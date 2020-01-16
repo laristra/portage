@@ -20,8 +20,11 @@
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/driver/coredriver.h"
+#include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_swept_face.h"
+#include "portage/intersect/intersect_r2d.h"
+#include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/support/portage.h"
@@ -75,7 +78,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            int interp_order,                                            
            Portage::Limiter_type limiter,                               
            Portage::Boundary_Limiter_type bnd_limiter,
-           bool mesh_output,                                            
+           bool intersect_based, bool mesh_output,
            std::string field_filename, int iteration,
            double& L1_error, double& L2_error,
            MPI_Comm comm,
@@ -143,6 +146,7 @@ void print_usage() {
   std::cerr << "\t--source_file   STRING  source mesh file to import"         << std::endl;
   std::cerr << "\t--target_file   STRING  target mesh file to import"         << std::endl;
   std::cerr << "\t--remap_order   INT     order of interpolation"             << std::endl;
+  std::cerr << "\t--intersect     CHAR    use intersection-based remap [y|n]" << std::endl;
   std::cerr << "\t--field         STRING  numerical field to remap"           << std::endl;
   std::cerr << "\t--field_file    STRING  numerical field file to import"     << std::endl;
   std::cerr << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
@@ -187,7 +191,8 @@ int main(int argc, char** argv) {
   int interp_order = 1;
   int ntimesteps = 4;
   int scale = 20;
-  bool mesh_output = false; // (!) 'write_to_gmv' segfaults in parallel
+  bool mesh_output = false;
+  bool intersect_based = false;
 
   std::string source_file;
   std::string target_file;
@@ -225,6 +230,8 @@ int main(int argc, char** argv) {
     } else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
+    } else if (keyword == "intersect") {
+      intersect_based = (valueword == "y");
     } else if (keyword == "field") {
       field_expression = valueword;
     } else if (keyword == "field_file") {
@@ -358,7 +365,8 @@ int main(int argc, char** argv) {
       std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
       std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"");
+    std::cout << std::endl << std::endl;
   }
 
   double periodT = 2.0;
@@ -376,12 +384,12 @@ int main(int argc, char** argv) {
       case 2:
         move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
         remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, mesh_output, field_path,
+                 limiter, bnd_limiter, intersect_based, mesh_output, field_path,
                  i, l1_err[i], l2_err[i], comm, profiler); break;
       case 3:
         move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
         remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, mesh_output, field_path,
+                 limiter, bnd_limiter, intersect_based, mesh_output, field_path,
                  i, l1_err[i], l2_err[i], comm, profiler); break;
       default:
         if (rank == 0)
@@ -432,7 +440,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            int interp_order,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
-           bool mesh_output,
+           bool intersect_based, bool mesh_output,
            std::string field_filename, int iteration,
            double& L1_error, double& L2_error,
            MPI_Comm comm,
@@ -476,8 +484,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     MPI_Abort(comm, EXIT_FAILURE);
 
   std::vector<double> source_data(nsrccells);
-  //std::vector<double> target_data;
-
   for (int c = 0; c < nsrccells; ++c) {
     source_data[c] = exact_value(source_mesh->cell_centroid(c));
   }
@@ -491,31 +497,31 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                                               Jali::Entity_kind::CELL,
                                                               Jali::Entity_type::ALL,
                                                               0.0);
-//  if (rank == 0) {
-//    std::cout << " \u2022 registered fields: ";
-//    for (auto&& name: source_state_wrapper.names())
-//      std::cout << "\""<< name << "\" ";
-//    std::cout << std::endl;
-//  }
-
   MPI_Barrier(comm);
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
                     target_mesh_wrapper, target_state_wrapper, executor);
 
-  auto candidates = remapper.template search<Portage::SearchSweptFace>();
-  auto weights = (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates)
-                           : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
+  auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
+                                     : remapper.template search<Portage::SearchSweptFace>());
+  auto weights = (intersect_based
+    ? (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
+                : remapper.template intersect_meshes<Portage::IntersectR3D>(candidates))
+    : (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates)
+                : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates)));
+
 
   switch (interp_order) {
     case 1:
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>
-        ("density", "density", weights);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
+                                                                                    "density",
+                                                                                    weights);
       break;
     case 2: {
       auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>
-        ("density", "density", weights, &gradients);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
+                                                                                    "density",
+                                                                                    weights, &gradients);
       break;
     }
     default: break;
