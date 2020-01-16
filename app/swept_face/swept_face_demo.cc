@@ -47,6 +47,9 @@
 
 #define DEBUG_PRINT 0
 
+static int rank = 0;
+static int numpe = 1;
+
 /**
  * @brief Remap the analytically imposed field and output related errors.
  *
@@ -59,8 +62,6 @@
  * @param bnd_limiter      gradient limiter to use for boundary cells.
  * @param mesh_output      dump meshes or not?
  * @param field_filename   field file name for imported meshes.
- * @param rank             current rank
- * @param numpe            number of MPI ranks.
  * @param iteration        current iteration.
  * @param L1_error         L1-norm error.
  * @param L2_error         L2-norm error.
@@ -75,8 +76,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Limiter_type limiter,                               
            Portage::Boundary_Limiter_type bnd_limiter,
            bool mesh_output,                                            
-           std::string field_filename,                                  
-           int rank, int numpe, int iteration,                          
+           std::string field_filename, int iteration,
            double& L1_error, double& L2_error,
            MPI_Comm comm,
            std::shared_ptr<Profiler> profiler);
@@ -159,7 +159,6 @@ int main(int argc, char** argv) {
 #endif
 
   // Initialize MPI
-  int numpe, rank;
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_size(comm, &numpe);
@@ -386,8 +385,6 @@ int main(int argc, char** argv) {
  * @param bnd_limiter      gradient limiter to use for boundary cells.
  * @param mesh_output      dump meshes or not?
  * @param field_filename   field file name for imported meshes.
- * @param rank             current rank
- * @param numpe            number of MPI ranks.
  * @param iteration        current iteration.
  * @param L1_error         L1-norm error.
  * @param L2_error         L2-norm error.
@@ -402,13 +399,13 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool mesh_output,
-           std::string field_filename,
-           int rank, int numpe, int iteration,
+           std::string field_filename, int iteration,
            double& L1_error, double& L2_error,
            MPI_Comm comm,
            std::shared_ptr<Profiler> profiler) {
 
-  std::cout << "Remap field using swept-face algorithm ... "<< std::endl;
+  if (rank == 0)
+    std::cout << "Remap field ... ";
 
   // the remapper to use
   using Remapper = Portage::CoreDriver<dim,
