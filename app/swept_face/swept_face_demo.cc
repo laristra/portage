@@ -571,8 +571,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   source_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &source_data_field);
   target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_data_field);
 
-  target_data.resize(ntarcells);
-
   // Compute total mass on the source mesh to check conservation
   for (int c = 0; c < nsrccells; ++c) {
     min_source_val = std::min(min_source_val, source_data_field[c]);
@@ -582,15 +580,17 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // cell error computation
-  Portage::Point<dim> ccen;
   for (int c = 0; c < ntarcells; ++c) {
+    // skip ghost cells to avoid duplicated values
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
-      target_mesh_wrapper.cell_centroid(c, &ccen);
-      double cellvol = target_mesh_wrapper.cell_volume(c);
-      target_data[c] = target_data_field[c];
+      // update field values bound
       min_target_val = std::min(min_target_val, target_data_field[c]);
       max_target_val = std::max(max_target_val, target_data_field[c]);
-      error = source_data_field[c] - target_data_field[c];
+      // compute difference between exact and remapped value
+      auto const centroid = target_mesh->cell_centroid(c);
+      auto const cellvol = target_mesh_wrapper.cell_volume(c);
+      auto const error = exact_value(centroid) - target_data_field[c];
+      // update L^p norm error and target mass
       L1_error += std::abs(error) * cellvol;
       L2_error += error * error * cellvol;
       total_volume += cellvol;
@@ -599,7 +599,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // accumulate all local value on master rank
-  MPI_Barrier(comm);
+  //MPI_Barrier(comm);
   MPI_Reduce(&L1_error, global_error+0, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   MPI_Reduce(&L2_error, global_error+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   MPI_Reduce(&min_source_val, source_extents, 1, MPI_DOUBLE, MPI_MIN, 0, comm);
@@ -616,8 +616,11 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   max_source_val = source_extents[1];
   min_target_val = target_extents[0];
   max_target_val = target_extents[1];
+  source_mass = total_mass[0];
+  target_mass = total_mass[1];
 
   if (rank == 0) {
+    std::printf("done\n");
     std::printf(" \u2022 L1-norm error     = %lf\n", L1_error);
     std::printf(" \u2022 L2-norm error     = %lf\n", L2_error);
     std::printf(" \u2022 source values     = [%.15f, %.15f]\n", min_source_val, max_source_val);
