@@ -52,37 +52,7 @@
 
 static int rank = 0;
 static int numpe = 1;
-
-/**
- * @brief Remap the analytically imposed field and output related errors.
- *
- * @tparam dim             dimension of the problem.
- * @param source_mesh      source mesh pointer.
- * @param target_mesh      target mesh pointer.
- * @param field_expression analytical expression of the field to remap.
- * @param interp_order     order of accuracy for interpolation.
- * @param limiter          gradient limiter to use for internal cells.
- * @param bnd_limiter      gradient limiter to use for boundary cells.
- * @param mesh_output      dump meshes or not?
- * @param field_filename   field file name for imported meshes.
- * @param iteration        current iteration.
- * @param L1_error         L1-norm error.
- * @param L2_error         L2-norm error.
- * @param comm             the MPI communicator to use.
- * @param profiler         profiler object pointer.
- */
-template<int dim>
-void remap(std::shared_ptr<Jali::Mesh> source_mesh,                     
-           std::shared_ptr<Jali::Mesh> target_mesh,                     
-           std::string field_expression,                                
-           int interp_order,                                            
-           Portage::Limiter_type limiter,                               
-           Portage::Boundary_Limiter_type bnd_limiter,
-           bool intersect_based, bool mesh_output,
-           std::string field_filename, int iteration,
-           double& L1_error, double& L2_error,
-           MPI_Comm comm,
-           std::shared_ptr<Profiler> profiler);
+static MPI_Comm comm = MPI_COMM_WORLD;
 
 /**
  * @brief Identify boundary nodes of the given mesh.
@@ -124,12 +94,60 @@ void compute_single_vortex_velocity(double* coords, double& tcur,
                                     double& periodT, double* veloc);
 
 /**
+ * @brief Remap the analytically imposed field and output related errors.
+ *
+ * @tparam dim             dimension of the problem.
+ * @param source_mesh      source mesh pointer.
+ * @param target_mesh      target mesh pointer.
+ * @param field_expression analytical expression of the field to remap.
+ * @param interp_order     order of accuracy for interpolation.
+ * @param limiter          gradient limiter to use for internal cells.
+ * @param bnd_limiter      gradient limiter to use for boundary cells.
+ * @param mesh_output      dump meshes or not?
+ * @param field_filename   field file name for imported meshes.
+ * @param iteration        current iteration.
+ * @param L1_error         L1-norm error.
+ * @param L2_error         L2-norm error.
+ * @param comm             the MPI communicator to use.
+ * @param profiler         profiler object pointer.
+ */
+template<int dim>
+void remap(std::shared_ptr<Jali::Mesh> source_mesh,
+           std::shared_ptr<Jali::Mesh> target_mesh,
+           std::string field_expression,
+           int interp_order,
+           Portage::Limiter_type limiter,
+           Portage::Boundary_Limiter_type bnd_limiter,
+           bool intersect_based, bool mesh_output,
+           std::string field_filename, int iteration,
+           double& L1_error, double& L2_error,
+           std::shared_ptr<Profiler> profiler);
+
+/**
  * @brief Print an error message followed by command-line usage, and exits.
  *
  * @param message the error message to be displayed
  * @return status code
  */
 int abort(std::string message);
+
+/**
+ * @brief Print some infos to the user.
+ *
+ * @param source_mesh      source mesh pointer
+ * @param target_mesh      target mesh pointer
+ * @param field_expression expression of the field to remap
+ * @param interp_order     order of interpolation
+ * @param intersect_based  use intersection-based method
+ * @param limiter          gradient limiter for internal cells
+ * @param bnd_limiter      gradient limiter for boundary cells
+ */
+void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
+                 std::shared_ptr<Jali::Mesh> target_mesh,
+                 std::string field_expression,
+                 int interp_order, bool intersect_based,
+                 Portage::Limiter_type limiter,
+                 Portage::Boundary_Limiter_type bnd_limiter);
 
 /**
  * @brief Print command-line usage.
@@ -176,7 +194,6 @@ int main(int argc, char** argv) {
 
   // Initialize MPI
   MPI_Init(&argc, &argv);
-  MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_size(comm, &numpe);
   MPI_Comm_rank(comm, &rank);
 
@@ -301,7 +318,7 @@ int main(int argc, char** argv) {
     std::cout << "  a swept-face algorithm. Meshes can be internally generated  " << std::endl;
     std::cout << "  cartesian grids or externally imported unstructured meshes. " << std::endl;
     std::cout << " ------------------------------------------------------------ " << std::endl;
-    std::cout << (ncells > 0 ? "Generate" : "Import") << " meshes ... ";
+    std::cout << (ncells > 0 ? "Generate" : "Import") << " meshes ... " << std::flush;
   }
 
   std::shared_ptr<Jali::Mesh> source_mesh;
@@ -350,24 +367,9 @@ int main(int argc, char** argv) {
 #endif
 
   // Output some information for the user
-  if (rank == 0) {
-    // get actual number of cells on both meshes
-    Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
-    Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
-    int const nb_source_cells = source_mesh_wrapper.num_owned_cells();
-    int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
-
-    std::cout << " \u2022 source mesh has " << nb_source_cells << " cells" << std::endl;
-    std::cout << " \u2022 target mesh has " << nb_target_cells << " cells" << std::endl;
-    std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
-    std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
-    if (interp_order == 2) {
-      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
-      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
-    }
-    std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"");
-    std::cout << std::endl << std::endl;
-  }
+  print_infos(source_mesh, target_mesh,
+              field_expression, interp_order,
+              intersect_based, limiter, bnd_limiter);
 
   double periodT = 2.0;
   double deltaT = periodT/ntimesteps;
@@ -380,22 +382,23 @@ int main(int argc, char** argv) {
       std::cout << "------------- timestep "<< i << " -------------" << std::endl;
 
     // move nodes of the target mesh then run the remap and output related errors
-    switch (dim) {
-      case 2:
-        move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
-        remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, intersect_based, mesh_output, field_path,
-                 i, l1_err[i], l2_err[i], comm, profiler); break;
-      case 3:
-        move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
-        remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, intersect_based, mesh_output, field_path,
-                 i, l1_err[i], l2_err[i], comm, profiler); break;
-      default:
-        if (rank == 0)
-          std::cerr << "Invalid dimension" << std::endl;
-        MPI_Finalize();
-        return EXIT_FAILURE;
+    try {
+      switch (dim) {
+        case 2:
+          move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
+          remap<2>(source_mesh, target_mesh, field_expression, interp_order,
+                   limiter, bnd_limiter, intersect_based, mesh_output, field_path,
+                   i, l1_err[i], l2_err[i], profiler); break;
+        case 3:
+          move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
+          remap<3>(source_mesh, target_mesh, field_expression, interp_order,
+                   limiter, bnd_limiter, intersect_based, mesh_output, field_path,
+                   i, l1_err[i], l2_err[i], profiler); break;
+        default:
+          return abort("invalid dimension");
+      }
+    } catch (std::exception const& exception) {
+      return abort(exception.what());
     }
 
     if (rank == 0)
@@ -443,11 +446,10 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            bool intersect_based, bool mesh_output,
            std::string field_filename, int iteration,
            double& L1_error, double& L2_error,
-           MPI_Comm comm,
            std::shared_ptr<Profiler> profiler) {
 
   if (rank == 0)
-    std::cout << "Remap field ... ";
+    std::cout << "Remap field ... " << std::flush;
 
   // the remapper to use
   using Remapper = Portage::CoreDriver<dim,
@@ -510,7 +512,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     : (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates)
                 : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates)));
 
-
   switch (interp_order) {
     case 1:
       remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
@@ -540,7 +541,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   // dump meshes if requested
   if (mesh_output) {
     if (rank == 0)
-      std::cout << "Dump data ... ";
+      std::cout << "Dump data ... " << std::flush;
 
     std::string suffix = std::to_string(rank) + std::to_string(iteration)+ ".exo";
     source_state->export_to_mesh();
@@ -553,7 +554,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   if (rank == 0)
-    std::cout << "Extract stats ... ";
+    std::cout << "Extract stats ... " << std::flush;
 
   // Compute error
   L1_error = 0.0;
@@ -681,7 +682,7 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale) {
 
   if (rank == 0)
-    std::cout << "Move target mesh ... ";
+    std::cout << "Move target mesh ... " << std::flush;
 
   const int nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
@@ -762,4 +763,49 @@ int abort(std::string message) {
   }
   MPI_Finalize();
   return EXIT_FAILURE;
+}
+
+/**
+ * @brief Print some infos to the user.
+ *
+ * @param source_mesh      source mesh pointer
+ * @param target_mesh      target mesh pointer
+ * @param field_expression expression of the field to remap
+ * @param interp_order     order of interpolation
+ * @param intersect_based  use intersection-based method
+ * @param limiter          gradient limiter for internal cells
+ * @param bnd_limiter      gradient limiter for boundary cells
+ */
+void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
+                 std::shared_ptr<Jali::Mesh> target_mesh,
+                 std::string field_expression,
+                 int interp_order, bool intersect_based,
+                 Portage::Limiter_type limiter,
+                 Portage::Boundary_Limiter_type bnd_limiter) {
+
+  // get actual number of cells on both meshes
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
+
+  int total_count[] = {0, 0};
+  int nb_source_cells = source_mesh_wrapper.num_owned_cells();
+  int nb_target_cells = target_mesh_wrapper.num_owned_cells();
+
+  MPI_Reduce(&nb_source_cells, total_count+0, 1, MPI_INT, MPI_SUM, 0, comm);
+  MPI_Reduce(&nb_target_cells, total_count+1, 1, MPI_INT, MPI_SUM, 0, comm);
+
+  if (rank == 0) {
+    nb_source_cells = total_count[0];
+    nb_target_cells = total_count[1];
+    std::cout << " \u2022 source mesh has " << nb_source_cells << " cells" << std::endl;
+    std::cout << " \u2022 target mesh has " << nb_target_cells << " cells" << std::endl;
+    std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
+    std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
+    if (interp_order == 2) {
+      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
+      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
+    }
+    std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"");
+    std::cout << std::endl << std::endl;
+  }
 }
