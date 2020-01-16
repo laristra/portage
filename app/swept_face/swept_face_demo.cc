@@ -172,14 +172,16 @@ int main(int argc, char** argv) {
   }
 
   int dim = 2;
-  int ncells = 10;
+  int ncells = 0;
   int interp_order = 1;
   int ntimesteps = 4;
   int scale = 20;
   bool mesh_output = false; // (!) 'write_to_gmv' segfaults in parallel
 
+  std::string source_file;
+  std::string target_file;
   std::string field_expression;
-  std::string field_filename;  // No default;
+  std::string field_path;  // No default;
 
   auto limiter     = Portage::Limiter_type::NOLIMITER;
   auto bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
@@ -203,6 +205,10 @@ int main(int argc, char** argv) {
       assert(dim == 2 || dim == 3);
     } else if (keyword == "ncells") {
       ncells = stoi(valueword);
+    } else if (keyword == "source_file") {
+      source_file = valueword;
+    } else if (keyword == "target_file") {
+      target_file = valueword;
     } else if (keyword == "scale_by") {
       scale = stoi(valueword);
     } else if (keyword == "remap_order") {
@@ -210,6 +216,8 @@ int main(int argc, char** argv) {
       assert(interp_order > 0 && interp_order < 3);
     } else if (keyword == "field") {
       field_expression = valueword;
+    } else if (keyword == "field_file") {
+      field_path = valueword;
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" or valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
@@ -222,25 +230,32 @@ int main(int argc, char** argv) {
       ntimesteps = stoi(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
-    }
 #if ENABLE_TIMINGS
-      else if (keyword == "only_threads"){
+    } else if (keyword == "only_threads"){
       only_threads = (numpe == 1 and valueword == "y");
     } else if (keyword == "scaling") {
       assert(valueword == "strong" or valueword == "weak");
       scaling_type = valueword;
-    }
 #endif
-    else if (keyword == "help") {
-      print_usage();
-      MPI_Finalize();
-      return EXIT_SUCCESS;
-    } else {
-      std::cerr << "Unrecognized option " << keyword << " !\n";
-      MPI_Finalize();
-      return EXIT_FAILURE;
-    }
+    } else if (keyword == "help") {
+      return abort("");
+    } else
+      return abort("unrecognized option "+ keyword);
   }
+
+  // Some input error checking
+  bool invalid_source = (ncells > 0 and not source_file.empty()) or (not ncells and source_file.empty());
+  bool invalid_target = (ncells > 0 and not target_file.empty()) or (not ncells and target_file.empty());
+  bool no_field_expression = ncells > 0 and field_expression.empty();
+
+  if (invalid_source)
+    return abort("please choose either generated or imported source mesh");
+
+  if (invalid_target)
+    return abort("please choose either generated or imported target mesh");
+
+  if (no_field_expression)
+    return abort("no field imposed on internally generated source mesh");
 
 #if ENABLE_TIMINGS
   auto profiler = std::make_shared<Profiler>();
@@ -262,37 +277,46 @@ int main(int argc, char** argv) {
   std::shared_ptr<Profiler> profiler = nullptr;
 #endif
 
-  if (rank == 0)
-    std::printf("Generating distributed meshes ... ");
+  if (rank == 0) {
+    std::cout << " ------------------------------------------------------------ " << std::endl;
+    std::cout << "  A simple application for single material field remap using  " << std::endl;
+    std::cout << "  a swept-face algorithm. Meshes can be internally generated  " << std::endl;
+    std::cout << "  cartesian grids or externally imported unstructured meshes. " << std::endl;
+    std::cout << " ------------------------------------------------------------ " << std::endl;
+    std::cout << "Generate meshes ... ";
+  }
 
-  // bounds of generated mesh in each dir
-  // no mismatch between source and target meshes.
-  double x_min = 0.0, x_max = 1.0;
-  double y_min = 0.0, y_max = 1.0;
+  std::shared_ptr<Jali::Mesh> source_mesh;
+  std::shared_ptr<Jali::Mesh> target_mesh;
 
-  std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
-
-  // generate distributed source and target meshes
-  // using a BLOCK partitioner to partition them.
   Jali::MeshFactory factory(comm);
   factory.included_entities(Jali::Entity_kind::ALL_KIND);
-  factory.partitioner(Jali::Partitioner_type::BLOCK);
 
-  // Create the source and target meshes
-  if (dim == 2) {
-    source_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
-    target_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
+  if (ncells == 0) {
+    // import meshes while using a graph partitioner to partition them.
+    factory.partitioner(Jali::Partitioner_type::METIS);
+    source_mesh = factory(source_file);
+    target_mesh = factory(target_file);
+  } else {
+    // generate distributed source and target meshes
+    // using a block partitioner to partition them.
+    factory.partitioner(Jali::Partitioner_type::BLOCK);
+    // no boundary mismatch
+    double x_min = 0.0, x_max = 1.0;
+    double y_min = 0.0, y_max = 1.0;
+    // Create the source and target meshes
+    if (dim == 2) {
+      source_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
+      target_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
+    }
+    else if (dim == 3) {
+      double z_min = 0.0, z_max = 1.0;
+      source_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max, ncells, ncells, ncells);
+      target_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max, ncells, ncells, ncells);
+    }
   }
-  else if (dim == 3) {
-    double z_min = 0.0, z_max = 1.0;
-    source_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max,
-                          ncells, ncells, ncells);
-    target_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max,
-                          ncells, ncells, ncells);
-  }
 
-
-  // Make sure we have the right dimension and that source and
+  // make sure that we have the right dimension and that source and
   // target mesh dimensions match (important when one or both of the
   // meshes are read in)
   assert(source_mesh->space_dimension() == target_mesh->space_dimension());
