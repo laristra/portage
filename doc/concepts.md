@@ -356,16 +356,16 @@ Following four phases described earlier, namely: **search**, **intersect**,
 **interpolate** and **repair**, the main difference lies inside the **intersect** phase.
 The swept-face **intersect** algorithm can be summarized as:
 
-* For each face f of a computational cell c, create a swept-face polygon/polyhedron
+* For each face *f* of a computational cell *c*, create a swept-face polygon/polyhedron
   and calculate its signed volume.
   Note that the polygon can be self-intersecting.
 
 * Based on the sign of the volume,
-  assign this volume (and higher moments) either to the cell c or to a neighboring
-  cell which is sharing the face f with the cell c.
+  assign this volume (and higher moments) either to the cell *c* or to a neighboring
+  cell which is sharing the face *f* with the cell *c*.
 
-* In addition to contributions from the face displacement, the volume of the cell c itself
-  is assigned to the cell c, so that the target data can be expressed as
+* In addition to contributions from the face displacement, the volume of the cell *c* itself
+  is assigned to the cell *c*, so that the target data can be expressed as
   a weighted sum over all these contributions in the same way as for the
   default exact intersections. Therefore, the **interpolate** phase is the same as for
   intersection based remap.
@@ -377,23 +377,24 @@ phase is trivial. A list of face-neighboring cells is created in this phase.
 ### Multi material remap
 
 ![Example of two multi-material swept regions](doxygen/images/swept_multi_small.png)
+###### An example of two swept regions projected into their corresponding face-cell groups for a multi-material remap
 
-Preservation of material volumes require more sopfisticated method for the
-multi-material swept-face remap. To make use of interface reconstruction is
+Preservation of material volumes requires more sophisticated method for the
+multi-material swept-face remap. To make use of interface reconstruction in
 source cells, swept regions are projected into corresponding cells based
 on their signed volumes. This is done in following steps during the **intersect**
 phase:
 
-* Create a polygon/polyhedron p by adding a cell centroid of a cell c
-  to a face f. This polygon defines a face-cell group fc.
+* Create a polygon/polyhedron *p* by adding a centroid of a cell *c*
+  to a face *f*. This poly defines a face-cell group *fc*.
 
-* Find a cutting plane in the direction of an effective normal of the face f
-  in such a way that the volume of the poly p under the plane is equal
+* Find a cutting plane in the direction of an effective normal of the face *f*
+  in such a way that the volume of the poly *p* under the plane is equal
   to the the swept volume.
 
-* Cut material polygons associated with a face-cell group fc with the
+* Cut material polygons associated with a face-cell group *fc* with the
   cutting plane to get material volumes (and higher moments) which
-  are assigned to the cell c. Material volumes from the cell itself have to be added
+  are assigned to the cell *c*. Material volumes from the cell itself have to be added
   to the contribution as described in the single-material case.
 
 <br>
