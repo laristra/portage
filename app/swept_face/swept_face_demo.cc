@@ -485,16 +485,13 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (not exact_value.initialize(dim, field_expression))
     MPI_Abort(comm, EXIT_FAILURE);
 
-  std::vector<double> source_data(nsrccells);
+  double source_field[nsrccells];
   for (int c = 0; c < nsrccells; ++c) {
-    source_data[c] = exact_value(source_mesh->cell_centroid(c));
+    source_field[c] = exact_value(source_mesh->cell_centroid(c));
   }
 
-  source_state->add("density", source_mesh,
-                    Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL,
-                    source_data.data());
-
+  source_state->add("density", source_mesh, Jali::Entity_kind::CELL,
+                    Jali::Entity_type::ALL, source_field);
   target_state->add<double, Jali::Mesh, Jali::UniStateVector>("density", target_mesh,
                                                               Jali::Entity_kind::CELL,
                                                               Jali::Entity_type::ALL,
@@ -561,8 +558,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   L2_error = 0.0;
 
   //double error;
-  double const* target_data_field;
-  double const* source_data_field;
+  double const* target_field;
   double min_source_val = std::numeric_limits<double>::max();
   double max_source_val = std::numeric_limits<double>::min();
   double min_target_val = min_source_val;
@@ -575,15 +571,16 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   double global_error[] = { 0., 0. };
   double total_volume = 0. ;
 
-  source_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &source_data_field);
-  target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_data_field);
+  target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_field);
 
   // Compute total mass on the source mesh to check conservation
   for (int c = 0; c < nsrccells; ++c) {
-    min_source_val = std::min(min_source_val, source_data_field[c]);
-    max_source_val = std::max(max_source_val, source_data_field[c]);
-    double cellvol2 = source_mesh_wrapper.cell_volume(c);
-    source_mass += source_data_field[c] * cellvol2;
+    if (source_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
+      min_source_val = std::min(min_source_val, source_field[c]);
+      max_source_val = std::max(max_source_val, source_field[c]);
+      double cellvol2 = source_mesh_wrapper.cell_volume(c);
+      source_mass += source_field[c] * cellvol2;
+    }
   }
 
   // cell error computation
@@ -591,17 +588,17 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     // skip ghost cells to avoid duplicated values
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
       // update field values bound
-      min_target_val = std::min(min_target_val, target_data_field[c]);
-      max_target_val = std::max(max_target_val, target_data_field[c]);
+      min_target_val = std::min(min_target_val, target_field[c]);
+      max_target_val = std::max(max_target_val, target_field[c]);
       // compute difference between exact and remapped value
       auto const centroid = target_mesh->cell_centroid(c);
       auto const cellvol = target_mesh_wrapper.cell_volume(c);
-      auto const error = exact_value(centroid) - target_data_field[c];
+      auto const error = exact_value(centroid) - target_field[c];
       // update L^p norm error and target mass
       L1_error += std::abs(error) * cellvol;
       L2_error += error * error * cellvol;
       total_volume += cellvol;
-      target_mass += target_data_field[c] * cellvol;
+      target_mass += target_field[c] * cellvol;
     }
   }
 
@@ -784,21 +781,15 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
                  Portage::Boundary_Limiter_type bnd_limiter) {
 
   // get actual number of cells on both meshes
-  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
-  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
-
   int total_count[] = {0, 0};
-  int nb_source_cells = source_mesh_wrapper.num_owned_cells();
-  int nb_target_cells = target_mesh_wrapper.num_owned_cells();
-
+  int nb_source_cells = Wonton::Jali_Mesh_Wrapper(*source_mesh).num_owned_cells();
+  int nb_target_cells = Wonton::Jali_Mesh_Wrapper(*target_mesh).num_owned_cells();
   MPI_Reduce(&nb_source_cells, total_count+0, 1, MPI_INT, MPI_SUM, 0, comm);
   MPI_Reduce(&nb_target_cells, total_count+1, 1, MPI_INT, MPI_SUM, 0, comm);
 
   if (rank == 0) {
-    nb_source_cells = total_count[0];
-    nb_target_cells = total_count[1];
-    std::cout << " \u2022 source mesh has " << nb_source_cells << " cells" << std::endl;
-    std::cout << " \u2022 target mesh has " << nb_target_cells << " cells" << std::endl;
+    std::cout << " \u2022 source mesh has " << total_count[0] << " cells" << std::endl;
+    std::cout << " \u2022 target mesh has " << total_count[1] << " cells" << std::endl;
     std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
     std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
     if (interp_order == 2) {
