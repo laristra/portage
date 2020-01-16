@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
   int ncells = 0;
   int interp_order = 1;
   int ntimesteps = 4;
-  int scale = 20;
+  int scale = 10;
   bool mesh_output = false;
   bool intersect_based = false;
 
@@ -704,6 +704,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
   }
   if (rank == 0)
     std::cout << "done" << std::endl;
+
+  MPI_Barrier(comm);
 }
 
 /**
@@ -716,8 +718,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  */
 void compute_single_vortex_velocity(double* coords, double& tcur,
                                     double& periodT, double* veloc) {
-  double const& x = coords[0];
-  double const& y = coords[1];
+  double x = coords[0];
+  double y = coords[1];
   veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
   veloc[1] =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
 }
