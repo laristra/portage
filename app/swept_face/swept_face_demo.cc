@@ -743,3 +743,17 @@ std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> m
   return boundary_node;
 }
 
+/**
+ * @brief Print an error message followed by command-line usage, and exits.
+ *
+ * @param message the error message to be displayed
+ * @return status code
+ */
+int abort(std::string message) {
+  if (rank == 0) {
+    std::fprintf(stderr, "\e[31mError: %s\e[0m\n", message.data());
+    print_usage();
+  }
+  MPI_Finalize();
+  return EXIT_FAILURE;
+}
