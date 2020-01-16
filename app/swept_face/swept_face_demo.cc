@@ -121,29 +121,41 @@ void compute_single_vortex_velocity(double* coords, double& tcur,
                                     double& periodT, double* veloc);
 
 /**
+ * @brief Print an error message followed by command-line usage, and exits.
+ *
+ * @param message the error message to be displayed
+ * @return status code
+ */
+int abort(std::string message);
+
+/**
  * @brief Print command-line usage.
  *
  */
 void print_usage() {
 
-  std::cout << "Usage: swept_face_demo [options]" << std::endl;
-  std::cout << std::endl;
-  std::cout << "Options:" << std::endl;
-  std::cout << "\t--help                  show this help message and exit" << std::endl;
-  std::cout << "\t--dim           INT     dimension of the problem"        << std::endl;
-  std::cout << "\t--ncells        INT     number of cells per axis"        << std::endl;
-  std::cout << "\t--remap_order   INT     order of interpolation"          << std::endl;
-  std::cout << "\t--field         STRING  numerical field to remap"        << std::endl;
-  std::cout << "\t--ntimesteps    INT     number of timesteps"             << std::endl;
-  std::cout << "\t--scale_by      FLOAT   displacement scaling factor"     << std::endl;
-  std::cout << "\t--limiter       STRING  gradient limiter to use"         << std::endl;
-  std::cout << "\t--bnd_limiter   STRING  gradient limiter for boundary"   << std::endl;
-  std::cout << "\t--output_meshes CHAR    dump meshes [y|n]"               << std::endl;
+  std::cerr << "Usage: swept_face_demo [options]" << std::endl;
+  std::cerr << std::endl;
+  std::cerr << "Options:" << std::endl;
+  std::cerr << "\t--help                  show this help message and exit"    << std::endl;
+  std::cerr << "\t--dim           INT     dimension of the problem"           << std::endl;
+  std::cerr << "\t--ncells        INT     cells per axis for generated grids" << std::endl;
+  std::cerr << "\t--source_file   STRING  source mesh file to import"         << std::endl;
+  std::cerr << "\t--target_file   STRING  target mesh file to import"         << std::endl;
+  std::cerr << "\t--remap_order   INT     order of interpolation"             << std::endl;
+  std::cerr << "\t--field         STRING  numerical field to remap"           << std::endl;
+  std::cerr << "\t--field_file    STRING  numerical field file to import"     << std::endl;
+  std::cerr << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
+  std::cerr << "\t--scale_by      FLOAT   displacement scaling factor"        << std::endl;
+  std::cerr << "\t--limiter       STRING  gradient limiter to use"            << std::endl;
+  std::cerr << "\t--bnd_limiter   STRING  gradient limiter for boundary"      << std::endl;
+  std::cerr << "\t--output_meshes CHAR    dump meshes [y|n]"                  << std::endl;
 #if ENABLE_TIMINGS
-  std::cout << "\t--scaling       STRING  scaling study [strong|weak]"     << std::endl;
-  std::cout << "\t--only_threads  CHAR    thread scaling profiling [y|n]"  << std::endl;
+  std::cerr << "\t--scaling       STRING  scaling study [strong|weak]"        << std::endl;
+  std::cerr << "\t--only_threads  CHAR    thread scaling profiling [y|n]"     << std::endl;
 #endif
 }
+
 
 /**
  * @brief Main method.
@@ -330,6 +342,25 @@ int main(int argc, char** argv) {
     std::cout << "done" << std::endl;
 #endif
 
+  // Output some information for the user
+  if (rank == 0) {
+    // get actual number of cells on both meshes
+    Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+    Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
+    int const nb_source_cells = source_mesh_wrapper.num_owned_cells();
+    int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
+
+    std::cout << " \u2022 source mesh has " << nb_source_cells << " cells" << std::endl;
+    std::cout << " \u2022 target mesh has " << nb_target_cells << " cells" << std::endl;
+    std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
+    std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
+    if (interp_order == 2) {
+      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
+      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
+    }
+    std::cout << std::endl;
+  }
+
   double periodT = 2.0;
   double deltaT = periodT/ntimesteps;
 
@@ -337,27 +368,30 @@ int main(int argc, char** argv) {
   std::vector<double> l2_err(ntimesteps, 0.0);
 
   for (int i = 1; i < ntimesteps; i++) {
-    std::cout << "------------- timestep "<< i << " -------------" << std::endl;
+    if (rank == 0)
+      std::cout << "------------- timestep "<< i << " -------------" << std::endl;
 
     // move nodes of the target mesh then run the remap and output related errors
     switch (dim) {
       case 2:
         move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
         remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, mesh_output, field_filename,
-                 rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
+                 limiter, bnd_limiter, mesh_output, field_path,
+                 i, l1_err[i], l2_err[i], comm, profiler); break;
       case 3:
         move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
         remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                 limiter, bnd_limiter, mesh_output, field_filename,
-                 rank, numpe, i, l1_err[i], l2_err[i], comm, profiler); break;
+                 limiter, bnd_limiter, mesh_output, field_path,
+                 i, l1_err[i], l2_err[i], comm, profiler); break;
       default:
-        std::cerr << "Invalid dimension" << std::endl;
+        if (rank == 0)
+          std::cerr << "Invalid dimension" << std::endl;
         MPI_Finalize();
         return EXIT_FAILURE;
     }
 
-    std::cout << std::endl;
+    if (rank == 0)
+      std::cout << std::endl;
   }
 
 #if ENABLE_TIMINGS
@@ -432,32 +466,20 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   const int ntarcells = target_mesh_wrapper.num_owned_cells() +
                         target_mesh_wrapper.num_ghost_cells();
 
-  // Output some information for the user
-  if (rank == 0) {
-    std::cout << " \u2022 source mesh has " << nsrccells << " cells" << std::endl;
-    std::cout << " \u2022 target mesh has " << ntarcells << " cells" << std::endl;
-    std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
-    std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
-    if (interp_order == 2) {
-      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
-      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
-    }
-  }
-
 #if ENABLE_TIMINGS
   auto tic = timer::now();
 #endif
 
   // Compute field data on source, and add to state manager.
-  user_field_t source_field;
-  if (not source_field.initialize(dim, field_expression))
+  user_field_t exact_value;
+  if (not exact_value.initialize(dim, field_expression))
     MPI_Abort(comm, EXIT_FAILURE);
 
   std::vector<double> source_data(nsrccells);
-  std::vector<double> target_data;
+  //std::vector<double> target_data;
 
   for (int c = 0; c < nsrccells; ++c) {
-    source_data[c] = source_field(source_mesh->cell_centroid(c));
+    source_data[c] = exact_value(source_mesh->cell_centroid(c));
   }
 
   source_state->add("density", source_mesh,
@@ -469,12 +491,12 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                                               Jali::Entity_kind::CELL,
                                                               Jali::Entity_type::ALL,
                                                               0.0);
-  if (rank == 0) {
-    std::cout << " \u2022 registered fields: ";
-    for (auto&& name: source_state_wrapper.names())
-      std::cout << "\""<< name << "\" ";
-    std::cout << std::endl;
-  }
+//  if (rank == 0) {
+//    std::cout << " \u2022 registered fields: ";
+//    for (auto&& name: source_state_wrapper.names())
+//      std::cout << "\""<< name << "\" ";
+//    std::cout << std::endl;
+//  }
 
   MPI_Barrier(comm);
 
@@ -504,12 +526,15 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   if (rank == 0)
     std::printf("done. \e[32m(%.3f s)\e[0m\n", profiler->time.remap);
+#else
+  if (rank == 0)
+    std::cout << "done" << std::endl;
 #endif
 
   // dump meshes if requested
   if (mesh_output) {
     if (rank == 0)
-      std::cout << "Dumping data to Exodus files ... ";
+      std::cout << "Dumping data ... ";
 
     std::string suffix = std::to_string(rank) + std::to_string(iteration)+ ".exo";
     source_state->export_to_mesh();
@@ -521,11 +546,14 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       std::cout << "done." << std::endl;
   }
 
+  if (rank == 0)
+    std::cout << "Extract stats ... ";
+
   // Compute error
   L1_error = 0.0;
   L2_error = 0.0;
 
-  double error;
+  //double error;
   double const* target_data_field;
   double const* source_data_field;
   double min_source_val = std::numeric_limits<double>::max();
@@ -643,7 +671,8 @@ template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, double& deltaT, double& periodT, int& scale) {
 
-  std::cout << "Moving target mesh points ... ";
+  if (rank == 0)
+    std::cout << "Moving target mesh ... ";
 
   const int nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
@@ -663,8 +692,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
       mesh->node_set_coordinates(i, coord.data());
     }
   }
-
-  std::cout << "done" << std::endl;
+  if (rank == 0)
+    std::cout << "done" << std::endl;
 }
 
 /**
