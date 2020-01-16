@@ -128,13 +128,18 @@ public:
     };
 
     int time_ratio[nsteps];
+    int max_elap = 0;
 
     for (int i = 0; i < nsteps; ++i) {
       time_ratio[i] = static_cast<int>(elap[i] * 100 / time.total);
+      max_elap = std::max(max_elap, static_cast<int>(elap[i]));
     }
 
-    std::string const& path = params.output;
+    // for number formatting
+    int const n_dec = 3;
+    int const n_tot = 1 + n_dec + (max_elap > 0 ? ((int) std::floor(std::log10(max_elap))) + 1 : 0);
 
+    std::string const& path = params.output;
     std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
     std::printf("= %2d %% mesh initialization     (%6.3f s).\n", time_ratio[0], elap[0]);
     std::printf("= %2d %% mesh redistribution     (%6.3f s).\n", time_ratio[1], elap[1]);
