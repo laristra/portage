@@ -60,7 +60,32 @@ static MPI_Comm comm = MPI_COMM_WORLD;
  * @param mesh the current mesh pointer.
  * @return a flag array to check if a given mesh node is a boundary one.
  */
-std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh);
+std::vector<bool> find_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh);
+
+/**
+ * @brief Move the given point.
+ *
+ * 2D: the point is updated using a periodic vortex velocity:
+ *   t: current timestep
+ *   dT = T/n with n: number of timesteps
+ *   u = -2*sin(PI*t/T) * sin(PI*x)^2 * sin(PI*y)*cos(PI*y);
+ *   v =  2*sin(PI*t/T) * sin(PI*x)*cos(PI*x) * sin(PI*y)^2;
+ *   x += x_old + u*t * dT
+ *   y += y_old + v*t * dT
+ *
+ * 3D: the point is updated as follow:
+ *   t: current timestep
+ *   x += 0.1 * sin(2*PI*x/(n-t))
+ *   y += 0.1 * sin(2*PI*y/(n-t))
+ *   z += 0.1 * sin(2*PI*z/(n-t))
+ *
+ * @param coords     coordinates of the given point
+ * @param iter       current iteration
+ * @param ntimesteps number of timesteps
+ * @param scale      displacement scaling factor
+ */
+template<int dim>
+void move_point(double* coords, int iter, int ntimesteps, int scale=1);
 
 /**
  * @brief Move the given target mesh points.
@@ -80,18 +105,8 @@ std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> m
  */
 template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            int iter, double& deltaT, double& periodT, int& scale);
-
-/**
- * @brief Compute a single vortex velocity value at the given point.
- *
- * @param[in]  coords  coordinates of the current point.
- * @param[in]  tcur    scaled displacement step
- * @param[in]  periodT displacement period.
- * @param[out] veloc   computed velocity for current point.
- */
-void compute_single_vortex_velocity(double* coords, double& tcur,
-                                    double& periodT, double* veloc);
+                            double p_min, double p_max,
+                            int iter, int ntimesteps, int scale);
 
 /**
  * @brief Remap the analytically imposed field and output related errors.
@@ -389,12 +404,12 @@ int main(int argc, char** argv) {
     try {
       switch (dim) {
         case 2:
-          move_target_mesh_nodes<2>(target_mesh, i, deltaT, periodT, scale);
+          move_target_mesh_nodes<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, field_path,
                    i, l1_err[i], l2_err[i], profiler); break;
         case 3:
-          move_target_mesh_nodes<3>(target_mesh, i, deltaT, periodT, scale);
+          move_target_mesh_nodes<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, field_path,
                    i, l1_err[i], l2_err[i], profiler); break;
@@ -592,7 +607,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       min_target_val = std::min(min_target_val, target_field[c]);
       max_target_val = std::max(max_target_val, target_field[c]);
       // compute difference between exact and remapped value
-      auto const centroid = target_mesh->cell_centroid(c);
+      //auto const centroid = target_mesh->cell_centroid(c);
+      target_mesh_wrapper.cell_centroid(c, &centroid);
       auto const cellvol = target_mesh_wrapper.cell_volume(c);
       auto const error = exact_value(centroid) - target_field[c];
       // update L^p norm error and target mass
@@ -667,8 +683,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  * connectivity but different point positions: loop over all the
  * boundary vertices assuming that we are only dealing with internally
  * generated meshes.
- * x_new = x_old + x_velocity(tcur) * deltaT
- * y_new = y_old + y_velocity(tcur) * deltaT
  *
  * @param mesh    current mesh pointer
  * @param iter    current timestep
@@ -678,49 +692,92 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  */
 template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            int iter, double& deltaT, double& periodT, int& scale) {
-
+                            double p_min, double p_max,
+                            int iter, int ntimesteps, int scale) {
   if (rank == 0)
     std::cout << "Move target mesh ... " << std::flush;
 
-  const int nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
+  assert(ntimesteps > 0);
+
+  auto is_boundary = [&](auto const& p) -> bool {
+    static double const epsilon = 1.E-16;
+    for (int d = 0; d < dim; ++d) {
+      if (std::abs(p[d] - p_min) < epsilon or std::abs(p[d] - p_max) < epsilon)
+        return false;
+    }
+    return true;
+  };
+
+  //auto boundary_node = find_boundary_nodes(mesh);
+  int const nb_nodes = mesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
-  double tcur = iter * deltaT;
-
-  auto boundary_node = identify_exterior_boundary_nodes(mesh);
-
   for (int i = 0; i < nb_nodes; i++) {
-    std::array<double, dim> coord{};
+    std::array<double, dim> point{};
     std::array<double, dim> veloc{};
-    mesh->node_get_coordinates(i, &coord);
+    mesh->node_get_coordinates(i, &point);
 
-    if (not boundary_node[i]) {
-      compute_single_vortex_velocity(coord.data(), tcur, periodT, veloc.data());
-      coord[0] = coord[0] + veloc[0] * deltaT / scale;
-      coord[1] = coord[1] + veloc[1] * deltaT / scale;
-      mesh->node_set_coordinates(i, coord.data());
+    if (not is_boundary(point)) {
+      move_point<dim>(point.data(), iter, ntimesteps);
+      mesh->node_set_coordinates(i, point.data());
     }
   }
-  if (rank == 0)
-    std::cout << "done" << std::endl;
 
   MPI_Barrier(comm);
+  if (rank == 0)
+    std::cout << "done" << std::endl;
 }
 
 /**
- * @brief Compute a single vortex velocity value at the given point.
+ * @brief Move the two-dimensional point.
+ * Its coordinates is updated using a periodic vortex velocity:
+ *   t: current timestep
+ *   dT = T/n with n: number of timesteps
+ *   u = -2*sin(PI*t/T) * sin(PI*x)^2 * sin(PI*y)*cos(PI*y);
+ *   v =  2*sin(PI*t/T) * sin(PI*x)*cos(PI*x) * sin(PI*y)^2;
+ *   x += x_old + u*t * dT
+ *   y += y_old + v*t * dT
  *
- * @param[in]  coords  coordinates of the current point.
- * @param[in]  tcur    scaled displacement step
- * @param[in]  periodT displacement period.
- * @param[out] veloc   computed velocity for current point.
+ * @param coords     coordinates of the given point
+ * @param iter       current iteration
+ * @param ntimesteps number of timesteps
+ * @param scale      displacement scaling factor
  */
-void compute_single_vortex_velocity(double* coords, double& tcur,
-                                    double& periodT, double* veloc) {
-  double x = coords[0];
-  double y = coords[1];
+template<>
+void move_point<2>(double* coords, int iter, int ntimesteps, int scale) {
+
+  double const periodT = 2.0;
+  double const deltaT = periodT/ntimesteps;
+  double const tcur = iter * deltaT;
+
+  double veloc[2];
+  double const& x = coords[0];
+  double const& y = coords[1];
+
   veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
   veloc[1] =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
+  coords[0] += veloc[0] * deltaT / scale;
+  coords[1] += veloc[1] * deltaT / scale;
+}
+
+/**
+ * @brief Move the three-dimensional point.
+ * Its coordinate is updated as follow:
+ *   t: current timestep
+ *   x += 0.1 * sin(2*PI*x/(n-t))
+ *   y += 0.1 * sin(2*PI*y/(n-t))
+ *   z += 0.1 * sin(2*PI*z/(n-t))
+ *
+ * @param coords     coordinates of the given point
+ * @param iter       current iteration
+ * @param ntimesteps number of timesteps
+ * @param scale      displacement scaling factor
+ */
+template<>
+void move_point<3>(double* coords, int iter, int ntimesteps, int scale) {
+
+  coords[0] += 0.05 * sin(2 * M_PI * coords[0]);
+  coords[1] += 0.05 * sin(2 * M_PI * coords[1]);
+  coords[2] += 0.05 * sin(2 * M_PI * coords[2]);
 }
 
 /**
@@ -729,7 +786,8 @@ void compute_single_vortex_velocity(double* coords, double& tcur,
  * @param mesh the current mesh pointer.
  * @return a flag array to check if a given mesh node is a boundary one.
  */
-std::vector<bool> identify_exterior_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh) {
+std::vector<bool> find_boundary_nodes(std::shared_ptr<Jali::Mesh> mesh,
+                                      double p_min, double p_max) {
 
   int nfaces = mesh->num_entities(Jali::Entity_kind::FACE, Jali::Entity_type::ALL);
   int nnodes = mesh->num_entities(Jali::Entity_kind::NODE, Jali::Entity_type::ALL);
