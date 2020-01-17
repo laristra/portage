@@ -477,8 +477,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   Wonton::Executor_type* executor = (numpe > 1 ? &mpi_executor : nullptr);
 
   // Native jali state managers for source and target
-  std::shared_ptr<Jali::State> source_state(Jali::State::create(source_mesh));
-  std::shared_ptr<Jali::State> target_state(Jali::State::create(target_mesh));
+  auto source_state = Jali::State::create(source_mesh);
+  auto target_state = Jali::State::create(target_mesh);
 
   // wrappers for interfacing with underlying mesh data structures,
   // and for source and target fields.
@@ -506,12 +506,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     source_field[c] = exact_value(source_mesh->cell_centroid(c));
   }
 
-  source_state->add("density", source_mesh, Jali::Entity_kind::CELL,
-                    Jali::Entity_type::ALL, source_field);
-  target_state->add<double, Jali::Mesh, Jali::UniStateVector>("density", target_mesh,
-                                                              Jali::Entity_kind::CELL,
-                                                              Jali::Entity_type::ALL,
-                                                              0.0);
+  source_state_wrapper.mesh_add_data(Portage::CELL, "density", source_field);
+  target_state_wrapper.mesh_add_data(Portage::CELL, "density", 0.0);
   MPI_Barrier(comm);
 
   Remapper remapper(source_mesh_wrapper, source_state_wrapper,
@@ -556,7 +552,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     if (rank == 0)
       std::cout << "Dump data ... " << std::flush;
 
-    std::string suffix = std::to_string(rank) + std::to_string(iteration)+ ".exo";
+    std::string suffix = "time_" + std::to_string(iteration)+ ".exo";
     source_state->export_to_mesh();
     target_state->export_to_mesh();
     source_mesh->write_to_exodus_file("source_" + suffix);
@@ -600,6 +596,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // cell error computation
+  Wonton::Point<dim> centroid;
   for (int c = 0; c < ntarcells; ++c) {
     // skip ghost cells to avoid duplicated values
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
@@ -630,17 +627,17 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   MPI_Reduce(&source_mass, total_mass+0, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
   MPI_Reduce(&target_mass, total_mass+1, 1, MPI_DOUBLE, MPI_SUM, 0, comm);
 
-  // update local value then
-  L1_error = global_error[0];
-  L2_error = sqrt(global_error[1]);
-  min_source_val = source_extents[0];
-  max_source_val = source_extents[1];
-  min_target_val = target_extents[0];
-  max_target_val = target_extents[1];
-  source_mass = total_mass[0];
-  target_mass = total_mass[1];
-
   if (rank == 0) {
+    // update local value then
+    L1_error = global_error[0];
+    L2_error = sqrt(global_error[1]);
+    min_source_val = source_extents[0];
+    max_source_val = source_extents[1];
+    min_target_val = target_extents[0];
+    max_target_val = target_extents[1];
+    source_mass = total_mass[0];
+    target_mass = total_mass[1];
+
     std::printf("done\n");
     std::printf(" \u2022 L1-norm error     = %.15f\n", L1_error);
     std::printf(" \u2022 L2-norm error     = %.15f\n", L2_error);
