@@ -327,6 +327,10 @@ int main(int argc, char** argv) {
   Jali::MeshFactory factory(comm);
   factory.included_entities(Jali::Entity_kind::ALL_KIND);
 
+  // point coordinates bounds
+  double const p_min = 0.0;
+  double const p_max = 1.0;
+
   if (ncells == 0) {
     // import meshes while using a graph partitioner to partition them.
     factory.partitioner(Jali::Partitioner_type::METIS);
@@ -337,18 +341,13 @@ int main(int argc, char** argv) {
     // using a block partitioner to partition them.
     // (!) no boundary mismatch
     factory.partitioner(Jali::Partitioner_type::BLOCK);
-
-    double x_min = 0.0, x_max = 1.0;
-    double y_min = 0.0, y_max = 1.0;
-    // Create the source and target meshes
     if (dim == 2) {
-      source_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
-      target_mesh = factory(x_min, y_min, x_max, y_max, ncells, ncells);
+      source_mesh = factory(p_min, p_min, p_max, p_max, ncells, ncells);
+      target_mesh = factory(p_min, p_min, p_max, p_max, ncells, ncells);
     }
     else if (dim == 3) {
-      double z_min = 0.0, z_max = 1.0;
-      source_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max, ncells, ncells, ncells);
-      target_mesh = factory(x_min, y_min, z_min, x_max, y_max, z_max, ncells, ncells, ncells);
+      source_mesh = factory(p_min, p_min, p_min, p_max, p_max, p_max, ncells, ncells, ncells);
+      target_mesh = factory(p_min, p_min, p_min, p_max, p_max, p_max, ncells, ncells, ncells);
     }
   }
 
