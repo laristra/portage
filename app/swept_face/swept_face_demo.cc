@@ -394,6 +394,7 @@ int main(int argc, char** argv) {
 
   for (int i = 1; i < ntimesteps; i++) {
     if (rank == 0) {
+      std::cout << std::endl;
       std::cout << " ------------- ";
       std::cout << "timestep "<< i;
       std::cout << " ------------- ";
@@ -499,7 +500,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   // Compute field data on source, and add to state manager.
   user_field_t exact_value;
   if (not exact_value.initialize(dim, field_expression))
-    MPI_Abort(comm, EXIT_FAILURE);
+    throw std::runtime_error("expression parsing failure");
 
   double source_field[nsrccells];
   for (int c = 0; c < nsrccells; ++c) {
@@ -523,15 +524,13 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   switch (interp_order) {
     case 1:
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
-                                                                                    "density",
-                                                                                    weights);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>
+        ("density", "density", weights);
       break;
     case 2: {
       auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
-                                                                                    "density",
-                                                                                    weights, &gradients);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>
+        ("density", "density", weights, &gradients);
       break;
     }
     default: break;
@@ -546,21 +545,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (rank == 0)
     std::cout << "done" << std::endl;
 #endif
-
-  // dump meshes if requested
-  if (mesh_output) {
-    if (rank == 0)
-      std::cout << "Dump data ... " << std::flush;
-
-    std::string suffix = "time_" + std::to_string(iteration)+ ".exo";
-    source_state->export_to_mesh();
-    target_state->export_to_mesh();
-    source_mesh->write_to_exodus_file("source_" + suffix);
-    target_mesh->write_to_exodus_file("target_" + suffix);
-
-    if (rank == 0)
-      std::cout << "done." << std::endl;
-  }
 
   if (rank == 0)
     std::cout << "Extract stats ... " << std::flush;
@@ -646,7 +630,21 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     std::printf(" \u2022 source total mass = %.15f\n", source_mass);
     std::printf(" \u2022 target total mass = %.15f\n", target_mass);
     std::printf(" \u2022 mass discrepancy  = %.15f\n", std::abs(source_mass - target_mass));
-    std::printf("\n");
+  }
+
+  // dump meshes if requested
+  if (mesh_output) {
+    if (rank == 0)
+      std::cout << "Dump data ... " << std::flush;
+
+    std::string suffix = "time_" + std::to_string(iteration)+ ".exo";
+    source_state->export_to_mesh();
+    target_state->export_to_mesh();
+    source_mesh->write_to_exodus_file("source_" + suffix);
+    target_mesh->write_to_exodus_file("target_" + suffix);
+
+    if (rank == 0)
+      std::cout << "done." << std::endl;
   }
 
 #if DEBUG_PRINT
@@ -847,15 +845,31 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
   MPI_Reduce(&nb_target_cells, total_count+1, 1, MPI_INT, MPI_SUM, 0, comm);
 
   if (rank == 0) {
+    std::string limiter_name;
+    std::string bnd_limiter_name;
+
+    switch(limiter) {
+      case Portage::NOLIMITER: limiter_name = "none"; break;
+      case Portage::BARTH_JESPERSEN: limiter_name = "barth-jespersen"; break;
+      default: limiter_name = "undefined"; break;
+    }
+
+    switch (bnd_limiter) {
+      case Portage::BND_NOLIMITER: bnd_limiter_name = "none"; break;
+      case Portage::BND_ZERO_GRADIENT: bnd_limiter_name = "zero-gradient"; break;
+      case Portage::BND_BARTH_JESPERSEN: bnd_limiter_name = "barth-jespersen"; break;
+      default: bnd_limiter_name = "undefined"; break;
+    }
+
     std::cout << " \u2022 source mesh has " << total_count[0] << " cells" << std::endl;
     std::cout << " \u2022 target mesh has " << total_count[1] << " cells" << std::endl;
     std::cout << " \u2022 material field: \""<< field_expression << "\""<< std::endl;
     std::cout << " \u2022 interpolation order: " << interp_order << std::endl;
     if (interp_order == 2) {
-      std::cout << " \u2022 internal gradient limiter: " << to_string(limiter) << std::endl;
-      std::cout << " \u2022 boundary gradient limiter: " << to_string(bnd_limiter) << std::endl;
+      std::cout << " \u2022 internal gradient limiter: " << limiter_name << std::endl;
+      std::cout << " \u2022 boundary gradient limiter: " << bnd_limiter_name << std::endl;
     }
     std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"");
-    std::cout << std::endl << std::endl;
+    std::cout << std::endl;
   }
 }
