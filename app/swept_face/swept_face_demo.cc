@@ -634,11 +634,13 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  * nodes assuming that we are only dealing with internally
  * generated grids.
  *
- * @param mesh    current mesh pointer
- * @param iter    current timestep
- * @param deltaT  displacement step
- * @param periodT displacement period
- * @param scale   scaling factor
+ * @tparam dim       dimension of the problem
+ * @param mesh       current mesh pointer
+ * @param p_min      point coordinates lower bound
+ * @param p_max      point coordinates upper bound
+ * @param iter       current iteration
+ * @param ntimesteps number of timesteps
+ * @param scale      scaling factor
  */
 template<int dim>
 void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
@@ -652,17 +654,18 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
 
   // identify internal points to skip them.
   // only valid for internally generated grids.
+  // skip all boundary points in 2D and only corners in 3D
   auto skip = [&](auto const& p) -> bool {
+    bool const skip_only_corners = (dim == 3);
     for (int d = 0; d < dim; ++d) {
       if (std::abs(p[d] - p_min) < epsilon or std::abs(p[d] - p_max) < epsilon)
-        return false;
+        return not skip_only_corners;
     }
-    return true;
+    return skip_only_corners;
   };
 
   for (int i = 0; i < nb_nodes; i++) {
     std::array<double, dim> point{};
-    std::array<double, dim> veloc{};
     mesh->node_get_coordinates(i, &point);
 
     if (not skip(point)) {
@@ -697,13 +700,14 @@ void move_point<2>(double* coords, int iter, int ntimesteps, int scale) {
   double const periodT = 2.0;
   double const deltaT = periodT/ntimesteps;
   double const tcur = iter * deltaT;
-  double const& x = coords[0];
-  double const& y = coords[1];
 
-  double const u = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
-  double const v =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
-  coords[0] += u * deltaT / scale;
-  coords[1] += v * deltaT / scale;
+  double veloc[2];
+  double x = coords[0];
+  double y = coords[1];
+  veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
+  veloc[1] =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
+  coords[0] += veloc[0] * deltaT / scale;
+  coords[1] += veloc[1] * deltaT / scale;
 }
 
 /**
