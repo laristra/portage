@@ -296,10 +296,10 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   auto candidates = d.search<Portage::SearchSweptFace>();
   auto srcwts = d.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
 
-  bool has_mismatch = d.check_mesh_mismatch(srcwts);
+  //bool has_mismatch = d.check_mesh_mismatch(srcwts);
 
-  double dblmin = -std::numeric_limits<double>::max();
-  double dblmax =  std::numeric_limits<double>::max();
+  //double dblmin = -std::numeric_limits<double>::max();
+  //double dblmax =  std::numeric_limits<double>::max();
 
   
   // Remap temperature and check that we got the right target
