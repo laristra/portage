@@ -19,7 +19,9 @@
 #include <numeric>
 #include <iomanip>
 #include <limits>
+#include <type_traits> 
 
+#include <portage-config.h>
 #include <mpi.h>
 
 #ifdef ENABLE_PROFILE
@@ -206,7 +208,7 @@ int main(int argc, char** argv) {
   }
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
-  int dim = 2; //dim 3 is not currently supported 
+  int dim = 2; //dim 2 or 3 is currently supported 
   bool source_convex_cells = true, target_convex_cells = true;
   std::string field_expression;
   std::string srcfile, trgfile;  // No default
@@ -217,6 +219,7 @@ int main(int argc, char** argv) {
   // user to output in serial
   bool mesh_output = false;
   int n_converge = 1;
+
   //Node-based remap not supported for swept-face algorithm
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL; 
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
@@ -277,6 +280,11 @@ int main(int argc, char** argv) {
         std::cerr << "Number of meshes for convergence study should be greater than 0" << std::endl;
         throw std::exception();
       }
+      if (srcfile.length() > 0 || trgfile.length() > 0) {
+        std::cerr << "Convergence study is supported for internally generated meshes" << std::endl;
+        throw std::exception();
+      }
+      
 #if ENABLE_TIMINGS
       assert(n_converge == 1);
 #endif
@@ -370,7 +378,6 @@ int main(int argc, char** argv) {
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   mf.included_entities({Jali::Entity_kind::ALL_KIND});
 
-  double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
 
   // If a mesh is being read from file, do it outside convergence loop
   if (srcfile.length() > 0) {
@@ -382,6 +389,7 @@ int main(int argc, char** argv) {
     target_mesh = mf(trgfile);
   }
 
+  double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
   // partitioner for internally generated meshes is a BLOCK partitioner
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
@@ -431,11 +439,7 @@ int main(int argc, char** argv) {
     profiler->time.mesh_init = timer::elapsed(tic);
 
     if (rank == 0) {
-      if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << profiler->time.mesh_init << std::endl;
-      else
-        std::cout << "Mesh Initialization Time (Iteration i): " <<
-            profiler->time.mesh_init << std::endl;
     }
 #endif
 
@@ -595,10 +599,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-#if ENABLE_TIMINGS
-  auto tic = timer::now();
-#endif
-
   // Compute field data on source and add to state manager. 
   user_field_t source_field; 
   if (!source_field.initialize(dim, field_expression))
@@ -616,10 +616,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                           targetMesh,
                                               Jali::Entity_kind::CELL,
                                               Jali::Entity_type::ALL, 0.0);
-
-#if ENABLE_TIMINGS
-    profiler->time.remap = timer::elapsed(tic, true);
-#endif
 
   // Executor
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
@@ -651,30 +647,62 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   source_state_flat.initialize(sourceStateWrapper, {"density"});
 
+#if ENABLE_TIMINGS
+  auto tic = timer::now();
+#endif
+
   // Use a bounding box distributor to send the source cells to the target
   // partitions where they are needed
   Portage::MPI_Bounding_Boxes distributor(&mpiexecutor);
-//  distributor.distribute(source_mesh_flat, source_state_flat, targetMeshWrapper, targetStateWrapper);
+  distributor.distribute(source_mesh_flat, source_state_flat, targetMeshWrapper, targetStateWrapper);
+
+#if ENABLE_TIMINGS
+    profiler->time.redistrib = timer::elapsed(tic);
+    auto ticrm = timer::now();
+#endif
 
   //Create core driver for remap
-  Portage::CoreDriver<dim, Wonton::Entity_kind::CELL,
-	 Wonton::Flat_Mesh_Wrapper<>, 
-         Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
-  Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>  cdriver(source_mesh_flat, source_state_flat, 
-	  targetMeshWrapper, targetStateWrapper, executor); 
+  if (dim == 2) {
+  Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+	   Wonton::Flat_Mesh_Wrapper<>, 
+           Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
+           cdriver(source_mesh_flat, source_state_flat, 
+	   targetMeshWrapper, targetStateWrapper, executor); 
 
+#if ENABLE_TIMINGS
+  tic = timer::now();
+#endif
 
   //Compute candidate src cells
   auto candidates = cdriver.search<Portage::SearchSweptFace>();
 
+#if ENABLE_TIMINGS
+    profiler->time.search = timer::elapsed(tic);
+    tic = timer::now();
+#endif
+
   //Compute weight of candidate src cells
   auto weights = cdriver.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
 
+#if ENABLE_TIMINGS
+    profiler->time.intersect = timer::elapsed(tic);
+#endif
+
   //Check if there is mesh mismatch
-  bool has_mismatch = cdriver.check_mesh_mismatch(weights);
+  //bool has_mismatch = cdriver.check_mesh_mismatch(weights);
+
+#if ENABLE_TIMINGS
+    tic = timer::now();
+#endif
 
   //Compute gradient 
   auto gradients = cdriver.compute_source_gradient("density");   
+
+#if ENABLE_TIMINGS
+    profiler->time.gradient = timer::elapsed(tic);
+    tic = timer::now();
+#endif
 
   //Interpolate density
   if (interp_order == 1) {
@@ -690,12 +718,82 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 								  "density",
 								  weights,
 								  &gradients);
+  
   }
+
+#if ENABLE_TIMINGS
+    profiler->time.interpolate = timer::elapsed(tic);
+#endif
+}
+else if (dim == 3) {
+  Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+	   Wonton::Flat_Mesh_Wrapper<>, 
+           Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+           Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
+           cdriver(source_mesh_flat, source_state_flat, 
+	   targetMeshWrapper, targetStateWrapper, executor); 
+
+#if ENABLE_TIMINGS
+  tic = timer::now();
+#endif
+
+  //Compute candidate src cells
+  auto candidates = cdriver.search<Portage::SearchSweptFace>();
+
+#if ENABLE_TIMINGS
+    profiler->time.search = timer::elapsed(tic);
+    tic = timer::now();
+#endif
+
+  //Compute weight of candidate src cells
+   auto weights = cdriver.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
+
+#if ENABLE_TIMINGS
+    profiler->time.intersect = timer::elapsed(tic);
+#endif
+
+  //Check if there is mesh mismatch
+  //bool has_mismatch = cdriver.check_mesh_mismatch(weights);
+
+#if ENABLE_TIMINGS
+    tic = timer::now();
+#endif
+
+  //Compute gradient 
+  auto gradients = cdriver.compute_source_gradient("density");   
+
+#if ENABLE_TIMINGS
+    profiler->time.gradient = timer::elapsed(tic);
+    tic = timer::now();
+#endif
+
+  //Interpolate density
+  if (interp_order == 1) {
+      cdriver.interpolate_mesh_var<double,
+				   Portage::Interpolate_1stOrder>("density",
+								  "density",
+								  weights,
+								  &gradients);
+  }
+  else if (interp_order == 2) {
+      cdriver.interpolate_mesh_var<double,
+				   Portage::Interpolate_2ndOrder>("density",
+								  "density",
+								  weights,
+								  &gradients);
+  
+  }
+
+#if ENABLE_TIMINGS
+    profiler->time.interpolate = timer::elapsed(tic);
+#endif
+}
 
 #if !ENABLE_TIMINGS
   // Output some information for the user
 #else
-  profiler->time.remap += timer::elapsed(tic);
+   profiler->time.remap = timer::elapsed(ticrm);
+  //profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0) {
     std::cout << "Remap Time: " << profiler->time.remap << std::endl;
@@ -716,19 +814,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (rank == 0)
 	std::cout << "...done." << std::endl;
   }
-
-
-  /*if (mesh_output) {  
-    std::string filename = "source_" + std::to_string(rank) + ".gmv";
-    Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-			       fieldnames,
-			       filename);
-
-    filename = "target_" + std::to_string(rank) + ".gmv";
-    Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
-			       fieldnames,
-			       filename);
-  }*/
 
   // Compute error
   L1_error = 0.0; L2_error = 0.0;

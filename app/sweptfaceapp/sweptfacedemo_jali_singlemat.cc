@@ -444,7 +444,7 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (sweptface) {
 
 #if ENABLE_TIMINGS
-  auto tic = timer::now();
+    auto tic = timer::now();
 #endif
 
     auto candidates = cdriver.search<Portage::SearchSweptFace>();
@@ -458,33 +458,38 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 #if ENABLE_TIMINGS
     profiler->time.intersect = timer::elapsed(tic);
+    tic = timer::now(); 
 #endif
 
-    bool has_mismatch = cdriver.check_mesh_mismatch(weights);
-  
-    double dblmin = -std::numeric_limits<double>::max();
-    double dblmax =  std::numeric_limits<double>::max();
+   //Compute gradient
+    auto gradients = cdriver.compute_source_gradient("density");
 
 #if ENABLE_TIMINGS
-    tic = timer::now();
+    profiler->time.gradient = timer::elapsed(tic);
+    tic = timer::now(); 
 #endif
-    if (interp_order == 1) {
+
+ //Interpolate density
+  if (interp_order == 1) {
       cdriver.interpolate_mesh_var<double,
-           Portage::Interpolate_1stOrder>("density",
-                  "density",
-                  weights,
-                  0.0, dblmax);
-    } else if (interp_order == 2) {
+                                   Portage::Interpolate_1stOrder>("density",
+                                                                  "density",
+                                                                  weights,
+                                                                  &gradients);
+  }
+  else if (interp_order == 2) {
       cdriver.interpolate_mesh_var<double,
-           Portage::Interpolate_2ndOrder>("density",
-                  "density",
-                  weights,
-                  0.0, dblmax);
+                                   Portage::Interpolate_2ndOrder>("density",
+                                                                  "density",
+                                                                  weights,
+                                                                  &gradients);
     }
+
 #if ENABLE_TIMINGS
     profiler->time.interpolate = timer::elapsed(tic);
 #endif
-  }
+
+}
   else {
 
 #if ENABLE_TIMINGS
@@ -502,28 +507,33 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 #if ENABLE_TIMINGS
     profiler->time.intersect = timer::elapsed(tic);
+    tic = timer::now(); 
 #endif
-    bool has_mismatch = cdriver.check_mesh_mismatch(weights);
-  
-    double dblmin = -std::numeric_limits<double>::max();
-    double dblmax =  std::numeric_limits<double>::max();
+
+   //Compute gradient
+    auto gradients = cdriver.compute_source_gradient("density");
 
 #if ENABLE_TIMINGS
-    tic = timer::now();
+    profiler->time.gradient = timer::elapsed(tic);
+    tic = timer::now(); 
 #endif
-    if (interp_order == 1) {
+
+ //Interpolate density
+  if (interp_order == 1) {
       cdriver.interpolate_mesh_var<double,
-           Portage::Interpolate_1stOrder>("density",
-                  "density",
-                  weights,
-                  0.0, dblmax);
-    } else if (interp_order == 2) {
+                                   Portage::Interpolate_1stOrder>("density",
+                                                                  "density",
+                                                                  weights,
+                                                                  &gradients);
+  }
+  else if (interp_order == 2) {
       cdriver.interpolate_mesh_var<double,
-           Portage::Interpolate_2ndOrder>("density",
-                  "density",
-                  weights,
-                  0.0, dblmax);
+                                   Portage::Interpolate_2ndOrder>("density",
+                                                                  "density",
+                                                                  weights,
+                                                                  &gradients);
     }
+
 #if ENABLE_TIMINGS
     profiler->time.interpolate = timer::elapsed(tic);
 #endif
@@ -557,19 +567,6 @@ template<int dim> void remap(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
        std::cout << "...done." << std::endl;
  }
-
-
-  /*if (mesh_output) {  
-    std::string filename = "source_" + std::to_string(rank) + ".gmv";
-    Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
-             fieldnames,
-             filename);
-
-    filename = "target_" + std::to_string(rank) + ".gmv";
-    Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
-             fieldnames,
-             filename);
-  }*/
 
   // Compute error
   L1_error = 0.0; L2_error = 0.0;
