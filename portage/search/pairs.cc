@@ -323,8 +323,8 @@ list<ulong> CellPairFinder::find_scatter(const ulong j) const
   // check for completely outside source boxes
   bool outside = false;
   for (size_t m=0;m<dim;m++) {
-    if (y[m][j]<=cminmax[0][m]) outside=true;
-    if (y[m][j]>=cminmax[1][m]) outside=true;
+    if (y[m][j]<=cminmax[0][m]) { outside=true; break; }
+    if (y[m][j]>=cminmax[1][m]) { outside=true; break; }
   }
   if (outside) return pairlist;
 
@@ -347,8 +347,8 @@ list<ulong> CellPairFinder::find_scatter(const ulong j) const
     // check that y is contained
     bool inside = true;
     for(size_t m=0; m<dim; m++) {
-      if (y[m][j] <= xll[m]) inside = false;
-      if (y[m][j] >= xur[m]) inside = false;
+      if (y[m][j] <= xll[m]) { inside = false; break; }
+      if (y[m][j] >= xur[m]) { inside = false; break; }
     }
 
     // add pair: put x's in this y-cell onto neighbor list, if inside

@@ -1,7 +1,7 @@
 /*
-This file is part of the Ristra portage project.
-Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
+  This file is part of the Ristra portage project.
+  Please see the license file at the root of this repository, or at:
+  https://github.com/laristra/portage/blob/master/LICENSE
 */
 
 #ifndef PORTAGE_DRIVER_MMDRIVER_H_
@@ -18,6 +18,7 @@ Please see the license file at the root of this repository, or at:
 #include <type_traits>
 #include <memory>
 #include <limits>
+#include <cmath>
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
@@ -88,13 +89,12 @@ using namespace Wonton;
 */
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
-          template<
-            int, Entity_kind, class, class, class, class, class,
-            template<class, int, class, class> class,
-            class, class, class=Wonton::DefaultCoordSys
-          > class Interpolate,
+                    template <class, int, class, class> class,
+                    class, class> class Intersect,
+          template<int, Entity_kind, class, class, class, class, class,
+                   template<class, int, class, class> class,
+                   class, class, class=Wonton::DefaultCoordSys
+                   > class Interpolate,
           int D,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
@@ -225,7 +225,7 @@ class MMDriver {
     @brief set limiter for a variable
     @param target_var_name Source mesh variable whose gradient is to be limited
     @param limiter  Limiter to use for second order reconstruction (NOLIMITER
-                     or BARTH_JESPERSEN)
+    or BARTH_JESPERSEN)
   */
   void set_limiter(std::string const& source_var_name, Limiter_type limiter) {
     limiters_[source_var_name] = limiter;
@@ -245,8 +245,8 @@ class MMDriver {
   /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
-                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                        Partial_fixup_type::SHIFTED_CONSERVATIVE
+                      Partial_fixup_type::LOCALLY_CONSERVATIVE,
+                      Partial_fixup_type::SHIFTED_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -283,7 +283,7 @@ class MMDriver {
     @brief set repair method in empty cells for all variables
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type Can be Empty_fixup_type::LEAVE_EMPTY,
-                      Empty_fixup_type::EXTRAPOLATE
+    Empty_fixup_type::EXTRAPOLATE
   */
   void set_empty_fixup_type(std::string const& target_var_name,
                             Empty_fixup_type fixup_type) {
@@ -377,172 +377,161 @@ class MMDriver {
 
 
   /*!
-    @brief remap for a given set of MESH and MATERIAL variables on a given entity kind
+    @brief remap for a given set of MESH and MATERIAL variables on CELLS
+    @tparam SourceMesh_Wrapper2  May be the mesh wrapper sent into MMDriver or the Flat_Mesh_Wrapper created for redistribution
+    @tparam SourceState_Wrapper2 May be the state wrapper sent into MMDriver or the Flat_State_Wrapper created for redistribution
     @tparam entity_kind  Kind of entity that variables live on
+
     @param source_meshvar_names  names of remap variables on source mesh
     @param target_meshvar_names  names of remap variables on target mesh
     @param source_matvar_names  names of remap variables on materials of source mesh
     @param target_matvar_names  names of remap variables on materials of target mesh
-    @param serialexecutor pointer to Serial Executor (generally not needed but introduced for future proofing)
+    @param executor             pointer to Serial Executor (generally not needed but introduced for future proofing)
     @return status of remap (1 if successful, 0 if not)
   */
 
+  template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
+  int cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
+                 SourceState_Wrapper2 const & source_state2,
+                 std::vector<std::string> const &source_meshvar_names,
+                 std::vector<std::string> const &target_meshvar_names,
+                 std::vector<std::string> const &source_matvar_names,
+                 std::vector<std::string> const &target_matvar_names,
+                 Wonton::Executor_type const *executor = nullptr);
+
+
+  /*!
+    @brief remap for a given set of MESH variables on NODES
+    @tparam SourceMesh_Wrapper2  May be the mesh wrapper sent into MMDriver or the Flat_Mesh_Wrapper created for redistribution
+    @tparam SourceState_Wrapper2 May be the state wrapper sent into MMDriver or the Flat_State_Wrapper created for redistribution
+    @tparam entity_kind  Kind of entity that variables live on
+
+    @param source_meshvar_names  names of remap variables on source mesh
+    @param target_meshvar_names  names of remap variables on target mesh
+    @param executor             pointer to Serial Executor (generally not needed but introduced for future proofing)
+    @return status of remap (1 if successful, 0 if not)
+  */
+
+  template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
+  int node_remap(SourceMesh_Wrapper2 const & source_mesh2,
+                 SourceState_Wrapper2 const & source_state2,
+                 std::vector<std::string> const &source_meshvar_names,
+                 std::vector<std::string> const &target_meshvar_names,
+                 Wonton::Executor_type const *executor = nullptr);
+
+
+
+  /*!
+
+    @brief Detect and fix if we have a mismatch between source and
+    target domain boundaries
+    @tparam SourceMesh_Wrapper2  May be the mesh wrapper sent into MMDriver or the Flat_Mesh_Wrapper created for redistribution
+    @tparam SourceState_Wrapper2 May be the state wrapper sent into MMDriver or the Flat_State_Wrapper created for redistribution
+    @tparam entity_kind  Kind of entity that variables live on
+
+    @param source_meshvar_names  names of remap variables on source mesh
+    @param target_meshvar_names  names of remap variables on target mesh
+    @param sources_and_weights   mesh-mesh intersection weights
+    @param executor              pointer to Executor
+    
+  */
+  
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2,
            Entity_kind onwhat>
-  int remap(SourceMesh_Wrapper2 const & source_mesh2,
-            SourceState_Wrapper2 const & source_state2,
-            std::vector<std::string> const &source_meshvar_names,
-            std::vector<std::string> const &target_meshvar_names,
-            std::vector<std::string> const &source_matvar_names,
-            std::vector<std::string> const &target_matvar_names,
-            Wonton::Executor_type const *executor = nullptr);
+  int fix_mismatch(SourceMesh_Wrapper2 const& source_mesh2,
+                   SourceState_Wrapper2 const& source_state2,
+                   Portage::vector<std::vector<Weights_t>> const& source_ents_and_weights,
+                   std::vector<std::string> const& src_meshvar_names,
+                   std::vector<std::string> const& trg_meshvar_names,
+                   Wonton::Executor_type const *executor = nullptr) {
+    
+    // Will be null if it's a parallel executor
+    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
 
+    bool distributed = false;
+    int comm_rank = 0;
+    int nprocs = 1;
 
-    /**
-     * @brief Compute the gradient field for the current remap variable.
-     *
-     * @tparam onwhat: the entity kind (cell or node)
-     * @tparam NewSourceMesh: the new source mesh wrapper type (native/flat).
-     * @tparam NewSourceState: the new source state wrapper type (native/flat).
-     * @param field_name: the field variable to remap.
-     * @param new_source_mesh: the new source mesh instance.
-     * @param new_source_state: the new source state instance.
-     * @param limiter_type: the gradient limiter to use for internal regions.
-     * @param boundary_limiter_type: the gradient limiter to use for boundary.
-     * @param material_id: the material id in multi-material context
-     * @return the computed gradient field.
-     */
-    template<Entity_kind onwhat,
-      typename NewSourceMesh,
-      typename NewSourceState>
-    Portage::vector<Vector<D>> compute_source_gradient(
-      std::string const field_name,
-      NewSourceMesh const& new_source_mesh,
-      NewSourceState const& new_source_state,
-      Limiter_type limiter_type = NOLIMITER,
-      Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-      int material_id = 0,
-#if HAVE_TANGRAM
-      std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
-#endif
-      Wonton::Executor_type const *executor = nullptr
-    ) const {
-
-      int size = 0;
-#if HAVE_TANGRAM
-      auto const field_type = new_source_state.field_type(onwhat, field_name);
-
-      // multi-material remap makes only sense on cell-centered fields.
-      bool const multimat =
-        onwhat == Entity_kind::CELL and
-        field_type == Field_type::MULTIMATERIAL_FIELD;
-
-      std::vector<int> mat_cells;
-
-      if (multimat) {
-        if (interface_reconstructor) {
-          new_source_state.mat_get_cells(material_id, &mat_cells);
-          size = mat_cells.size();
-        } else
-          throw std::runtime_error("interface reconstructor not set");
-      } else {
-#endif
-        size = new_source_mesh.num_entities(onwhat);
-#if HAVE_TANGRAM
-      }
-#endif
-
-      using Gradient = Limited_Gradient<D, onwhat,
-                                        NewSourceMesh, NewSourceState,
-                                        InterfaceReconstructorType,
-                                        Matpoly_Splitter, Matpoly_Clipper>;
-
-      // instantiate the right kernel according to entity kind (cell/node),
-      // as well as source and target meshes and states types.
-#if HAVE_TANGRAM
-      Gradient kernel(new_source_mesh, new_source_state, field_name,
-                      limiter_type, boundary_limiter_type,
-                      interface_reconstructor);
-#else
-      Gradient kernel(new_source_mesh, new_source_state, field_name,
-                    limiter_type, boundary_limiter_type);
-#endif
-
-      // create and resize the field
-      Portage::vector<Vector<D>> gradient_field(size);
-
-      // populate it by invoking the kernel on each source entity.
-#if HAVE_TANGRAM
-      if (multimat) {
-        kernel.set_material(material_id);
-        Portage::transform(mat_cells.begin(),
-                           mat_cells.end(),
-                           gradient_field.begin(), kernel);
-      } else {
-#endif
-        Portage::transform(new_source_mesh.begin(onwhat),
-                           new_source_mesh.end(onwhat),
-                           gradient_field.begin(), kernel);
-#if HAVE_TANGRAM
-      }
-#endif
-      return gradient_field;
+#ifdef PORTAGE_ENABLE_MPI
+    MPI_Comm mycomm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+      mycomm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_size(mycomm, &nprocs);
+      if (nprocs > 1)
+        distributed = true;
     }
-
-  /**
-   *
-   * @tparam onwhat
-   * @tparam NewSourceMesh
-   * @tparam NewSourceState
-   * @param field_name
-   * @param interpolate
-   * @param gradients
-   */
-  template<Entity_kind onwhat,
-           typename NewSourceMesh, typename NewSourceState>
-  void set_interpolation_variable(
-    std::string const& field_name,
-    NewSourceMesh const& new_source_mesh,
-    NewSourceState const& new_source_state,
-    Interpolate<D, onwhat,
-                NewSourceMesh, TargetMesh_Wrapper,
-                NewSourceState, TargetState_Wrapper,
-                double,
-                InterfaceReconstructorType,
-                Matpoly_Splitter, Matpoly_Clipper>& interpolate,
-#if HAVE_TANGRAM
-    std::shared_ptr<InterfaceReconstructor<NewSourceMesh>> interface_reconstructor = nullptr,
 #endif
-    int material_id = 0,
-    Portage::vector<Vector<D>>* gradients = nullptr,
-    Wonton::Executor_type const* executor = nullptr) {
 
-    int const order = Interpolate<D, onwhat,
-                                  NewSourceMesh, TargetMesh_Wrapper,
-                                  NewSourceState, TargetState_Wrapper,
-                                  double,
-                                  InterfaceReconstructorType,
-                                  Matpoly_Splitter, Matpoly_Clipper>::order;
+    MismatchFixer<D, onwhat, SourceMesh_Wrapper2,
+                  SourceState_Wrapper2,
+                  TargetMesh_Wrapper, TargetState_Wrapper>
+        mismatch_fixer(source_mesh2, source_state2,
+                       target_mesh_, target_state_,
+                       source_ents_and_weights, executor);
 
-    switch (order) {
-      case 1: interpolate.set_interpolation_variable(field_name); break;
-      case 2:
-        // compute the gradient field for this variable.
-        *gradients = compute_source_gradient<onwhat>(field_name,
-                                              new_source_mesh, new_source_state,
-                                              limiters_.at(field_name),
-                                              bnd_limiters_.at(field_name),
-                                              material_id,
-                                              #if HAVE_TANGRAM
-                                                interface_reconstructor,
-                                              #endif
-                                              executor);
+    if (mismatch_fixer.has_mismatch()) {
+      int nvars = src_meshvar_names.size();
+      for (int i = 0; i < nvars; i++) {
+        std::string const& src_var = src_meshvar_names[i];
+        std::string const& trg_var = trg_meshvar_names[i];
+      
+        double lower_bound, upper_bound;
+        try {  // see if we have caller specified bounds
+          
+          lower_bound = double_lower_bounds_.at(trg_var);
+          upper_bound = double_upper_bounds_.at(trg_var);
+          
+        } catch (const std::out_of_range& oor) {
+          // Since caller has not specified bounds for variable, attempt
+          // to derive them from source state. This code should go into
+          // Wonton into each state manager
+          
+          int nsrcents = source_mesh_.num_entities(onwhat,
+                                                   Entity_type::PARALLEL_OWNED);
+          
+          double const *source_data;
+          source_state_.mesh_get_data(onwhat, src_var, &source_data);
+          lower_bound = *std::min_element(source_data, source_data + nsrcents);
+          upper_bound = *std::max_element(source_data, source_data + nsrcents);
+          
+#ifdef PORTAGE_ENABLE_MPI
+          if (mycomm != MPI_COMM_NULL) {
+            double global_lower_bound=0.0, global_upper_bound=0.0;
+            MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
+                          MPI_MIN, mycomm);
+            lower_bound = global_lower_bound;
+            
+            MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
+                          MPI_MAX, mycomm);
+            upper_bound = global_upper_bound;
+          }
+#endif
 
-        interpolate.set_interpolation_variable(field_name, gradients); break;
-
-      default: throw std::runtime_error("unsupported interpolation order");
+        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
+        if (relbounddiff < consttol_) {
+          // The field is constant over the source mesh/part. We HAVE to
+          // relax the bounds to be able to conserve the integral quantity
+          // AND maintain a constant.
+          lower_bound -= 0.5*lower_bound;
+          upper_bound += 0.5*upper_bound;
+        }
+        }
+        
+        double conservation_tol = DEFAULT_CONSERVATION_TOL;
+        try {  // see if caller has specified a tolerance for conservation
+          conservation_tol = conservation_tol_.at(trg_var);
+        } catch ( const std::out_of_range& oor) {}
+        
+        mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
+                                    conservation_tol, max_fixup_iter_,
+                                    partial_fixup_types_[trg_var],
+                                    empty_fixup_types_[trg_var]);
+      }
     }
-  }
+  }  // fix_mismatch
+
 
 
   /*!
@@ -597,7 +586,7 @@ class MMDriver {
     for (auto const& stpair : source_target_varname_map_) {
       std::string const& srcvarname = stpair.first;
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
-      if (onwhat == Entity_kind::CELL) {
+      if (onwhat == CELL) {
         // Separate out mesh fields and multi-material fields - they will be
         // processed differently
 
@@ -661,11 +650,11 @@ class MMDriver {
       // Why is it not able to deduce the template arguments, if I don't specify
       // Flat_Mesh_Wrapper and Flat_State_Wrapper?
 
-      remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-            Entity_kind::CELL>(source_mesh_flat, source_state_flat,
-                               src_meshvar_names, trg_meshvar_names,
-                               src_matvar_names,  trg_matvar_names,
-                               executor);
+      cell_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
+          (source_mesh_flat, source_state_flat,
+           src_meshvar_names, trg_meshvar_names,
+           src_matvar_names,  trg_matvar_names,
+           executor);
     }
     else
 #endif
@@ -673,11 +662,11 @@ class MMDriver {
       // Why is it not able to deduce the template arguments, if I don't specify
       // Source_Mesh_Wrapper and Source_State_Wrapper?
 
-      remap<SourceMesh_Wrapper, SourceState_Wrapper,
-            Entity_kind::CELL>(source_mesh_, source_state_,
-                               src_meshvar_names, trg_meshvar_names,
-                               src_matvar_names, trg_matvar_names,
-                               executor);
+      cell_remap<SourceMesh_Wrapper, SourceState_Wrapper>
+          (source_mesh_, source_state_,
+           src_meshvar_names, trg_meshvar_names,
+           src_matvar_names, trg_matvar_names,
+           executor);
     }
 
 
@@ -692,7 +681,7 @@ class MMDriver {
     for (auto const& stpair : source_target_varname_map_) {
       std::string const& srcvarname = stpair.first;
       Entity_kind onwhat = source_state_.get_entity(srcvarname);
-      if (onwhat == Entity_kind::NODE) {
+      if (onwhat == NODE) {
         std::string const& trgvarname = stpair.second;
 
         Field_type ftype = source_state_.field_type(onwhat, srcvarname);
@@ -708,18 +697,16 @@ class MMDriver {
     if (src_meshvar_names.size()) {
 #ifdef PORTAGE_ENABLE_MPI
       if (distributed)
-        remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-              Entity_kind::NODE>(source_mesh_flat, source_state_flat,
-                                 src_meshvar_names, trg_meshvar_names,
-                                 src_matvar_names,  trg_matvar_names,
-                                 executor);
+        node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
+            (source_mesh_flat, source_state_flat,
+             src_meshvar_names, trg_meshvar_names,
+             executor);
       else
 #endif
-        remap<SourceMesh_Wrapper, SourceState_Wrapper,
-              Entity_kind::NODE>(source_mesh_, source_state_,
-                                 src_meshvar_names, trg_meshvar_names,
-                                 src_meshvar_names, trg_meshvar_names,
-                                 executor);
+        node_remap<SourceMesh_Wrapper, SourceState_Wrapper>
+            (source_mesh_, source_state_,
+             src_meshvar_names, trg_meshvar_names,
+             executor);
     }
 
     return 1;
@@ -747,103 +734,36 @@ class MMDriver {
 
 
 #ifdef HAVE_TANGRAM
-  // The following tolerances as well as the all-convex flag are required for 
-  // the interface reconstructor driver. The size of the tols vector is currently 
-  // set to two since MOF requires two different set of tolerances to match the 
-  // 0th-order and 1st-order moments. VOF on the other does not require the second 
-  // tolerance. 
-  // If a new IR method which requires tolerances for higher moment is added to 
-  // Tangram, then this vector size should be generalized. The boolean all_convex 
-  // flag is to specify if a mesh contains only convex cells and set to true in that case. 
+  // The following tolerances as well as the all-convex flag are
+  // required for the interface reconstructor driver. The size of the
+  // tols vector is currently set to two since MOF requires two
+  // different set of tolerances to match the 0th-order and 1st-order
+  // moments. VOF on the other does not require the second tolerance.
+  // If a new IR method which requires tolerances for higher moment is
+  // added to Tangram, then this vector size should be
+  // generalized. The boolean all_convex flag is to specify if a mesh
+  // contains only convex cells and set to true in that case.
   //
-  // There is an associated method called set_reconstructor_options that should
-  // be invoked to set user-specific values. Otherwise, the remapper will use 
-  // the default values. 
+  // There is an associated method called set_reconstructor_options
+  // that should be invoked to set user-specific values. Otherwise,
+  // the remapper will use the default values.
   std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
   {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
   bool reconstructor_all_convex_ = true;  
-
-  // Convert volume fraction and centroid data from compact
-  // material-centric to compact cell-centric (ccc) form as needed by
-  // Tangram
-  template<class StateWrapperInner>
-  void ccc_vfcen_data(std::vector<int>& cell_num_mats,
-                      std::vector<int>& cell_mat_ids,
-                      std::vector<double>& cell_mat_volfracs,
-                      std::vector<Tangram::Point<D>>& cell_mat_centroids,
-                      int nsourcecells,
-                      StateWrapperInner const& source_state){
-
-    int nmats = source_state.num_materials();
-    cell_num_mats.assign(nsourcecells, 0);
-
-    // First build full arrays (as if every cell had every material)
-
-    std::vector<int> cell_mat_ids_full(nsourcecells*nmats, -1);
-    std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
-    std::vector<Tangram::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
-
-    int have_centroids = true;
-    int nvals = 0;
-    for (int m = 0; m < nmats; m++) {
-      std::vector<int> cellids;
-      source_state.mat_get_cells(m, &cellids);
-      for (int ic = 0; ic < cellids.size(); ic++) {
-        int c = cellids[ic];
-        int nmatc = cell_num_mats[c];
-        cell_mat_ids_full[c*nmats+nmatc] = m;
-        cell_num_mats[c]++;
-      }
-      nvals += cellids.size();
-
-      double const * matfracptr;
-      source_state.mat_get_celldata("mat_volfracs", m, &matfracptr);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
-
-      Portage::Point<D> const *matcenvec;
-      source_state.mat_get_celldata("mat_centroids", m, &matcenvec);
-      if (cellids.size() && !matcenvec)
-        have_centroids = false;
-      else
-        for (int ic = 0; ic < cellids.size(); ic++)
-          cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
-    }
-
-    // At this point nvals contains the number of non-zero volume
-    // fraction entries in the full array. Use this and knowledge of
-    // number of materials in each cell to compress the data into
-    // linear arrays
-
-    cell_mat_ids.resize(nvals);
-    cell_mat_volfracs.resize(nvals);
-    cell_mat_centroids.resize(nvals);  // dummy vals for VOF
-
-    int idx = 0;
-    for (int c = 0; c < nsourcecells; c++) {
-      for (int m = 0; m < cell_num_mats[c]; m++) {
-        int matid = cell_mat_ids_full[c*nmats+m];
-        cell_mat_ids[idx] = matid;
-        cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-        if (have_centroids)
-          cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
-        idx++;
-      }
-    }
-  }
-#endif //HAVE_TANGRAM
-
+#endif
+  
 };  // class MMDriver
 
 
-// Common remap routine
+
+// remap routine specialization for cells
 
 template <template <int, Entity_kind, class, class> class Search,
           template <Entity_kind, class, class, class,
-          template <class, int, class, class> class,
-          class, class> class Intersect,
+                    template <class, int, class, class> class,
+                    class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
-          template<class, int, class, class> class,
+                   template<class, int, class, class> class,
                    class, class, class=Wonton::DefaultCoordSys>
           class Interpolate,
           int D,
@@ -854,75 +774,73 @@ template <template <int, Entity_kind, class, class> class Search,
           template <class, int, class, class> class InterfaceReconstructorType,
           class Matpoly_Splitter,
           class Matpoly_Clipper>
-template<class SourceMesh_Wrapper2, class SourceState_Wrapper2,
-         Entity_kind onwhat>
+template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
 int MMDriver<Search, Intersect, Interpolate, D,
              SourceMesh_Wrapper, SourceState_Wrapper,
              TargetMesh_Wrapper, TargetState_Wrapper,
              InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
-             >::remap(SourceMesh_Wrapper2 const & source_mesh2,
-                      SourceState_Wrapper2 const & source_state2,
-                      std::vector<std::string> const &src_meshvar_names,
-                      std::vector<std::string> const &trg_meshvar_names,
-                      std::vector<std::string> const &src_matvar_names,
-                      std::vector<std::string> const &trg_matvar_names,
-                      Wonton::Executor_type const *executor) {
+             >::cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
+                           SourceState_Wrapper2 const & source_state2,
+                           std::vector<std::string> const &src_meshvar_names,
+                           std::vector<std::string> const &trg_meshvar_names,
+                           std::vector<std::string> const &src_matvar_names,
+                           std::vector<std::string> const &trg_matvar_names,
+                           Wonton::Executor_type const *executor) {
+  
+  int comm_rank = 0;
+  int nprocs = 1;
 
-    int comm_rank = 0;
-    int nprocs = 1;
-
-    // Will be null if it's a parallel executor
-    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+  // Will be null if it's a parallel executor
+  auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
 
 #ifdef PORTAGE_ENABLE_MPI
-    MPI_Comm mycomm = MPI_COMM_NULL;
-    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
-    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
-      mycomm = mpiexecutor->mpicomm;
-      MPI_Comm_rank(mycomm, &comm_rank);
-      MPI_Comm_size(mycomm, &nprocs);
-    }
+  MPI_Comm mycomm = MPI_COMM_NULL;
+  auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+  if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+    mycomm = mpiexecutor->mpicomm;
+    MPI_Comm_rank(mycomm, &comm_rank);
+    MPI_Comm_size(mycomm, &nprocs);
+  }
 #endif
 
 
-  static_assert(onwhat == Entity_kind::NODE || onwhat == Entity_kind::CELL,
-                "Remap implemented only for CELL and NODE variables");
-
-
-#ifdef ENABLE_DEBUG
-  int ntarget_ents_owned = target_mesh_.num_entities(onwhat,
-                                                     Entity_type::PARALLEL_OWNED);
-  std::cout << "Number of target entities of kind " << onwhat <<
-      " in target mesh on rank " << comm_rank << ": " <<
-      ntarget_ents_owned << std::endl;
-#endif
-  int ntarget_ents = target_mesh_.num_entities(onwhat, Entity_type::ALL);
-
+  
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
   struct timeval begin_timeval, end_timeval, diff_timeval;
-
-
-  // SEARCH
-
-  Portage::vector<std::vector<int>> candidates(ntarget_ents);
-  Portage::vector<std::vector<Weights_t>> source_ents_and_weights(ntarget_ents);
-
-  gettimeofday(&begin_timeval, 0);
 
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
 
-  // Get an instance of the desired search algorithm type
-  gettimeofday(&begin_timeval, 0);
-  const Search<D, onwhat, SourceMesh_Wrapper2, TargetMesh_Wrapper>
-      search(source_mesh2, target_mesh_);
+  
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+    NumericTolerances_t default_num_tols;
+    default_num_tols.use_default();
+    set_num_tols(default_num_tols);
+  }
 
-  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
-                     candidates.begin(), search);
+
+  // Instantiate core driver
+
+  Portage::CoreDriver<D, CELL,
+                      SourceMesh_Wrapper2, SourceState_Wrapper2,
+                      TargetMesh_Wrapper, TargetState_Wrapper,
+                      InterfaceReconstructorType,
+                      Matpoly_Splitter, Matpoly_Clipper>
+      coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_);
+
+  coredriver_cell.set_num_tols(num_tols_);
+#ifdef HAVE_TANGRAM
+  coredriver_cell.set_interface_reconstructor_options(reconstructor_tols_,
+                                                      reconstructor_all_convex_);
+#endif  
+  
+  // SEARCH
+
+  auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -930,106 +848,16 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   int nmats = source_state2.num_materials();
 
-  // Use default numerical tolerances in case they were not set earlier
-  if (num_tols_.tolerances_set == false) {
-      NumericTolerances_t default_num_tols;
-      default_num_tols.use_default();
-    set_num_tols(default_num_tols);
-  }
-
-#ifdef HAVE_TANGRAM
-  // Call interface reconstruction only if we got a method from the
-  // calling app
-  //std::vector<Tangram::IterativeMethodTolerances_t> tols(2, {1000, 1e-12, 1e-12});
-
-  auto interface_reconstructor =
-      std::make_shared<Tangram::Driver<InterfaceReconstructorType, D,
-                                       SourceMesh_Wrapper2,
-                                       Matpoly_Splitter,
-                                       Matpoly_Clipper>
-                       >(source_mesh2, reconstructor_tols_, reconstructor_all_convex_);
-
-  if (typeid(InterfaceReconstructorType<SourceMesh_Wrapper2, D,
-             Matpoly_Splitter, Matpoly_Clipper >) !=
-      typeid(DummyInterfaceReconstructor<SourceMesh_Wrapper2, D,
-             Matpoly_Splitter, Matpoly_Clipper>)) {
-
-    int nsourcecells = source_mesh2.num_entities(Entity_kind::CELL, Entity_type::ALL);
-
-    std::vector<int> cell_num_mats;
-    std::vector<int> cell_mat_ids;
-    std::vector<double> cell_mat_volfracs;
-    std::vector<Wonton::Point<D>> cell_mat_centroids;
-
-    // Extract volume fraction and centroid data for cells in compact
-    // cell-centric form (ccc)
-
-    ccc_vfcen_data(cell_num_mats, cell_mat_ids, cell_mat_volfracs,
-                   cell_mat_centroids, nsourcecells, source_state2);
-
-    interface_reconstructor->set_volume_fractions(cell_num_mats,
-                                                  cell_mat_ids,
-                                                  cell_mat_volfracs,
-                                                  cell_mat_centroids);
-    interface_reconstructor->reconstruct(executor);
-  }
-
-#endif
-  // Make an intersector which knows about the source state (to be able
-  // to query the number of materials, etc) and also knows about the
-  // interface reconstructor so that it can retrieve pure material polygons
-  using Intersector = Intersect<onwhat,
-                                SourceMesh_Wrapper2, SourceState_Wrapper2,
-                                TargetMesh_Wrapper, InterfaceReconstructorType,
-                                Matpoly_Splitter, Matpoly_Clipper>;
-
-  using Interpolator = Interpolate<D, onwhat,
-                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
-                                   SourceState_Wrapper2, TargetState_Wrapper,
-                                   double,
-                                   InterfaceReconstructorType,
-                                   Matpoly_Splitter, Matpoly_Clipper>;
-
-#if HAVE_TANGRAM
-  Intersector intersect(source_mesh2, source_state2,
-                        target_mesh_, num_tols_,
-                        interface_reconstructor);
-
-  // Get an instance of the desired interpolate algorithm type
-  Interpolator interpolate(source_mesh2, target_mesh_,
-                           source_state2,
-                           num_tols_, interface_reconstructor);
-#else
-  Intersector intersect(source_mesh2, source_state2, target_mesh_, num_tols_);
-
-  // Get an instance of the desired interpolate algorithm type
-  Interpolator interpolate(source_mesh2, target_mesh_, source_state2, num_tols_);
-#endif  // HAVE_TANGRAM
-
-
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
   //--------------------------------------------------------------------
 
-  // INTERSECT
+  // INTERSECT MESHES
 
   gettimeofday(&begin_timeval, 0);
 
-  // For each cell in the target mesh get a list of candidate-weight
-  // pairings (in a traditional mesh, not particle mesh, the weights
-  // are moments). Note that this candidate list is different from the
-  // search candidate list in that it may not include some of the
-  // search candidates. Also, note that for 2nd order and higher
-  // remaps, we get multiple moments (0th, 1st, etc) for each
-  // target-source cell intersection
-
-  Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
-                     target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
-                     candidates.begin(),
-                     source_ents_and_weights.begin(),
-                     intersect);
-
-
+  auto source_ents_and_weights =
+      coredriver_cell.template intersect_meshes<Intersect>(candidates);
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -1040,38 +868,31 @@ int MMDriver<Search, Intersect, Interpolate, D,
   gettimeofday(&begin_timeval, 0);
   int nvars = src_meshvar_names.size();
 #ifdef ENABLE_DEBUG
-    if (comm_rank == 0){
-      std::cout << "Number of mesh variables on entity kind " << onwhat <<
-          " to remap is " << nvars << std::endl;
-    }
+  if (comm_rank == 0) {
+    std::cout << "Number of mesh variables on cells to remap is " <<
+        nvars << std::endl;
+  }
 #endif
 
-Portage::vector<Vector<D>> gradients;
+  Portage::vector<Vector<D>> gradients;
 
   for (int i = 0; i < nvars; ++i) {
-    // compute gradient field if necessary and set interpolation parameters
-    set_interpolation_variable(src_meshvar_names[i],
-                               source_mesh2, source_state2, interpolate,
-                               #if HAVE_TANGRAM
-                                 interface_reconstructor,
-                               #endif
-                               0, &gradients, executor);
+    std::string const& srcvar = src_meshvar_names[i];
+    std::string const& trgvar = trg_meshvar_names[i];
 
-    // Get a handle to a memory location where the target state
-    // would like us to write this material variable into. If it is
-    // NULL, we allocate it ourself
+    Limiter_type limiter = DEFAULT_LIMITER;
+    auto const& it1 = limiters_.find(srcvar);
+    if (it1 != limiters_.end()) limiter = it1->second;
 
-    double *target_field_raw;
-    target_state_.mesh_get_data(onwhat, trg_meshvar_names[i], &target_field_raw);
-    assert (target_field_raw != nullptr);
+    Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
+    auto const& it2 = bnd_limiters_.find(srcvar);
+    if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
 
-
-    Portage::pointer<double> target_field(target_field_raw);
-
-    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
-                       source_ents_and_weights.begin(),
-                       target_field, interpolate);
+    auto gradients =
+        coredriver_cell.compute_source_gradient(srcvar, limiter, bndlimiter);
+    
+    coredriver_cell.template interpolate_mesh_var<double, Interpolate>
+        (srcvar, trgvar, source_ents_and_weights, &gradients);
   }
 
   gettimeofday(&end_timeval, 0);
@@ -1079,277 +900,52 @@ Portage::vector<Vector<D>> gradients;
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
 
-  // Detect and fix if we have a mismatch between source and target
-  // domain boundaries
-
-  // Detect and fix values if we have a mismatch between source and
-  // target domain boundaries
-
-  MismatchFixer<D, onwhat, SourceMesh_Wrapper2,
-                SourceState_Wrapper2,
-                TargetMesh_Wrapper, TargetState_Wrapper>
-      mismatch_fixer(source_mesh2, source_state2,
-                     target_mesh_, target_state_,
-                     source_ents_and_weights, executor);
-
-  if (mismatch_fixer.has_mismatch()) {
-    for (int i = 0; i < nvars; i++) {
-      std::string const& src_var = src_meshvar_names[i];
-      std::string const& trg_var = trg_meshvar_names[i];
-
-      double lower_bound, upper_bound;
-      try {  // see if we have caller specified bounds
-
-        lower_bound = double_lower_bounds_.at(trg_var);
-        upper_bound = double_upper_bounds_.at(trg_var);
-
-      } catch (const std::out_of_range& oor) {
-        // Since caller has not specified bounds for variable, attempt
-        // to derive them from source state. This code should go into
-        // Wonton into each state manager
-
-        int nsrcents = source_mesh_.num_entities(onwhat,
-                                                 Entity_type::PARALLEL_OWNED);
-
-        double const *source_data;
-        source_state_.mesh_get_data(onwhat, src_var, &source_data);
-        lower_bound = *std::min_element(source_data, source_data + nsrcents);
-        upper_bound = *std::max_element(source_data, source_data + nsrcents);
-
-#ifdef PORTAGE_ENABLE_MPI
-        if (mycomm != MPI_COMM_NULL) {
-          double global_lower_bound=0.0, global_upper_bound=0.0;
-          MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
-                        MPI_MIN, mycomm);
-          lower_bound = global_lower_bound;
-
-          MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
-                        MPI_MAX, mycomm);
-          upper_bound = global_upper_bound;
-        }
-#endif
-
-        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
-        if (relbounddiff < consttol_) {
-          // The field is constant over the source mesh/part. We HAVE to
-          // relax the bounds to be able to conserve the integral quantity
-          // AND maintain a constant.
-          lower_bound -= 0.5*lower_bound;
-          upper_bound += 0.5*upper_bound;
-        }
-      }
-
-      double conservation_tol = DEFAULT_CONSERVATION_TOL;
-      try {  // see if caller has specified a tolerance for conservation
-        conservation_tol = conservation_tol_.at(trg_var);
-      } catch ( const std::out_of_range& oor) {}
-
-      mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
-                                  conservation_tol, max_fixup_iter_,
-                                  partial_fixup_types_[trg_var],
-                                  empty_fixup_types_[trg_var]);
-    }
+  // Fix mismatch in cell variables as requested
+  
+  fix_mismatch<SourceMesh_Wrapper2, SourceState_Wrapper2, CELL>
+      (source_mesh2, source_state2, source_ents_and_weights,
+       src_meshvar_names, trg_meshvar_names, executor);
+  
+  if (nmats > 1) {
+    //--------------------------------------------------------------------
+    // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
+    //--------------------------------------------------------------------
+    
+    auto source_ents_and_weights_mat =
+        coredriver_cell.template intersect_materials<Intersect>(candidates);
+    
+    int nmatvars = src_matvar_names.size();
+    for (int i = 0; i < nmatvars; ++i) {
+      std::string const& srcvar = src_matvar_names[i];
+      std::string const& trgvar = trg_matvar_names[i];
+      
+      std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+      
+      Limiter_type limiter = DEFAULT_LIMITER;
+      auto const& it1 = limiters_.find(srcvar);
+      if (it1 != limiters_.end()) limiter = it1->second;
+      
+      Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
+      auto const& it2 = bnd_limiters_.find(srcvar);
+      if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
+      
+      for (int m = 0; m < nmats; m++)
+        matgradients[m] =
+            coredriver_cell.compute_source_gradient(src_matvar_names[i],
+                                                    limiter, bndlimiter,
+                                                    m);
+      
+      coredriver_cell.template interpolate_mat_var<double, Interpolate>
+          (srcvar, trgvar, source_ents_and_weights_mat, &matgradients);
+    }  // nmatvars
   }
-
-
-  //--------------------------------------------------------------------
-  // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
-  //--------------------------------------------------------------------
-
-  if (onwhat != Entity_kind::CELL) return 1;
-
-  // Material centric loop
-
-  for (int m = 0; m < nmats; m++) {
-
-    // INTERSECT
-
-    gettimeofday(&begin_timeval, 0);
-
-    intersect.set_material(m);
-
-    // For each cell in the target mesh get a list of candidate-weight
-    // pairings (in a traditional mesh, not particle mesh, the weights
-    // are moments). Note that this candidate list is different from the
-    // search candidate list in that it may not include some of the
-    // search candidates. Also, note that for 2nd order and higher
-    // remaps, we get multiple moments (0th, 1st, etc) for each
-    // target-source cell intersection
-
-    // NOTE: IDEALLY WE WOULD REUSE THE MESH-MESH INTERSECTIONS FROM THE
-    // PREVIOUS STEP WHEN THE SOURCE MATERIAL CONTAINS ONLY ONE MATERIAL
-    //
-    // UNFORTUNATELY, THE REQUIREMENT OF THE INTERSECT FUNCTOR IS THAT
-    // IT CANNOT MODIFY STATE, THIS MEANS WE CANNOT STORE THE MESH-MESH
-    // INTERSECTION VALUES AND REUSE THEM AS NECESSARY FOR MESH-MATERIAL
-    // INTERSECTION COMPUTATIONS
-
-    Portage::transform(target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED),
-                       target_mesh_.end(onwhat, Entity_type::PARALLEL_OWNED),
-                       candidates.begin(),
-                       source_ents_and_weights.begin(),
-                       intersect);
-
-    gettimeofday(&end_timeval, 0);
-    timersub(&end_timeval, &begin_timeval, &diff_timeval);
-    tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-    // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
-    // WILL GET NEW MATERIALS
-
-    int ntargetcells = target_mesh_.num_entities(Entity_kind::CELL,
-                                                 Entity_type::ALL);
-    std::vector<int> matcellstgt;
-
-    for (int c = 0; c < ntargetcells; c++) {
-      std::vector<Weights_t> const& cell_sources_and_weights =
-          source_ents_and_weights[c];
-      for (int s = 0; s < cell_sources_and_weights.size(); s++) {
-        std::vector<double> const& wts = cell_sources_and_weights[s].weights;
-        if (wts[0] > 0.0) {
-          double vol = target_mesh_.cell_volume(c);
-          // Check that the volume of material we are adding to c is not miniscule
-          if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
-            matcellstgt.push_back(c);
-            break;
-          }
-        }
-      }
-    }
-
-
-    // add material to target state (even if this material does not
-    // overlap this processor)
-
-    int nmatstrg = target_state_.num_materials();
-    bool found = false;
-    int m2 = -1;
-    for (int i = 0; i < nmatstrg; i++)
-      if (target_state_.material_name(i) == source_state2.material_name(m)) {
-        found = true;
-        m2 = i;
-        break;
-      }
-    if (found) {  // material already present - just update its cell list
-      target_state_.mat_add_cells(m2, matcellstgt);
-    } else {
-      // add material along with the cell list
-      
-      // NOTE: NOT ONLY DOES THIS ROUTINE ADD A MATERIAL AND ITS
-      // CELLS TO THE STATEMANAGER, IT ALSO MAKES SPACE FOR FIELD
-      // VALUES FOR THIS MATERIAL IN EVERY MULTI-MATERIAL VECTOR IN
-      // THE STATE MANAGER. THIS ENSURES THAT WHEN WE CALL
-      // mat_get_celldata FOR A MATERIAL IN MULTI-MATERIAL STATE
-      // VECTOR IT WILL ALREADY HAVE SPACE ALLOCATED FOR FIELD
-      // VALUES OF THAT MATERIAL. SOME STATE WRAPPERS COULD CHOOSE
-      // TO MAKE THIS A SIMPLER ROUTINE THAT ONLY STORES THE NAME
-      // AND THE CELLS IN THE MATERIAL AND ACTUALLY ALLOCATE SPACE
-      // FOR FIELD VALUES OF A MATERIAL IN A MULTI-MATERIAL FIELD
-      // WHEN mat_get_celldata IS INVOKED.
-      
-      target_state_.add_material(source_state2.material_name(m), matcellstgt);
-    }
-
-    int nmatcells = matcellstgt.size();
-    if (nmatcells) {
-
-      // Add volume fractions and centroids of materials to target mesh
-      //
-      // Also make list of sources/weights only for target cells that are
-      // getting this material - Can we avoid the copy?
-      
-      std::vector<double> mat_volfracs(nmatcells);
-      std::vector<Point<D>> mat_centroids(nmatcells);
-      std::vector<std::vector<Weights_t>> mat_sources_and_weights(nmatcells);
-      
-      for (int ic = 0; ic < nmatcells; ic++) {
-        int c = matcellstgt[ic];
-        double matvol = 0.0;
-        Point<D> matcen;
-        std::vector<Weights_t> const& cell_sources_and_weights =
-            source_ents_and_weights[c];
-        for (int s = 0; s < cell_sources_and_weights.size(); s++) {
-          std::vector<double> const& wts = cell_sources_and_weights[s].weights;
-          matvol += wts[0];
-        for (int d = 0; d < D; d++)
-          matcen[d] += wts[d+1];
-        }
-        matcen /= matvol;
-        mat_volfracs[ic] = matvol/target_mesh_.cell_volume(c);
-        mat_centroids[ic] = matcen;
-        
-        mat_sources_and_weights[ic] = cell_sources_and_weights;
-      }
-      
-      target_state_.mat_add_celldata("mat_volfracs", m, &(mat_volfracs[0]));
-      target_state_.mat_add_celldata("mat_centroids", m, &(mat_centroids[0]));
-      
-
-      // INTERPOLATE (one variable at a time)
-      
-      // HERE WE COULD MAKE A NEW LIST BASED ON WHICH TARGET CELLS HAVE ANY
-      // INTERSECTIONS WITH SOURCE CELLS FOR THIS MATERIAL TO AVOID A NULL-OP
-      // AND A WARNING MESSAGE ABOUT NO SOURCE CELLS CONTRIBUTING TO A TARGET -
-      // IS IT WORTH IT?
-      
-      gettimeofday(&begin_timeval, 0);
-      
-      int nmatvars = src_matvar_names.size();
-#ifdef ENABLE_DEBUG
-      if (comm_rank == 0)
-        std::cout << "Number of multi-material variables on entity kind " <<
-            onwhat << " to remap is " << nmatvars << std::endl;
-#endif      
-      interpolate.set_material(m);    // We have to do this so we know
-      //                              // which material values we have
-      //                              // to grab from the source state
-      
-
-      // if the material has no cells on this partition, then don't bother
-      // interpolating MM variables
-      for (int i = 0; i < nmatvars; ++i) {
-        // compute gradient field if necessary and set interpolation parameters
-        set_interpolation_variable(src_matvar_names[i],
-                                   source_mesh2, source_state2, interpolate,
-                                   #if HAVE_TANGRAM
-                                     interface_reconstructor,
-                                   #endif
-                                   m, &gradients, executor);
-
-        // Get a handle to a memory location where the target state
-        // would like us to write this material variable into. If it is
-        // NULL, we allocate it ourself
-
-        double *target_field_raw;
-        target_state_.mat_get_celldata(trg_matvar_names[i], m, &target_field_raw);
-        assert (target_field_raw != nullptr);
-
-        Portage::pointer<double> target_field(target_field_raw);
-
-        Portage::transform(matcellstgt.begin(), matcellstgt.end(),
-                           mat_sources_and_weights.begin(),
-                           target_field, interpolate);
-
-        // If the state wrapper knows that the target data is already
-        // laid out in this way and it gave us a pointer to the array
-        // where the values reside, it has to do nothing in this
-        // call. If the storage format is different, however, it may
-        // have to copy the values into their proper locations
-
-        target_state_.mat_add_celldata(trg_matvar_names[i], m, target_field_raw);
-
-      }  // nmatvars
-    }  // if matcellstgt.size()
-
-    gettimeofday(&end_timeval, 0);
-    timersub(&end_timeval, &begin_timeval, &diff_timeval);
-    tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  }  // for nmats
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 #ifdef ENABLE_DEBUG
-  std::cout << "Transform Time for Entity Kind " << onwhat << " on Rank " <<
+  std::cout << "Transform Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
@@ -1359,7 +955,176 @@ Portage::vector<Vector<D>> gradients;
       tot_seconds_interp << std::endl;
 #endif
   return 1;
-}
+}  // remap specialization for cells
+
+
+
+
+
+// remap routine specialization for nodes
+
+template <template <int, Entity_kind, class, class> class Search,
+          template <Entity_kind, class, class, class,
+                    template <class, int, class, class> class,
+                    class, class> class Intersect,
+          template<int, Entity_kind, class, class, class, class, class,
+                   template<class, int, class, class> class,
+                   class, class, class=Wonton::DefaultCoordSys>
+          class Interpolate,
+          int D,
+          class SourceMesh_Wrapper,
+          class SourceState_Wrapper,
+          class TargetMesh_Wrapper,
+          class TargetState_Wrapper,
+          template <class, int, class, class> class InterfaceReconstructorType,
+          class Matpoly_Splitter,
+          class Matpoly_Clipper>
+template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
+int MMDriver<Search, Intersect, Interpolate, D,
+             SourceMesh_Wrapper, SourceState_Wrapper,
+             TargetMesh_Wrapper, TargetState_Wrapper,
+             InterfaceReconstructorType, Matpoly_Splitter,
+             Matpoly_Clipper
+             >::node_remap(SourceMesh_Wrapper2 const & source_mesh2,
+                           SourceState_Wrapper2 const & source_state2,
+                           std::vector<std::string> const &src_meshvar_names,
+                           std::vector<std::string> const &trg_meshvar_names,
+                           Wonton::Executor_type const *executor) {
+  
+  int comm_rank = 0;
+  int nprocs = 1;
+
+  // Will be null if it's a parallel executor
+  auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
+
+#ifdef PORTAGE_ENABLE_MPI
+  MPI_Comm mycomm = MPI_COMM_NULL;
+  auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+  if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
+    mycomm = mpiexecutor->mpicomm;
+    MPI_Comm_rank(mycomm, &comm_rank);
+    MPI_Comm_size(mycomm, &nprocs);
+  }
+#endif
+
+
+  
+  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
+      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
+  struct timeval begin_timeval, end_timeval, diff_timeval;
+
+  std::vector<std::string> source_remap_var_names;
+  for (auto & stpair : source_target_varname_map_)
+    source_remap_var_names.push_back(stpair.first);
+
+  
+  // Use default numerical tolerances in case they were not set earlier
+  if (num_tols_.tolerances_set == false) {
+    NumericTolerances_t default_num_tols;
+    default_num_tols.use_default();
+    set_num_tols(default_num_tols);
+  }
+
+
+  // Instantiate core driver
+
+  Portage::CoreDriver<D, NODE,
+                      SourceMesh_Wrapper2, SourceState_Wrapper2,
+                      TargetMesh_Wrapper, TargetState_Wrapper>
+      coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_);
+
+  coredriver_node.set_num_tols(num_tols_);
+#ifdef HAVE_TANGRAM
+  coredriver_node.set_interface_reconstructor_options(reconstructor_tols_,
+                                                      reconstructor_all_convex_);
+#endif  
+  
+  // SEARCH
+
+  auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  int nmats = source_state2.num_materials();
+
+  //--------------------------------------------------------------------
+  // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
+  //--------------------------------------------------------------------
+
+  // INTERSECT MESHES
+
+  gettimeofday(&begin_timeval, 0);
+
+  auto source_ents_and_weights =
+      coredriver_node.template intersect_meshes<Intersect>(candidates);
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+  // INTERPOLATE (one variable at a time)
+  gettimeofday(&begin_timeval, 0);
+  int nvars = src_meshvar_names.size();
+#ifdef ENABLE_DEBUG
+  if (comm_rank == 0) {
+    std::cout << "Number of mesh variables on nodes to remap is " <<
+        nvars << std::endl;
+  }
+#endif
+
+  Portage::vector<Vector<D>> gradients;
+
+  for (int i = 0; i < nvars; ++i) {
+    std::string const& srcvar = src_meshvar_names[i];
+    std::string const& trgvar = trg_meshvar_names[i];
+
+    Limiter_type limiter = DEFAULT_LIMITER;
+    auto const& it1 = limiters_.find(srcvar);
+    if (it1 != limiters_.end()) limiter = it1->second;
+
+    Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
+    auto const& it2 = bnd_limiters_.find(srcvar);
+    if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
+
+    auto gradients =
+        coredriver_node.compute_source_gradient(srcvar, limiter, bndlimiter);
+    
+    coredriver_node.template interpolate_mesh_var<double, Interpolate>
+        (srcvar, trgvar, source_ents_and_weights, &gradients);
+  }
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+
+  // Fix mismatch in cell variables as requested
+    
+  fix_mismatch<SourceMesh_Wrapper2, SourceState_Wrapper2, NODE>
+      (source_mesh2, source_state2, source_ents_and_weights,
+       src_meshvar_names, trg_meshvar_names, executor);
+  
+
+  gettimeofday(&end_timeval, 0);
+  timersub(&end_timeval, &begin_timeval, &diff_timeval);
+  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
+#ifdef ENABLE_DEBUG
+  std::cout << "Transform Time for Node remap on Rank " <<
+      comm_rank << " (s): " << tot_seconds << std::endl;
+  std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
+      tot_seconds_srch << std::endl;
+  std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
+      tot_seconds_xsect << std::endl;
+  std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
+      tot_seconds_interp << std::endl;
+#endif
+  return 1;
+}  // remap specialization for cells
 
 
 }  // namespace Portage
