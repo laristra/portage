@@ -452,7 +452,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
-      sourceStateWrapper.cell_get_mats(source_id, &cellmats);
+      source_state_.cell_get_mats(source_id, &cellmats);
       // nb_mats == 0 -- no materials ==> single material
       // material_id_ == -1 -- intersect with mesh not a particular material
       // nb_mats == 1 && cellmats[0] == material_id_ -- intersection with pure cell
@@ -589,7 +589,7 @@ namespace Portage {
             } else {
               //Skip if the neighboring cell doesn't contain material_id_
               std::vector<int> neighmats;
-              sourceStateWrapper.cell_get_mats(neigh, &neighmats);
+              source_state_.cell_get_mats(neigh, &neighmats);
               if (std::find(neighmats.begin(), neighmats.end(), material_id_) ==
                   neighmats.end())
                 continue;
