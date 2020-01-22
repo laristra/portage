@@ -373,8 +373,8 @@ namespace Portage {
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int const nfaces = std::static_cast<int>(cfaces.size());
-      int const cface_id = std::distance(
+      int nfaces = cfaces.size();
+      int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
       //Face group should be associated with one of the cell's faces
       assert(cface_id != nfaces);
@@ -390,13 +390,13 @@ namespace Portage {
       Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<2>> face_group_polys;
-      Tangram::Plane<2> cutting_plane;
+      Tangram::Plane_t<2> cutting_plane;
       cutting_plane.normal = 
         cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
 
       //Find the cutting distance for the given swept volume
       Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
-        cutting_plane.normal, im_tols[0], true);
+        cutting_plane.normal, ims_tols[0], true);
 
       cds.set_target_volume(swept_volume);
       std::vector<double> cds_res = cds();
@@ -415,7 +415,7 @@ namespace Portage {
         cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
 
       //Clip the MatPoly's with the plane to get moments
-      MatPoly_Clipper clip_matpolys(vol_tol);
+      Matpoly_Clipper clip_matpolys(vol_tol);
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
@@ -477,7 +477,7 @@ namespace Portage {
         Tangram::CellMatPoly<2> const& cellmatpoly =
           interface_reconstructor->cell_matpoly_data(source_id);
 
-        swept_moments.push_back(source_id, cellmatpoly.material_moments(material_id_));
+        swept_moments.emplace_back(source_id, cellmatpoly.material_moments(material_id_));
       }
 #endif
 

@@ -128,12 +128,6 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
      
-     cinch_add_unit(test_singlemat_swept
-       SOURCES test/test_singlemat_swept.cc
-       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-       POLICY MPI
-       THREADS 1)
-
    endif (Jali_DIR)
 
    cinch_add_unit(test_driver_swarm
