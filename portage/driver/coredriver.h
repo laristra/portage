@@ -329,15 +329,15 @@ class CoreDriverBase {
 
   template<Entity_kind ONWHAT>
   bool 
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->check_mesh_mismatch(source_weights);
+    return derived_class_ptr->check_mismatch(source_weights);
   }
 
 
   /*!
-    @brief Return if meshes are mismatched (check_mesh_mismatch must already have been
+    @brief Return if meshes are mismatched (check_mismatch must already have been
     called)
 
     @returns   Whether the meshes are mismatched
@@ -353,8 +353,7 @@ class CoreDriverBase {
 
 
   /*!
-    ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
-    @brief Return if meshes are mismatched (check_mesh_mismatch must already have been
+    @brief Return if meshes are mismatched (check_mismatch must already have been
     called)
 
     @returns   Whether the meshes are mismatched
@@ -374,14 +373,14 @@ class CoreDriverBase {
                Empty_fixup_type::EXTRAPOLATE) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->fix_mismatch(std::string const & src_var_name,
-               std::string const & trg_var_name,
-               double global_lower_bound,
-               double global_upper_bound,
-               double conservation_tol,
-               int maxiter,
-               Partial_fixup_type partial_fixup_type,
-               Empty_fixup_type empty_fixup_type);
+    return derived_class_ptr->fix_mismatch(src_var_name,
+               trg_var_name,
+               global_lower_bound,
+               global_upper_bound,
+               conservation_tol,
+               maxiter,
+               partial_fixup_type,
+               empty_fixup_type);
 }
 
 
@@ -1224,7 +1223,7 @@ class CoreDriver : public CoreDriverBase<D,
     @returns   Whether the meshes are mismatched
   */
   bool
-  check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
@@ -1246,7 +1245,7 @@ class CoreDriver : public CoreDriverBase<D,
                                            executor_));
     }
 
-    return mismatch_fixer_->check_mesh_mismatch(source_weights);
+    return mismatch_fixer_->check_mismatch(source_weights);
   }
 
   

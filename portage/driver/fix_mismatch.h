@@ -147,8 +147,12 @@ class MismatchFixer {
   /// @brief Compute (and cache) whether the mesh domains are mismatched
   /// @param[in] sources_and_weights Intersection sources and moments (vols, centroids)
   /// @returns whether the mesh domains are mismatched
-  bool check_mesh_mismatch(
+  bool check_mismatch(
     Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
+    
+    // make sure we have not already computed the mismatch
+    assert(!computed_mismatch_);
+    
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
         source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
 
@@ -313,6 +317,9 @@ class MismatchFixer {
 
     }
 
+    // set whether we have computed the mismatch (before any return)
+    computed_mismatch_ = true;
+    
     if (!mismatch_) return false;
 
 
@@ -409,9 +416,15 @@ class MismatchFixer {
   
   
   /// @brief Return whether the mesh domains are mismatched
-  ///    (must be called after check_mesh_mismatch)
+  ///    (must be called after check_mismatch)
   /// @returns whether the mesh domains are mismatched
-  bool has_mismatch() const {return mismatch_;}
+  bool has_mismatch() const {
+  
+    // make sure we have already computed the mismatch
+    assert(computed_mismatch_);
+      
+    return mismatch_;
+  }
 
 
 
@@ -458,6 +471,9 @@ class MismatchFixer {
                     Empty_fixup_type::EXTRAPOLATE) {
 
 
+    // make sure we have already computed the mismatch
+    assert(computed_mismatch_);
+      
     if (source_state_.field_type(onwhat, src_var_name) ==
         Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
@@ -766,6 +782,7 @@ class MismatchFixer {
   int rank_ = 0, nprocs_ = 1;
   double voldifftol_ = 1e2*std::numeric_limits<double>::epsilon();
   bool distributed_ = false;
+  bool computed_mismatch_ = false;
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif

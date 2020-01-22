@@ -86,7 +86,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   auto source_weights = driver.intersect_meshes<Portage::IntersectR2D>(candidates);
   auto gradients = driver.compute_source_gradient("cellvars");
 
-  driver.check_mesh_mismatch(source_weights);
+  driver.check_mismatch(source_weights);
   
   //-------------------------------------------------------------------
   // Expected Results
