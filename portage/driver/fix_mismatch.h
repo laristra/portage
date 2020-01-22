@@ -320,7 +320,7 @@ class MismatchFixer {
     // set whether we have computed the mismatch (before any return)
     computed_mismatch_ = true;
     
-    if (!mismatch_) return false;
+    if (!mismatch_) return mismatch_;
 
 
     // Discrepancy between intersection volume and source mesh volume PLUS
@@ -412,6 +412,8 @@ class MismatchFixer {
         nlayers++;
       }
     }  // if nempty
+    
+    return mismatch_;  
   }
   
   

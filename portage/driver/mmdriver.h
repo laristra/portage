@@ -824,7 +824,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                       TargetMesh_Wrapper, TargetState_Wrapper,
                       InterfaceReconstructorType,
                       Matpoly_Splitter, Matpoly_Clipper>
-      coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_);
+      coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_cell.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
@@ -861,10 +861,12 @@ int MMDriver<Search, Intersect, Interpolate, D,
   coredriver_cell.check_mismatch(source_ents_and_weights);
 
   // compute bounds (for all variables) if required for mismatch
-  if (coredriver_cell.has_mismatch())
+  if (coredriver_cell.has_mismatch()){
+    std::cout << "DWS found mismatch\n";
     compute_bounds<SourceState_Wrapper2, CELL>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
-
+  }
+  
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);
   int nvars = src_meshvar_names.size();
@@ -1035,7 +1037,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Portage::CoreDriver<D, NODE,
                       SourceMesh_Wrapper2, SourceState_Wrapper2,
                       TargetMesh_Wrapper, TargetState_Wrapper>
-      coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_);
+      coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_node.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
