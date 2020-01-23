@@ -1255,7 +1255,10 @@ class CoreDriver : public CoreDriverBase<D,
     @returns   Whether the meshes are mismatched
   */
   bool
-  has_mismatch() {return mismatch_fixer_->has_mismatch();}
+  has_mismatch() {
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
+    return mismatch_fixer_->has_mismatch();
+  }
 
   /// @brief Repair the remapped field to account for boundary mismatch
   /// @param src_var_name        field variable on source mesh
@@ -1297,6 +1300,7 @@ class CoreDriver : public CoreDriverBase<D,
                     Empty_fixup_type empty_fixup_type =
                     Empty_fixup_type::EXTRAPOLATE) {
 
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
 
     if (source_state_.field_type(ONWHAT, src_var_name) ==
         Field_type::MESH_FIELD)

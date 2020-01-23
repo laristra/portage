@@ -861,11 +861,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   coredriver_cell.check_mismatch(source_ents_and_weights);
 
   // compute bounds (for all variables) if required for mismatch
-  if (coredriver_cell.has_mismatch()){
-    std::cout << "DWS found mismatch\n";
+  if (coredriver_cell.has_mismatch())
     compute_bounds<SourceState_Wrapper2, CELL>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
-  }
   
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);

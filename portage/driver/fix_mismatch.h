@@ -150,8 +150,8 @@ class MismatchFixer {
   bool check_mismatch(
     Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
     
-    // make sure we have not already computed the mismatch
-    assert(!computed_mismatch_);
+    // If we have already computed the mismatch, just return the result
+    if (computed_mismatch_) return mismatch_;
     
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
         source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
@@ -423,7 +423,7 @@ class MismatchFixer {
   bool has_mismatch() const {
   
     // make sure we have already computed the mismatch
-    assert(computed_mismatch_);
+    assert(computed_mismatch_ && "check_mismatch must be called first!");
       
     return mismatch_;
   }
@@ -474,7 +474,7 @@ class MismatchFixer {
 
 
     // make sure we have already computed the mismatch
-    assert(computed_mismatch_);
+    assert(computed_mismatch_ && "check_mismatch must be called first!");
       
     if (source_state_.field_type(onwhat, src_var_name) ==
         Field_type::MESH_FIELD)
