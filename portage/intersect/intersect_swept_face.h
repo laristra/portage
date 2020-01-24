@@ -542,14 +542,13 @@ namespace Portage {
             }
             // sanity check: ensure that swept face centroid remains
             // inside the neighbor cell.
-//            else if (not centroid_inside_cell(neigh, moments)) {
-//              throw std::runtime_error("invalid target mesh for swept face");
-//            }
-//            // append to list as current neighbor moment.
-//            else {
-//              swept_moments.emplace_back(neigh, moments);
-//            }
-            swept_moments.emplace_back(neigh, moments);
+            else if (not centroid_inside_cell(neigh, moments)) {
+              throw std::runtime_error("invalid target mesh for swept face");
+            }
+            // append to list as current neighbor moment.
+            else {
+              swept_moments.emplace_back(neigh, moments);
+            }
           }
         } // end for each edge of current cell
 
@@ -988,12 +987,10 @@ namespace Portage {
           }
         } // end of for each face of current cell
 
-        return swept_moments;
-
-//        if (valid_displacement(source_id, swept_moments)) {
-//          return swept_moments;
-//        } else
-//          throw std::runtime_error("invalid displacement");
+        if (valid_displacement(source_id, swept_moments)) {
+          return swept_moments;
+        } else
+          throw std::runtime_error("invalid displacement");
 
 #ifdef HAVE_TANGRAM
       } else /* multi-material case */ {
