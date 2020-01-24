@@ -124,6 +124,12 @@ namespace Portage {
     void set_material(int m) { material_id_ = m; }
 
     /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+    /**
      * @brief Perform the actual swept faces volumes computation.
      *
      * @param target_id: the current target cell index.
@@ -144,6 +150,7 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
@@ -433,6 +440,13 @@ namespace Portage {
     }
 
   public:
+
+    /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
     /**
      * @brief Perform the actual swept faces computation.
      *
@@ -541,13 +555,11 @@ namespace Portage {
               throw std::runtime_error("invalid stencil for source cell "+ id);
             }
             // sanity check: ensure that swept face centroid remains
-            // inside the neighbor cell.
-            else if (not centroid_inside_cell(neigh, moments)) {
-              throw std::runtime_error("invalid target mesh for swept face");
-            }
-            // append to list as current neighbor moment.
-            else {
+            // inside the neighbor cell and append to list.
+            if (not displacement_check or centroid_inside_cell(neigh, moments)) {
               swept_moments.emplace_back(neigh, moments);
+            } else {
+              throw std::runtime_error("invalid target mesh for swept face");
             }
           }
         } // end for each edge of current cell
@@ -566,6 +578,7 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
@@ -785,6 +798,12 @@ namespace Portage {
 
   public:
     /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+    /**
      * @brief Perform the actual swept moments computation for the given cell.
      *
      * After decomposing the cell into faces, it constructs a swept polyhedron
@@ -987,7 +1006,7 @@ namespace Portage {
           }
         } // end of for each face of current cell
 
-        if (valid_displacement(source_id, swept_moments)) {
+        if (not displacement_check or valid_displacement(source_id, swept_moments)) {
           return swept_moments;
         } else
           throw std::runtime_error("invalid displacement");
@@ -1005,6 +1024,7 @@ namespace Portage {
     SourceState const& source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
