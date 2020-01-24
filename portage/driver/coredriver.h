@@ -29,6 +29,7 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 #include "portage/driver/parts.h"
+#include "portage/driver/fix_mismatch.h"
 
 /*!
   @file coredriver.h
@@ -314,6 +315,74 @@ class CoreDriverBase {
                                                       sources_and_weights_by_mat,
                                                       gradients);
   }
+
+
+  /*!
+    @brief Check if meshes are mismatched (don't cover identical
+    portions of space)
+
+    @tparam Entity_kind  What kind of entity are we performing intersection of
+
+    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->check_mismatch(source_weights);
+  }
+
+
+  /*!
+    @brief Return if meshes are mismatched (check_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  has_mismatch() {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->has_mismatch();
+  }
+
+
+  /*!
+    @brief Return if meshes are mismatched (check_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  fix_mismatch(std::string const & src_var_name,
+               std::string const & trg_var_name,
+               double global_lower_bound = -std::numeric_limits<double>::max(),
+               double global_upper_bound = std::numeric_limits<double>::max(),
+               double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+               int maxiter = 5,
+               Partial_fixup_type partial_fixup_type =
+               Partial_fixup_type::SHIFTED_CONSERVATIVE,
+               Empty_fixup_type empty_fixup_type =
+               Empty_fixup_type::EXTRAPOLATE) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->fix_mismatch(src_var_name,
+               trg_var_name,
+               global_lower_bound,
+               global_upper_bound,
+               conservation_tol,
+               maxiter,
+               partial_fixup_type,
+               empty_fixup_type);
+}
+
 
   /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
@@ -1144,6 +1213,103 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif  // HAVE_TANGRAM
 
+
+  /*! 
+    Check mismatch between meshes
+
+    @param[in] sources_and_weights Intersection sources and moments
+    (vols, centroids)
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+
+    // Instantiate mismatch fixer for later use
+    if (not mismatch_fixer_) {
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
+      //                                                  SourceMesh, SourceState,
+      //                                                  TargetMesh,  TargetState>
+      //                                    >
+      //     (source_mesh_, source_state_, target_mesh_, target_state_,
+      //      source_weights, executor_);
+
+      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                                      SourceMesh, SourceState,
+                                                      TargetMesh,  TargetState>
+                                        >(new MismatchFixer<D, ONWHAT,
+                                          SourceMesh, SourceState,
+                                          TargetMesh,  TargetState>
+                                          (source_mesh_, source_state_, target_mesh_, target_state_,
+                                           executor_));
+    }
+
+    return mismatch_fixer_->check_mismatch(source_weights);
+  }
+
+  
+  /*! 
+    Return mismatch between meshes
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  has_mismatch() {
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
+    return mismatch_fixer_->has_mismatch();
+  }
+
+  /// @brief Repair the remapped field to account for boundary mismatch
+  /// @param src_var_name        field variable on source mesh
+  /// @param trg_var_name        field variable on target mesh
+  /// @param global_lower_bound  lower limit on variable
+  /// @param global_upper_bound  upper limit on variable
+  /// @param partial_fixup_type  type of fixup in case of partial mismatch
+  /// @param empty_fixup_type    type of fixup in empty target entities
+  ///
+  /// partial_fixup_type can be one of three types:
+  ///
+  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
+  ///            NON-CONSERVATIVE (constant preserving, not linearity
+  ///            preserving)
+  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                        will preserve the integral quantities received from
+  ///                        source mesh overlap) but perturbations will
+  ///                        occur in the field (constant fields may not stay
+  ///                        constant if there is mismatch)
+  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
+  ///                        perturbations will be minimum but field
+  ///                        values may be shifted (Constant fields
+  ///                        will be shifted to different constant; no
+  ///                        guarantees on linearity preservation)
+  ///
+  /// empty_fixup_type can be one of two types:
+  ///
+  /// LEAVE_EMPTY - Leave empty cells as is
+  /// EXTRAPOLATE - Fill empty cells with extrapolated values
+  /// FILL        - Fill empty cells with specified values (not yet implemented)
+  bool fix_mismatch(std::string const & src_var_name,
+                    std::string const & trg_var_name,
+                    double global_lower_bound = -std::numeric_limits<double>::max(),
+                    double global_upper_bound = std::numeric_limits<double>::max(),
+                    double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+                    int maxiter = 5,
+                    Partial_fixup_type partial_fixup_type =
+                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Empty_fixup_type empty_fixup_type =
+                    Empty_fixup_type::EXTRAPOLATE) {
+
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
+
+    if (source_state_.field_type(ONWHAT, src_var_name) ==
+        Field_type::MESH_FIELD)
+      return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
+                                  global_lower_bound, global_upper_bound,
+                                  conservation_tol, maxiter,
+                                  partial_fixup_type, empty_fixup_type);
+    return false;
+  }
   
  private:
   SourceMesh const & source_mesh_;
@@ -1262,7 +1428,11 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif
 
-};  // CoreDriverBase
+  std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                SourceMesh, SourceState,
+                                TargetMesh, TargetState>> mismatch_fixer_;
+
+};  // CoreDriver
 
 
 // Core Driver Factory

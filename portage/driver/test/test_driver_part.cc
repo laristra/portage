@@ -272,13 +272,7 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
       
     // test for mismatch and compute volumes
     parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
-    
-    // this block won't run since no mismatch, but make sure syntactically correct
-    if (parts[i].has_mismatch())
-      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
+    assert(not parts[i].has_mismatch());    
   }
 
   // compare remapped values with analytically computed ones
@@ -409,9 +403,6 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       "density", "density", weights, &(parts[i]), &gradients
     );
 
-    // test for mismatch and compute volumes
-    parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
 
     // this block won't run since no mismatch, but make sure syntactically correct
     if (parts[i].has_mismatch())

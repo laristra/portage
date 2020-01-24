@@ -36,7 +36,6 @@
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
-// DWS unnecessary #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
 
@@ -107,6 +106,7 @@ class UberDriver {
                      InterfaceReconstructorType,
                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
   
+  // NOTE: Unused
   using ParallelDriverType =
       CoreDriverBase<D, Flat_Mesh_Wrapper<>,
                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
@@ -390,10 +390,17 @@ class UberDriver {
   Portage::vector<std::vector<Portage::Weights_t>>         // return type
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
+
+    const auto& weights = core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+    
+    // Check the mesh mismatch once, to make sure the mismatch is cached
+    // prior to interpolation with fixup. This is the correct place to automatically do the
+    // check because it reqires the intersection weights which were just computed.
+    core_driver_serial_[ONWHAT]->template check_mismatch<ONWHAT>(weights);
+    
     mesh_intersection_completed_[ONWHAT] = true;
-
-    return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
-
+    
+    return weights;
   }
 
 #ifdef HAVE_TANGRAM
@@ -667,6 +674,11 @@ class UberDriver {
         srcvarname, trgvarname, sources_and_weights_in
       );
     }
+    
+    if (driver->template has_mismatch<ONWHAT>())
+      driver->template fix_mismatch<ONWHAT>(srcvarname, trgvarname, lower_bound, upper_bound, conservation_tol, 
+        max_fixup_iter, partial_fixup_type, empty_fixup_type);
+
   }
 
   /*!

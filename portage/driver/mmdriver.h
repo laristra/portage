@@ -423,12 +423,11 @@ class MMDriver {
 
   /*!
 
-    @brief Detect and fix if we have a mismatch between source and
-    target domain boundaries
-    @tparam SourceMesh_Wrapper2  May be the mesh wrapper sent into MMDriver or the Flat_Mesh_Wrapper created for redistribution
+    @brief Compute mismatch fixup bounds dynamically
     @tparam SourceState_Wrapper2 May be the state wrapper sent into MMDriver or the Flat_State_Wrapper created for redistribution
     @tparam entity_kind  Kind of entity that variables live on
 
+    @param source_state2         source state wrapper
     @param source_meshvar_names  names of remap variables on source mesh
     @param target_meshvar_names  names of remap variables on target mesh
     @param sources_and_weights   mesh-mesh intersection weights
@@ -436,11 +435,8 @@ class MMDriver {
     
   */
   
-  template<class SourceMesh_Wrapper2, class SourceState_Wrapper2,
-           Entity_kind onwhat>
-  int fix_mismatch(SourceMesh_Wrapper2 const& source_mesh2,
-                   SourceState_Wrapper2 const& source_state2,
-                   Portage::vector<std::vector<Weights_t>> const& source_ents_and_weights,
+  template<class SourceState_Wrapper2,Entity_kind onwhat>
+  int compute_bounds(SourceState_Wrapper2 const& source_state2,
                    std::vector<std::string> const& src_meshvar_names,
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
@@ -464,49 +460,48 @@ class MMDriver {
     }
 #endif
 
-    MismatchFixer<D, onwhat, SourceMesh_Wrapper2,
-                  SourceState_Wrapper2,
-                  TargetMesh_Wrapper, TargetState_Wrapper>
-        mismatch_fixer(source_mesh2, source_state2,
-                       target_mesh_, target_state_,
-                       source_ents_and_weights, executor);
-
-    if (mismatch_fixer.has_mismatch()) {
-      int nvars = src_meshvar_names.size();
-      for (int i = 0; i < nvars; i++) {
-        std::string const& src_var = src_meshvar_names[i];
-        std::string const& trg_var = trg_meshvar_names[i];
+    int nvars = src_meshvar_names.size();
       
-        double lower_bound, upper_bound;
-        try {  // see if we have caller specified bounds
-          
-          lower_bound = double_lower_bounds_.at(trg_var);
-          upper_bound = double_upper_bounds_.at(trg_var);
-          
-        } catch (const std::out_of_range& oor) {
-          // Since caller has not specified bounds for variable, attempt
-          // to derive them from source state. This code should go into
-          // Wonton into each state manager
-          
-          int nsrcents = source_mesh_.num_entities(onwhat,
-                                                   Entity_type::PARALLEL_OWNED);
-          
-          double const *source_data;
-          source_state_.mesh_get_data(onwhat, src_var, &source_data);
-          lower_bound = *std::min_element(source_data, source_data + nsrcents);
-          upper_bound = *std::max_element(source_data, source_data + nsrcents);
-          
+    // loop over mesh variables
+    for (int i = 0; i < nvars; i++) {
+    
+      std::string const& src_var = src_meshvar_names[i];
+      std::string const& trg_var = trg_meshvar_names[i];
+    
+      double lower_bound, upper_bound;
+      
+      // See if we have caller specified bounds, if so, keep them. 
+      // Otherwise, determine sensible values
+      try {  
+        
+        double_lower_bounds_.at(trg_var);
+        double_upper_bounds_.at(trg_var);
+        
+      } catch (const std::out_of_range& oor) {
+      
+        // Since caller has not specified bounds for variable, attempt
+        // to derive them from source state. This code should go into
+        // Wonton into each state manager (or better yet, deprecated :-))
+        
+        int nsrcents = source_mesh_.num_entities(onwhat,
+                                                 Entity_type::PARALLEL_OWNED);
+        
+        double const *source_data;
+        source_state_.mesh_get_data(onwhat, src_var, &source_data);
+        lower_bound = *std::min_element(source_data, source_data + nsrcents);
+        upper_bound = *std::max_element(source_data, source_data + nsrcents);
+        
 #ifdef PORTAGE_ENABLE_MPI
-          if (mycomm != MPI_COMM_NULL) {
-            double global_lower_bound=0.0, global_upper_bound=0.0;
-            MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
-                          MPI_MIN, mycomm);
-            lower_bound = global_lower_bound;
-            
-            MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
-                          MPI_MAX, mycomm);
-            upper_bound = global_upper_bound;
-          }
+        if (mycomm != MPI_COMM_NULL) {
+          double global_lower_bound=0.0, global_upper_bound=0.0;
+          MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
+                        MPI_MIN, mycomm);
+          lower_bound = global_lower_bound;
+          
+          MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
+                        MPI_MAX, mycomm);
+          upper_bound = global_upper_bound;
+        }
 #endif
 
         double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
@@ -517,18 +512,17 @@ class MMDriver {
           lower_bound -= 0.5*lower_bound;
           upper_bound += 0.5*upper_bound;
         }
-        }
         
-        double conservation_tol = DEFAULT_CONSERVATION_TOL;
-        try {  // see if caller has specified a tolerance for conservation
-          conservation_tol = conservation_tol_.at(trg_var);
-        } catch ( const std::out_of_range& oor) {}
-        
-        mismatch_fixer.fix_mismatch(src_var, trg_var, lower_bound, upper_bound,
-                                    conservation_tol, max_fixup_iter_,
-                                    partial_fixup_types_[trg_var],
-                                    empty_fixup_types_[trg_var]);
+        // set the bounds on the instance variable
+        set_remap_var_bounds(trg_var, lower_bound, upper_bound);      
       }
+        
+      // see if caller has specified a tolerance for conservation  
+      try {  
+        conservation_tol_.at(trg_var);
+      } catch ( const std::out_of_range& oor) {
+        set_conservation_tolerance(trg_var, DEFAULT_CONSERVATION_TOL);     
+      }      
     }
   }  // fix_mismatch
 
@@ -830,7 +824,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                       TargetMesh_Wrapper, TargetState_Wrapper,
                       InterfaceReconstructorType,
                       Matpoly_Splitter, Matpoly_Clipper>
-      coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_);
+      coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_cell.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
@@ -863,7 +857,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  // check for mesh mismatch
+  coredriver_cell.check_mismatch(source_ents_and_weights);
 
+  // compute bounds (for all variables) if required for mismatch
+  if (coredriver_cell.has_mismatch())
+    compute_bounds<SourceState_Wrapper2, CELL>
+        (source_state2, src_meshvar_names, trg_meshvar_names, executor);
+  
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);
   int nvars = src_meshvar_names.size();
@@ -893,19 +894,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
     
     coredriver_cell.template interpolate_mesh_var<double, Interpolate>
         (srcvar, trgvar, source_ents_and_weights, &gradients);
+
+    if (coredriver_cell.has_mismatch())
+      coredriver_cell.fix_mismatch(srcvar, trgvar, 
+          double_lower_bounds_[trgvar],
+          double_upper_bounds_[trgvar],
+          conservation_tol_[trgvar],
+          max_fixup_iter_,
+          partial_fixup_types_[trgvar],
+          empty_fixup_types_[trgvar]
+      );
+
   }
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
-
-  // Fix mismatch in cell variables as requested
-  
-  fix_mismatch<SourceMesh_Wrapper2, SourceState_Wrapper2, CELL>
-      (source_mesh2, source_state2, source_ents_and_weights,
-       src_meshvar_names, trg_meshvar_names, executor);
-  
   if (nmats > 1) {
     //--------------------------------------------------------------------
     // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
@@ -939,10 +944,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
           (srcvar, trgvar, source_ents_and_weights_mat, &matgradients);
     }  // nmatvars
   }
+  
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 #ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Cell remap on Rank " <<
@@ -956,7 +961,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
   return 1;
 }  // remap specialization for cells
-
 
 
 
@@ -1031,7 +1035,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   Portage::CoreDriver<D, NODE,
                       SourceMesh_Wrapper2, SourceState_Wrapper2,
                       TargetMesh_Wrapper, TargetState_Wrapper>
-      coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_);
+      coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_node.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
@@ -1064,6 +1068,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
 
+  // check for mesh mismatch
+  coredriver_node.check_mismatch(source_ents_and_weights);
+
+  // compute bounds if required for mismatch
+  if (coredriver_node.has_mismatch())
+    compute_bounds<SourceState_Wrapper2, NODE>
+        (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
   // INTERPOLATE (one variable at a time)
   gettimeofday(&begin_timeval, 0);
@@ -1094,19 +1105,22 @@ int MMDriver<Search, Intersect, Interpolate, D,
     
     coredriver_node.template interpolate_mesh_var<double, Interpolate>
         (srcvar, trgvar, source_ents_and_weights, &gradients);
+        
+    if (coredriver_node.has_mismatch())
+      coredriver_node.fix_mismatch(srcvar, trgvar, 
+          double_lower_bounds_[trgvar],
+          double_upper_bounds_[trgvar],
+          conservation_tol_[trgvar],
+          max_fixup_iter_,
+          partial_fixup_types_[trgvar],
+          empty_fixup_types_[trgvar]
+      );
+
   }
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
   tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-
-  // Fix mismatch in cell variables as requested
-    
-  fix_mismatch<SourceMesh_Wrapper2, SourceState_Wrapper2, NODE>
-      (source_mesh2, source_state2, source_ents_and_weights,
-       src_meshvar_names, trg_meshvar_names, executor);
-  
 
   gettimeofday(&end_timeval, 0);
   timersub(&end_timeval, &begin_timeval, &diff_timeval);
@@ -1124,7 +1138,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       tot_seconds_interp << std::endl;
 #endif
   return 1;
-}  // remap specialization for cells
+}  // remap specialization for nodes
 
 
 }  // namespace Portage
