@@ -393,6 +393,9 @@ class UberDriver {
 
     const auto& weights = core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
     
+    // Check the mesh mismatch once, to make sure the mismatch is cached
+    // prior to interpolation with fixup. This is the correct place to automatically do the
+    // check because it reqires the intersection weights which were just computed.
     core_driver_serial_[ONWHAT]->template check_mismatch<ONWHAT>(weights);
     
     mesh_intersection_completed_[ONWHAT] = true;
