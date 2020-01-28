@@ -78,11 +78,11 @@ using Wonton::Jali_Mesh_Wrapper;
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: sweptfaceapp_jali " <<
-      "--dim=2|3 --nsourcecells=N/source_file=srcfilename \n"<< 
-      " --ntargetcells=M/target_file=tgtfilename  \n" << 
-      "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
+      "--dim=2|3 --ncells=N \n"<< 
+      "--source_file=srcfilename \n"<< 
+      "--target_file=tgtfilename  \n" << 
       "--mesh_min=0. --mesh_max=1. \n" <<
-      "--field=expression --remap_order=1|2 \n" <<
+      "--field_expression --remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
       "--convergence_study=NREF --output_meshes=y|n --only_threads=y|n \n" <<
       "--scaling=strong|weak \n" <<
@@ -90,25 +90,11 @@ int print_usage() {
 
   std::cout << "--dim (default = 2): spatial dimension of mesh\n\n";
 
-  std::cout << "--nsourcecells (NO DEFAULT): Internally generated rectangular "
-            << "SOURCE mesh with num cells in each coord dir\n\n";
+  std::cout << "--ncells (NO DEFAULT): Internally generated rectangular "
+            << "SOURCE and TARGET mesh with num cells in each coord dir\n\n";
   std::cout << "        -----  OR  ----- \n";
   std::cout << "--source_file=srcfilename: file name of source mesh (Exodus II format only)\n\n";
-
-  std::cout << "--ntargetcells (NO DEFAULT): Internally generated rectangular "
-            << "TARGET mesh with num cells in each coord dir\n\n";
-  std::cout << "        -----  OR  ----- \n";
   std::cout << "--target_file=trgfilename: file name of target mesh (Exodus II format only)\n\n";
-
-  std::cout << "--source_convex_cells (default = y): " <<
-      "specifies whether all the source mesh cells are convex\n" <<
-      "if mesh contains non-convex cells, all the cells will be decomposed into simplices\n" <<
-      "during material data generation and interface reconstruction\n\n";
-
-  std::cout << "--target_convex_cells (default = y): " <<
-      "specifies whether all the target mesh cells are convex\n" <<
-      "if mesh contains non-convex cells, all the cells will be decomposed into simplices\n" <<
-      "during interface reconstruction\n\n";
 
   std::cout << "--mesh_min (default = 0.): " <<
       "coordinates (same in x, y, and z) of the lower corner of a mesh\n" <<
@@ -140,15 +126,16 @@ int print_usage() {
 
   std::cout << "--output_meshes (default = y)\n";
   std::cout << "  If 'y', the source and target meshes are output with the " <<
-      "remapped field attached as input.exo and output.exo, \n" <<
-      "and interface reconstruction results are output as source_mm.gmv and target_mm.gmv \n\n";
+      "remapped field attached as input.exo and output.exo \n\n";
   
 #if ENABLE_TIMINGS
   std::cout << "--only_threads (default = n)\n";
   std::cout << " enable if you want to profile only threads scaling\n\n";
+  std::cout << " NOT APPLICABLE FOR CONVERGENCE STUDY \n\n";
 
   std::cout << "--scaling (default = strong)\n";
   std::cout << " specify the scaling study type [strong|weak]\n\n";
+  std::cout << " NOT APPLICABLE FOR CONVERGENCE STUDY \n\n";
 #endif
 
   std::cout << "--field_filename\n\n";
@@ -166,8 +153,6 @@ int print_usage() {
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
  			   double& delta,
-                           bool source_convex_cells,
-                           bool target_convex_cells,
                            Portage::Limiter_type limiter,
                            Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
@@ -209,7 +194,6 @@ int main(int argc, char** argv) {
 
   int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2; //dim 2 or 3 is currently supported 
-  bool source_convex_cells = true, target_convex_cells = true;
   std::string field_expression;
   std::string srcfile, trgfile;  // No default
   std::string field_filename="";  // No default;
@@ -243,14 +227,10 @@ int main(int argc, char** argv) {
     if (keyword == "dim") {
       dim = stoi(valueword);
       assert(dim == 2 || dim == 3);
-    } else if (keyword == "nsourcecells")
+    } else if (keyword == "ncells") {
       nsourcecells = stoi(valueword);
-    else if (keyword == "ntargetcells")
-      ntargetcells = stoi(valueword);
-    else if (keyword == "source_convex_cells")
-      source_convex_cells = (valueword == "y");
-    else if (keyword == "target_convex_cells")
-      target_convex_cells = (valueword == "y");
+      ntargetcells = nsourcecells; 
+    }
     else if (keyword == "source_file")
       srcfile = valueword;
     else if (keyword == "target_file")
@@ -309,12 +289,6 @@ int main(int argc, char** argv) {
   }
 
   // Some input error checking
-  if (nsourcecells > 0 && (nsourcecells != ntargetcells)) {
-    std::cout << "Internally generated source and target mesh needs to be of the same size \n\n";
-    print_usage();
-    MPI_Abort(MPI_COMM_WORLD, -1);
-  }
-
   if (nsourcecells > 0 && srcfile.length() > 0) {
     std::cout << "Cannot request internally generated source mesh "
               << "(--nsourcecells) and external file read (--source_file)\n\n";
@@ -322,7 +296,7 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!nsourcecells && srcfile.length() == 0) {
-    std::cout << "Must specify one of the two options --nsourcecells "
+    std::cout << "Must specify one of the two options --ncells "
               << "or --source_file\n";
     print_usage();
     MPI_Abort(MPI_COMM_WORLD, -1);
@@ -335,7 +309,7 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
   if (!ntargetcells && trgfile.length() == 0) {
-    std::cout << "Must specify one of the two options --ntargetcells "
+    std::cout << "Must specify one of the two options --ncells "
               << "or --target_file\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
@@ -455,7 +429,6 @@ int main(int argc, char** argv) {
     switch (dim) {
       case 2:
         run<2> (source_mesh, target_mesh, delta, 
-                source_convex_cells, target_convex_cells,
                 limiter, bnd_limiter, interp_order, 
                 field_expression,
                 field_filename, mesh_output,
@@ -463,7 +436,6 @@ int main(int argc, char** argv) {
         break;
       case 3:
         run<3> (source_mesh, target_mesh, delta, 
-                source_convex_cells, target_convex_cells,
                 limiter, bnd_limiter, interp_order, 
                 field_expression,
                 field_filename, mesh_output,
@@ -509,34 +481,26 @@ int main(int argc, char** argv) {
 void write_field(std::string filename, 
     const Wonton::Jali_Mesh_Wrapper& meshWrapper, 
     const Wonton::Jali_State_Wrapper& stateWrapper,
-    std::string field_name="cellmatdata"){
+    std::string field_name="density"){
   
   // open the stream
   std::ofstream f(filename);
   
-  // get the number of materials in the problem frm the state manager
-  int nmats=stateWrapper.num_materials();
+  double const *data;
+  stateWrapper.mesh_get_data<double>(Portage::CELL, field_name,
+					&data);
   
-  // loop over materials since we are material dominant
-  for (int m = 0; m < nmats;  ++m) {
-  
-    // get the material cells
-    std::vector<int> matcells;
-    stateWrapper.mat_get_cells(m, &matcells);
-
-    // get the field values
-    double const *data;
-    stateWrapper.mat_get_celldata(field_name, m, &data);
+  // get number of owned cells
+  const int ncells = meshWrapper.num_owned_cells();
     
-    // write a line for each cell (using global id) for each material
-    for (int ic = 0; ic < matcells.size(); ic++) {
-      f << meshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL)
-      << " " << m << " " 
-      << std::fixed
-      << std::setprecision(16) 
-      << data[ic]<< "\n";
+  // write a line for each cell (using global id) 
+  for (int ic = 0; ic < ncells; ic++) {
+    f << meshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL)
+    << " "  
+    << std::fixed
+    << std::setprecision(16) 
+    << data[ic]<< "\n";
     }    
-  }
   
   // close the stream
   f.close();
@@ -549,8 +513,6 @@ void write_field(std::string filename,
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            std::shared_ptr<Jali::Mesh> targetMesh,
  			   double& delta,
-                           bool source_convex_cells,
-                           bool target_convex_cells,
                            Portage::Limiter_type limiter,
                            Portage::Boundary_Limiter_type bnd_limiter,
                            int interp_order,
@@ -824,7 +786,6 @@ else if (dim == 3) {
   double minin =  1.0e50, minout =  1.0e50;
   double maxin = -1.0e50, maxout = -1.0e50;
   double err_l1 = 0.;
-  double err_norm = 0.;
   double target_mass = 0.;
   double source_mass = 0.;
   double totvolume = 0. ;
@@ -850,30 +811,28 @@ else if (dim == 3) {
     // Cell error computation
     Portage::Point<dim> ccen;
     for (int c = 0; c < ntarcells; ++c) {
-      targetMeshWrapper.cell_centroid(c, &ccen);
-      error = source_field(ccen) - cellvecout[c];
-      targetData[c] = cellvecout[c];
-      minout = fmin( minout, cellvecout[c] );
-      maxout = fmax( maxout, cellvecout[c] );
-      double cellvol = targetMeshWrapper.cell_volume(c);
-      err_l1 += fabs(error)*cellvol;
-      err_norm  += fabs( cellvecout[c] ) * cellvol;
-      target_mass += cellvecout[c] * cellvol;
+      if (targetMeshWrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
 
-      if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
-	double cellvol = targetMeshWrapper.cell_volume(c);
-	totvolume += cellvol;
-	L1_error += fabs(error)*cellvol;
-	L2_error += error*error*cellvol;
-      }
-      if (ntarcells < 10) {
-	std::printf("Rank %d\n", rank);
-	std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
-		    ccen[0], ccen[1]);
-	std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
-		    cellvecout[c], error);
-      }
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        double cellvol = targetMeshWrapper.cell_volume(c);
+        targetData[c] = cellvecout[c];
+        minout = fmin( minout, cellvecout[c] );
+        maxout = fmax( maxout, cellvecout[c] );
+        error = source_field(ccen) - cellvecout[c];
+        L1_error += fabs(error)*cellvol;
+        L2_error += error*error*cellvol;
+        totvolume += cellvol;
+        target_mass += cellvecout[c]*cellvol;
+
+	if (ntarcells < 10) {
+	  std::printf("Rank %d\n", rank);
+	  std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
+		      ccen[0], ccen[1]);
+	  std::printf("  Value = % 10.6lf  L2 Err = % lf\n",
+		      cellvecout[c], error);
+	}
     }
+  }
 
   if (numpe > 1) {
     std::cout << std::flush << std::endl;
@@ -889,11 +848,10 @@ else if (dim == 3) {
   err_norm = err_l1 / err_norm;
   L2_error = sqrt(L2_error);
   
-  std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", L1_error);
-  std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", L2_error);
+  std::printf("\n\nL1 NORM OF ERROR  = %lf\n", L1_error);
+  std::printf("L2 NORM OF ERROR  = %lf\n\n", L2_error);
   std::printf("===================================================\n");
   std::printf("ON RANK %d\n", rank);
-  std::printf("Relative L1 error = %.5e \n", err_norm);
   std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
   std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
   std::printf("Source total mass = %.15e \n", source_mass);
