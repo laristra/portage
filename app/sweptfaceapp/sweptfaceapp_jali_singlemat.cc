@@ -496,7 +496,7 @@ void write_field(std::string filename,
   // write a line for each cell (using global id) 
   for (int ic = 0; ic < ncells; ic++) {
     f << meshWrapper.get_global_id(ic, Wonton::Entity_kind::CELL)
-    << " "  
+    << "  1  " 
     << std::fixed
     << std::setprecision(16) 
     << data[ic]<< "\n";
@@ -786,6 +786,7 @@ else if (dim == 3) {
   double minin =  1.0e50, minout =  1.0e50;
   double maxin = -1.0e50, maxout = -1.0e50;
   double err_l1 = 0.;
+  double err_norm = 0.;
   double target_mass = 0.;
   double source_mass = 0.;
   double totvolume = 0. ;
@@ -824,6 +825,9 @@ else if (dim == 3) {
         totvolume += cellvol;
         target_mass += cellvecout[c]*cellvol;
 
+        err_l1 += fabs(error)*cellvol;
+        err_norm  += fabs( cellvecout[c] ) * cellvol;
+
 	if (ntarcells < 10) {
 	  std::printf("Rank %d\n", rank);
 	  std::printf("Cell=% 4d Centroid = (% 8.5lf,% 8.5lf)", c,
@@ -852,6 +856,7 @@ else if (dim == 3) {
   std::printf("L2 NORM OF ERROR  = %lf\n\n", L2_error);
   std::printf("===================================================\n");
   std::printf("ON RANK %d\n", rank);
+  std::printf("Relative L1 error = %.5e \n", err_norm);
   std::printf("Source min/max    = %.15e %.15e \n", minin, maxin);
   std::printf("Target min/max    = %.15e %.15e \n", minout, maxout);
   std::printf("Source total mass = %.15e \n", source_mass);
