@@ -945,10 +945,11 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh, double& delta)
     std::array<double, dim> coords;
     mesh->node_get_coordinates(i, &coords);
  
-    if (ntarnodes <= 20)  
+    if (ntarnodes <= 20) {  
      std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]
 	      <<", "<<coords[1]<<"}"<<std::endl;
-    
+    }
+
     if (!node_on_bnd[i]) {
       
       coords[0] = coords[0] + det; 
@@ -957,10 +958,11 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh, double& delta)
      
       mesh->node_set_coordinates(i, &coords[0]);      
    
-      if (ntarnodes <= 20)  
+      if (ntarnodes <= 20) {  
         mesh->node_get_coordinates(i, &coords);
         std::cout<<"Target Node = "<<i<<" Modified Coords = {"<< coords[0]
 	         <<", "<< coords[1]<<"}"<<std::endl;
-    } 
+      } 
+    }
   }
 }

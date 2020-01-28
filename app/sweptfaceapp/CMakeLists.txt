@@ -67,8 +67,8 @@ if (ENABLE_MPI)
     endif (Jali_DIR)
   endif(ENABLE_PROFILE)
 
-#  if (ENABLE_APP_TESTS)
-#    add_subdirectory(test)
-#  endif (ENABLE_APP_TESTS)
+  if (ENABLE_APP_TESTS)
+    add_subdirectory(test)
+  endif (ENABLE_APP_TESTS)
 
 endif (ENABLE_MPI)
