@@ -56,7 +56,7 @@ public:
       source_state_wrapper(*source_state),
       target_state_wrapper(*target_state)
   {
-    num_tols.use_default();
+    num_tols.use_default<3>();
   }
 
   /**

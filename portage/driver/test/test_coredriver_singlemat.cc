@@ -86,7 +86,7 @@ TEST(CellDriver, 2D_2ndOrder) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchKDTree>();
@@ -183,7 +183,7 @@ TEST(CellDriver, 3D_2ndOrder) {
         targetMeshWrapper, targetStateWrapper, &executor);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<3>();
   d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchKDTree>();

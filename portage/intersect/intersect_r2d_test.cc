@@ -33,7 +33,7 @@ TEST(intersectR2D, simple1) {
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<2>();
 
   Portage::IntersectRND<2>::Intersect<Portage::Entity_kind::CELL,
                                       Wonton::Simple_Mesh_Wrapper,

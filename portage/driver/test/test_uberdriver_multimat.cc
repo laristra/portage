@@ -249,7 +249,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
@@ -623,7 +623,7 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
         targetMeshWrapper, targetStateWrapper, &executor);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<3>();
   d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
@@ -989,7 +989,7 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
@@ -1338,7 +1338,7 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
         targetMeshWrapper, targetStateWrapper, &executor);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<3>();
   d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();

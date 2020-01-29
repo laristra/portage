@@ -25,6 +25,7 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <limits>
 
 #endif
 
@@ -170,30 +171,28 @@ struct NumericTolerances_t {
     // error.
     double minimal_intersection_volume      = error_value_;
 
-    // Relative distance tolerance for a bounding box check.
-    double intersect_bb_relative_distance   = error_value_;
+    // Distance tolerance: two points within that distance from each
+    // other are considered coincident. Used for bounding box check
+    // in Portage intersect and passed to Tangram in multi-material runs
+    double min_absolute_distance            = error_value_;
 
-    // Intersection elements with a relative volume smaller than
-    // this value are skipped in interpolate.
-    double min_relative_volume              = error_value_;
-
-    // Minimal polytope volume for swept regions
+    // Volume tolerance: intersections and material polytopes with
+    // the volume below this tolerance are ignored. In multi-material
+    // runs this tolerance is passed to Tangram. Target multi-material 
+    // cells will not contain any material with volume below tolerance,
+    // interface reconstruction results on the source mesh will not
+    // contain material polytopes for materials with volume below this
+    // tolerance.
     double min_absolute_volume              = error_value_;
 
-    // Check that the relative volume of a material we are adding to
-    // a cell is not miniscule. If the relative volume is smaller
-    // that this value, the material is not added to the cell.
-    double driver_relative_min_mat_vol      = error_value_;
-
+    template <int D>
     void use_default()
     {
         tolerances_set                  =   true;
         polygon_convexity_eps           =  1e-14;
         minimal_intersection_volume     = -1e-14;
-        intersect_bb_relative_distance  =  1e-12;
-        min_relative_volume             =  1e-12;
-        min_absolute_volume             =  1e-12;
-        driver_relative_min_mat_vol     =  1e-10;
+        min_absolute_distance           =  sqrt(D)*std::numeric_limits<double>::epsilon();
+        min_absolute_volume             =  std::numeric_limits<double>::epsilon();
     }
 
     private:

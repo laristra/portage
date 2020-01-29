@@ -405,15 +405,21 @@ class UberDriver {
 
 #ifdef HAVE_TANGRAM
   /*!
-    @brief set tolerances and options for interface reconstructor driver  
-    @param tols The vector of tolerances for each moment during reconstruction
-    @param all_convex Should be set to false if the source mesh contains 
-    non-convex cells.  
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
   */
-  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
-                                 bool all_convex) {
-    core_driver_serial_[CELL]->set_interface_reconstructor_options(tols,
-                                                                   all_convex);
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(all_convex, tols);
   }
 
 #endif

@@ -370,7 +370,6 @@ namespace Portage {
        * contribution of the source cell is its field value weighted by
        * its "weight" (in this case, its 0th moment/area/volume).
        */
-      double volume = target_mesh_.cell_volume(cell_id);
       int nb_summed = 0;
 
       // Loop over source cells
@@ -380,7 +379,7 @@ namespace Portage {
         auto intersect_weights = current.weights;
         double intersect_volume = intersect_weights[0];
 
-        if (fabs(intersect_volume / volume) <= num_tols_.min_relative_volume)
+        if (fabs(intersect_volume) <= num_tols_.min_absolute_volume)
           continue;  // no intersection
 
         // Obtain source cell centroid
@@ -655,7 +654,6 @@ namespace Portage {
 
       // contribution of the source cell is its field value weighted by
       // its "weight" (in this case, its 0th moment/area/volume)
-      double volume = target_mesh_.dual_cell_volume(node_id);
       int nb_summed = 0;
 
       for (auto&& current : sources_and_weights) {
@@ -663,7 +661,7 @@ namespace Portage {
         auto intersect_weights = current.weights;
         double intersect_volume = intersect_weights[0];
 
-        if (fabs(intersect_volume / volume) <= num_tols_.min_relative_volume)
+        if (fabs(intersect_volume) <= num_tols_.min_absolute_volume)
           continue;  // no intersection
 
         // note: here we are getting the node coord, not the centroid of

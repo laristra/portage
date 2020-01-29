@@ -329,12 +329,19 @@ class MMDriver {
 #ifdef HAVE_TANGRAM
   /*!
     @brief set options for interface reconstructor driver  
-    @param tols The vector of tolerances for each moment during reconstruction
     @param all_convex Should be set to false if the source mesh contains 
-    non-convex cells.  
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
   */
-  void set_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
-                                 bool all_convex){
+  void set_reconstructor_options(bool all_convex,
+                                 const std::vector<Tangram::IterativeMethodTolerances_t> &tols = 
+                                   std::vector<Tangram::IterativeMethodTolerances_t>()){
     reconstructor_tols_ = tols; 
     reconstructor_all_convex_ = all_convex; 
   }
@@ -741,8 +748,7 @@ class MMDriver {
   // There is an associated method called set_reconstructor_options
   // that should be invoked to set user-specific values. Otherwise,
   // the remapper will use the default values.
-  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
-  {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_; 
   bool reconstructor_all_convex_ = true;  
 #endif
   
@@ -812,11 +818,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // Use default numerical tolerances in case they were not set earlier
   if (num_tols_.tolerances_set == false) {
     NumericTolerances_t default_num_tols;
-    default_num_tols.use_default();
+    default_num_tols.use_default<D>();
+#ifdef HAVE_TANGRAM
+    if (!reconstructor_tols_.empty()) {
+      default_num_tols.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      default_num_tols.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
+#endif
     set_num_tols(default_num_tols);
   }
-
-
+#ifdef HAVE_TANGRAM
+  if (reconstructor_tols_.empty()) {
+    reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
+                                   num_tols_.min_absolute_volume},
+                            {100, num_tols_.min_absolute_distance,
+                                  num_tols_.min_absolute_distance} }; 
+  }
+#endif
   // Instantiate core driver
 
   Portage::CoreDriver<D, CELL,
@@ -828,8 +846,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   coredriver_cell.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
-  coredriver_cell.set_interface_reconstructor_options(reconstructor_tols_,
-                                                      reconstructor_all_convex_);
+  coredriver_cell.set_interface_reconstructor_options(reconstructor_all_convex_,
+                                                      reconstructor_tols_);
 #endif  
   
   // SEARCH
@@ -1025,11 +1043,23 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // Use default numerical tolerances in case they were not set earlier
   if (num_tols_.tolerances_set == false) {
     NumericTolerances_t default_num_tols;
-    default_num_tols.use_default();
+    default_num_tols.use_default<D>();
+#ifdef HAVE_TANGRAM
+    if (!reconstructor_tols_.empty()) {
+      default_num_tols.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      default_num_tols.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
+#endif
     set_num_tols(default_num_tols);
   }
-
-
+#ifdef HAVE_TANGRAM
+  if (reconstructor_tols_.empty()) {
+    reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
+                                   num_tols_.min_absolute_volume},
+                            {100, num_tols_.min_absolute_distance,
+                                  num_tols_.min_absolute_distance} };
+  }
+#endif
   // Instantiate core driver
 
   Portage::CoreDriver<D, NODE,
@@ -1039,8 +1069,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   coredriver_node.set_num_tols(num_tols_);
 #ifdef HAVE_TANGRAM
-  coredriver_node.set_interface_reconstructor_options(reconstructor_tols_,
-                                                      reconstructor_all_convex_);
+  coredriver_node.set_interface_reconstructor_options(reconstructor_all_convex_,
+                                                      reconstructor_tols_);
 #endif  
   
   // SEARCH

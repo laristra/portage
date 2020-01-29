@@ -118,7 +118,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<2>();
 
   // Create Interpolation object
 
@@ -241,7 +241,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<2>();
 
   // Create Interpolation object
 
@@ -371,7 +371,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<2>();
 
   // Create Interpolation object
 
@@ -491,7 +491,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<3>();
 
   // Create Interpolation object
 
@@ -613,7 +613,7 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<3>();
 
   // Create Interpolation object
 
@@ -743,7 +743,7 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
   // use default tolerances
   Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  num_tols.use_default<3>();
 
   // Create Interpolation object
 

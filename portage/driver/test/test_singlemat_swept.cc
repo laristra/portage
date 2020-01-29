@@ -118,7 +118,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchSweptFace>();
@@ -233,7 +233,7 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
                     target_mesh_wrapper, target_state_wrapper);
 
   Portage::NumericTolerances_t tolerances;
-  tolerances.use_default();
+  tolerances.use_default<3>();
   remapper.set_num_tols(tolerances);
 
   auto candidates = remapper.search<Portage::SearchSweptFace>();

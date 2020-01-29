@@ -249,7 +249,7 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   d.set_remap_var_names(remap_fields);
@@ -598,7 +598,7 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<3>();
   d.set_num_tols(default_num_tols);
 
   d.set_remap_var_names(remap_fields);
@@ -942,7 +942,7 @@ TEST(UberDriver, TwoMat2D_VOF_2ndOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<2>();
   d.set_num_tols(default_num_tols);
 
   d.set_remap_var_names(remap_fields);
@@ -1264,7 +1264,7 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
         targetMeshWrapper, targetStateWrapper);
 
   Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
+  default_num_tols.use_default<3>();
   d.set_num_tols(default_num_tols);
 
   d.set_remap_var_names(remap_fields);
