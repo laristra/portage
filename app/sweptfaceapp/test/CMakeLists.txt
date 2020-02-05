@@ -51,21 +51,29 @@ if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
   ADD_DISTRIBUTED_APPTEST(2 2 5 42 2)
   ADD_DISTRIBUTED_APPTEST(4 2 5 42 2)
 
-  # 2D, constant fields, ro 2, vary number of processors 
+  ## 2D, constant fields, ro 2, vary number of processors 
   ADD_DISTRIBUTED_APPTEST(2 2 5 x+3*y 1)
   ADD_DISTRIBUTED_APPTEST(4 2 5 x+3*y 1)
 
-  # 2D, constant fields, ro 2, vary number of processors 
+  ## 2D, constant fields, ro 2, vary number of processors 
   ADD_DISTRIBUTED_APPTEST(2 2 5 x+3*y 2)
   ADD_DISTRIBUTED_APPTEST(4 2 5 x+3*y 2)
 
-  # 2D, constant fields, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 x*x+3*y*y*y 1)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 x*x+3*y*y* 1)
+  # 3D, constant fields, ro 1, vary number of processors 
+  ADD_DISTRIBUTED_APPTEST(2 3 5 42 1)
+  ADD_DISTRIBUTED_APPTEST(4 3 5 42 1)
+  
+  # 3D, constant fields, ro 2, vary number of processors 
+  ADD_DISTRIBUTED_APPTEST(2 3 5 42 2)
+  ADD_DISTRIBUTED_APPTEST(4 3 5 42 2)
 
-  # 2D, constant fields, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 x*x+3*y*y*y 2)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 x*x+3*y*y* 2)
+  ## 3D, constant fields, ro 2, vary number of processors 
+  ADD_DISTRIBUTED_APPTEST(2 3 5 x+3*y+5*z 1)
+  ADD_DISTRIBUTED_APPTEST(4 3 5 x+3*y+5*z 1)
+
+  ## 3D, constant fields, ro 2, vary number of processors 
+  ADD_DISTRIBUTED_APPTEST(2 3 5 x+3*y+5*z 2)
+  ADD_DISTRIBUTED_APPTEST(4 3 5 x+3*y+5*z 2)
 
 endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
 

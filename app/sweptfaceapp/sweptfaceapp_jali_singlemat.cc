@@ -36,13 +36,10 @@
 #include "JaliState.h"
 
 // Wonton 
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
 // Portage 
-#include "portage/distributed/mpi_bounding_boxes.h"
 #include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -444,7 +441,7 @@ int main(int argc, char** argv) {
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
         MPI_Abort(MPI_COMM_WORLD, -1);
-    }
+    } 
 
     std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
@@ -559,7 +556,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       std::cout << "   Limiter type is " << limiter << "\n";
       std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
     }
-  }
+  } 
 
   // Compute field data on source and add to state manager. 
   user_field_t source_field; 
@@ -579,10 +576,6 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                               Jali::Entity_kind::CELL,
                                               Jali::Entity_type::ALL, 0.0);
 
-  // Executor
-  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
-  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
-
   if (rank == 0) {
     std::cout << "***Registered fieldnames:\n";
     for (auto & field_name: sourceStateWrapper.names()) 
@@ -591,49 +584,21 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   std::vector<std::string> fieldnames;
   fieldnames.push_back("density");
- 
-  if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
-
-  //-------------------------------------------------------------------
-  // The driver is no longer responsible for distributing the mesh.
-  // The calling program is responsible, so we create the flat mesh/state
-  // prior to instantiating the driver distribute here.
-  //-------------------------------------------------------------------
-
-  // create the flat mesh
-  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
-  source_mesh_flat.initialize(sourceMeshWrapper);
-
-  // create the flat state
-  Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
-
-  source_state_flat.initialize(sourceStateWrapper, {"density"});
 
 #if ENABLE_TIMINGS
-  auto tic = timer::now();
-#endif
-
-  // Use a bounding box distributor to send the source cells to the target
-  // partitions where they are needed
-  Portage::MPI_Bounding_Boxes distributor(&mpiexecutor);
-  distributor.distribute(source_mesh_flat, source_state_flat, targetMeshWrapper, targetStateWrapper);
-
-#if ENABLE_TIMINGS
-    profiler->time.redistrib = timer::elapsed(tic);
-    auto ticrm = timer::now();
+  auto  ticrm = timer::now();
 #endif
 
   //Create core driver for remap
   if (dim == 2) {
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-	   Wonton::Flat_Mesh_Wrapper<>, 
-           Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+	   Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
            Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
-           cdriver(source_mesh_flat, source_state_flat, 
-	   targetMeshWrapper, targetStateWrapper, executor); 
-
+           cdriver(sourceMeshWrapper, sourceStateWrapper, 
+	   targetMeshWrapper, targetStateWrapper);
+ 
 #if ENABLE_TIMINGS
-  tic = timer::now();
+  auto  tic = timer::now();
 #endif
 
   //Compute candidate src cells
@@ -689,14 +654,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 }
 else if (dim == 3) {
   Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
-	   Wonton::Flat_Mesh_Wrapper<>, 
-           Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+	   Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
            Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> 
-           cdriver(source_mesh_flat, source_state_flat, 
-	   targetMeshWrapper, targetStateWrapper, executor); 
+           cdriver(sourceMeshWrapper, sourceStateWrapper, 
+	   targetMeshWrapper, targetStateWrapper);
 
 #if ENABLE_TIMINGS
-  tic = timer::now();
+  auto tic = timer::now();
 #endif
 
   //Compute candidate src cells
@@ -755,7 +719,6 @@ else if (dim == 3) {
   // Output some information for the user
 #else
    profiler->time.remap = timer::elapsed(ticrm);
-  //profiler->time.remap += timer::elapsed(tic);
 
   if (rank == 0) {
     std::cout << "Remap Time: " << profiler->time.remap << std::endl;
@@ -793,8 +756,9 @@ else if (dim == 3) {
 
   targetStateWrapper.mesh_get_data<double>(Portage::CELL, "density",
 					&cellvecout);
-  source_state_flat.mesh_get_data<double>(Portage::CELL, "density",
+  sourceStateWrapper.mesh_get_data<double>(Portage::CELL, "density",
 					&cellvecin);
+
   if (numpe == 1 && ntarcells < 10)
    std::cout << "celldata vector on target mesh after remapping is:"
 	     << std::endl;
@@ -805,7 +769,8 @@ else if (dim == 3) {
     for (int c = 0; c < nsrccells; ++c) {
       minin = fmin( minin, cellvecin[c] );
       maxin = fmax( maxin, cellvecin[c] );
-      double cellvol2 = source_mesh_flat.cell_volume(c);
+      //double cellvol2 = source_mesh_flat.cell_volume(c);
+      double cellvol2 = sourceMeshWrapper.cell_volume(c);
       source_mass += cellvecin[c] * cellvol2;
     }
 
@@ -932,37 +897,60 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh, double& delta)
   // the wrappers don't do well when we modify the coordinates after
   // their creation because they end up not updating the centroids
   // in response to the node movement.
-  
-  const int ntarnodes = mesh->num_entities(Jali::Entity_kind::NODE,
-                                           Jali::Entity_type::ALL);
-
+ 
   std::vector<bool> node_on_bnd; 
   find_nodes_on_exterior_boundary(mesh, node_on_bnd);
 
   double det = delta/10; 
-  for (int i = 0; i <ntarnodes; i++)
-  {
-    std::array<double, dim> coords;
-    mesh->node_get_coordinates(i, &coords);
- 
-    if (ntarnodes <= 20) {  
-     std::cout<<"Target Node = "<<i<<" Original Coords = {"<<coords[0]
-	      <<", "<<coords[1]<<"}"<<std::endl;
-    }
 
-    if (!node_on_bnd[i]) {
-      
-      coords[0] = coords[0] + det; 
-      //      coords[1] = coords[1] + det;
-      //coords[1] = coords[1];
-     
-      mesh->node_set_coordinates(i, &coords[0]);      
-   
-      if (ntarnodes <= 20) {  
-        mesh->node_get_coordinates(i, &coords);
-        std::cout<<"Target Node = "<<i<<" Modified Coords = {"<< coords[0]
-	         <<", "<< coords[1]<<"}"<<std::endl;
-      } 
-    }
+  const int ntarcells = mesh->num_entities(Jali::Entity_kind::CELL, 
+		         		   Jali::Entity_type::PARALLEL_OWNED); 
+  // Get unique list of nodes
+  std::set<int> nodes;   
+  for (int i = 0; i < ntarcells; i++)
+  {
+     std::vector<int> cnodes; 
+     mesh->cell_get_nodes(i, &cnodes); 
+     for (int j = 0; j < cnodes.size(); j++){  
+      nodes.insert(cnodes[j]); 
+     } 
+
   }
+
+  const int ntarnodes = nodes.size(); 
+  for (auto n = nodes.begin(); n != nodes.end(); n++)
+  {
+        if (!node_on_bnd[*n]) {
+	 std::array<double, dim> coords;
+	 mesh->node_get_coordinates(*n, &coords);
+ 
+	 if (ntarnodes <= 20) {  
+	   if (dim == 2) {
+	    std::cout<<"Target Node = "<<*n<<" Original Coords = {"<<coords[0]
+		     <<", "<<coords[1]<<"}"<<std::endl;
+	   }
+ 
+	   if (dim == 3) {
+	    std::cout<<"Target Node = "<<*n<<" Original Coords = {"<<coords[0]
+		    <<", "<<coords[1]<<", "<<coords[2]<<"}"<<std::endl;
+	   }  
+	 }
+      
+	 coords[0] = coords[0] + det; 
+         mesh->node_set_coordinates(*n, &coords[0]);      
+   
+	 if (ntarnodes <= 20) {  
+	   mesh->node_get_coordinates(*n, &coords);
+	   if (dim == 2) {
+	    std::cout<<"Target Node = "<<*n<<" Modified Coords = {"<<coords[0]
+		     <<", "<<coords[1]<<"}"<<std::endl;
+	   }
+ 
+	   if (dim == 3) {
+	     std::cout<<"Target Node = "<<*n<<" Modified Coords = {"<<coords[0]
+		      <<", "<<coords[1]<<", "<<coords[2]<<"}"<<std::endl;
+	   }  
+	 }
+       }
+   }   
 }

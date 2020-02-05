@@ -442,6 +442,10 @@ namespace Portage {
      */
     std::vector<Weights_t> operator()(int target_id,
                                       std::vector<int> const& stencil) const {
+      //DBG
+      std::cout<<"tarid = "<<target_id<<std::endl;
+
+
       // convenience function to check if a given cell is within the stencil.
       auto in_stencil = [&](int cell) -> bool {
         return std::find(stencil.begin(), stencil.end(), cell) != stencil.end();

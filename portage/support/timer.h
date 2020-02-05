@@ -112,11 +112,12 @@ public:
   inline bool dump() {
 
     // save timing for each step
-    constexpr int const nsteps = 8;
+    constexpr int const nsteps = 9;
     constexpr float const time_eps = 1.E-4;
 
     float const elap[nsteps] = {
       std::max(time_eps, time.mesh_init),
+      std::max(time_eps, time.redistrib),
       std::max(time_eps, time.interface),
       std::max(time_eps, time.search),
       std::max(time_eps, time.intersect),
@@ -136,13 +137,14 @@ public:
 
     std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
     std::printf("= %2d %% mesh initialization     (%6.3f s).\n", time_ratio[0], elap[0]);
-    std::printf("= %2d %% interface recontruction (%6.3f s).\n", time_ratio[1], elap[1]);
-    std::printf("= %2d %% search                  (%6.3f s).\n", time_ratio[2], elap[2]);
-    std::printf("= %2d %% intersect               (%6.3f s).\n", time_ratio[3], elap[3]);
-    std::printf("= %2d %% gradient                (%6.3f s).\n", time_ratio[4], elap[4]);
-    std::printf("= %2d %% interpolate             (%6.3f s).\n", time_ratio[5], elap[5]);
-    std::printf("= %2d %% mismatch                (%6.3f s).\n", time_ratio[6], elap[6]);
-    std::printf("= %2d %% remapping               (%6.3f s).\n", time_ratio[7], elap[7]);
+    std::printf("= %2d %% mesh redistribution     (%6.3f s).\n", time_ratio[1], elap[1]);
+    std::printf("= %2d %% interface recontruction (%6.3f s).\n", time_ratio[2], elap[2]);
+    std::printf("= %2d %% search                  (%6.3f s).\n", time_ratio[3], elap[3]);
+    std::printf("= %2d %% intersect               (%6.3f s).\n", time_ratio[4], elap[4]);
+    std::printf("= %2d %% gradient                (%6.3f s).\n", time_ratio[5], elap[5]);
+    std::printf("= %2d %% interpolate             (%6.3f s).\n", time_ratio[6], elap[6]);
+    std::printf("= %2d %% mismatch                (%6.3f s).\n", time_ratio[7], elap[7]);
+    std::printf("= %2d %% remapping               (%6.3f s).\n", time_ratio[8], elap[8]);
     std::fflush(stdout);
 
     std::printf("Exporting stats to '%s' ... ", path.data());
