@@ -594,14 +594,6 @@ void remap<2>(std::string field, int nb_parts,
           field, field, weights, current_part
         );
               
-        // test for mismatch and compute volumes
-        current_part->check_mismatch(weights);
-
-        if (current_part->has_mismatch())
-          current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
-          params.tolerance, params.fix_iter,
-          params.partial_fixup, params.empty_fixup);
-
       break;
 
       case 2: *gradients = remapper.compute_source_gradient(field, params.limiter,
@@ -612,27 +604,21 @@ void remap<2>(std::string field, int nb_parts,
           field, field, weights, current_part, gradients
         );
         
-        // test for mismatch and compute volumes
-        current_part->check_mismatch(weights);
-
-        if (current_part->has_mismatch())
-          current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
-          params.tolerance, params.fix_iter,
-          params.partial_fixup, params.empty_fixup);
-
       break;
 
       default: throw std::runtime_error("wrong remap order");
     }
+    
+    if (current_part->has_mismatch())
+      current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
+                                 params.tolerance, params.fix_iter,
+                                 params.partial_fixup, params.empty_fixup);
+
   };
 
   for (int i = 0; i < nb_parts; ++i) {
+  
     // compute volumes of intersection and test for parts boundaries mismatch.
-    // DWS: I would have made this comment in the PR had I known enough at the
-    // time, but I don't like the name "check_mismatch". A function with that 
-    // name should be used as a boolean. The usage below is strictly for its side
-    // effects. The vanilla MismatchFixer computes the side effects as part of
-    // the constructor. I would do the same with PartPair or rename this function.
     parts_manager[i].check_mismatch(weights);
 
     // interpolate field for each part and fix partially filled or empty cells.
@@ -702,34 +688,25 @@ void remap<3>(std::string field, int nb_parts,
           field, field, weights, current_part
         );
               
-        // test for mismatch and compute volumes
-        current_part->check_mismatch(weights);
-
-        if (current_part->has_mismatch())
-          current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
-          params.tolerance, params.fix_iter,
-          params.partial_fixup, params.empty_fixup);
-
-      case 2: gradients = remapper.compute_source_gradient(field, params.limiter,
-                                                           params.bnd_limiter,0,
-                                                           &(current_part->source()));
+      case 2: 
+      
+        gradients = remapper.compute_source_gradient(field, params.limiter,
+                                                     params.bnd_limiter,0,
+                                                     &(current_part->source()));
 
         remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
           field, field, weights, current_part, &gradients
         );
         
-        // test for mismatch and compute volumes
-        current_part->check_mismatch(weights);
-
-        if (current_part->has_mismatch())
-          current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
-          params.tolerance, params.fix_iter,
-          params.partial_fixup, params.empty_fixup);
-
       break;
 
       default: throw std::runtime_error("wrong remap order");
     }
+    
+    if (current_part->has_mismatch())
+      current_part->fix_mismatch(field, field, lower_bound, upper_bound, 
+      params.tolerance, params.fix_iter,
+      params.partial_fixup, params.empty_fixup);
   };
 
   for (int i = 0; i < nb_parts; ++i) {
