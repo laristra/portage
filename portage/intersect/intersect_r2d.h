@@ -75,7 +75,7 @@ class IntersectR2D {
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 
@@ -86,8 +86,8 @@ class IntersectR2D {
 
   std::vector<Weights_t>
   operator() (const int tgt_entity, const std::vector<int> src_entities) const {
-    std::cerr << "IntersectR3D not implemented for this entity type" <<
-        std::endl;
+    std::cerr << "IntersectR3D not implemented for this entity type" << std::endl;
+    return std::vector<Weights_t>(0);
   }
 
   IntersectR2D() = delete;
@@ -151,7 +151,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 
@@ -305,7 +305,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 

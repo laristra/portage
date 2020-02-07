@@ -10,6 +10,7 @@
     "kind": "cell",
     "order": 1,
     "limiter": false,
+    "bnd_limiter": false,
     "fixup": {
       "partial": "shifted_conservative",
       "empty": "extrapolate",

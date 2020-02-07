@@ -13,7 +13,7 @@ set -x
 
 DATA_DIR=.
 
-${TESTAPPDIR}/portageapp_multimat_jali \
+mpirun -np 1 ${TESTAPPDIR}/portageapp_multimat_jali \
     --dim=2 \
     --source_file=reg10x10.exo \
     --target_file=polymesh_10x10.exo \

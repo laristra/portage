@@ -232,14 +232,14 @@ class MSM_Driver {
       }
     }
 #endif
-    
+#ifdef ENABLE_DEBUG
     if (comm_rank == 0) std::printf("in MSM_Driver::run()...\n");
 
     int numTargetCells = target_mesh_.num_owned_cells();
     std::cout << "Number of target cells in target mesh on rank "
               << comm_rank << ": "
               << numTargetCells << std::endl;
-
+#endif
     int nvars = source_remap_var_names_.size();
 
     float tot_seconds = 0.0, tot_seconds_srch = 0.0,
@@ -495,9 +495,10 @@ class MSM_Driver {
     gettimeofday(&end_timeval, 0);
     timersub(&end_timeval, &begin_timeval, &diff_timeval);
     tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
+#if ENABLE_DEBUG
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << comm_rank << " (s): " <<
         tot_seconds << std::endl;
+#endif
   }
 
 

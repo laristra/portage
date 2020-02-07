@@ -125,7 +125,6 @@ class MismatchFixer {
                 SourceState_Wrapper const& source_state,
                 TargetMesh_Wrapper const& target_mesh,
                 TargetState_Wrapper & target_state,
-                Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights,
                 Wonton::Executor_type const *executor) :
       source_mesh_(source_mesh), source_state_(source_state),
       target_mesh_(target_mesh), target_state_(target_state) {
@@ -140,6 +139,20 @@ class MismatchFixer {
     }
 #endif
 
+  }  // MismatchFixer
+
+
+
+
+  /// @brief Compute (and cache) whether the mesh domains are mismatched
+  /// @param[in] sources_and_weights Intersection sources and moments (vols, centroids)
+  /// @returns whether the mesh domains are mismatched
+  bool check_mismatch(
+    Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
+    
+    // If we have already computed the mismatch, just return the result
+    if (computed_mismatch_) return mismatch_;
+    
     nsourceents_ = (onwhat == Entity_kind::CELL) ?
         source_mesh_.num_owned_cells() : source_mesh_.num_owned_nodes();
 
@@ -304,7 +317,10 @@ class MismatchFixer {
 
     }
 
-    if (!mismatch_) return;
+    // set whether we have computed the mismatch (before any return)
+    computed_mismatch_ = true;
+    
+    if (!mismatch_) return mismatch_;
 
 
     // Discrepancy between intersection volume and source mesh volume PLUS
@@ -328,6 +344,8 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
+#ifdef ENABLE_DEBUG
+
     int global_nempty = nempty;
 #ifdef PORTAGE_ENABLE_MPI
     if (distributed_) {
@@ -338,7 +356,7 @@ class MismatchFixer {
     }
 #endif
     
-    if (global_nempty && rank_ == 0) {
+    if (rank_ == 0 && global_nempty) {
       if (onwhat == Entity_kind::CELL)
         std::cerr << "One or more target cells are not covered by " <<
             "ANY source cells.\n" <<
@@ -348,6 +366,7 @@ class MismatchFixer {
             "ANY source dual cells.\n" <<
             " Will assign values based on their neighborhood\n";
     }
+#endif
     
     if (nempty) {
       layernum_.resize(ntargetents_, 0);
@@ -367,7 +386,12 @@ class MismatchFixer {
             target_mesh_.cell_get_node_adj_cells(ent, Entity_type::ALL, &nbrs);
           else
             target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
-          for (int nbr : nbrs)
+          for (int nbr : nbrs) {
+            if ((onwhat == Entity_kind::CELL &&
+                 target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED) ||
+                (onwhat == Entity_kind::NODE &&
+                 target_mesh_.node_get_type(nbr) != Entity_type::PARALLEL_OWNED))
+              continue;
             if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
               // At least one neighbor has some material or will
               // receive some material (indicated by having a +ve
@@ -376,6 +400,7 @@ class MismatchFixer {
               curlayerents.push_back(ent);
               break;
             }
+          }
         }  // for (ent in emptyents)
 
         // Tag the current layer cells with the next layer number
@@ -387,15 +412,21 @@ class MismatchFixer {
         nlayers++;
       }
     }  // if nempty
-
-  }  // MismatchFixer
-
-
-
-
-  // has this problem been found to have mismatched mesh boundaries?
-
-  bool has_mismatch() const {return mismatch_;}
+    
+    return mismatch_;  
+  }
+  
+  
+  /// @brief Return whether the mesh domains are mismatched
+  ///    (must be called after check_mismatch)
+  /// @returns whether the mesh domains are mismatched
+  bool has_mismatch() const {
+  
+    // make sure we have already computed the mismatch
+    assert(computed_mismatch_ && "check_mismatch must be called first!");
+      
+    return mismatch_;
+  }
 
 
 
@@ -442,6 +473,9 @@ class MismatchFixer {
                     Empty_fixup_type::EXTRAPOLATE) {
 
 
+    // make sure we have already computed the mismatch
+    assert(computed_mismatch_ && "check_mismatch must be called first!");
+      
     if (source_state_.field_type(onwhat, src_var_name) ==
         Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
@@ -750,6 +784,7 @@ class MismatchFixer {
   int rank_ = 0, nprocs_ = 1;
   double voldifftol_ = 1e2*std::numeric_limits<double>::epsilon();
   bool distributed_ = false;
+  bool computed_mismatch_ = false;
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif

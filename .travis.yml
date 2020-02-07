@@ -8,8 +8,6 @@ services:
 dist: xenial
 
 env:
-  global:
-    - secure: "WEd3rDHOotVYHgyb90sQ/wrtY8h3xba99+5XYAz5Xd/R74dAfP0Tk0VmOq1SKanLtLSeo1EGRA/UiGvStge2cE8UL7y0MLuzfGvp8VTZDuqWJSyLehDiuXI3Jz8kmHMJzsBCbgMFrqqOGCyv8rLGE0Ydg/+AJiBgqZVbJ0SO+K7a4F0e6bcRaTZlLcCa/dNh3g66DwjRbHkrtV94zPzysN4rTgxwxtkgfcpaBtg3SF3JeDq8yNgtH+OcqKMNRWqMYfjjotHEqALWuQUuAvFiOxjDJCkxjTr2Tr7ybHtPi+ACEq0aqWHjGmbZgwyJucYaIiTMVkDiso4E7IjaOPWlmLkyh9o8l6XyCtpMXxs7ytRPxskYxhJrxF8jBwmQaztz+SzNld220oyJEBlxGeAHRxvYHcFTo+Ghm7WiXCQ0iC65y3g+oyHERVUKP3wH2xuvzMPv6/Re3iTFTXN/uOh/Scz0F1tcdVjtnvwI/JhtBBMWDFbydQNXln/r4rKeEHXp+7o9D5QekR7rna0Y+DfB+Mt7oum//yBDP9KhAPfI9cbCSEyN6akHFl0XqZlaQhUzEquhFl/EqxQiSVJJ1BCv7sFfWaswzzbWHC4K7OzWqIJKKWrq/bFqtTxXBzy3oUB1AobIszHeAphEP/U34Y6qTskUnG8w8uh4s6FVAhzX5jY="
   matrix:
     - MPI=OFF DOCS=true
     - MPI=ON DOCKERHUB=true
@@ -29,6 +27,9 @@ script:
                  --build-arg DOCS=${DOCS}
                  -t ${TRAVIS_REPO_SLUG}:latest ${HOME}/docker/
 
+before_install:
+  - openssl aes-256-cbc -K $encrypted_8c527b4ea4e2_key -iv $encrypted_8c527b4ea4e2_iv -in github_deploy_key.enc -out github_deploy_key -d
+
 after_success:
   - if [[ ${DOCKERHUB} = true && ${DOCKER_USERNAME} && ${DOCKER_PASSWORD} && ${TRAVIS_PULL_REQUEST} == false && ${TRAVIS_BRANCH} == master ]]; then
       docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
@@ -38,12 +39,13 @@ after_success:
       cd ${HOME}/docker/portage;
       CON=$(docker run -d ${TRAVIS_REPO_SLUG}:latest) && docker cp ${CON}:/home/portage/portage/build/doc . ;
     fi
-    
+
 deploy:
-  provider: pages
+  provider: pages:git
   edge: true # opt into version 2 of the dpl
-  github_token: $DOCTR_DEPLOY_ENCRYPTION_KEY_LARISTRA_PORTAGE
+  deploy_key: github_deploy_key
   local_dir: doc/doxygen/html
   verbose: true
   on:
-    condition: ${DOCS} && -d doc/doxygen/html
+    tags: true  # only build on tagged versions
+    condition:  ${DOCS} && -d doc/doxygen/html

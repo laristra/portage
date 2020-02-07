@@ -215,7 +215,6 @@ std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
     long int seed;
     if (rand_seed == 0) {
       seed = get_seed();
-      std::cout << "seed is " << seed << std::endl;
     } else {
       seed = rand_seed;
     }

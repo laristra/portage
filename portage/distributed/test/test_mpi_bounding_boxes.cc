@@ -190,19 +190,6 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
 
-  // Source mesh
-  // NOTE:  The gid's of the source mesh are as follows:
-  //   5  7 13 15
-  //   4  6 12 14
-  //   1  3  9 11
-  //   0  2  8 10
-  // It's tricky to reason from gid's to geometry, so in several
-  // places I'll use the "cartesian id" or "cid" instead:
-  //   3  7 11 15
-  //   2  6 10 14
-  //   1  5  9 13
-  //   0  4  8 12
-  // This is computed by swapping the middle 2 bits of the 4-bit gid.
   std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
   Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
 
@@ -285,32 +272,11 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   // Reference List of owned cells on each rank after distribution
   std::vector<Wonton::GID_t> expOwnedCellGids[4] =
-  {{0,1,2,3,4,6,8,9,12},
-   {0,1,2,3,4,5,6,7,8,9,12,13},
-   {0,1,2,3,4,6,8,9,10,11,12,14},
+  {{0,1,2,4,5,6,8,9,10},
+   {0,1,2,3,4,5,6,7,8,9,10,11},
+   {0,1,2,4,5,6,8,9,10,12,13,14},
    {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}};
 
-  // Check coordinates
-  // List coordinates of cell 0 - others are equal to this
-  // with a shift
-  std::vector<Wonton::Point<2>> cell0Coords =
-    {{0.0, 0.0},  {0.25, 0.0},  {0.25, 0.25},  {0.0, 0.25}};
-  // List owned cells that should have been sent to each rank
-  std::vector<Wonton::GID_t> expOwnedGids;
-  switch (commRank) {
-    case 0:
-      expOwnedGids = {0, 1, 2, 3};
-      break;
-    case 1:
-      expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7};
-      break;
-    case 2:
-      expOwnedGids = {0, 1, 2, 3, 8, 9, 10, 11};
-      break;
-    case 3:
-      expOwnedGids = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
-      break;
-  }
   // Check global IDs
   std::vector<Wonton::GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
   std::vector<Wonton::GID_t> cell_gids_sorted = cell_gids;
@@ -319,42 +285,28 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   for (int c=0; c<num_cells; ++c)
     ASSERT_EQ(expOwnedCellGids[commRank][c], cell_gids_sorted[c]);
 
-  for (int c=0; c<num_cells; ++c) {
-    std::vector<Wonton::Point<2>> myCoords;
-    source_mesh_flat.cell_get_coordinates(c, &myCoords);
-    ASSERT_EQ(4, myCoords.size());
-    Wonton::GID_t gid = cell_gids[c];
-    int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
-    double dx = (cid / 4) * 0.25;
-    double dy = (cid % 4) * 0.25;
-    for (int n=0; n<4; ++n) {
-      ASSERT_EQ(cell0Coords[n][0] + dx, myCoords[n][0]);
-      ASSERT_EQ(cell0Coords[n][1] + dy, myCoords[n][1]);
-    }
-  }
-
    //Reference list of vertices
    std::vector<Wonton::Point<2>> ref_nodes =
-   {{0.0, 0.0}, {0.25, 0.0}, {0.5, 0.0}, {0.0, 0.25}, {0.25, 0.25},
-    {0.5, 0.25}, {0.0, 0.5}, {0.25, 0.5}, {0.5, 0.5}, {0.0, 0.75},
-    {0.25, 0.75}, {0.5, 0.75}, {0.0, 1.0}, {0.25, 1.0}, {0.5, 1.0},
-    {0.75, 0.0}, {1.0, 0.0}, {0.75, 0.25}, {1.0, 0.25}, {0.75, 0.5},
-    {1.0, 0.5}, {0.75, 0.75}, {1.0, 0.75}, {0.75, 1.0}, {1.0, 1.0}};
+   {{0.0, 0.0}, {0.0, 0.25}, {0.0, 0.5}, {0.0, 0.75}, {0.0, 1.0},
+    {0.25, 0.0}, {0.25, 0.25}, {0.25, 0.5}, {0.25, 0.75}, {0.25, 1.0},
+    {0.5, 0.0}, {0.5, 0.25}, {0.5, 0.5}, {0.5, 0.75}, {0.5, 1.0},
+    {0.75, 0.0}, {0.75, 0.25}, {0.75, 0.5}, {0.75, 0.75}, {0.75, 1.0},
+    {1.0, 0.0}, {1.0, 0.25}, {1.0, 0.5}, {1.0, 0.75}, {1.0, 1.0}};
 
     std::vector<std::vector<int>> ref_cell_to_nodes =
-    {{0,1,4,3}, {3,4,7,6}, {1,2,5,4}, {4,5,8,7},
-     {6,7,10,9}, {9,10,13,12}, {7,8,11,10}, {10,11,14,13},
-     {2,15,17,5}, {5,17,19,8}, {15,16,18,17}, {17,18,20,19},
-     {8,19,21,11}, {11,21,23,14}, {19,20,22,21}, {21,22,24,23}};
+    {{0,5,6,1}, {1,6,7,2}, {2,7,8,3}, {3,8,9,4},
+     {5,10,11,6}, {6,11,12,7}, {7,12,13,8}, {8,13,14,9},
+     {10,15,16,11}, {11,16,17,12}, {12,17,18,13}, {13,18,19,14},
+     {15,20,21,16}, {16,21,22,17}, {17,22,23,18}, {18,23,24,19}};
 
 
     // Check coordinates
     for (int c=0; c<num_cells; ++c) {
       std::vector<Wonton::Point<2>> mycoords;
       source_mesh_flat.cell_get_coordinates(c, &mycoords);
+
       ASSERT_EQ(4, mycoords.size());
       int gid = cell_gids[c];
-      //int gid = expOwnedCellGids[commRank][c];
 
       for (int n=0; n<4; ++n) {
         int nid = ref_cell_to_nodes[gid][n];
@@ -375,15 +327,11 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
     // Add my own ID
     myNeighborsGID.push_back(cell_gids[c]);
     count += 1;
-    // Convert to cartesian IDs
-    for (int n=0; n<count; ++n) {
-      int ngid = myNeighborsGID[n];
-      myNeighborsGID[n] = (ngid & 9) | ((ngid & 4) >> 1) | ((ngid & 2) << 1);
-    }
+    
     // Which neighbors do I expect?
     std::vector<Wonton::GID_t> expNeighbors;
     Wonton::GID_t gid = cell_gids[c];
-    int cid = (gid & 9) | ((gid & 4) >> 1) | ((gid & 2) << 1);
+    int cid = gid;
 
     // Loop through all possible neighbors, skipping if on boundary
      if (commRank == 0)
@@ -458,3 +406,169 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   }
 
 }
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_1) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_2) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution2D_3) {
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  // these results absolutely depend on the partitioning
+  // only target partition 3 requires no other data
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+
+  if (commRank==3)
+    ASSERT_FALSE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+  else
+    ASSERT_TRUE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+    
+  ASSERT_TRUE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_1) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, inputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, inputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_2) {
+
+ Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  ASSERT_FALSE(
+    distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+  );
+  
+  ASSERT_FALSE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+}
+
+
+TEST(MPI_Bounding_Boxes, NeedsRedistribution3D_3) {
+
+  Jali::MeshFactory mf(MPI_COMM_WORLD);
+
+  // Source mesh
+  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 5, 5, 5);
+  Wonton::Jali_Mesh_Wrapper inputMeshWrapper(*source_mesh);
+  
+  // target mesh
+  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
+  Wonton::Jali_Mesh_Wrapper outputMeshWrapper(*target_mesh);
+  
+  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Portage::MPI_Bounding_Boxes distributor(&executor);
+  
+  // these results absolutely depend on the partitioning
+  // only target partition 3 requires no other data
+  int commRank;
+  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+
+  if (commRank==3)
+    ASSERT_FALSE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+  else
+    ASSERT_TRUE(
+      distributor.is_bob_hungry(inputMeshWrapper, outputMeshWrapper)
+    );
+    
+  ASSERT_TRUE(
+    distributor.is_redistribution_needed(inputMeshWrapper, outputMeshWrapper)
+  );
+    
+}
+
+
