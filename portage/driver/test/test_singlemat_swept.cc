@@ -142,10 +142,8 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
 
   // Remap temperature and check that we got the right target
   // temperatures - both cell wise values and integral should match
-  auto temp_gradients = d.compute_source_gradient("temperature");
-
   d.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "temperature", "temperature", srcwts, &temp_gradients);
+    "temperature", "temperature", srcwts);
 
   double *targettemp;
   targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "temperature",
@@ -167,13 +165,9 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   // Remap density and check that we got the right target densities -
   // cell wise values won't necessarily match as it is a general
   // function but integral values should match
-  
-  auto density_gradients = d.compute_source_gradient("density");
-
   d.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
                                                                 "density",
-                                                                srcwts,
-                                                                &density_gradients);
+                                                                srcwts); 
 
   double *targetdensity;
   targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "density",
