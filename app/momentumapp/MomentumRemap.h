@@ -375,6 +375,8 @@ void MomentumRemap<D>::RemapND(
   Jali::UniStateVector<double, Jali::Mesh> ux_src, uy_src, uz_src;
 
   srcstate->get("mass", srcmesh, kind, type, &mass_src);
+
+  kind = VelocityKind();
   srcstate->get("velocity_x", srcmesh, kind, type, &ux_src);
   srcstate->get("velocity_y", srcmesh, kind, type, &uy_src);
   if (D == 3) srcstate->get("velocity_z", srcmesh, kind, type, &uz_src);
@@ -398,7 +400,6 @@ void MomentumRemap<D>::RemapND(
     double tmp = (method_ == SGH) ? mass_c[c] : mass_src[c];
     density[c] = tmp / srcmesh_wrapper.cell_volume(c);
   }
-std::cout << "Step 2 is complete" << std::endl;
   
   // Step 3 (SGH and CCH)
   // -- compute cell-centered specific momentum
@@ -408,18 +409,13 @@ std::cout << "Step 2 is complete" << std::endl;
 
   for (int c = 0; c < ncells_src; ++c) {
     if (method_ == SGH) {
-std::cout << "Step 2a " << c << std::endl;
       srcmesh_wrapper.cell_get_corners(c, &corners);
 
-std::cout << "Step 2b " << c << " size=" << corners.size() << std::endl;
       for (auto cn : corners) { 
-std::cout << "Step 2c " << c << " " << cn << std::endl;
         int v = srcmesh_wrapper.corner_get_node(cn);
-std::cout << "Step 2d " << c << " " << cn << " " << v << " size=" << ux_src.size() << std::endl;
         momentum_x_src[c] += mass_src[cn] * ux_src[v];
         momentum_y_src[c] += mass_src[cn] * uy_src[v];
         if (D == 3) momentum_z_src[c] += mass_src[cn] * uz_src[v];
-std::cout << "Step 2e " << c << " " << cn << std::endl;
       }
     } else {
       momentum_x_src[c] += mass_src[c] * ux_src[c];
@@ -432,7 +428,6 @@ std::cout << "Step 2e " << c << " " << cn << std::endl;
     momentum_y_src[c] /= volume;
     if (D == 3) momentum_z_src[c] /= volume;
   }
-std::cout << "Step 3 is complete" << std::endl;
 
   // Step 4 (SGH and CCH)
   // -- remap density and specific momentum following three basic
@@ -480,7 +475,6 @@ std::cout << "Step 3 is complete" << std::endl;
     cd.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
         field_names[i], field_names[i], srcwts, &gradients);
   }
-std::cout << "Step 4 is complete" << std::endl;
 
   // Step 5 (SGH only)
   // -- create linear reconstruction (limited or unlimited) 
@@ -503,7 +497,6 @@ std::cout << "Step 4 is complete" << std::endl;
                          gradients[i].begin(), gradient_kernel);
     }
   }
-std::cout << "Step 5 is complete" << std::endl;
 
   // Step 6 (SGH and CCH)
   // -- integrate density and specific momentum on the target mesh
