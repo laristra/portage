@@ -19,6 +19,8 @@ Please see the license file at the root of this repository, or at:
 #include "lretypes.hh"
 #include "pairs.hh"
 
+using Wonton::Point;
+
 namespace Portage {
 
   /*!

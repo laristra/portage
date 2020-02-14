@@ -21,6 +21,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"  // For Meshfree::WeightCenter
 //                                          // Hope we can get rid of it
 
+using Wonton::Point;
 
 namespace Portage {
 template <size_t D, class SwarmType>
