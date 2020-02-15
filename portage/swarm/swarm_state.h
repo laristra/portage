@@ -38,10 +38,10 @@ class SwarmState {
   using DblVec=vector<double>;
 
   /*! @brief Pointer to integer data type allowed on the swarm.  */
-  using IntVecPtr=shared_ptr<vector<int>>;
+  using IntVecPtr=std::shared_ptr<std::vector<int>>;
 
   /*! @brief Pointer to double data type allowed on the swarm.  */
-  using DblVecPtr=shared_ptr<vector<double>>;
+  using DblVecPtr=std::shared_ptr<std::vector<double>>;
 
   /*! @brief Constructor provided a reference swarm.
    * @param swarm the swarm with which the field data are associated.
@@ -57,10 +57,28 @@ class SwarmState {
 
   /*! @brief Set an integer field on the swarm.
    * @param name the name of the integer field
-   * @param value the values in the field
+   * @param value a shared pointer to the values in the field.
    * If field does not exist, create it.
    */
   void add_field(const string name, IntVecPtr value);
+
+  /**
+   * @brief Set an integer field on the swarm.
+   *
+   * @param name name of the integer field
+   * @param value a shared pointer to the values in the field.
+   * If field does not exist, create it.
+   */
+  void add_field(const string name, std::vector<int> const&  value);
+
+  /**
+  * @brief Set an integer field on the swarm.
+  *
+  * @param name name of the integer field
+  * @param value a shared pointer to the values in the field.
+  * If field does not exist, create it.
+  */
+  void add_field(const string name, const int* const value);
 
   /*! @brief Set a double field on the swarm centers.
    * @param name the name of the double field
@@ -68,6 +86,24 @@ class SwarmState {
    * If field does not exist, create it.
    */
   void add_field(const string name, DblVecPtr value);
+
+  /**
+   * @brief Set a double field on the swarm centers.
+   *
+   * @param name the name of the double field
+   * @param value value the values in the field
+   * If field does not exist, create it.
+   */
+  void add_field(const string name, std::vector<double> const& value);
+
+  /**
+   * @brief Set a double field on the swarm centers.
+   * @param name the name of the double field
+   * @param value value the values in the field
+   * If field does not exist, create it.
+   */
+  void add_field(const string name, const double* const value);
+
 
   /*! @brief Get an integer field off the swarm - throw exception if
    *  it does not exist
@@ -77,6 +113,15 @@ class SwarmState {
    */
   void get_field(const string name, IntVecPtr &value) const;
 
+  /**
+   * @brief Get an integer field off the swarm - throw exception if
+   *  it does not exist
+   *
+   * @param name the name of the integer field
+   * @param value the values in the field
+   */
+  void get_field(const string name, int const **value) const;
+
   /*! @brief Get a double field off the swarm centers - throw
    *  exception if it does not exist
    *
@@ -84,6 +129,15 @@ class SwarmState {
    * @param value the values in the field
    */
    void get_field(const string name, DblVecPtr &value) const;
+
+   /**
+    * @brief Get a double field off the swarm centers - throw
+    *  exception if it does not exist
+    *
+    * @param name the name of the double field
+    * @param value the values in the field
+    */
+  void get_field(const string name, double const **value) const;
 
   /*! @brief Get an integer field off the swarm - add it if it does
    *  not exist
@@ -93,6 +147,15 @@ class SwarmState {
    */
   void get_field(const string name, IntVecPtr &value);
 
+  /**
+   * @brief Get an integer field off the swarm - add it if it does
+   *  not exist
+   *
+   * @param name the name of the integer field
+   * @param value the values in the field
+   */
+  void get_field(const string name, int **value);
+
   /*! @brief Get a double field off the swarm centers - add it if it
    *  does not exist
    *
@@ -100,6 +163,15 @@ class SwarmState {
    * @param value the values in the field
    */
   void get_field(const string name, DblVecPtr &value);
+
+  /**
+   * @brief Get a double field off the swarm centers - add it if it
+   *  does not exist
+   *
+   * @param name the name of the double field
+   * @param value the values in the field
+   */
+  void get_field(const string name, double **value);
 
   /*! @brief Get number of points in swarm
    * @return number of points
@@ -134,85 +206,123 @@ class SwarmState {
   int npoints_owned_;
 
   /** integer data fields */
-  map<string, IntVecPtr> int_field_map_;
+  std::map<string, IntVecPtr> int_field_map_;
 
   /** double data fields */
-  map<string, DblVecPtr> dbl_field_map_;
+  std::map<string, DblVecPtr> dbl_field_map_;
 };
 
-//=======================================================================
-
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, IntVecPtr value) {
   // check size
-  if (value->size() != npoints_owned_) {
-    throw std::runtime_error(
-      string("incorrect size when adding attempting to add int field ")+name);
-  }
-
-  // check duplicate
-  auto checkdup = int_field_map_.find(name);
-  if (checkdup != int_field_map_.end()) {
-    assert(checkdup->first == name);
-    throw std::runtime_error(string("tried to add int field ")+name+
-                             "when it already existed");
-  }
-
-  // add it
-  int_field_map_.insert(pair<string, IntVecPtr>(name, value));
+  if (value->size() == npoints_owned_) {
+    int_field_map_[name] = value;
+  } else
+    throw std::runtime_error("incorrect size when adding field " + name);
 }
 
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::add_field(const string name, std::vector<int> const& value) {
+  // check size
+  if (value.size() == npoints_owned_) {
+    auto vec = std::make_shared<Portage::vector<int>>(npoints_owned_);
+    std::copy(value.begin(), value.end(), vec->begin());
+    int_field_map_[name] = vec;
+  } else
+    throw std::runtime_error("incorrect size when adding field " + name);
+}
+
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::add_field(const string name, const int* const value) {
+  // assume value is of the right length - we can't check it
+  auto vec = std::make_shared<Portage::vector<int>>(npoints_owned_);
+  std::copy(value, value + npoints_owned_, vec->begin());
+  int_field_map_[name] = vec;
+}
+
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::add_field(const string name, DblVecPtr value) {
-  // check size
-  if (value->size() != npoints_owned_) {
-    throw std::runtime_error(
-      string("incorrect size when adding attempting to add double field ")+name);
-  }
-
-  // check duplicate
-  auto checkdup = dbl_field_map_.find(name);
-  if (checkdup != dbl_field_map_.end()) {
-    assert(checkdup->first == name);
-    throw std::runtime_error(string("tried to add double field ")+name+
-                             " when it already existed");
-  }
-
-  // add it
-  dbl_field_map_.insert(pair<string, DblVecPtr>(name, value));
+  if (value->size() == npoints_owned_) {
+    dbl_field_map_[name] = value;
+  } else
+    throw std::runtime_error("incorrect size when adding field " + name);
 }
 
-// Const version of get_field for integer field - throws exception if
-// field does not exist
+/* -------------------------------------------------------------------------- */
+template <size_t dim>
+void SwarmState<dim>::add_field(const string name, std::vector<double> const& value) {
+  if (value.size() == npoints_owned_) {
+    auto vec = std::make_shared<Portage::vector<double>>(npoints_owned_);
+    std::copy(value.begin(), value.end(), vec->begin());
+    dbl_field_map_[name] = vec;
+  } else
+    throw std::runtime_error("incorrect size when adding field " + name);
+}
+
+/* -------------------------------------------------------------------------- */
+template <size_t dim>
+void SwarmState<dim>::add_field(const string name, const double* const value) {
+  // assume value is of the right length - we can't check it
+  auto vec = std::make_shared<Portage::vector<double>>(npoints_owned_);
+  std::copy(value, value + npoints_owned_, vec->begin());
+  dbl_field_map_[name] = vec;
+}
+
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) const {
-  value = int_field_map_.at(name);
+  value = int_field_map_[name];
 }
 
-// Const version of get_field for real field - throws exception if
-// field does not exist
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, int const **value) const {
+  *value = int_field_map_[name].get()->data();
+}
+
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) const {
-  value = dbl_field_map_.at(name);
+  value = dbl_field_map_[name];
 }
 
-// Non-const version of get_field for integer field - inserts the field
-// if it does not exist
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, double const **value) const {
+  *value = dbl_field_map_[name].get()->data();
+}
+
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, IntVecPtr &value) {
   value = int_field_map_[name];
 }
 
-// Non-const version of get_field for real field - inserts the field
-// if it does not exist
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::get_field(const string name, int **value) {
+  *value = int_field_map_[name].get()->data();
+}
+
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::get_field(const string name, DblVecPtr &value) {
   value = dbl_field_map_[name];
 }
 
-
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
-void SwarmState<dim>::extend_field(const string name, IntVec new_value)  
+void SwarmState<dim>::get_field(const string name, double **value) {
+  *value = dbl_field_map_[name].get()->data();
+}
+
+/* -------------------------------------------------------------------------- */
+template<size_t dim>
+void SwarmState<dim>::extend_field(const string name, IntVec new_value)
 {
    // check if the field already exists
   auto check = int_field_map_.find(name);
@@ -224,6 +334,7 @@ void SwarmState<dim>::extend_field(const string name, IntVec new_value)
   val->insert(val->end(), new_value.begin(), new_value.end());
 }
 
+/* -------------------------------------------------------------------------- */
 template<size_t dim>
 void SwarmState<dim>::extend_field(const string name, DblVec new_value)  
 {
@@ -237,6 +348,7 @@ void SwarmState<dim>::extend_field(const string name, DblVec new_value)
   val->insert(val->end(), new_value.begin(), new_value.end());
 }
 
+/* -------------------------------------------------------------------------- */
 /*! @brief SwarmState factory, given a mesh state wrapper. Only does double fields.
  * Copies fields from mesh state wrapper to a swarm state wrapper of the same size.
  * @param state the field data on the mesh
