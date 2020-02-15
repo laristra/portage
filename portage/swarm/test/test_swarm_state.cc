@@ -25,7 +25,7 @@
 #include "wonton/support/Point.h"
 
 TEST(SwarmState, basic) {
-  using std::make_shared;
+//  using std::make_shared;
   using Portage::Meshfree::SwarmState;
 
   const size_t npoints = 10;
@@ -48,18 +48,12 @@ TEST(SwarmState, basic) {
   ASSERT_EQ(state.get_size(), npoints);
 
   // create state fields
-  SwarmState<3>::DblVecPtr dbl_field1 =
-      make_shared<SwarmState<3>::DblVec>(npoints, 0.);
-  SwarmState<3>::DblVecPtr dbl_field2 =
-      make_shared<SwarmState<3>::DblVec>(npoints, 0.);
-  SwarmState<3>::DblVecPtr bad_dbl_field =
-      make_shared<SwarmState<3>::DblVec>(npoints+5, 0.);
-  SwarmState<3>::IntVecPtr int_field1 =
-      make_shared<SwarmState<3>::IntVec>(npoints, 0.);
-  SwarmState<3>::IntVecPtr int_field2 =
-      make_shared<SwarmState<3>::IntVec>(npoints, 0.);
-  SwarmState<3>::IntVecPtr bad_int_field =
-      make_shared<SwarmState<3>::IntVec>(npoints+5, 0.);
+  auto dbl_field1 = std::make_shared<SwarmState<3>::DblVec>(npoints, 0.);
+  auto dbl_field2 = std::make_shared<SwarmState<3>::DblVec>(npoints, 0.);
+  auto int_field1 = std::make_shared<SwarmState<3>::IntVec>(npoints, 0.);
+  auto int_field2 = std::make_shared<SwarmState<3>::IntVec>(npoints, 0.);
+  auto bad_dbl_field = std::make_shared<SwarmState<3>::DblVec>(npoints+5, 0.);
+  auto bad_int_field = std::make_shared<SwarmState<3>::IntVec>(npoints+5, 0.);
 
   // fill in fields
   for (size_t i=0; i < npoints; i++) {
@@ -90,30 +84,14 @@ TEST(SwarmState, basic) {
   }
 
   // check names lists are correct
-  std::vector<std::string>
-      dnames = state.field_names_double();
-  std::vector<std::string>
-      inames = state.field_names_int();
+  auto dnames = state.field_names_double();
+  auto inames = state.field_names_int();
   ASSERT_EQ(dnames.size(), 2);
   ASSERT_EQ(dnames[0], "d1");
   ASSERT_EQ(dnames[1], "d2");
   ASSERT_EQ(inames.size(), 2);
   ASSERT_EQ(inames[0], "i1");
   ASSERT_EQ(inames[1], "i2");
-
-  // check failure on adding field twice
-  try {
-    state.add_field("d1", dbl_field1);
-    ASSERT_FALSE(true);
-  } catch (std::exception err) {
-    ASSERT_TRUE(true);
-  }
-  try {
-    state.add_field("i1", int_field1);
-    ASSERT_FALSE(true);
-  } catch (std::exception err) {
-    ASSERT_TRUE(true);
-  }
 
   // check failure on adding bad fields
   try {
@@ -142,48 +120,45 @@ TEST(SwarmState, basic) {
   @brief Unit test for constructor with Simple_State_Wrapper in 3D using cells
 */
 TEST(SwarmState, Simple_State_Wrapper) {
-  std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr =
-    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
+
+  using namespace Portage::Meshfree;
+  using StateWrapper = Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>;
+
+  auto mesh_ptr = std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh &mesh(*mesh_ptr);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  StateWrapper sstate(mesh_wrapper);
 
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sstate(mesh_wrapper);
   int ncells = mesh_wrapper.num_owned_cells();
   int nnodes = mesh_wrapper.num_owned_nodes();
-  std::vector<double> &cfield1 = *new std::vector<double>(ncells);
-  std::vector<double> &nfield1 = *new std::vector<double>(nnodes);
-  for (int i=0; i < ncells; i++) {
-    cfield1[i] = 1.;
-  }
-  for (int i=0; i < nnodes; i++) {
-    nfield1[i] = 2.;
-  }
+  std::vector<double> cfield1(ncells, 1.);
+  std::vector<double> nfield1(nnodes, 2.);
 
   sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"cf1", Portage::Entity_kind::CELL, cfield1)
+    	"cf1", Wonton::CELL, cfield1)
     );
   sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nf1", Portage::Entity_kind::NODE, nfield1)
+    	"nf1", Wonton::NODE, nfield1)
     );
 
 
   // create swarm state from mesh state wrapper for cells
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
-      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-        (sstate, Portage::Entity_kind::CELL);
-    Portage::Meshfree::SwarmState<3> &state(*state_ptr);
+    auto state_ptr = SwarmStateFactory<3, StateWrapper>(sstate, Wonton::CELL);
+    SwarmState<3> &state(*state_ptr);
 
     // test size
     ASSERT_EQ(state.get_size(), ncells);
 
     // check data fields
-    std::vector<std::string> intnames = state.field_names_int();
+    auto intnames = state.field_names_int();
     ASSERT_EQ(intnames.size(), 0);
-    std::vector<std::string> dblnames = state.field_names_double();
+
+    auto dblnames = state.field_names_double();
     ASSERT_EQ(dblnames.size(), 1);
     ASSERT_EQ(dblnames[0], "cf1");
-    Portage::Meshfree::SwarmState<3>::DblVecPtr field;
+
+    SwarmState<3>::DblVecPtr field;
     state.get_field("cf1", field);
     for (int i=0; i < ncells; i++) {
       ASSERT_EQ((*field)[i], 1.0);
@@ -192,21 +167,21 @@ TEST(SwarmState, Simple_State_Wrapper) {
 
   // create swarm state from mesh state wrapper for nodes
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
-       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-      (sstate, Portage::Entity_kind::NODE);
-    Portage::Meshfree::SwarmState<3> &state(*state_ptr);
+    auto state_ptr = SwarmStateFactory<3, StateWrapper>(sstate, Wonton::NODE);
+    SwarmState<3> &state(*state_ptr);
 
     // test size
     ASSERT_EQ(state.get_size(), nnodes);
 
     // check data fields
-    std::vector<std::string> intnames = state.field_names_int();
+    auto intnames = state.field_names_int();
     ASSERT_EQ(intnames.size(), 0);
+
     auto dblnames = state.field_names_double();
     ASSERT_EQ(dblnames.size(), 1);
     ASSERT_EQ(dblnames[0], "nf1");
-    Portage::Meshfree::SwarmState<3>::DblVecPtr field;
+
+    SwarmState<3>::DblVecPtr field;
     state.get_field("nf1", field);
     for (int i=0; i < nnodes; i++) {
       ASSERT_EQ((*field)[i], 2.0);
