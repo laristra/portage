@@ -349,7 +349,7 @@ void SwarmState<dim>::extend_field(const std::string name, DblVec new_value)
  * @return shared pointer to the resultant swarm state
  */
 template<size_t dim, class StateWrapper>
-shared_ptr<SwarmState<dim>> SwarmStateFactory(
+std::shared_ptr<SwarmState<dim>> SwarmStateFactory(
   const StateWrapper &state,
   const Portage::Entity_kind entity)
 {
@@ -364,7 +364,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
       break;
     }
   }
-  shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
+  std::shared_ptr<SwarmState<dim>> result=std::make_shared<SwarmState<dim>>(ndata);
 
   // copy data
   for (const std::string name : state.names()) {
@@ -375,7 +375,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
 
     const double *datap;
     state.mesh_get_data(entity, name, &datap);
-    typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
+    typename SwarmState<dim>::DblVecPtr data = std::make_shared<vector<double>>(ndata);
     
     for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
     result->add_field(name, data);
@@ -395,7 +395,7 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory(
  * All fields must exist in all states. In each state, all fields must have same size.
  */
 template<size_t dim, class StateWrapper>
-shared_ptr<SwarmState<dim>> SwarmStateFactory
+std::shared_ptr<SwarmState<dim>> SwarmStateFactory
   (const std::vector<StateWrapper*> states,
    const Portage::Entity_kind entity)
 {
@@ -437,11 +437,11 @@ shared_ptr<SwarmState<dim>> SwarmStateFactory
   }
 
   // create output swarm state
-  shared_ptr<SwarmState<dim>> result=make_shared<SwarmState<dim>>(ndata);
+  std::shared_ptr<SwarmState<dim>> result = std::make_shared<SwarmState<dim>>(ndata);
 
   // copy data
   for (const std::string name : states[0]->names()) {
-    typename SwarmState<dim>::DblVecPtr data = make_shared<vector<double>>(ndata);
+    typename SwarmState<dim>::DblVecPtr data = std::make_shared<vector<double>>(ndata);
     for (size_t wrap=0; wrap<states.size(); wrap++) {
       StateWrapper &state=*states[wrap];
 
