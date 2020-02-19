@@ -10,20 +10,19 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <chrono>
 #include <algorithm>
-#include <cstdlib>
 #include <stdexcept>
 #include <string>
 #include <iostream>
-#include <stdlib.h>
+#include <random>
 
 // portage includes
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 
-namespace Portage {
-namespace Meshfree {
+namespace Portage { namespace Meshfree {
 
 using std::string;
 using std::shared_ptr;
@@ -34,7 +33,7 @@ using Wonton::Point;
  @brief An effective "mesh" class for a collection disconnected points (particles).
  @tparam dim The dimension of the problem space.
  */
-template<size_t dim>
+template<int dim>
 class Swarm {
  public:
 
@@ -43,7 +42,7 @@ class Swarm {
 
   //  SEE --- https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords
 
-  using PointVecPtr = shared_ptr<vector<Point<dim>>>;
+  using PointVecPtr = shared_ptr<vector<Wonton::Point<dim>>>;
   using PointVec = vector<Point<dim>>;
 
   /*!
@@ -51,9 +50,51 @@ class Swarm {
    * @param points center points of the particles
    * @param extents the widths of the particle bounding boxes in each dimension
    */
-  Swarm(PointVecPtr points)
-      : points_(points), npoints_owned_(points_->size())
+
+  /**
+   * @brief Create a particle field from a given list.
+   *
+   * @param points
+   */
+  explicit Swarm(Portage::vector<Wonton::Point<dim>> const& points)
+    : points_(points),
+      num_owned_points_(points_.size())
   {}
+
+  /**
+   * @brief Generate a random or uniform particle field.
+   *
+   * @param num_particles: number of points.
+   * @param p_min: lower bounds on points coordinates.
+   * @param p_max: upper bounds on points coordinates.
+   * @param distribution: the kind of random numbers distribution.
+   * @param seed: a seed used by the random number generator.
+   */
+  Swarm(int num_particles, int distribution,
+        unsigned user_seed = 0,
+        double x_min = 0.0, double x_max = 0.0,
+        double y_min = 0.0, double y_max = 0.0,
+        double z_min = 0.0, double z_max = 0.0);
+
+  /**
+   * @brief Create a particle field from an arbitary mesh wrapper.
+   *
+   * @tparam Mesh: type of mesh wrapper.
+   * @param mesh: a mesh.
+   * @param entity: the entity kind.
+   */
+  template<typename Mesh>
+  Swarm(Mesh const& mesh, Wonton::Entity_kind entity);
+
+  /**
+   * @brief Create a particle field from a set of arbitary mesh wrappers.
+   *
+   * @tparam Mesh: type of mesh wrappers.
+   * @param meshes: a set of meshes.
+   * @param entity: the entity kind.
+   */
+  template<typename Mesh>
+  Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity);
 
   /*! @brief Dimensionality of points */
   unsigned int space_dimension() const {
@@ -64,7 +105,7 @@ class Swarm {
    * @return the number of owned particles in the swarm
    */
   int num_owned_particles() const {
-    return npoints_owned_;
+    return num_owned_points_;
   }
 
   /*! @brief return the number of ghost (not owned by this processor)
@@ -74,7 +115,7 @@ class Swarm {
    * and num_owned_particles+num_ghost_particle.
    */
   int num_ghost_particles() const {
-    return points_->size() - npoints_owned_;
+    return points_.size() - num_owned_points_;
   }
 
   /*! @brief return the number of particles of given type
@@ -99,8 +140,8 @@ class Swarm {
    * @param index index of particle of interest
    * @return the particle coordinates
    */
-  Point<dim> get_particle_coordinates(const size_t index) const {
-    return (*points_)[index];
+  Wonton::Point<dim> get_particle_coordinates(const size_t index) const {
+    return points_[index];
   }
 
   //! Iterators on mesh entity - begin
@@ -129,10 +170,10 @@ class Swarm {
 
  private:
   /** the centers of the particles */
-  PointVecPtr points_;
+  Portage::vector<Wonton::Point<dim>> points_;
 
   /** the number of owned particles in the swarm */
-  size_t npoints_owned_;
+  size_t num_owned_points_;
 };
 
 // Get a reasonable random number seed if needed.
@@ -147,6 +188,157 @@ unsigned long get_seed() {
   return seed;
 }
 
+/* -------------------------------------------------------------------------- */
+template<>
+Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                double x_min, double x_max,
+                double /* unused */, double /* unused */,
+                double /* unused */, double /* unused */) {
+
+  assert(num_particles > 0);
+  assert(0 <= distribution and distribution <= 2);
+
+  // resize field
+  points_.resize(num_particles);
+  num_owned_points_ = num_particles;
+
+  // set the random engine and generator
+  std::random_device device;
+  std::mt19937 engine { user_seed ? user_seed : device() };
+  std::uniform_real_distribution<> generator(0.0, 1.0);
+
+  // update coordinates
+  if (distribution == 0) {
+    for (auto&& current : points_)
+      current = Wonton::Point<1>(x_min + (x_max - x_min) * generator(engine));
+
+  } else {
+    double const h = (x_max - x_min) / (num_particles - 1);
+    for (int i = 0; i < num_particles; i++)
+      points_[i] = Wonton::Point<1>(x_min + i * h);
+
+    if (distribution == 2) {
+      for (int i = 0; i < num_particles; i++) {
+        Point<1> current = points_[i];
+        current[0] += 0.25 * h * (2 * generator(engine) - 1);
+        points_[i] = Wonton::Point<1>(std::max(x_min, std::min(x_max, current[0])));
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+template<>
+Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                double x_min, double x_max,
+                double y_min, double y_max,
+                double /* unused */, double /* unused */) {
+
+  assert(num_particles > 0);
+  assert(0 <= distribution and distribution <= 2);
+
+  // set the random engine and generator
+  std::random_device device;
+  std::mt19937 engine { user_seed ? user_seed : device() };
+  std::uniform_real_distribution<double> generator(0.0, 1.0);
+
+  if (distribution == 0) {
+    // resize field and update coordinates
+    num_owned_points_ = num_particles;
+    points_.resize(num_owned_points_);
+
+    for (auto&& current : points_)
+      current = Wonton::Point<2>(x_min + (x_max - x_min) * generator(engine),
+                                 y_min + (y_max - y_min) * generator(engine));
+  } else {
+    // resize field
+    int const num_per_dim = std::floor(std::sqrt(num_particles));
+    num_owned_points_ = num_per_dim * num_per_dim;
+    points_.resize(num_owned_points_);
+    double const hx = (x_max - x_min) / (num_per_dim - 1);
+    double const hy = (y_max - y_min) / (num_per_dim - 1);
+
+    // update coordinates
+    int k = 0;
+    for (int i = 0; i < num_per_dim; i++)
+      for (int j = 0; j < num_per_dim; ++j)
+        points_[k++] = Wonton::Point<2>(x_min + i * hx, y_min + j * hy);
+
+    if (distribution == 2) {
+      for (auto&& current : points_) {
+        Wonton::Point<2> copy = current;
+        copy[0] += 0.25 * hx * (2 * generator(engine) - 1);
+        copy[1] += 0.25 * hy * (2 * generator(engine) - 1);
+        current = Wonton::Point<2>(std::max(x_min, std::min(x_max, copy[0])),
+                                   std::max(y_min, std::min(y_max, copy[1])));
+      }
+    }
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+template<>
+Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                double x_min, double x_max,
+                double y_min, double y_max,
+                double z_min, double z_max) {
+
+  assert(num_particles > 0);
+  assert(0 <= distribution and distribution <= 2);
+
+  // set the random engine and generator
+  std::random_device device;
+  std::mt19937 engine { user_seed ? user_seed : device() };
+  std::uniform_real_distribution<> generator(0.0, 1.0);
+
+  if (distribution == 0) {
+    // resize field and update coordinates
+    num_owned_points_ = num_particles;
+    points_.resize(num_owned_points_);
+
+    for (int i = 0; i < num_particles; i++)
+      points_[i] = Wonton::Point<3>(x_min + (x_max - x_min) * generator(engine),
+                                    y_min + (y_max - y_min) * generator(engine),
+                                    z_min + (z_max - z_min) * generator(engine));
+  } else {
+    // resize field
+    auto const cubic_root = std::pow(num_particles, 1./3.);
+    auto const num_per_dim = static_cast<int>(std::ceil(cubic_root));
+    auto const hx = (x_max - x_min) / (cubic_root - 1);
+    auto const hy = (y_max - y_min) / (cubic_root - 1);
+    auto const hz = (z_max - z_min) / (cubic_root - 1);
+
+//    std::printf("hx: %.3f, hy: %.3f, hz: %.3f\n", hx, hy, hz);
+//    std::printf("cubic_root: %.3f, num_per_dim: %d", cubic_root, num_per_dim);
+//    std::fflush(stdout);
+
+    num_owned_points_ = num_per_dim * num_per_dim * num_per_dim;
+    points_.resize(num_owned_points_);
+
+    // update coordinates
+    int n = 0;
+    for (int i = 0; i < num_per_dim; i++)
+      for (int j = 0; j < num_per_dim; ++j)
+        for (int k = 0; k < num_per_dim; ++k)
+          points_[n++] = Wonton::Point<3>(x_min + i * hx,
+                                          y_min + j * hy,
+                                          z_min + k * hz);
+
+    if (distribution == 2) {
+      for (auto&& current : points_) {
+        Point<3> copy = current;
+        copy[0] += 0.25 * hx * (2 * generator(engine) - 1);
+        copy[1] += 0.25 * hy * (2 * generator(engine) - 1);
+        copy[2] += 0.25 * hz * (2 * generator(engine) - 1);
+        current = Wonton::Point<3>(std::max(x_min, std::min(x_max, copy[0])),
+                                   std::max(y_min, std::min(y_max, copy[1])),
+                                   std::max(z_min, std::min(z_max, copy[2])));
+      }
+    }
+  }
+}
+
+#if USE_FACTORIES
 // Factories for making swarms in 1/2/3 dimensions with random or uniform
 // distribution of particles. Reason we are having to return a
 // shared_ptr to the Swarm is because of how its used in the
@@ -426,8 +618,80 @@ template<size_t dim, class MeshWrapper>
   std::shared_ptr<Swarm<dim>> result = make_shared<Swarm<dim>>(points);
   return result;
 }
+#endif
 
-}  // namespace Meshfree
-}  // namespace Portage
+
+/* -------------------------------------------------------------------------- */
+template<int dim>
+template<typename Mesh>
+Swarm<dim>::Swarm(Mesh const& mesh, Wonton::Entity_kind entity) {
+  switch (entity) {
+    case Wonton::NODE: {
+      num_owned_points_ = mesh.num_owned_nodes();
+      points_.resize(num_owned_points_);
+      Point<dim> coord;
+      for (int i = 0; i < num_owned_points_; ++i) {
+        mesh.node_get_coordinates(i, &coord);
+        points_[i] = coord;
+      }
+    } break;
+    case Wonton::CELL: {
+      num_owned_points_ = mesh.num_owned_cells();
+      points_.resize(num_owned_points_);
+      Point<dim> centroid;
+      for (int i = 0; i < num_owned_points_; ++i) {
+        mesh.cell_centroid(i, &centroid);
+        points_[i] = centroid;
+      }
+    } break;
+    default: throw std::runtime_error("unsupported entity");
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+template<int dim>
+template<typename Mesh>
+Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) {
+
+  // resize particle field
+  int n = 0;
+  switch (entity) {
+    case Wonton::NODE: for (auto&& mesh : meshes) n += mesh->num_owned_nodes(); break;
+    case Wonton::CELL: for (auto&& mesh : meshes) n += mesh->num_owned_cells(); break;
+    default: throw std::runtime_error("unsupported entity");
+  }
+
+  num_owned_points_ = n;
+  points_.resize(num_owned_points_);
+
+  n = 0;
+  switch (entity) {
+    case Wonton::NODE: {
+      for (auto&& mesh : meshes) {
+        int const num_nodes = mesh->num_owned_nodes();
+        Point<dim> coord;
+        for (int i = 0; i < num_nodes; i++) {
+          mesh->node_get_coordinates(i, &coord);
+          points_[n++] = coord;
+        }
+      }
+    } break;
+    case Wonton::CELL: {
+      for (auto&& mesh : meshes) {
+        int const num_nodes = mesh->num_owned_nodes();
+        Point<dim> centroid;
+        for (int i = 0; i < num_nodes; i++) {
+          mesh->cell_centroid(i, &centroid);
+          points_[n++] = centroid;
+        }
+      }
+    } break;
+    default: break;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+
+}}  // namespace Portage::Meshfree
 
 #endif  // PORTAGE_SWARM_SWARM_H_
