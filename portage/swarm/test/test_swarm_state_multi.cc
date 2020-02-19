@@ -28,6 +28,8 @@ TEST(SwarmState, Multiple2D) {
   using Portage::Meshfree::SwarmState;
   using Portage::Meshfree::Swarm;
 
+  using namespace Portage::Meshfree;
+
   Wonton::Simple_Mesh mesh0(0.0, 0.0, 1.0, 1.0, 4, 4);
   Wonton::Simple_Mesh_Wrapper wrapper0(mesh0);
 
@@ -69,8 +71,10 @@ TEST(SwarmState, Multiple2D) {
 
   std::vector<Wonton::Simple_State_Wrapper*> wraps = {&wrap0, &wrap1, &wrap2};
 
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm_ptr = 
-    Portage::Meshfree::SwarmFactory<2,Wonton::Simple_Mesh_Wrapper>(wrappers, Wonton::NODE);
+  Swarm<2> swarm(wrappers, Wonton::NODE);
+
+//  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm_ptr =
+//    Portage::Meshfree::SwarmFactory<2,Wonton::Simple_Mesh_Wrapper>(wrappers, Wonton::NODE);
 
   std::shared_ptr<Portage::Meshfree::SwarmState<2>> swarm_state_ptr = 
     Portage::Meshfree::SwarmStateFactory<2,Wonton::Simple_State_Wrapper>(wraps, Wonton::NODE);

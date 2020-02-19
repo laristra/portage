@@ -41,7 +41,7 @@ TEST(SwarmState, basic) {
         (static_cast<double>(rand()) / RAND_MAX));
   }
   auto p_ptr = std::make_shared<Portage::vector<Wonton::Point<3>>>(points);
-  auto swarm = Portage::Meshfree::Swarm<3>(p_ptr);
+  auto swarm = Portage::Meshfree::Swarm<3>(*p_ptr);
 
   // create state
   SwarmState<3> state(swarm);
