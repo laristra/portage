@@ -24,10 +24,6 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage { namespace Meshfree {
 
-using std::string;
-using std::shared_ptr;
-using std::make_shared;
-using Wonton::Point;
 /*!
  @class Swarm "swarm.h"
  @brief An effective "mesh" class for a collection disconnected points (particles).
@@ -42,8 +38,8 @@ class Swarm {
 
   //  SEE --- https://stackoverflow.com/questions/610245/where-and-why-do-i-have-to-put-the-template-and-typename-keywords
 
-  using PointVecPtr = shared_ptr<vector<Wonton::Point<dim>>>;
-  using PointVec = vector<Point<dim>>;
+  using PointVecPtr = std::shared_ptr<Portage::vector<Wonton::Point<dim>>>;
+  using PointVec = vector<Wonton::Point<dim>>;
 
   /*!
    * @brief A particle has a center point and smoothing lengths in each dimension.
@@ -163,7 +159,7 @@ class Swarm {
   /*! @brief Add new particles to swarm
    * @return
    */
-  void extend_particle_list(std::vector<Point<dim>>& new_pts)
+  void extend_particle_list(std::vector<Wonton::Point<dim>>& new_pts)
   {
     (*points_).insert((*points_).end(), new_pts.begin(), new_pts.end());
   }
@@ -219,7 +215,7 @@ Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
     if (distribution == 2) {
       for (int i = 0; i < num_particles; i++) {
-        Point<1> current = points_[i];
+        Wonton::Point<1> current = points_[i];
         current[0] += 0.25 * h * (2 * generator(engine) - 1);
         points_[i] = Wonton::Point<1>(std::max(x_min, std::min(x_max, current[0])));
       }
@@ -326,7 +322,7 @@ Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
     if (distribution == 2) {
       for (auto&& current : points_) {
-        Point<3> copy = current;
+        Wonton::Point<3> copy = current;
         copy[0] += 0.25 * hx * (2 * generator(engine) - 1);
         copy[1] += 0.25 * hy * (2 * generator(engine) - 1);
         copy[2] += 0.25 * hz * (2 * generator(engine) - 1);
@@ -629,7 +625,7 @@ Swarm<dim>::Swarm(Mesh const& mesh, Wonton::Entity_kind entity) {
     case Wonton::NODE: {
       num_owned_points_ = mesh.num_owned_nodes();
       points_.resize(num_owned_points_);
-      Point<dim> coord;
+      Wonton::Point<dim> coord;
       for (int i = 0; i < num_owned_points_; ++i) {
         mesh.node_get_coordinates(i, &coord);
         points_[i] = coord;
@@ -638,7 +634,7 @@ Swarm<dim>::Swarm(Mesh const& mesh, Wonton::Entity_kind entity) {
     case Wonton::CELL: {
       num_owned_points_ = mesh.num_owned_cells();
       points_.resize(num_owned_points_);
-      Point<dim> centroid;
+      Wonton::Point<dim> centroid;
       for (int i = 0; i < num_owned_points_; ++i) {
         mesh.cell_centroid(i, &centroid);
         points_[i] = centroid;
@@ -669,7 +665,7 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
     case Wonton::NODE: {
       for (auto&& mesh : meshes) {
         int const num_nodes = mesh->num_owned_nodes();
-        Point<dim> coord;
+        Wonton::Point<dim> coord;
         for (int i = 0; i < num_nodes; i++) {
           mesh->node_get_coordinates(i, &coord);
           points_[n++] = coord;
@@ -679,7 +675,7 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
     case Wonton::CELL: {
       for (auto&& mesh : meshes) {
         int const num_nodes = mesh->num_owned_nodes();
-        Point<dim> centroid;
+        Wonton::Point<dim> centroid;
         for (int i = 0; i < num_nodes; i++) {
           mesh->cell_centroid(i, &centroid);
           points_[n++] = centroid;
