@@ -109,62 +109,49 @@ TEST(SwarmState, Simple_State_Wrapper) {
   using Wrapper = Wonton::Simple_Mesh_Wrapper;
   using State = Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>;
 
-  //auto mesh_ptr = std::make_shared<Wonton::Simple_Mesh>
-
   Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wrapper mesh_wrapper(mesh);
-  State sstate(mesh_wrapper);
+  State mesh_state(mesh_wrapper);
 
   int ncells = mesh_wrapper.num_owned_cells();
   int nnodes = mesh_wrapper.num_owned_nodes();
   std::vector<double> cfield1(ncells, 1.);
   std::vector<double> nfield1(nnodes, 2.);
 
-  sstate.add(std::make_shared<Wonton::StateVectorUni<>>("cf1", Wonton::CELL, cfield1));
-  sstate.add(std::make_shared<Wonton::StateVectorUni<>>("nf1", Wonton::NODE, nfield1));
+  mesh_state.add(std::make_shared<Wonton::StateVectorUni<>>("cf1", Wonton::CELL, cfield1));
+  mesh_state.add(std::make_shared<Wonton::StateVectorUni<>>("nf1", Wonton::NODE, nfield1));
 
-//  // create swarm state from mesh state wrapper for cells
-//  {
-//    auto state_ptr = SwarmStateFactory<3, State>(sstate, Wonton::CELL);
-//    SwarmState<3> &state(*state_ptr);
-//
-//    // test size
-//    ASSERT_EQ(state.get_size(), ncells);
-//
-//    // check data fields
-//    auto intnames = state.get_field_names<int>();
-//    ASSERT_EQ(intnames.size(), 0);
-//
-//    auto dblnames = state.get_field_names<double>();
-//    ASSERT_EQ(dblnames.size(), 1);
-//    ASSERT_EQ(dblnames[0], "cf1");
-//
-//    auto field = state.get_field<double>("cf1");
-//    for (int i = 0; i < ncells; i++) {
-//      ASSERT_EQ(field[i], 1.0);
-//    }
-//  }
-//
-//  // create swarm state from mesh state wrapper for nodes
-//  {
-//    auto state_ptr = SwarmStateFactory<3, State>(sstate, Wonton::NODE);
-//    SwarmState<3> &state(*state_ptr);
-//
-//    // test size
-//    ASSERT_EQ(state.get_size(), nnodes);
-//
-//    // check data fields
-//    auto intnames = state.get_field_names<int>();
-//    ASSERT_EQ(intnames.size(), 0);
-//
-//    auto dblnames = state.get_field_names<double>();
-//    ASSERT_EQ(dblnames.size(), 1);
-//    ASSERT_EQ(dblnames[0], "nf1");
-//
-//    auto field = state.get_field<double>("nf1");
-//    for (int i=0; i < nnodes; i++) {
-//      ASSERT_EQ(field[i], 2.0);
-//    }
-//  }
+  {
+    SwarmState<3> state(mesh_state, Wonton::CELL);
+
+    auto intnames = state.get_field_names<int>();
+    auto dblnames = state.get_field_names<double>();
+
+    ASSERT_EQ(state.get_size(), ncells);
+    ASSERT_EQ(intnames.size(), 0);
+    ASSERT_EQ(dblnames.size(), 1);
+    ASSERT_EQ(dblnames[0], "cf1");
+
+    auto field = state.get_field_double("cf1");
+    for (int i = 0; i < ncells; i++)
+      ASSERT_EQ(field[i], 1.0);
+  }
+
+  // create swarm state from mesh state wrapper for nodes
+  {
+    SwarmState<3> state(mesh_state, Wonton::NODE);
+
+    auto intnames = state.get_field_names<int>();
+    auto dblnames = state.get_field_names<double>();
+
+    ASSERT_EQ(state.get_size(), nnodes);
+    ASSERT_EQ(intnames.size(), 0);
+    ASSERT_EQ(dblnames.size(), 1);
+    ASSERT_EQ(dblnames[0], "nf1");
+
+    auto field = state.get_field_double("nf1");
+    for (int i=0; i < nnodes; i++)
+      ASSERT_EQ(field[i], 2.0);
+  }
 }
 

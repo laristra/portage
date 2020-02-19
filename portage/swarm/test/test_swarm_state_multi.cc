@@ -24,22 +24,12 @@
 #include "wonton/support/Point.h"
 
 TEST(SwarmState, Multiple2D) {
-  using std::make_shared;
-  using Portage::Meshfree::SwarmState;
-  using Portage::Meshfree::Swarm;
 
   using namespace Portage::Meshfree;
 
   Wonton::Simple_Mesh mesh0(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Simple_Mesh_Wrapper wrapper0(mesh0);
-
   Wonton::Simple_Mesh mesh1(1.0, 0.0, 2.0, 1.0, 4, 5);
-  Wonton::Simple_Mesh_Wrapper wrapper1(mesh1);
-
   Wonton::Simple_Mesh mesh2(1.0, 1.0, 2.0, 2.0, 4, 6);
-  Wonton::Simple_Mesh_Wrapper wrapper2(mesh2);
-
-  std::vector<Wonton::Simple_Mesh_Wrapper*> wrappers={&wrapper0,&wrapper1,&wrapper2};
 
   Wonton::Simple_State state0(std::make_shared<Wonton::Simple_Mesh>(mesh0));
   Wonton::Simple_State state1(std::make_shared<Wonton::Simple_Mesh>(mesh1));
@@ -58,6 +48,7 @@ TEST(SwarmState, Multiple2D) {
       f21[i-55] = 1000.+i;
     }
   }
+
   state0.add("f0", Wonton::NODE, f00);
   state0.add("f1", Wonton::NODE, f01);
   state1.add("f0", Wonton::NODE, f10);
@@ -65,27 +56,29 @@ TEST(SwarmState, Multiple2D) {
   state2.add("f0", Wonton::NODE, f20);
   state2.add("f1", Wonton::NODE, f21);
 
-  Wonton::Simple_State_Wrapper wrap0(state0);
-  Wonton::Simple_State_Wrapper wrap1(state1);
-  Wonton::Simple_State_Wrapper wrap2(state2);
+  Wonton::Simple_Mesh_Wrapper  mesh_wrapper0(mesh0);
+  Wonton::Simple_Mesh_Wrapper  mesh_wrapper1(mesh1);
+  Wonton::Simple_Mesh_Wrapper  mesh_wrapper2(mesh2);
+  Wonton::Simple_State_Wrapper state_wrapper0(state0);
+  Wonton::Simple_State_Wrapper state_wrapper1(state1);
+  Wonton::Simple_State_Wrapper state_wrapper2(state2);
 
-  std::vector<Wonton::Simple_State_Wrapper*> wraps = {&wrap0, &wrap1, &wrap2};
+  std::vector<Wonton::Simple_Mesh_Wrapper*>  mesh_wrappers = { &mesh_wrapper0,
+                                                               &mesh_wrapper1,
+                                                               &mesh_wrapper2 };
 
-  Swarm<2> swarm(wrappers, Wonton::NODE);
+  std::vector<Wonton::Simple_State_Wrapper*> state_wrappers = { &state_wrapper0,
+                                                                &state_wrapper1,
+                                                                &state_wrapper2 };
 
-//  std::shared_ptr<Portage::Meshfree::Swarm<2>> swarm_ptr =
-//    Portage::Meshfree::SwarmFactory<2,Wonton::Simple_Mesh_Wrapper>(wrappers, Wonton::NODE);
+  Swarm<2> swarm(mesh_wrappers, Wonton::NODE);
+  SwarmState<2> swarm_state(state_wrappers, Wonton::NODE);
 
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> swarm_state_ptr = 
-    Portage::Meshfree::SwarmStateFactory<2,Wonton::Simple_State_Wrapper>(wraps, Wonton::NODE);
+  auto g0 = swarm_state.get_field_double("f0");
+  auto g1 = swarm_state.get_field_double("f1");
 
-  using VecPtr=Portage::Meshfree::SwarmState<2>::DblVecPtr;
-  VecPtr g0, g1;
-  swarm_state_ptr->get_field("f0", g0);
-  swarm_state_ptr->get_field("f1", g1);
-
-  for (int i=0; i<90; i++) {
-    ASSERT_EQ((*g0)[i], i);
-    ASSERT_EQ((*g1)[i], 1000.+i);
+  for (int i = 0; i < 90; i++) {
+    ASSERT_EQ(g0[i], i);
+    ASSERT_EQ(g1[i], 1000.+i);
   }
 }

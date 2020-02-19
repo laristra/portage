@@ -3,8 +3,7 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef SWARM_STATE_H_INC_
-#define SWARM_STATE_H_INC_
+#pragma once
 
 #include <vector>
 #include <map>
@@ -17,43 +16,159 @@ Please see the license file at the root of this repository, or at:
 
 namespace Portage { namespace Meshfree {
 
-/*!
- @class SwarmState "swarm_state.h"
- @brief Holds state data for particle Swarms.
+/**
+ * @class SwarmState
+ * @brief Particle field state class.
+ *
+ * @tparam dim: the dimension of the problem.
  */
 template<int dim>
 class SwarmState {
 public:
-  /*! @brief Integer data type allowed on the swarm.  */
-  using IntVec = Portage::vector<int>;
 
-  /*! @brief Double data type allowed on the swarm.  */
-  using DblVec = Portage::vector<double>;
-
-  /*! @brief Pointer to integer data type allowed on the swarm.  */
-  using IntVecPtr = std::shared_ptr<Portage::vector<int>>;
-
-  /*! @brief Pointer to double data type allowed on the swarm.  */
-  using DblVecPtr = std::shared_ptr<Portage::vector<double>>;
-
-  /*! @brief Constructor provided a reference swarm.
-   * @param swarm the swarm with which the field data are associated.
+  /**
+   * @brief Initialize from a reference swarm.
+   *
+   * @param swarm: the swarm with which the field data are associated.
    */
   explicit SwarmState(Swarm<dim> const& swarm)
     : num_owned_points_(swarm.num_owned_particles())
   {}
 
-  /*! @brief Constructor provided a size.
-   * @param data_size the number of data elements
+  /**
+   * @brief Initialize with a field size.
+   *
+   * @param size: size of each field.
    */
-  explicit SwarmState(int data_size)
-    : num_owned_points_(data_size)
-  {}
+  explicit SwarmState(int size) : num_owned_points_(size) {}
 
-  /*! @brief Set an integer field on the swarm.
-   * @param name the name of the integer field
-   * @param value a shared pointer to the values in the field.
-   * If field does not exist, create it.
+  /**
+   * @brief Create the swarm state from a given mesh state wrapper.
+   *
+   * Copies fields from mesh state wrapper to the current swarm state
+   * of the same size. It works only for double precision floating-point fields.
+   *
+   * @tparam State: type of the mesh state wrapper.
+   * @param state: the mesh state wrapper.
+   * @param kind: the entity kind to consider (node, cell).
+   */
+  template<typename State>
+  SwarmState(State const& state, Wonton::Entity_kind kind) {
+    // create return value
+    int num_entities = 0;
+    auto const field_names = state.names();
+
+    // retrieve number of entities
+    for (auto&& name : field_names) {
+      if (state.get_entity(name) == kind) {
+        num_entities = state.get_data_size(kind, name);
+        break;
+      }
+    }
+    // set number of particles
+    num_owned_points_ = num_entities;
+
+    // copy data
+    for (auto&& name : field_names) {
+      if (state.get_entity(name) == kind) {
+        // retrieve field from mesh state
+        const double* values;
+        state.mesh_get_data(kind, name, &values);
+        assert(values != nullptr);
+
+        // perform a deep copy then
+        auto& field = fields_dbl_[name];
+        field.resize(num_entities);
+        std::copy(values, values + num_entities, field.begin());
+      }
+    }
+  }
+
+  /**
+   * @brief Create the swarm state from set of mesh states wrappers.
+   *
+   * Copies fields from mesh state wrappers to the current swarm state of the
+   * same total size. It is useful for mapping from several meshes at once,
+   * e.g. for analysis of multiple times, or multiple simulations at the same
+   * set of spatial points, to obtain statistical properties like average,
+   * confidence bounds, and uncertaintities, for example. It works only for
+   * double precision floating-point fields.
+   *
+   * @tparam State: type of the mesh state wrapper.
+   * @param state: a list of mesh states wrappers.
+   * @param kind: the entity kind to consider (node, cell).
+   */
+  template<typename State>
+  SwarmState(std::vector<State*> const& states, Wonton::Entity_kind kind) {
+
+    auto const names = states[0]->names();
+    int const num_fields = names.size();
+    int const num_states = states.size();
+
+    // check all fields in all states
+    for (auto&& state : states) {
+      auto current = state->names();
+      if (names != current)
+        throw std::runtime_error("field names do not match");
+    }
+
+    // get sizes of data fields that match entity on each wrapper
+    std::vector<std::vector<int>> sizes(num_fields);
+
+    for (int i = 0; i < num_fields; ++i) {
+      sizes[i].resize(num_states);
+      for (int j = 0; j < num_states; ++j) {
+        auto const& state = *(states[j]);
+        auto const& name = state.names()[i];
+        if (state.get_entity(name) == kind) {
+          sizes[i][j] = state.get_data_size(kind, name);
+        }
+      }
+    }
+
+    // ensure sizes are same across names for each wrapper
+    for (int i = 0; i < num_fields; ++i) {
+      for (int j = 0; j < num_states; ++j) {
+        assert(sizes[0][j] > 0);
+        if (sizes[i][j] != sizes[0][j])
+          throw std::runtime_error("field sizes do not match");
+      }
+    }
+
+    // compute particle offsets per state
+    int num_entities = 0;
+    std::vector<int> offset(num_states);
+
+    for (int i = 0; i < num_states; i++) {
+      offset[i] = num_entities;
+      num_entities += sizes[0][i];
+    }
+
+    num_owned_points_ = num_entities;
+
+    // copy data
+    for (auto&& name : names) {
+      // resize particle field array
+      auto& field = fields_dbl_[name];
+      field.resize(num_entities);
+
+      for (int i = 0; i < num_states; ++i) {
+        // retrieve field from mesh state
+        const double* values;
+        states[i]->mesh_get_data(kind, name, &values);
+        assert(values != nullptr);
+        // perform a deep copy then
+        std::copy(values, values + sizes[0][i], field.begin() + offset[i]);
+      }
+    }
+  }
+
+  /**
+   * @brief Set a field on the swarm.
+   *
+   * @tparam T: field values type (int, double).
+   * @param name: field name.
+   * @param value: field values list.
    */
   template<typename T>
   void add_field(std::string name, Portage::vector<T> const& value) {
@@ -74,11 +189,11 @@ public:
   }
 
   /**
-   * @brief Set an integer field on the swarm.
+   * @brief Set a field on the swarm.
    *
-   * @param name name of the integer field
-   * @param value a shared pointer to the values in the field.
-   * If field does not exist, create it.
+   * @tparam T: field values type (int, double)
+   * @param name: field name.
+   * @param value: field values list.
    */
   template<typename T>
   void add_field(std::string name, std::vector<T> const&  value) {
@@ -99,12 +214,12 @@ public:
   }
 
   /**
-  * @brief Set an integer field on the swarm.
-  *
-  * @param name name of the integer field
-  * @param value a shared pointer to the values in the field.
-  * If field does not exist, create it.
-  */
+   * @brief Set a field on the swarm.
+   *
+   * @tparam T: field values type (int, double)
+   * @param name: field name.
+   * @param value: field values array.
+   */
   template<typename T>
   void add_field(std::string name, const T* const value) {
 
@@ -154,10 +269,10 @@ public:
   }
 
   /**
-   * @brief Get an integer field off the swarm.
+   * @brief Retrieve the specified field.
    *
-   * @param name the name of the integer field
-   * @param value the values in the field
+   * @param name field name.
+   * @param value a pointer to field values.
    */
   template<typename T>
   void get_field(std::string name, T const** value) const {
@@ -175,11 +290,10 @@ public:
   }
 
   /**
-   * @brief Get an integer field off the swarm - add it if it does
-   *  not exist
+   * @brief Retrieve the specified field.
    *
-   * @param name the name of the integer field
-   * @param value the values in the field
+   * @param name field name.
+   * @param value a pointer to field values.
    */
   template<typename T>
   void get_field(std::string name, T **value) {
@@ -195,12 +309,18 @@ public:
     }
   }
 
-  /*! @brief Get number of particles
-   * @return number of points
+  /**
+   * @brief Get number of particles.
+   *
+   * @return the number of particles of the swarm.
    */
   int get_size() { return num_owned_points_; }
 
-  /*! @brief Get the names of all integer fields
+  /**
+   * @brief Retrieve the list of field names.
+   *
+   * @tparam T: field values type (int or double)
+   * @return the list of field names
    */
   template<typename T>
   std::vector<std::string> get_field_names() {
@@ -222,10 +342,11 @@ public:
   }
 
   /**
+   * @brief Extend the field with the given subfield.
    *
-   * @tparam T
-   * @param name
-   * @param values
+   * @tparam T: field values type (int or double).
+   * @param name: name of the field to update.
+   * @param values: the subfield to add.
    */
   template<typename T>
   void extend_field(std::string name, Portage::vector<T> const& values) {
@@ -254,126 +375,9 @@ public:
   int num_owned_points_ = 0;
 
   /** data fields */
-  std::map<std::string, Portage::vector<int>>    fields_int_;
-  std::map<std::string, Portage::vector<double>> fields_dbl_;
+  std::map<std::string, Portage::vector<int>>    fields_int_ {};
+  std::map<std::string, Portage::vector<double>> fields_dbl_ {};
 };
 
-/* -------------------------------------------------------------------------- */
-/*! @brief SwarmState factory, given a mesh state wrapper. Only does double fields.
- * Copies fields from mesh state wrapper to a swarm state wrapper of the same size.
- * @param state the field data on the mesh
- * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
- * @return shared pointer to the resultant swarm state
- */
-template<size_t dim, class StateWrapper>
-std::shared_ptr<SwarmState<dim>> SwarmStateFactory(
-  const StateWrapper &state,
-  const Portage::Entity_kind entity)
-{
-  // create return value
-  size_t ndata=0;
-
-  for (std::string name : state.names()) {
-    // Simple_State does not store separte lists of names by entity, 
-    // so we have to filter.
-    if (state.get_entity(name) == entity) {
-      ndata = state.get_data_size(entity, name);
-      break;
-    }
-  }
-  std::shared_ptr<SwarmState<dim>> result=std::make_shared<SwarmState<dim>>(ndata);
-
-  // copy data
-  for (std::string name : state.names()) {
-    if (state.get_entity(name) != entity) continue;
-
-    // make sure all fields have same size
-    assert(state.get_data_size(entity, name) == ndata);
-
-    const double *datap;
-    state.mesh_get_data(entity, name, &datap);
-    typename SwarmState<dim>::DblVecPtr data = std::make_shared<vector<double>>(ndata);
-    
-    for (size_t i=0; i<ndata; i++) (*data)[i] = datap[i];
-    result->add_field(name, data);
-  }
-
-  return result;
-}
-
-/*! @brief SwarmState factory, given a set of mesh state wrappers. Only does double fields.
- * Copies fields from mesh state wrappers to a swarm state wrapper of the total size.
- * This factory is useful for mapping from several meshes at once, 
- * e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, 
- * to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.
- * @param states the field data on the meshes
- * @param entity entity on which to get data (e.g. CELL, NODE, etc.)
- *
- * All fields must exist in all states. In each state, all fields must have same size.
- */
-template<size_t dim, class StateWrapper>
-std::shared_ptr<SwarmState<dim>> SwarmStateFactory
-  (const std::vector<StateWrapper*> states,
-   const Portage::Entity_kind entity)
-{
-  // check all fields in all states
-  std::vector<std::string> names = states[0]->names();
-  for (size_t wrap=1; wrap<states.size(); wrap++) {
-    std::vector<std::string> these = states[wrap]->names();
-    if (names != these) {
-      throw std::runtime_error("field names don't match across state wrappers");
-    }
-  }
-
-  // get sizes of data fields that match entity on each wrapper
-  std::vector<std::vector<int>> sizes(names.size(), std::vector<int>(states.size(),0));
-  for (size_t n=0; n<names.size(); n++) {
-    for (size_t wrap=0; wrap<states.size(); wrap++) {
-      StateWrapper &state=*states[wrap];
-      std::string name=state.names()[n];
-      if (state.get_entity(name) == entity) {
-        sizes[n][wrap] = state.get_data_size(entity, name);
-      }
-    }
-  }
-  // ensure sizes are same across names for each wrapper
-  for (size_t wrap=0; wrap<states.size(); wrap++) {
-    assert(sizes[0][wrap]>0);
-    for (size_t n=1; n<names.size(); n++) {
-      if (sizes[n][wrap] != sizes[0][wrap]) {
-	throw std::runtime_error("field sizes don't match across state names");
-      }
-    }
-  }
-  // get size of output swarm state
-  size_t ndata=0;
-  std::vector<int> offset(states.size(),0);
-  for (size_t wrap=0; wrap<states.size(); wrap++) {
-    offset[wrap] = ndata;
-    ndata += sizes[0][wrap];
-  }
-
-  // create output swarm state
-  std::shared_ptr<SwarmState<dim>> result = std::make_shared<SwarmState<dim>>(ndata);
-
-  // copy data
-  for (std::string name : states[0]->names()) {
-    typename SwarmState<dim>::DblVecPtr data = std::make_shared<vector<double>>(ndata);
-    for (size_t wrap=0; wrap<states.size(); wrap++) {
-      StateWrapper &state=*states[wrap];
-
-      const double *datap;
-      state.mesh_get_data(entity, name, &datap);
-    
-      for (size_t i=0; i<sizes[0][wrap]; i++) (*data)[i+offset[wrap]] = datap[i];
-    }
-    result->add_field(name, data);
-  }
-
-  return result;
-}
-
 }} //namespace Portage::MeshFree
-
-#endif // SWARM_STATE_H_INC_
 
