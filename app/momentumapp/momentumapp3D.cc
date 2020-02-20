@@ -157,6 +157,7 @@ int main(int argc, char** argv) {
 
   auto srcmesh = mesh_factory(0.0, 0.0, 0.0, lenx, leny, lenz, nx, ny, nz);
   auto trgmesh = mesh_factory(0.0, 0.0, 0.0, lenx, leny, lenz, nx + 2, ny + 3, nz + 4);
+  // auto trgmesh = mesh_factory("test/prism40.exo");
 
   // -- setup mesh wrappers
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
@@ -278,7 +279,7 @@ int main(int argc, char** argv) {
   if (rank == 0) {
     std::ofstream datafile;
     std::stringstream ss;
-    ss << "errors" << method - 1 << ".txt"; 
+    ss << "errors3D_" << method - 1 << ".txt"; 
     datafile.open(ss.str());
     datafile << "0 " << cons_law0 << std::endl;
     datafile << "1 " << cons_law1 << std::endl;

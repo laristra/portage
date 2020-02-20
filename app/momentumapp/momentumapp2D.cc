@@ -270,7 +270,7 @@ int main(int argc, char** argv) {
   if (rank == 0) {
     std::ofstream datafile;
     std::stringstream ss;
-    ss << "errors" << method - 1 << ".txt"; 
+    ss << "errors2D_" << method - 1 << ".txt"; 
     datafile.open(ss.str());
     datafile << "0 " << cons_law0 << std::endl;
     datafile << "1 " << cons_law1 << std::endl;
