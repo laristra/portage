@@ -10,26 +10,26 @@ Please see the license file at the root of this repository, or at:
 
 ####################################################################
 
-message(STATUS "Adding sweptfaceapp_jali_singlemat tests")
+message(STATUS "Adding swept_face_singlemat tests")
 
 # create a macro to run a distributed compare test
 macro(ADD_DISTRIBUTED_APPTEST NP DIM NCELLS FIELDS REMAP_ORDER )
 
   # copy the shell script
   file(
-    COPY sweptfaceapp_jali_singlemat.sh 
+    COPY swept_face_singlemat.sh
     DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   )
   
   # add the test
   add_test(
-    NAME sweptfaceapp_jali_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
-    COMMAND ./sweptfaceapp_jali_singlemat.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER} 
+    NAME swept_face_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
+    COMMAND swept_face_singlemat.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER}
   )
     
   # set environment variables for the script
   set_property(
-    TEST sweptfaceapp_jali_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
+    TEST swept_face_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
     PROPERTY ENVIRONMENT
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/distributed_cmp

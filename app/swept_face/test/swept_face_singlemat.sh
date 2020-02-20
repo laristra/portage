@@ -23,7 +23,7 @@ TOLERANCE_3D=5.e-9
 rm -f ${FILENAME}*
 
 # SERIAL RUN
-mpirun -np 1 $TESTAPPDIR/sweptfaceapp_jali_singlemat \
+mpirun -np 1 $TESTAPPDIR/swept_face_singlemat \
   --dim=$2 \
   --ncells=$3 \
   --field_expression=$4 \
@@ -31,7 +31,7 @@ mpirun -np 1 $TESTAPPDIR/sweptfaceapp_jali_singlemat \
   --field_filename=${FILENAME}
  
 # PARALLEL RUN
-mpirun -np $1 $TESTAPPDIR/sweptfaceapp_jali_singlemat \
+mpirun -np $1 $TESTAPPDIR/swept_face_singlemat \
   --dim=$2 \
   --ncells=$3 \
   --field_expression=$4 \
