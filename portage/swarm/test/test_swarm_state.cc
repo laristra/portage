@@ -29,33 +29,33 @@ TEST(SwarmState, basic) {
   using Portage::Meshfree::SwarmState;
   using namespace Portage::Meshfree;
 
-  int const npoints = 10;
-  Portage::vector<Wonton::Point<3>> points(npoints);
+  // set up a random swarm
+  std::random_device device;
+  std::mt19937 engine { device() };
+  std::uniform_real_distribution<double> generator(0.0, 1.0);
 
-  // set up swarm
-  double h = 0.01;
-  srand(time(NULL));
-  for (int i = 0; i < npoints; i++) {
-    points[i] = Wonton::Point<3>(
-        (static_cast<double>(rand()) / RAND_MAX),
-        (static_cast<double>(rand()) / RAND_MAX),
-        (static_cast<double>(rand()) / RAND_MAX));
+  int const num_points = 10;
+  Portage::vector<Wonton::Point<3>> points(num_points);
+
+  for (int i = 0; i < num_points; i++) {
+    points[i] = Wonton::Point<3>(generator(engine),
+                                 generator(engine),
+                                 generator(engine));
   }
-  //auto p_ptr = std::make_shared<Portage::vector<Wonton::Point<3>>>(points);
 
   // create state
   Swarm<3> swarm(points);
   SwarmState<3> state(swarm);
-  ASSERT_EQ(state.get_size(), npoints);
+  ASSERT_EQ(state.get_size(), num_points);
 
   // create state fields
-  Portage::vector<double> dbl_field1(npoints, 0.);
-  Portage::vector<double> dbl_field2(npoints, 0.);
-  Portage::vector<int>    int_field1(npoints, 0.);
-  Portage::vector<int>    int_field2(npoints, 0.);
+  Portage::vector<double> dbl_field1(num_points, 0.);
+  Portage::vector<double> dbl_field2(num_points, 0.);
+  Portage::vector<int>    int_field1(num_points, 0.);
+  Portage::vector<int>    int_field2(num_points, 0.);
 
   // fill in fields
-  for (int i = 0; i < npoints; i++) {
+  for (int i = 0; i < num_points; i++) {
     dbl_field1[i] = i + 0.10;
     dbl_field2[i] = i + 0.01;
     int_field1[i] = i + 10;
@@ -74,7 +74,7 @@ TEST(SwarmState, basic) {
   auto i1p = state.get_field_int("i1");
   auto i2p = state.get_field_int("i2");
 
-  for (int i = 0; i < npoints; i++) {
+  for (int i = 0; i < num_points; i++) {
     ASSERT_DOUBLE_EQ(d1p[i], dbl_field1[i]);
     ASSERT_DOUBLE_EQ(d2p[i], dbl_field2[i]);
     ASSERT_EQ(i1p[i], int_field1[i]);
@@ -92,10 +92,10 @@ TEST(SwarmState, basic) {
   ASSERT_EQ(inames[1], "i2");
 
   // check creation by size alone
-  SwarmState<3> state2(npoints);
+  SwarmState<3> state2(num_points);
   state2.add_field("d1", dbl_field1);
   auto d1p2 = state2.get_field_double("d1");
-  ASSERT_EQ(d1p2.size(), npoints);
+  ASSERT_EQ(d1p2.size(), num_points);
 }
 
 

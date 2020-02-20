@@ -194,7 +194,7 @@ Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
   // set the random engine and generator
   std::random_device device;
   std::mt19937 engine { user_seed ? user_seed : device() };
-  std::uniform_real_distribution<> generator(0.0, 1.0);
+  std::uniform_real_distribution<double> generator(0.0, 1.0);
 
   // update coordinates
   if (distribution == 0) {
@@ -278,7 +278,7 @@ Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
   // set the random engine and generator
   std::random_device device;
   std::mt19937 engine { user_seed ? user_seed : device() };
-  std::uniform_real_distribution<> generator(0.0, 1.0);
+  std::uniform_real_distribution<double> generator(0.0, 1.0);
 
   if (distribution == 0) {
     // resize field and update coordinates
