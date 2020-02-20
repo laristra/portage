@@ -139,7 +139,7 @@ class DriverTest : public ::testing::Test {
     double toterr=0.;
 
     typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    targetState->get_field("particledata", vecout);
+    targetState->copy_field("particledata", vecout);
     ASSERT_NE(nullptr, vecout);
 
     for (int p = 0; p < ntarpts; ++p) {

@@ -196,7 +196,7 @@ class DriverTest : public ::testing::Test {
     // Check the answer
     double toterr=0.;
     typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    targetState->get_field("particledata", vecout);
+    targetState->copy_field("particledata", vecout);
     ASSERT_NE(nullptr, vecout);
     if (operator_ == Portage::Meshfree::Operator::LastOperator) {
       for (int p = 0; p < ntarpts; ++p) {
@@ -295,7 +295,7 @@ class DriverTest : public ::testing::Test {
     // Check the answer
     double toterr=0.;
     typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    targetState->get_field("particledata", vecout);
+    targetState->copy_field("particledata", vecout);
     ASSERT_NE(nullptr, vecout);
     if (operator_ == Portage::Meshfree::Operator::LastOperator) {
       for (int p = 0; p < ntarpts; ++p) {
@@ -668,7 +668,7 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
     driver.run();
 
     Portage::Meshfree::SwarmState<2>::DblVecPtr indicator_ptr;
-    tgt_state_ptr->get_field("indicate", indicator_ptr);
+    tgt_state_ptr->copy_field("indicate", indicator_ptr);
     Portage::vector<double> &indicator=*indicator_ptr;
 
 #ifdef DEBUG_HERE
@@ -772,7 +772,7 @@ TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
     driver.run();
 
     Portage::Meshfree::SwarmState<3>::DblVecPtr indicator_ptr;
-    tgt_state_ptr->get_field("indicate", indicator_ptr);
+    tgt_state_ptr->copy_field("indicate", indicator_ptr);
     Portage::vector<double> &indicator=*indicator_ptr;
 
 #ifdef DEBUG_HERE

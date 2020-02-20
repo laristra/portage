@@ -391,7 +391,7 @@ class MSM_Driver {
                 name!=target_cellvar_names.end(); name++)
       {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
-        target_swarm_state.get_field(*name, sfield);
+        target_swarm_state.copy_field(*name, sfield);
         double *mfield;
         target_state_.mesh_get_data(Entity_kind::CELL, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {
@@ -483,7 +483,7 @@ class MSM_Driver {
                 name!=target_nodevar_names.end(); name++)
       {
         typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
-        target_swarm_state.get_field(*name, sfield);
+        target_swarm_state.copy_field(*name, sfield);
         double *mfield;
         target_state_.mesh_get_data(Entity_kind::NODE, *name, &mfield);
         for (int i=0; i<target_swarm_state.get_size(); i++) {

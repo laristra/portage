@@ -120,7 +120,8 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
 
   // fill in source state
   for (size_t j=0; j<nbasis; j++) {
-    typename SwarmState<dim>::DblVecPtr fieldp; src_state.get_field(fnames[j], fieldp);
+    typename SwarmState<dim>::DblVecPtr fieldp;
+    src_state.copy_field(fnames[j], fieldp);
     auto &field(*fieldp);
     for (size_t i=0; i<nsrc; i++) {
       auto y = src_swarm.get_particle_coordinates(i);
@@ -149,7 +150,8 @@ void test_estimate(Portage::Meshfree::EstimateType etype,
     for (size_t j=0; j<nbasis; j++) {
 
       // get the target field
-      typename SwarmState<dim>::DblVecPtr fieldp; tgt_state.get_field(fnames[j], fieldp);
+      typename SwarmState<dim>::DblVecPtr fieldp;
+      tgt_state.copy_field(fnames[j], fieldp);
       auto &field(*fieldp);
 
       // Loop through derivatives

@@ -77,8 +77,8 @@ TEST(SwarmState, Multiple2D) {
   Swarm<2> swarm(mesh_wrappers, Wonton::NODE);
   SwarmState<2> swarm_state(state_wrappers, Wonton::NODE);
 
-  auto g0 = swarm_state.get_field_double("f0");
-  auto g1 = swarm_state.get_field_double("f1");
+  auto g0 = swarm_state.get_field_dbl("f0");
+  auto g1 = swarm_state.get_field_dbl("f1");
 
   for (int i = 0; i < 90; i++) {
     ASSERT_EQ(g0[i], i);

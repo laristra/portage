@@ -73,7 +73,7 @@ class Estimate {
   void set_variable(std::string const & var_name, size_t derivin=0) {
     var_name_ = var_name;
     derivative_ = derivin;
-    source_state_.get_field(var_name_, source_vals_);
+    source_state_.copy_field(var_name_, source_vals_);
   }
 
  private:

@@ -108,11 +108,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
 
@@ -210,11 +210,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
 
@@ -320,11 +320,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
 
@@ -428,11 +428,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
 
@@ -539,11 +539,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
 
@@ -658,11 +658,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
   int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
   typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  source_state->copy_field("intdata", sd_int_after);
 
   typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
       std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
+  source_state->copy_field("dbldata", sd_dbl_after);
    
   ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
 
