@@ -132,7 +132,7 @@ public:
     int max_elap = 0;
 
     for (int i = 0; i < nsteps; ++i) {
-      time_ratio[i] = static_cast<int>(elap[i] * 100 / time.total);
+      time_ratio[i] = static_cast<int>(100 * (elap[i] / time.total));
       max_elap = std::max(max_elap, static_cast<int>(elap[i]));
     }
 
