@@ -272,6 +272,15 @@ public:
   }
 
   /**
+   *
+   * @param name
+   * @return
+   */
+  Portage::vector<double>& get_field(std::string name) const {
+    return get_field_dbl(name);
+  }
+
+  /**
    * @brief Retrieve the specified field.
    *
    * @param name field name.
