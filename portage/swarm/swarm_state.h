@@ -240,7 +240,7 @@ public:
   }
 
   /**
-   * @brief Retrieve an integer field.
+   * @brief Retrieve a specified integer field.
    *
    * One cannot specialize template method without
    * specializing the template class, so just revert
@@ -249,13 +249,14 @@ public:
    * @param name the name of the integer field
    * @return value the values in the field
    */
-  Portage::vector<int> get_field_int(std::string name) const {
+  Portage::vector<int>& get_field_int(std::string name) const {
     assert(fields_int_.count("name"));
-    return fields_int_.at(name);
+    using T = Portage::vector<int>;
+    return const_cast<T&>(fields_int_.at(name));
   }
 
   /**
-   * @brief Retrieve a real value field.
+   * @brief Retrieve a specified real field.
    *
    * One cannot specialize template method without
    * specializing the template class, so just revert
@@ -264,9 +265,10 @@ public:
    * @param name the name of the integer field
    * @return value the values in the field
    */
-  Portage::vector<double> get_field_double(std::string name) const {
+  Portage::vector<double>& get_field_dbl(std::string name) const {
     assert(fields_dbl_.count("name"));
-    return fields_dbl_.at(name);
+    using T = Portage::vector<double>;
+    return const_cast<T&>(fields_dbl_.at(name));
   }
 
   /**
@@ -276,37 +278,19 @@ public:
    * @param value a pointer to field values.
    */
   template<typename T>
-  void get_field(std::string name, T const** value) const {
+  void copy_field(std::string name, T* value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
+    assert(value != nullptr);
 
     if (std::is_integral<T>::value) {
       assert(fields_int_.count("name"));
-      *value = fields_int_.at(name).data();
-    }
-    else {
-      assert(fields_dbl_.count("name"));
-      *value = fields_dbl_.at(name).data();
-    }
-  }
-
-  /**
-   * @brief Retrieve the specified field.
-   *
-   * @param name field name.
-   * @param value a pointer to field values.
-   */
-  template<typename T>
-  void get_field(std::string name, T **value) {
-
-    static_assert(std::is_arithmetic<T>::value, "only numeric fields");
-
-    if (std::is_integral<T>::value) {
-      assert(fields_int_.count("name"));
-      *value = fields_int_.at(name).data();
+      auto& field = fields_int_[name];
+      std::copy(field.begin(), field.end(), value);
     } else {
       assert(fields_dbl_.count("name"));
-      *value = fields_dbl_.at(name).data();
+      auto& field = fields_dbl_[name];
+      std::copy(field.begin(), field.end(), value);
     }
   }
 
