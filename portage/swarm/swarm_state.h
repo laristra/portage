@@ -18,6 +18,7 @@ namespace Portage { namespace Meshfree {
 
 /**
  * @class SwarmState
+ *
  * @brief Particle field state class.
  *
  * @tparam dim: the dimension of the problem.

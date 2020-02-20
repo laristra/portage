@@ -3,8 +3,7 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#ifndef PORTAGE_SWARM_SWARM_H_
-#define PORTAGE_SWARM_SWARM_H_
+#pragma once
 
 #include <vector>
 #include <memory>
@@ -34,9 +33,6 @@ namespace Portage { namespace Meshfree {
 template<int dim>
 class Swarm {
 public:
-
-  using PointVecPtr = std::shared_ptr<Portage::vector<Wonton::Point<dim>>>;
-  using PointVec = vector<Wonton::Point<dim>>;
 
   /**
    * @brief A particle has a center point and smoothing lengths in each dimension.
@@ -397,7 +393,5 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
 }
 
 /* -------------------------------------------------------------------------- */
-
 }}  // namespace Portage::Meshfree
 
-#endif  // PORTAGE_SWARM_SWARM_H_
