@@ -53,6 +53,8 @@ TEST(SwarmState, basic) {
   Portage::vector<double> dbl_field2(num_points, 0.);
   Portage::vector<int>    int_field1(num_points, 0.);
   Portage::vector<int>    int_field2(num_points, 0.);
+  std::vector<double>     dbl_field3(num_points, 0.);
+  std::vector<int>        int_field3(num_points, 0.);
 
   // fill in fields
   for (int i = 0; i < num_points; i++) {
@@ -62,39 +64,53 @@ TEST(SwarmState, basic) {
     int_field2[i] = i + 100;
   }
 
+  std::copy(dbl_field1.begin(), dbl_field1.end(), dbl_field3.begin());
+  std::copy(int_field1.begin(), int_field1.end(), int_field3.begin());
+
   // add the fields to the state
   state.add_field("d1", dbl_field1);
   state.add_field("d2", dbl_field2);
   state.add_field("i1", int_field1);
   state.add_field("i2", int_field2);
+  state.add_field("d3", dbl_field3);
+  state.add_field("i3", int_field3);
 
   // check that fields are correct
-  auto d1p = state.get_field_double("d1");
-  auto d2p = state.get_field_double("d2");
-  auto i1p = state.get_field_int("i1");
-  auto i2p = state.get_field_int("i2");
+  int i3[num_points];
+  double d3[num_points];
+
+  auto d1 = state.get_field_dbl("d1");
+  auto d2 = state.get_field_dbl("d2");
+  auto i1 = state.get_field_int("i1");
+  auto i2 = state.get_field_int("i2");
+  state.copy_field("d3", d3);
+  state.copy_field("i3", i3);
 
   for (int i = 0; i < num_points; i++) {
-    ASSERT_DOUBLE_EQ(d1p[i], dbl_field1[i]);
-    ASSERT_DOUBLE_EQ(d2p[i], dbl_field2[i]);
-    ASSERT_EQ(i1p[i], int_field1[i]);
-    ASSERT_EQ(i2p[i], int_field2[i]);
+    ASSERT_EQ(i1[i], int_field1[i]);
+    ASSERT_EQ(i2[i], int_field2[i]);
+    ASSERT_EQ(i3[i], i1[i]);
+    ASSERT_DOUBLE_EQ(d1[i], dbl_field1[i]);
+    ASSERT_DOUBLE_EQ(d2[i], dbl_field2[i]);
+    ASSERT_DOUBLE_EQ(d3[i], d1[i]);
   }
 
   // check names lists are correct
   auto dnames = state.get_field_names<double>();
   auto inames = state.get_field_names<int>();
-  ASSERT_EQ(dnames.size(), 2);
+  ASSERT_EQ(dnames.size(), 3);
   ASSERT_EQ(dnames[0], "d1");
   ASSERT_EQ(dnames[1], "d2");
-  ASSERT_EQ(inames.size(), 2);
+  ASSERT_EQ(dnames[2], "d3");
+  ASSERT_EQ(inames.size(), 3);
   ASSERT_EQ(inames[0], "i1");
   ASSERT_EQ(inames[1], "i2");
+  ASSERT_EQ(inames[2], "i3");
 
   // check creation by size alone
   SwarmState<3> state2(num_points);
   state2.add_field("d1", dbl_field1);
-  auto d1p2 = state2.get_field_double("d1");
+  auto d1p2 = state2.get_field_dbl("d1");
   ASSERT_EQ(d1p2.size(), num_points);
 }
 
@@ -132,7 +148,7 @@ TEST(SwarmState, Simple_State_Wrapper) {
     ASSERT_EQ(dblnames.size(), 1);
     ASSERT_EQ(dblnames[0], "cf1");
 
-    auto field = state.get_field_double("cf1");
+    auto field = state.get_field_dbl("cf1");
     for (int i = 0; i < ncells; i++)
       ASSERT_EQ(field[i], 1.0);
   }
@@ -149,7 +165,7 @@ TEST(SwarmState, Simple_State_Wrapper) {
     ASSERT_EQ(dblnames.size(), 1);
     ASSERT_EQ(dblnames[0], "nf1");
 
-    auto field = state.get_field_double("nf1");
+    auto field = state.get_field_dbl("nf1");
     for (int i=0; i < nnodes; i++)
       ASSERT_EQ(field[i], 2.0);
   }
