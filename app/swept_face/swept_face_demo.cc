@@ -700,14 +700,15 @@ void move_point<2>(double* coords, int iter, int ntimesteps, int scale) {
   double const periodT = 2.0;
   double const deltaT = periodT/ntimesteps;
   double const tcur = iter * deltaT;
+  double const step = (deltaT / scale);
 
-  double veloc[2];
-  double x = coords[0];
-  double y = coords[1];
-  veloc[0] = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
-  veloc[1] =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
-  coords[0] += veloc[0] * deltaT / scale;
-  coords[1] += veloc[1] * deltaT / scale;
+  double& x = coords[0];
+  double& y = coords[1];
+  double vx = -2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*y);
+  double vy =  2*sin(M_PI*tcur/periodT)*sin(M_PI*x)*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*y);
+
+  x += vx * step;
+  y += vy * step;
 }
 
 /**
@@ -729,18 +730,18 @@ void move_point<3>(double* coords, int iter, int ntimesteps, int scale) {
   double const periodT = 2.0;
   double const deltaT = periodT/ntimesteps;
   double const tcur = iter * deltaT;
+  double const step = (deltaT / scale);
 
-  double veloc[3];
-  double x = coords[0];
-  double y = coords[1];
-  double z = coords[2];
-  veloc[0] = -2*sin(M_PI*tcur/periodT) * pow(sin(M_PI*x),2) * sin(M_PI*y)*cos(M_PI*y);
-  veloc[1] =  2*sin(M_PI*tcur/periodT) * sin(M_PI*x)*cos(M_PI*x) * pow(sin(M_PI*y),2);
-  veloc[2] = -2*sin(M_PI*tcur/periodT) * sin(M_PI*x*y)*cos(M_PI*x*y) * pow(sin(M_PI*z),2);
-  coords[0] += veloc[0] * deltaT / scale;
-  coords[1] += veloc[1] * deltaT / scale;
-  coords[2] += veloc[2] * deltaT / scale;
+  double& x = coords[0];
+  double& y = coords[1];
+  double& z = coords[2];
+  double vx = -2*sin(M_PI*tcur/periodT) * pow(sin(M_PI*x),2) * sin(M_PI*y)*cos(M_PI*y);
+  double vy =  2*sin(M_PI*tcur/periodT) * sin(M_PI*x)*cos(M_PI*x) * pow(sin(M_PI*y),2);
+  double vz = -2*sin(M_PI*tcur/periodT) * sin(M_PI*x*y)*cos(M_PI*x*y) * pow(sin(M_PI*z),2);
 
+  x += vx * step;
+  y += vy * step;
+  z += vz * step;
 //  static double const factor = 0.075;
 //  coords[0] += factor * sin(2 * M_PI * coords[0]);
 //  coords[1] += factor * sin(2 * M_PI * coords[1]);
