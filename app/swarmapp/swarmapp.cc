@@ -38,7 +38,6 @@ using std::make_shared;
 using Portage::Meshfree::Swarm;
 using Portage::Meshfree::SwarmState;
 using Portage::Meshfree::SwarmDriver;
-using Portage::Meshfree::SwarmFactory;
 using Portage::Meshfree::Accumulate;
 using Portage::Meshfree::Estimate;
 using Portage::SearchSimplePoints;
@@ -187,7 +186,6 @@ void usage() {
 
   std::cout << "List of example numbers:" << std::endl;
   int i = 0;
-  bool separated = false;
   for (const auto &example : examples) {
     std::printf("  %d: order %d remap of order %d function\n",
                 i, example.estimation_order,
@@ -207,49 +205,49 @@ void run_test_2d(int example_num, int n_source, int n_target,
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.1, -1.1, 1.1, 1.1, n_source*n_source,
-                                 distribution, seed);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, 1.0, 1.0, n_target*n_target, 
-                                  distribution, seed);
-  
-  auto inputState = make_shared<SwarmState<2>>(*inputSwarm);
-  auto targetState = make_shared<SwarmState<2>>(*targetSwarm);
+  Swarm<2> source_swarm(n_source * n_source, distribution, seed,
+                        -1.1, 1.1, -1.1, 1.1);
+  Swarm<2> target_swarm(n_target * n_target, distribution, seed,
+                        -1.0, 1.0, -1.0, 1.0);
 
-  int nsrcpts = inputSwarm->num_particles();
-  auto inputData = make_shared<typename SwarmState<2>::DblVec>(nsrcpts, 0.0);
+  SwarmState<2> source_state(source_swarm);
+  SwarmState<2> target_state(target_swarm);
 
-  for (int p(0); p < nsrcpts; ++p) {
-    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
-    (*inputData)[p] = field_func<2>(example.field_order, coord);
+  int const num_source_particles = source_swarm.num_particles();
+  int const num_target_particles = target_swarm.num_particles();
+
+  Portage::vector<double> source_data(num_source_particles, 0.);
+  Portage::vector<double> target_data(num_target_particles, 0.);
+  std::vector<std::string> remap_fields;
+
+  for (int p = 0; p < num_source_particles; ++p) {
+    auto coord = source_swarm.get_particle_coordinates(p);
+    source_data[p] = field_func<2>(example.field_order, coord);
   }
   
-  inputState->add_field("remapdata", inputData);
-
-  int ntarpts = targetSwarm->num_particles();
-  auto targetData = make_shared<typename SwarmState<2>::DblVec>(ntarpts, 0.0);
-  targetState->add_field("remapdata", targetData);
-
-  std::vector<std::string> remap_fields;
-  remap_fields.push_back("remapdata");
+  source_state.add_field("remapdata", source_data);
+  target_state.add_field("remapdata", target_data);
+  remap_fields.emplace_back("remapdata");
 
   // Smoothing lengths (or in other words "size" of the support
   // function) in each dimension
-  double h;
+  double h = 0.;
+  int nsmooth = 0;
   Portage::Meshfree::WeightCenter center_type;
-  int nsmooth;
-  if(center==0) {
+
+  if (center == 0) {
     center_type = Portage::Meshfree::Gather;
-    h = 2.0*hfactor/n_target;
-    nsmooth = ntarpts;
-  } else if (center==1) {
+    h = 2.0 * hfactor / n_target;
+    nsmooth = num_target_particles;
+  } else if (center == 1) {
     center_type = Portage::Meshfree::Scatter;
-    h = 2.2*hfactor/n_source;
-    nsmooth = nsrcpts;
+    h = 2.2 * hfactor / n_source;
+    nsmooth = num_source_particles;
   }
-  auto smoothing_lengths =
-    Portage::vector<std::vector<std::vector<double>>>
-      (nsmooth, std::vector<std::vector<double>>(1, std::vector<double>(2, h)));
-                                                                      
+
+  std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, h));
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
+
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   SwarmDriver<
     Search_KDTree_Nanoflann,
@@ -258,7 +256,7 @@ void run_test_2d(int example_num, int n_source, int n_target,
     2,
     Swarm<2>,
     SwarmState<2>>
-      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+      d(source_swarm, source_state, target_swarm, target_state,
         smoothing_lengths, Portage::Meshfree::Weight::B4, 
         Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #else
@@ -269,7 +267,7 @@ void run_test_2d(int example_num, int n_source, int n_target,
     2,
     Swarm<2>,
     SwarmState<2>>
-      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+      d(source_swarm, source_state, target_swarm, target_state,
         smoothing_lengths, Portage::Meshfree::Weight::B4, 
         Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #endif
@@ -294,21 +292,21 @@ void run_test_2d(int example_num, int n_source, int n_target,
   d.run();
 #endif
 
-  std::vector<double> expected_value(ntarpts, 0.0);
+  std::vector<double> expected_value(num_target_particles, 0.0);
 
   std::vector<double> toterr(3,0.);
-  for (int p(0); p < ntarpts; ++p) {
-    Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
+  for (int p(0); p < num_target_particles; ++p) {
+    auto coord = target_swarm.get_particle_coordinates(p);
 
     expected_value[p] = field_func<2>(example.field_order, coord);
 
-    double error = fabs(expected_value[p] - (*targetData)[p]);
+    double error = fabs(expected_value[p] - target_data[p]);
     toterr[0] = fmax(error, toterr[0]);
     toterr[1] = toterr[1]+error;
     toterr[2] = toterr[2]+error*error;
   }
-  toterr[1] /= nsrcpts;
-  toterr[2] /= nsrcpts;
+  toterr[1] /= num_source_particles;
+  toterr[2] /= num_source_particles;
   toterr[2] = sqrt(toterr[2]);
 
   std::cout << std::endl;
@@ -333,9 +331,9 @@ void run_test_2d(int example_num, int n_source, int n_target,
   finp_csv << std::scientific;
   finp_csv.precision(17);
   finp_csv << " X, Y, Value\n";
-  for (int p(0); p < nsrcpts; ++p) {
-    Wonton::Point<2> coord = inputSwarm->get_particle_coordinates(p);
-    finp_csv << coord[0] << ", " << coord[1] << ", " << (*inputData)[p] << std::endl;
+  for (int p(0); p < num_source_particles; ++p) {
+    Wonton::Point<2> coord = source_swarm.get_particle_coordinates(p);
+    finp_csv << coord[0] << ", " << coord[1] << ", " << source_data[p] << std::endl;
   }
 
   // Create the output file for comparison.
@@ -348,9 +346,9 @@ void run_test_2d(int example_num, int n_source, int n_target,
   fout_csv << std::scientific;
   fout_csv.precision(17);
   fout_csv << " X, Y, Value\n";
-  for (int p(0); p < ntarpts; ++p) {
-    Wonton::Point<2> coord = targetSwarm->get_particle_coordinates(p);
-    fout_csv << coord[0] << ", " << coord[1] << ", " << (*targetData)[p] << std::endl;
+  for (int p(0); p < num_target_particles; ++p) {
+    Wonton::Point<2> coord = target_swarm.get_particle_coordinates(p);
+    fout_csv << coord[0] << ", " << coord[1] << ", " << target_data[p] << std::endl;
   }
   std::cout << "finishing swarm app..." << std::endl;
 }
@@ -366,27 +364,27 @@ void run_test_3d(int example_num, int n_source, int n_target,
   example_properties example = setup_examples()[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  auto inputSwarm = SwarmFactory(-1.1, -1.1, -1.1, 1.1, 1.1, 1.1, n_source*n_source*n_source,
+  auto source_swarm = SwarmFactory(-1.1, -1.1, -1.1, 1.1, 1.1, 1.1, n_source*n_source*n_source,
                                  distribution, seed);
-  auto targetSwarm = SwarmFactory(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, n_target*n_target*n_target, 
+  auto target_swarm = SwarmFactory(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0, n_target*n_target*n_target, 
                                   distribution, seed);
   
-  auto inputState = make_shared<SwarmState<3>>(*inputSwarm);
-  auto targetState = make_shared<SwarmState<3>>(*targetSwarm);
+  auto source_state = make_shared<SwarmState<3>>(*source_swarm);
+  auto target_state = make_shared<SwarmState<3>>(*target_swarm);
 
-  int nsrcpts = inputSwarm->num_particles();
+  int nsrcpts = source_swarm->num_particles();
   auto inputData = make_shared<typename SwarmState<2>::DblVec>(nsrcpts, 0.0);
 
   for (int p(0); p < nsrcpts; ++p) {
-    Wonton::Point<3> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<3> coord = source_swarm->get_particle_coordinates(p);
     (*inputData)[p] = field_func<3>(example.field_order, coord);
   }
   
-  inputState->add_field("remapdata", inputData);
+  source_state->add_field("remapdata", inputData);
 
-  int ntarpts = targetSwarm->num_particles();
+  int ntarpts = target_swarm->num_particles();
   auto targetData = make_shared<typename SwarmState<2>::DblVec>(ntarpts, 0.0);
-  targetState->add_field("remapdata", targetData);
+  target_state->add_field("remapdata", targetData);
 
   std::vector<std::string> remap_fields;
   remap_fields.push_back("remapdata");
@@ -417,7 +415,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
     3,
     Swarm<3>,
     SwarmState<3>>
-      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+      d(*source_swarm, *source_state, *target_swarm, *target_state,
         smoothing_lengths, Portage::Meshfree::Weight::B4, 
         Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #else
@@ -428,7 +426,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
     3,
     Swarm<3>,
     SwarmState<3>>
-      d(*inputSwarm, *inputState, *targetSwarm, *targetState,
+      d(*source_swarm, *source_state, *target_swarm, *target_state,
         smoothing_lengths, Portage::Meshfree::Weight::B4, 
         Portage::Meshfree::Weight::ELLIPTIC, center_type);
 #endif
@@ -457,7 +455,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
 
   std::vector<double> toterr(3,0.0);
   for (int p(0); p < ntarpts; ++p) {
-  Wonton::Point<3> coord = targetSwarm->get_particle_coordinates(p);
+  Wonton::Point<3> coord = target_swarm->get_particle_coordinates(p);
 
     expected_value[p] = field_func<3>(example.field_order, coord);
     double error = fabs(expected_value[p] - (*targetData)[p]);
@@ -492,7 +490,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
   finp_csv.precision(17);
   finp_csv << " X, Y, Z, Value\n";
   for (int p(0); p < nsrcpts; ++p) {
-    Wonton::Point<3> coord = inputSwarm->get_particle_coordinates(p);
+    Wonton::Point<3> coord = source_swarm->get_particle_coordinates(p);
     finp_csv << coord[0] << ", " << coord[1] << ", " << coord[2] << ", " << (*inputData)[p] << std::endl;
   }
 
@@ -507,7 +505,7 @@ void run_test_3d(int example_num, int n_source, int n_target,
   fout_csv.precision(17);
   fout_csv << " X, Y, Z, Value\n";
   for (int p(0); p < ntarpts; ++p) {
-    Wonton::Point<3> coord = targetSwarm->get_particle_coordinates(p);
+    Wonton::Point<3> coord = target_swarm->get_particle_coordinates(p);
     fout_csv << coord[0] << ", " << coord[1] << ", " << coord[2] << ", " << (*targetData)[p] << std::endl;
   }
   std::cout << "finishing swarm app..." << std::endl;
