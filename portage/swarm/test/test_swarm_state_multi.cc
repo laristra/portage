@@ -35,17 +35,20 @@ TEST(SwarmState, Multiple2D) {
   Wonton::Simple_State state1(std::make_shared<Wonton::Simple_Mesh>(mesh1));
   Wonton::Simple_State state2(std::make_shared<Wonton::Simple_Mesh>(mesh2));
 
-  double f00[25], f01[25], f10[30], f11[30], f20[35], f21[35];
-  for (int i=0; i<90; i++) {
-    if (i<25) {
+  double f00[25], f01[25];
+  double f10[30], f11[30];
+  double f20[35], f21[35];
+
+  for (int i = 0; i < 90; i++) {
+    if (i < 25) {
       f00[i] = i;
-      f01[i] = 1000.+i;
-    } else if (i<55) {
-      f10[i-25] = i;
-      f11[i-25] = 1000.+i;
-    } else if (i<90) {
-      f20[i-55] = i;
-      f21[i-55] = 1000.+i;
+      f01[i] = 1000. + i;
+    } else if (i < 55) {
+      f10[i - 25] = i;
+      f11[i - 25] = 1000. + i;
+    } else if (i < 90) {
+      f20[i - 55] = i;
+      f21[i - 55] = 1000. + i;
     }
   }
 
