@@ -81,8 +81,8 @@ class Accumulate {
       Basis::Type basis,
       Operator::Type operator_spec = Operator::LastOperator,
       vector<Operator::Domain> const& operator_domain = vector<Operator::Domain>(0),
-      vector<std::vector<Point<dim>>> const& operator_data=
-      vector<std::vector<Point<dim>>>(0,std::vector<Point<dim>>(0))):
+      vector<std::vector<Wonton::Point<dim>>> const& operator_data=
+      vector<std::vector<Wonton::Point<dim>>>(0,std::vector<Wonton::Point<dim>>(0))):
    source_(source),
    target_(target),
    estimate_(estimate),
@@ -122,8 +122,8 @@ class Accumulate {
   double weight(const size_t particleA, const size_t particleB)
   {
     double result;
-    Point<dim> x = target_.get_particle_coordinates(particleA);
-    Point<dim> y = source_.get_particle_coordinates(particleB);
+    Wonton::Point<dim> x = target_.get_particle_coordinates(particleA);
+    Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
     if (center_ == Gather) {
       result = Weight::eval<dim>(geometries_[particleA],
                                  kernels_[particleA],
@@ -164,7 +164,7 @@ class Accumulate {
       case OperatorRegression:
       case LocalRegression: {
         size_t nbasis = Basis::function_size<dim>(basis_);
-        Point<dim> x = target_.get_particle_coordinates(particleA);
+        Wonton::Point<dim> x = target_.get_particle_coordinates(particleA);
         
 	// If too few particles, set estimate to zero for this target
 	bool zilchit = false;
@@ -179,7 +179,7 @@ class Accumulate {
 	if (not zilchit) {
 	  for (auto const& particleB : source_particles) {
 	    weight_val[iB] = weight(particleA, particleB); // save weights for later
-	    Point<dim> y = source_.get_particle_coordinates(particleB);
+      Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
 	    auto basis = Basis::shift<dim>(basis_,x,y);
 	    for (size_t i=0; i<nbasis; i++) {
 	      for (size_t j=0; j<nbasis; j++) {
@@ -195,7 +195,7 @@ class Accumulate {
         int bad_count=0;
         for (auto const& particleB : source_particles) {
 	  std::vector<double> pair_result(nbasis);
-          Point<dim> y = source_.get_particle_coordinates(particleB);
+          Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
 	  std::vector<double> basis = Basis::shift<dim>(basis_,x,y);
 
           // recast as a Portage::Matrix
@@ -259,7 +259,7 @@ class Accumulate {
   Basis::Type basis_;
   Operator::Type operator_spec_;
   vector<Operator::Domain> operator_domain_;
-  vector<std::vector<Point<dim>>> operator_data_;
+  vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 }}

@@ -537,9 +537,10 @@ remap(std::vector<std::string> const &src_varnames,
   // It is also assumed no target point will appear in more than one source cell.
   if (geom_types_[0]==Weight::FACETED and weight_center_==Scatter and part_field_!="NONE") {
     // get source part assignments
-    shared_ptr<vector<double>> sfpart_ptr;
-    source_state_.get_field(part_field_, sfpart_ptr);
-    Portage::vector<double> &sfpart(*sfpart_ptr);
+//    shared_ptr<vector<double>> sfpart_ptr;
+//    source_state_.get_field(part_field_, sfpart_ptr);
+//    Portage::vector<double> &sfpart(*sfpart_ptr);
+    auto sfpart = source_state_.get_field_dbl(part_field_);
 
     // make storage for target part assignments
     size_t ns=source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);

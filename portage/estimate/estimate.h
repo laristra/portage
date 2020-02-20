@@ -60,12 +60,12 @@ class Estimate {
     int nsrc = sources_and_mults.size();
     if (nsrc > 0) assert(derivative_ < sources_and_mults[0].weights.size());
 
-    double result=0.;
+    double result = 0.;
     for (size_t i=0; i<nsrc; i++) {
       Weights_t const& wt = sources_and_mults[i];
       int p = wt.entityID;
       std::vector<double> const& shape_vec = wt.weights;
-      {double val=(*source_vals_)[p]; result += val * shape_vec[derivative_];}
+      result += source_vals_[p] * shape_vec[derivative_];
     }
     return result;
   }
@@ -73,14 +73,14 @@ class Estimate {
   void set_variable(std::string const & var_name, size_t derivin=0) {
     var_name_ = var_name;
     derivative_ = derivin;
-    source_state_.copy_field(var_name_, source_vals_);
+    source_vals_ = source_state_.get_field(var_name_);
   }
 
  private:
   SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
-  typename SwarmState<dim>::DblVecPtr source_vals_;
+  Portage::vector<double> source_vals_;
 };
 
 }
