@@ -13,26 +13,29 @@ else()
   set(RUN_COMMAND "")
 endif(ENABLE_MPI)
 
-macro(ADD_MOMENTUM_TEST TEST_NUM)
-  file(COPY momentumapp_test${TEST_NUM}.sh
+macro(ADD_MOMENTUM_TEST DIM TEST_NUM)
+  file(COPY momentumapp${DIM}_test${TEST_NUM}.sh
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  file(COPY errors_gold${TEST_NUM}.txt
+  file(COPY errors${DIM}_gold${TEST_NUM}.txt
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  add_test(NAME momentumapp_test${TEST_NUM}
-           COMMAND ./momentumapp_test${TEST_NUM}.sh)
+  add_test(NAME momentumapp${DIM}_test${TEST_NUM}
+           COMMAND ./momentumapp${DIM}_test${TEST_NUM}.sh)
 
-  set_property(TEST momentumapp_test${TEST_NUM}
+  set_property(TEST momentumapp${DIM}_test${TEST_NUM}
                PROPERTY ENVIRONMENT
                TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
                CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp
                RUN_COMMAND=${RUN_COMMAND})
 
-  set_property(TEST momentumapp_test${TEST_NUM}
+  set_property(TEST momentumapp${DIM}_test${TEST_NUM}
                PROPERTY PROCESSORS 1)
 endmacro(ADD_MOMENTUM_TEST)
 
-ADD_MOMENTUM_TEST(0)
-ADD_MOMENTUM_TEST(1)
+ADD_MOMENTUM_TEST(2D 0)
+ADD_MOMENTUM_TEST(2D 1)
+
+ADD_MOMENTUM_TEST(3D 0)
+ADD_MOMENTUM_TEST(3D 1)
 
