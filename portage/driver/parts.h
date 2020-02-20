@@ -66,7 +66,10 @@ namespace Portage {
           index_[s] = i;
           lookup_.insert(s);
         }
-      } else { throw std::runtime_error("Error: empty part"); }
+      } else { 
+        volumes_.clear();
+        lookup_.clear();
+      }
     }
 
     ~Part() = default;
