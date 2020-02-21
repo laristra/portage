@@ -103,6 +103,16 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
                             int iter, int ntimesteps, int scale);
 
 /**
+ * @brief Update the source mesh to the previous target mesh.
+ *
+ * @param source_mesh: the source mesh to update.
+ * @param target_mesh: the target mesh to copy from.
+ */
+template<int dim>
+void update_source_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
+                        std::shared_ptr<Jali::Mesh> target_mesh);
+
+/**
  * @brief Remap the analytically imposed field and output related errors.
  *
  * @tparam dim             dimension of the problem.
@@ -173,17 +183,18 @@ void print_usage() {
   std::cerr << "\t--source_file   STRING  source mesh file to import"         << std::endl;
   std::cerr << "\t--target_file   STRING  target mesh file to import"         << std::endl;
   std::cerr << "\t--remap_order   INT     order of interpolation"             << std::endl;
-  std::cerr << "\t--intersect     CHAR    use intersection-based remap [y|n]" << std::endl;
+  std::cerr << "\t--intersect     BOOL    use intersection-based remap"       << std::endl;
   std::cerr << "\t--field         STRING  numerical field to remap"           << std::endl;
   std::cerr << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
+  std::cerr << "\t--keep_source   BOOL    keep source mesh for all timesteps" << std::endl;
   std::cerr << "\t--scale_by      FLOAT   displacement scaling factor"        << std::endl;
   std::cerr << "\t--limiter       STRING  gradient limiter to use"            << std::endl;
   std::cerr << "\t--bnd_limiter   STRING  gradient limiter for boundary"      << std::endl;
-  std::cerr << "\t--output_meshes CHAR    dump meshes [y|n]"                  << std::endl;
-  std::cerr << "\t--result_file    STRING  dump remapped field to file"        << std::endl;
+  std::cerr << "\t--output_meshes BOOL    dump meshes"                        << std::endl;
+  std::cerr << "\t--result_file   STRING  dump remapped field to file"        << std::endl;
 #if ENABLE_TIMINGS
   std::cerr << "\t--scaling       STRING  scaling study [strong|weak]"        << std::endl;
-  std::cerr << "\t--only_threads  CHAR    thread scaling profiling [y|n]"     << std::endl;
+  std::cerr << "\t--only_threads  BOOL    thread scaling profiling"           << std::endl;
 #endif
 }
 
@@ -211,6 +222,7 @@ int main(int argc, char** argv) {
   int scale = 10;
   bool mesh_output = false;
   bool intersect_based = false;
+  bool keep_source = true;
   // point coordinates bounds
   double const p_min = 0.0;
   double const p_max = 1.0;
@@ -227,6 +239,13 @@ int main(int argc, char** argv) {
   bool only_threads = false;
   std::string scaling_type = "strong";
 #endif
+
+  // convert to lower case and check if true
+  auto is_true = [](std::string input) -> bool {
+    std::string buffer;
+    std::transform(input.begin(), input.end(), buffer.begin(), ::tolower);
+    return buffer == "true" or buffer == "y" or buffer == "yes";
+  };
 
   // parse the input
   for (int i = 1; i < argc; i++) {
@@ -248,13 +267,13 @@ int main(int argc, char** argv) {
     } else if (keyword == "target_file") {
       target_file = valueword;
     } else if (keyword == "scale_by") {
-      scale = stoi(valueword);
+      scale = std::stoi(valueword);
       assert(scale > 0);
     } else if (keyword == "remap_order") {
-      interp_order = stoi(valueword);
+      interp_order = std::stoi(valueword);
       assert(interp_order > 0 and interp_order < 3);
     } else if (keyword == "intersect") {
-      intersect_based = (valueword == "y");
+      intersect_based = is_true(valueword);
     } else if (keyword == "field") {
       field_expression = valueword;
     } else if (keyword == "limiter") {
@@ -268,13 +287,15 @@ int main(int argc, char** argv) {
     } else if (keyword == "ntimesteps") {
       ntimesteps = stoi(valueword);
       assert(ntimesteps > 0);
+    } else if (keyword == "keep_source") {
+      keep_source = is_true(valueword);
     } else if (keyword == "output_meshes") {
-      mesh_output = (valueword == "y");
+      mesh_output = is_true(valueword);
     } else if (keyword == "result_file") {
       result_file = valueword;
 #if ENABLE_TIMINGS
     } else if (keyword == "only_threads"){
-      only_threads = (nb_ranks == 1 and valueword == "y");
+      only_threads = (nb_ranks == 1 and is_true(valueword));
     } else if (keyword == "scaling") {
       scaling_type = valueword;
       assert(valueword == "strong" or valueword == "weak");
@@ -384,23 +405,32 @@ int main(int argc, char** argv) {
       std::cout << std::endl;
     }
 
-    // move nodes of the target mesh then run the remap and output related errors
     try {
       switch (dim) {
         case 2:
+          // update source mesh if necessary
+          if (not keep_source)
+            update_source_mesh<2>(source_mesh, target_mesh);
+          // move target points for internally generated grid
           if (ncells)
             move_target_mesh_nodes<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
                    i, l1_err[i], l2_err[i], profiler); break;
         case 3:
+          // update source mesh if necessary
+          if (not keep_source)
+            update_source_mesh<3>(source_mesh, target_mesh);
+          // move target points for internally generated grid
           if (ncells)
             move_target_mesh_nodes<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
                    i, l1_err[i], l2_err[i], profiler); break;
-        default:
-          return abort("invalid dimension");
+
+        default: return abort("invalid dimension");
       }
     } catch (std::exception const& exception) {
       return abort(exception.what());
@@ -716,6 +746,31 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
       move_point<dim>(point.data(), iter, ntimesteps, scale);
       mesh->node_set_coordinates(i, point.data());
     }
+  }
+
+  MPI_Barrier(comm);
+  if (rank == 0)
+    std::cout << "done" << std::endl;
+}
+
+/**
+ * @brief Update the source mesh to the previous target mesh.
+ *
+ * @param source_mesh: the source mesh to update.
+ * @param target_mesh: the target mesh to copy from.
+ */
+template<int dim>
+void update_source_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
+                        std::shared_ptr<Jali::Mesh> target_mesh) {
+  if (rank == 0)
+    std::cout << "Update source mesh ... " << std::flush;
+
+  int const nb_nodes = source_mesh->num_nodes<Jali::Entity_type::ALL>();
+
+  for (int i = 0; i < nb_nodes; i++) {
+    std::array<double, dim> point {};
+    source_mesh->node_get_coordinates(i, &point);
+    target_mesh->node_set_coordinates(i, point.data());
   }
 
   MPI_Barrier(comm);
