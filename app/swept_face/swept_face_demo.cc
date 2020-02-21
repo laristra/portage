@@ -14,11 +14,14 @@
 #include <limits>
 #include <mpi.h>
 
+// wonton includes
 #include "Mesh.hh"         // see https://github.com/lanl/jali
 #include "MeshFactory.hh"
 #include "JaliState.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
+// portage includes
 #include "portage/driver/coredriver.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
@@ -28,6 +31,7 @@
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/support/portage.h"
+#include "portage/support/mpi_collate.h"
 #include "portage/support/timer.h"
 #include "user_field.h" // parsing and evaluating user defined expressions
 
@@ -49,7 +53,7 @@
  */
 
 static int rank = 0;
-static int numpe = 1;
+static int nb_ranks = 1;
 static MPI_Comm comm = MPI_COMM_WORLD;
 
 /**
@@ -109,7 +113,7 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  * @param limiter          gradient limiter to use for internal cells.
  * @param bnd_limiter      gradient limiter to use for boundary cells.
  * @param mesh_output      dump meshes or not?
- * @param field_filename   field file name for imported meshes.
+ * @param result_file   field file name for imported meshes.
  * @param iteration        current iteration.
  * @param L1_error         L1-norm error.
  * @param L2_error         L2-norm error.
@@ -124,7 +128,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output,
-           std::string field_filename, int iteration,
+           std::string result_file, int iteration,
            double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler);
 
@@ -171,12 +175,12 @@ void print_usage() {
   std::cerr << "\t--remap_order   INT     order of interpolation"             << std::endl;
   std::cerr << "\t--intersect     CHAR    use intersection-based remap [y|n]" << std::endl;
   std::cerr << "\t--field         STRING  numerical field to remap"           << std::endl;
-  std::cerr << "\t--field_file    STRING  numerical field file to import"     << std::endl;
   std::cerr << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
   std::cerr << "\t--scale_by      FLOAT   displacement scaling factor"        << std::endl;
   std::cerr << "\t--limiter       STRING  gradient limiter to use"            << std::endl;
   std::cerr << "\t--bnd_limiter   STRING  gradient limiter for boundary"      << std::endl;
   std::cerr << "\t--output_meshes CHAR    dump meshes [y|n]"                  << std::endl;
+  std::cerr << "\t--result_file    STRING  dump remapped field to file"        << std::endl;
 #if ENABLE_TIMINGS
   std::cerr << "\t--scaling       STRING  scaling study [strong|weak]"        << std::endl;
   std::cerr << "\t--only_threads  CHAR    thread scaling profiling [y|n]"     << std::endl;
@@ -194,7 +198,7 @@ void print_usage() {
 int main(int argc, char** argv) {
 
   MPI_Init(&argc, &argv);
-  MPI_Comm_size(comm, &numpe);
+  MPI_Comm_size(comm, &nb_ranks);
   MPI_Comm_rank(comm, &rank);
 
   if (argc == 1)
@@ -214,7 +218,7 @@ int main(int argc, char** argv) {
   std::string source_file;
   std::string target_file;
   std::string field_expression;
-  std::string field_path;  // No default;
+  std::string result_file;
 
   auto limiter     = Portage::Limiter_type::NOLIMITER;
   auto bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
@@ -253,8 +257,6 @@ int main(int argc, char** argv) {
       intersect_based = (valueword == "y");
     } else if (keyword == "field") {
       field_expression = valueword;
-    } else if (keyword == "field_file") {
-      field_path = valueword;
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" or valueword == "BARTH_JESPERSEN")
         limiter = Portage::Limiter_type::BARTH_JESPERSEN;
@@ -268,9 +270,11 @@ int main(int argc, char** argv) {
       assert(ntimesteps > 0);
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
+    } else if (keyword == "result_file") {
+      result_file = valueword;
 #if ENABLE_TIMINGS
     } else if (keyword == "only_threads"){
-      only_threads = (numpe == 1 and valueword == "y");
+      only_threads = (nb_ranks == 1 and valueword == "y");
     } else if (keyword == "scaling") {
       scaling_type = valueword;
       assert(valueword == "strong" or valueword == "weak");
@@ -298,7 +302,7 @@ int main(int argc, char** argv) {
 #if ENABLE_TIMINGS
   auto profiler = std::make_shared<Profiler>();
   // save params for after
-  profiler->params.ranks   = numpe;
+  profiler->params.ranks   = nb_ranks;
   profiler->params.nsource = std::pow(ncells, dim);
   profiler->params.ntarget = std::pow(ncells, dim);
   profiler->params.order   = interp_order;
@@ -387,13 +391,13 @@ int main(int argc, char** argv) {
           if (ncells)
             move_target_mesh_nodes<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                   limiter, bnd_limiter, intersect_based, mesh_output, field_path,
+                   limiter, bnd_limiter, intersect_based, mesh_output, result_file,
                    i, l1_err[i], l2_err[i], profiler); break;
         case 3:
           if (ncells)
             move_target_mesh_nodes<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                   limiter, bnd_limiter, intersect_based, mesh_output, field_path,
+                   limiter, bnd_limiter, intersect_based, mesh_output, result_file,
                    i, l1_err[i], l2_err[i], profiler); break;
         default:
           return abort("invalid dimension");
@@ -426,7 +430,7 @@ int main(int argc, char** argv) {
  * @param limiter          gradient limiter to use for internal cells.
  * @param bnd_limiter      gradient limiter to use for boundary cells.
  * @param mesh_output      dump meshes or not?
- * @param field_filename   field file name for imported meshes.
+ * @param result_file   field file name for imported meshes.
  * @param iteration        current iteration.
  * @param L1_error         L1-norm error.
  * @param L2_error         L2-norm error.
@@ -441,7 +445,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output,
-           std::string field_filename, int iteration,
+           std::string result_file, int iteration,
            double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler) {
 
@@ -455,7 +459,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                        Wonton::Jali_State_Wrapper>;
   // parallel executor
   Wonton::MPIExecutor_type mpi_executor(comm);
-  Wonton::Executor_type* executor = (numpe > 1 ? &mpi_executor : nullptr);
+  Wonton::Executor_type* executor = (nb_ranks > 1 ? &mpi_executor : nullptr);
 
   // create native jali state managers for source and target
   auto source_state = Jali::State::create(source_mesh);
@@ -619,6 +623,46 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     source_mesh->write_to_exodus_file("source_" + suffix);
     target_mesh->write_to_exodus_file("target_" + suffix);
 
+    if (rank == 0)
+      std::cout << "done." << std::endl;
+  }
+
+  // dump remapped field
+  if (not result_file.empty()) {
+
+    if (rank == 0)
+      std::cout << "Dump remapped field ... " << std::flush;
+
+    std::vector<int> index(nb_target_cells);
+    std::vector<double> value(nb_target_cells);
+
+    for (int i=0; i < nb_target_cells; i++) {
+      index[i] = target_mesh->GID(i, Jali::Entity_kind::CELL);
+      value[i] = target_field[i];
+    }
+
+    // sort the field values by global ID
+    std::vector<int> swap;
+    Portage::argsort(index, swap);   // find sorting indices based on global IDS
+    Portage::reorder(index, swap);   // sort the global ids
+    Portage::reorder(value, swap);  // sort the values
+
+    if (nb_ranks > 1) {
+      int width = static_cast<int>(std::ceil(std::log10(nb_ranks)));
+      char ext[10];
+      std::snprintf(ext, sizeof(ext), "%0*d", width, rank);
+      result_file = result_file + "." + std::string(ext);
+    }
+
+    // write out the values
+    std::ofstream file(result_file);
+    file << std::scientific;
+    file.precision(17);
+
+    for (int i = 0; i < nb_target_cells; i++)
+      file << index[i] << "\t" << value[i] << std::endl;
+
+    MPI_Barrier(comm);
     if (rank == 0)
       std::cout << "done." << std::endl;
   }
