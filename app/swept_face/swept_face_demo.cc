@@ -783,7 +783,7 @@ void move_points(std::shared_ptr<Jali::Mesh> mesh,
       }
     }
   } else {
-    double const delta_shift = (p_max - p_min) * scale / nb_cells;
+    double const delta_shift = (p_max - p_min) / (scale * nb_cells);
 
     for (int i = 0; i < nb_nodes; i++) {
       std::array<double, dim> point{};
