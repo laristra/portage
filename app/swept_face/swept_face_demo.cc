@@ -98,9 +98,9 @@ void move_point(double* coords, int iter, int ntimesteps, int scale=1);
  * @param scale   scaling factor
  */
 template<int dim>
-void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            double p_min, double p_max,
-                            int iter, int ntimesteps, int scale);
+void move_points(std::shared_ptr<Jali::Mesh> mesh,
+                 double p_min, double p_max,
+                 int iter, int ntimesteps, int scale);
 
 /**
  * @brief Update the source mesh to the previous target mesh.
@@ -109,8 +109,8 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  * @param target_mesh: the target mesh to copy from.
  */
 template<int dim>
-void update_source_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
-                        std::shared_ptr<Jali::Mesh> target_mesh);
+void update_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
+                 std::shared_ptr<Jali::Mesh> target_mesh);
 
 /**
  * @brief Remap the analytically imposed field and output related errors.
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
   int scale = 10;
   bool mesh_output = false;
   bool intersect_based = false;
-  bool keep_source = true;
+  bool update_source = true;
   // point coordinates bounds
   double const p_min = 0.0;
   double const p_max = 1.0;
@@ -288,7 +288,7 @@ int main(int argc, char** argv) {
       ntimesteps = stoi(valueword);
       assert(ntimesteps > 0);
     } else if (keyword == "keep_source") {
-      keep_source = is_true(valueword);
+      update_source = not is_true(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = is_true(valueword);
     } else if (keyword == "result_file") {
@@ -310,6 +310,7 @@ int main(int argc, char** argv) {
   bool invalid_source = (ncells and not source_file.empty()) or (not ncells and source_file.empty());
   bool invalid_target = (ncells and not target_file.empty()) or (not ncells and target_file.empty());
   bool no_field_expression = ncells and field_expression.empty();
+  bool const generated_grids = ncells > 0;
 
   if (invalid_source)
     return abort("please choose either generated or imported source mesh");
@@ -319,6 +320,9 @@ int main(int argc, char** argv) {
 
   if (no_field_expression)
     return abort("no field imposed on internally generated source mesh");
+
+  if (not generated_grids and ntimesteps > 1)
+    return abort("multiple timesteps only valid for generated grids");
 
 #if ENABLE_TIMINGS
   auto profiler = std::make_shared<Profiler>();
@@ -355,7 +359,7 @@ int main(int argc, char** argv) {
   Jali::MeshFactory factory(comm);
   factory.included_entities(Jali::Entity_kind::ALL_KIND);
 
-  if (not ncells) {
+  if (not generated_grids) {
     // import meshes while using a graph partitioner to partition them.
     factory.partitioner(Jali::Partitioner_type::METIS);
     source_mesh = factory(source_file);
@@ -393,49 +397,61 @@ int main(int argc, char** argv) {
               field_expression, interp_order,
               intersect_based, limiter, bnd_limiter);
 
-  std::vector<double> l1_err(ntimesteps, 0.0);
-  std::vector<double> l2_err(ntimesteps, 0.0);
+  if (not generated_grids) {
+    double l1_err = 0.;
+    double l2_err = 0.;
 
-  for (int i = 1; i < ntimesteps; i++) {
-    if (rank == 0) {
-      std::cout << std::endl;
-      std::cout << " ------------- ";
-      std::cout << "timestep "<< i;
-      std::cout << " ------------- ";
-      std::cout << std::endl;
+    switch (dim) {
+      case 2: remap<2>(source_mesh, target_mesh, field_expression, interp_order,
+                       limiter, bnd_limiter, intersect_based, mesh_output, result_file,
+                       1, l1_err, l2_err, profiler); break;
+      case 3: remap<3>(source_mesh, target_mesh, field_expression, interp_order,
+                       limiter, bnd_limiter, intersect_based, mesh_output, result_file,
+                        1, l1_err, l2_err, profiler); break;
+      default: break;
     }
+  } else {
+    std::vector<double> l1_err(ntimesteps, 0.0);
+    std::vector<double> l2_err(ntimesteps, 0.0);
 
-    try {
+    for (int i = 1; i <= ntimesteps; i++) {
+      if (rank == 0) {
+        std::cout << std::endl;
+        std::cout << " ------------- ";
+        std::cout << "timestep "<< i;
+        std::cout << " ------------- ";
+        std::cout << std::endl;
+      }
+
       switch (dim) {
         case 2:
           // update source mesh if necessary
-          if (not keep_source)
-            update_source_mesh<2>(source_mesh, target_mesh);
+          if (update_source and i > 1)
+            update_mesh<2>(source_mesh, target_mesh);
           // move target points for internally generated grid
-          if (ncells)
-            move_target_mesh_nodes<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          move_points<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                   i, l1_err[i], l2_err[i], profiler); break;
+                   i, l1_err[i-1], l2_err[i-1], profiler);
+          break;
         case 3:
           // update source mesh if necessary
-          if (not keep_source)
-            update_source_mesh<3>(source_mesh, target_mesh);
+          if (update_source and i > 1)
+            update_mesh<3>(source_mesh, target_mesh);
           // move target points for internally generated grid
-          if (ncells)
-            move_target_mesh_nodes<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          move_points<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
           // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                   i, l1_err[i], l2_err[i], profiler); break;
-
-        default: return abort("invalid dimension");
+                   i, l1_err[i-1], l2_err[i-1], profiler);
+          break;
+        default: break;
       }
-    } catch (std::exception const& exception) {
-      return abort(exception.what());
     }
   }
+
+
 
 #if ENABLE_TIMINGS
   profiler->time.total = timer::elapsed(start);
@@ -643,9 +659,9 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // dump meshes if requested
-  if (mesh_output) {
+  if (true) {
     if (rank == 0)
-      std::cout << "Dump data ... " << std::flush;
+      std::cout << "Dump meshes ... " << std::flush;
 
     std::string suffix = "time_" + std::to_string(iteration)+ ".exo";
     source_state->export_to_mesh();
@@ -661,7 +677,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (not result_file.empty()) {
 
     if (rank == 0)
-      std::cout << "Dump remapped field ... " << std::flush;
+      std::cout << "Dump field ... " << std::flush;
 
     std::vector<int> index(nb_target_cells);
     std::vector<double> value(nb_target_cells);
@@ -677,15 +693,17 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     Portage::reorder(index, swap);   // sort the global ids
     Portage::reorder(value, swap);  // sort the values
 
+    result_file += "_time_" + std::to_string(iteration);
+
     if (nb_ranks > 1) {
       int width = static_cast<int>(std::ceil(std::log10(nb_ranks)));
       char ext[10];
       std::snprintf(ext, sizeof(ext), "%0*d", width, rank);
-      result_file = result_file + "." + std::string(ext);
+      result_file = result_file + "_rank_" + std::string(ext);
     }
 
     // write out the values
-    std::ofstream file(result_file);
+    std::ofstream file(result_file +".txt");
     file << std::scientific;
     file.precision(17);
 
@@ -717,9 +735,9 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  * @param scale      scaling factor
  */
 template<int dim>
-void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
-                            double p_min, double p_max,
-                            int iter, int ntimesteps, int scale) {
+void move_points(std::shared_ptr<Jali::Mesh> mesh,
+                 double p_min, double p_max,
+                 int iter, int ntimesteps, int scale) {
   if (rank == 0)
     std::cout << "Move target mesh ... " << std::flush;
 
@@ -760,17 +778,19 @@ void move_target_mesh_nodes(std::shared_ptr<Jali::Mesh> mesh,
  * @param target_mesh: the target mesh to copy from.
  */
 template<int dim>
-void update_source_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
-                        std::shared_ptr<Jali::Mesh> target_mesh) {
+void update_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
+                 std::shared_ptr<Jali::Mesh> target_mesh) {
   if (rank == 0)
     std::cout << "Update source mesh ... " << std::flush;
 
   int const nb_nodes = source_mesh->num_nodes<Jali::Entity_type::ALL>();
 
   for (int i = 0; i < nb_nodes; i++) {
-    std::array<double, dim> point {};
-    source_mesh->node_get_coordinates(i, &point);
-    target_mesh->node_set_coordinates(i, point.data());
+    std::array<double, dim> point {}, p_old {}, p_new {};
+    target_mesh->node_get_coordinates(i, &point);
+    source_mesh->node_get_coordinates(i, &p_old);
+    source_mesh->node_set_coordinates(i, point.data());
+    source_mesh->node_get_coordinates(i, &p_new);
   }
 
   MPI_Barrier(comm);
