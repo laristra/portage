@@ -79,7 +79,10 @@ static MPI_Comm comm = MPI_COMM_WORLD;
  * @param scale      displacement scaling factor
  */
 template<int dim>
-void move_point(double* coords, int iter, int ntimesteps, int scale=1);
+void rotate_vortex(double* coords, int iter, int ntimesteps, int scale=1);
+
+template<int dim>
+void shift_point(double* coords, double delta);
 
 /**
  * @brief Move the given target mesh points.
@@ -96,11 +99,12 @@ void move_point(double* coords, int iter, int ntimesteps, int scale=1);
  * @param deltaT  displacement step
  * @param periodT displacement period
  * @param scale   scaling factor
+ * @param simple  use simple displacement scheme
  */
 template<int dim>
 void move_points(std::shared_ptr<Jali::Mesh> mesh,
                  double p_min, double p_max,
-                 int iter, int ntimesteps, int scale);
+                 int iter, int ntimesteps, int scale, bool simple);
 
 /**
  * @brief Update the source mesh to the previous target mesh.
@@ -166,7 +170,8 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
                  std::string field_expression,
                  int interp_order, bool intersect_based,
                  Portage::Limiter_type limiter,
-                 Portage::Boundary_Limiter_type bnd_limiter);
+                 Portage::Boundary_Limiter_type bnd_limiter,
+                 int ntimesteps, bool keep_source, bool simple_move);
 
 /**
  * @brief Print command-line usage.
@@ -174,27 +179,28 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
  */
 void print_usage() {
 
-  std::cerr << "Usage: swept_face_demo [options]" << std::endl;
-  std::cerr << std::endl;
-  std::cerr << "Options:" << std::endl;
-  std::cerr << "\t--help                  show this help message and exit"    << std::endl;
-  std::cerr << "\t--dim           INT     dimension of the problem"           << std::endl;
-  std::cerr << "\t--ncells        INT     cells per axis for generated grids" << std::endl;
-  std::cerr << "\t--source_file   STRING  source mesh file to import"         << std::endl;
-  std::cerr << "\t--target_file   STRING  target mesh file to import"         << std::endl;
-  std::cerr << "\t--remap_order   INT     order of interpolation"             << std::endl;
-  std::cerr << "\t--intersect     BOOL    use intersection-based remap"       << std::endl;
-  std::cerr << "\t--field         STRING  numerical field to remap"           << std::endl;
-  std::cerr << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
-  std::cerr << "\t--keep_source   BOOL    keep source mesh for all timesteps" << std::endl;
-  std::cerr << "\t--scale_by      FLOAT   displacement scaling factor"        << std::endl;
-  std::cerr << "\t--limiter       STRING  gradient limiter to use"            << std::endl;
-  std::cerr << "\t--bnd_limiter   STRING  gradient limiter for boundary"      << std::endl;
-  std::cerr << "\t--output_meshes BOOL    dump meshes"                        << std::endl;
-  std::cerr << "\t--result_file   STRING  dump remapped field to file"        << std::endl;
+  std::cout << "Usage: swept_face_demo [options]" << std::endl;
+  std::cout << std::endl;
+  std::cout << "Options:" << std::endl;
+  std::cout << "\t--help                  show this help message and exit"    << std::endl;
+  std::cout << "\t--dim           INT     dimension of the problem"           << std::endl;
+  std::cout << "\t--ncells        INT     cells per axis for generated grids" << std::endl;
+  std::cout << "\t--source_file   STRING  source mesh file to import"         << std::endl;
+  std::cout << "\t--target_file   STRING  target mesh file to import"         << std::endl;
+  std::cout << "\t--remap_order   INT     order of interpolation"             << std::endl;
+  std::cout << "\t--intersect     BOOL    use intersection-based remap"       << std::endl;
+  std::cout << "\t--field         STRING  numerical field to remap"           << std::endl;
+  std::cout << "\t--ntimesteps    INT     number of timesteps"                << std::endl;
+  std::cout << "\t--keep_source   BOOL    keep source mesh for all timesteps" << std::endl;
+  std::cout << "\t--simple        BOOL    use simple point displacement"      << std::endl;
+  std::cout << "\t--scale_by      FLOAT   displacement scaling factor"        << std::endl;
+  std::cout << "\t--limiter       STRING  gradient limiter to use"            << std::endl;
+  std::cout << "\t--bnd_limiter   STRING  gradient limiter for boundary"      << std::endl;
+  std::cout << "\t--output_meshes BOOL    dump meshes"                        << std::endl;
+  std::cout << "\t--result_file   STRING  dump remapped field to file"        << std::endl;
 #if ENABLE_TIMINGS
-  std::cerr << "\t--scaling       STRING  scaling study [strong|weak]"        << std::endl;
-  std::cerr << "\t--only_threads  BOOL    thread scaling profiling"           << std::endl;
+  std::cout << "\t--scaling       STRING  scaling study [strong|weak]"        << std::endl;
+  std::cout << "\t--only_threads  BOOL    thread scaling profiling"           << std::endl;
 #endif
 }
 
@@ -223,6 +229,7 @@ int main(int argc, char** argv) {
   bool mesh_output = false;
   bool intersect_based = false;
   bool update_source = true;
+  bool simple_shift = false;
   // point coordinates bounds
   double const p_min = 0.0;
   double const p_max = 1.0;
@@ -289,6 +296,8 @@ int main(int argc, char** argv) {
       assert(ntimesteps > 0);
     } else if (keyword == "keep_source") {
       update_source = not is_true(valueword);
+    } else if (keyword == "simple") {
+      simple_shift = is_true(valueword);
     } else if (keyword == "output_meshes") {
       mesh_output = is_true(valueword);
     } else if (keyword == "result_file") {
@@ -350,7 +359,7 @@ int main(int argc, char** argv) {
     std::cout << "  a swept-face algorithm. Meshes can be internally generated  " << std::endl;
     std::cout << "  cartesian grids or externally imported unstructured meshes. " << std::endl;
     std::cout << " ------------------------------------------------------------ " << std::endl;
-    std::cout << (ncells ? "Generate" : "Import") << " meshes ... " << std::flush;
+    std::cout << (generated_grids ? "Generate" : "Import") << " meshes ... " << std::flush;
   }
 
   std::shared_ptr<Jali::Mesh> source_mesh;
@@ -395,7 +404,8 @@ int main(int argc, char** argv) {
   // Output some information for the user
   print_infos(source_mesh, target_mesh,
               field_expression, interp_order,
-              intersect_based, limiter, bnd_limiter);
+              intersect_based, limiter, bnd_limiter,
+              ntimesteps, not update_source, simple_shift);
 
   if (not generated_grids) {
     double l1_err = 0.;
@@ -429,7 +439,7 @@ int main(int argc, char** argv) {
           if (update_source and i > 1)
             update_mesh<2>(source_mesh, target_mesh);
           // move target points for internally generated grid
-          move_points<2>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          move_points<2>(target_mesh, p_min, p_max, i, ntimesteps, scale, simple_shift);
           // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
@@ -440,7 +450,7 @@ int main(int argc, char** argv) {
           if (update_source and i > 1)
             update_mesh<3>(source_mesh, target_mesh);
           // move target points for internally generated grid
-          move_points<3>(target_mesh, p_min, p_max, i, ntimesteps, scale);
+          move_points<3>(target_mesh, p_min, p_max, i, ntimesteps, scale, simple_shift);
           // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, result_file,
@@ -733,17 +743,20 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
  * @param iter       current iteration
  * @param ntimesteps number of timesteps
  * @param scale      scaling factor
+ * @param simple     simple displacement scheme
  */
 template<int dim>
 void move_points(std::shared_ptr<Jali::Mesh> mesh,
                  double p_min, double p_max,
-                 int iter, int ntimesteps, int scale) {
+                 int iter, int ntimesteps, int scale, bool simple) {
   if (rank == 0)
     std::cout << "Move target mesh ... " << std::flush;
 
   int const nb_nodes = mesh->num_nodes<Jali::Entity_type::ALL>();
+  int const nb_cells = mesh->num_nodes<Jali::Entity_type::ALL>();
   double const epsilon = 1.E-16;
 
+  // --------------------------------------
   // identify internal points to skip them.
   // only valid for internally generated grids.
   // skip all boundary points in 2D and only corners in 3D
@@ -755,14 +768,26 @@ void move_points(std::shared_ptr<Jali::Mesh> mesh,
     }
     return skip_only_corners;
   };
+  // --------------------------------------
+  if (not simple) {
+    for (int i = 0; i < nb_nodes; i++) {
+      std::array<double, dim> point{};
+      mesh->node_get_coordinates(i, &point);
+      if (not skip(point)) {
+        rotate_vortex<dim>(point.data(), iter, ntimesteps, scale);
+        mesh->node_set_coordinates(i, point.data());
+      }
+    }
+  } else {
+    double const delta_shift = (p_max - p_min) * scale / nb_cells;
 
-  for (int i = 0; i < nb_nodes; i++) {
-    std::array<double, dim> point{};
-    mesh->node_get_coordinates(i, &point);
-
-    if (not skip(point)) {
-      move_point<dim>(point.data(), iter, ntimesteps, scale);
-      mesh->node_set_coordinates(i, point.data());
+    for (int i = 0; i < nb_nodes; i++) {
+      std::array<double, dim> point{};
+      mesh->node_get_coordinates(i, &point);
+      if (not skip(point)) {
+        point[0] += delta_shift;
+        mesh->node_set_coordinates(i, point.data());
+      }
     }
   }
 
@@ -814,7 +839,7 @@ void update_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
  * @param scale      displacement scaling factor
  */
 template<>
-void move_point<2>(double* coords, int iter, int ntimesteps, int scale) {
+void rotate_vortex<2>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
   double const deltaT = periodT/ntimesteps;
@@ -844,7 +869,7 @@ void move_point<2>(double* coords, int iter, int ntimesteps, int scale) {
  * @param scale      displacement scaling factor (unused)
  */
 template<>
-void move_point<3>(double* coords, int iter, int ntimesteps, int scale) {
+void rotate_vortex<3>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
   double const deltaT = periodT/ntimesteps;
@@ -866,6 +891,7 @@ void move_point<3>(double* coords, int iter, int ntimesteps, int scale) {
 //  coords[1] += factor * sin(2 * M_PI * coords[1]);
 //  coords[2] += factor * sin(2 * M_PI * coords[2]);
 }
+
 
 /**
  * @brief Print an error message followed by command-line usage, and exits.
@@ -898,7 +924,8 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
                  std::string field_expression,
                  int interp_order, bool intersect_based,
                  Portage::Limiter_type limiter,
-                 Portage::Boundary_Limiter_type bnd_limiter) {
+                 Portage::Boundary_Limiter_type bnd_limiter,
+                 int ntimesteps, bool keep_source, bool simple_move) {
 
   // get actual number of cells on both meshes
   int total_count[] = {0, 0};
@@ -934,7 +961,10 @@ void print_infos(std::shared_ptr<Jali::Mesh> source_mesh,
       std::cout << " \u2022 internal gradient limiter: " << limiter_name << std::endl;
       std::cout << " \u2022 boundary gradient limiter: " << bnd_limiter_name << std::endl;
     }
-    std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"");
+    std::cout << " \u2022 method: "<< (intersect_based ? "\"intersect-based\"" : "\"swept-face\"") << std::endl;
+    std::cout << " \u2022 timesteps: "<< ntimesteps << std::endl;
+    std::cout << " \u2022 keep source: "<< std::boolalpha << keep_source << std::endl;
+    std::cout << " \u2022 displacement: "<< (simple_move ? "simple shift" : "vortex") << std::endl;
     std::cout << std::endl;
   }
 }
