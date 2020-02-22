@@ -35,6 +35,10 @@
 #include "portage/support/timer.h"
 #include "user_field.h" // parsing and evaluating user defined expressions
 
+#include <cctype>
+#include <string>
+
+
 #define ENABLE_TIMINGS 1
 
 #ifdef ENABLE_PROFILE
@@ -249,9 +253,9 @@ int main(int argc, char** argv) {
 
   // convert to lower case and check if true
   auto is_true = [](std::string input) -> bool {
-    std::string buffer;
-    std::transform(input.begin(), input.end(), buffer.begin(), ::tolower);
-    return buffer == "true" or buffer == "y" or buffer == "yes";
+    std::transform(input.begin(), input.end(), input.begin(),
+                   [](auto c) { return std::tolower(c); });
+    return input == "true" or input == "y" or input == "yes";
   };
 
   // parse the input
@@ -669,7 +673,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // dump meshes if requested
-  if (true) {
+  if (mesh_output) {
     if (rank == 0)
       std::cout << "Dump meshes ... " << std::flush;
 
