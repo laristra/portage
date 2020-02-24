@@ -46,8 +46,8 @@ if (ENABLE_MPI AND Jali_DIR)
     endif()
   endforeach()
 
-  # build tests as well
-  #    if (ENABLE_APP_TESTS)
-  #        add_subdirectory(test)
-  #    endif()
+   # build tests as well
+  if (ENABLE_APP_TESTS)
+    add_subdirectory(test)
+  endif()
 endif()
