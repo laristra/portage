@@ -15,20 +15,15 @@ message(STATUS "Adding swept_face_demo tests")
 # create a macro to run a distributed compare test
 macro(ADD_DISTRIB_TEST NP DIM NCELLS FIELDS REMAP_ORDER SIMPLE_SHIFT)
 
-  # copy the shell script
   file(COPY swept_face_demo.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-  set(TEST_NAME "swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}_${SIMPLE_SHIFT}")
-
-  # add the test
   add_test(
-    NAME "${TEST_NAME}"
+    NAME swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}_${SIMPLE_SHIFT}
     COMMAND swept_face_demo.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER} ${SIMPLE_SHIFT}
   )
-    
-  # set environment variables for the script
+
   set_property(
-    TEST "${TEST_NAME}"
+    TEST swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}_${SIMPLE_SHIFT}
     PROPERTY ENVIRONMENT
     TESTAPPDIR="${CMAKE_CURRENT_BINARY_DIR}/.."
     CMPAPPDIR="${CMAKE_BINARY_DIR}/app/distributed_cmp"
