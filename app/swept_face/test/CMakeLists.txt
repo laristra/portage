@@ -10,32 +10,31 @@ Please see the license file at the root of this repository, or at:
 
 ####################################################################
 
-message(STATUS "Adding swept_face_singlemat tests")
+message(STATUS "Adding swept_face_demo tests")
 
 # create a macro to run a distributed compare test
-macro(ADD_DISTRIBUTED_APPTEST NP DIM NCELLS FIELDS REMAP_ORDER )
+macro(ADD_DISTRIB_TEST NP DIM NCELLS FIELDS REMAP_ORDER SIMPLE_SHIFT)
 
   # copy the shell script
-  file(
-    COPY swept_face_singlemat.sh
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-  )
-  
+  file(COPY swept_face_demo.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+  set(TEST_NAME "swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}_${SIMPLE_SHIFT}")
+
   # add the test
   add_test(
-    NAME swept_face_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
-    COMMAND swept_face_singlemat.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER}
+    NAME "${TEST_NAME}"
+    COMMAND swept_face_demo.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER} ${SIMPLE_SHIFT}
   )
     
   # set environment variables for the script
   set_property(
-    TEST swept_face_singlemat_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
+    TEST "${TEST_NAME}"
     PROPERTY ENVIRONMENT
-    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
-    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/distributed_cmp
+    TESTAPPDIR="${CMAKE_CURRENT_BINARY_DIR}/.."
+    CMPAPPDIR="${CMAKE_BINARY_DIR}/app/distributed_cmp"
   )
 
-endmacro(ADD_DISTRIBUTED_APPTEST)
+endmacro()
 
 # add the tests
 # These tests don't test whether the remap is correct or reproduces a certain
@@ -43,38 +42,25 @@ endmacro(ADD_DISTRIBUTED_APPTEST)
 # order fields or remap order changes don't really test anything new.
 if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
 
-  # 2D, constant field, ro 1, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 42 1)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 42 1)
-  
-  # 2D, constant field, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 42 2)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 42 2)
+  # 2D, constant field, order 2, vary number of processors
+  ADD_DISTRIB_TEST(2 2 5 42 2 true)
+  ADD_DISTRIB_TEST(4 2 5 42 2 true)
+  ADD_DISTRIB_TEST(8 2 5 42 2 true)
 
-  # 2D, linear field, ro 1, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 x+3*y 1)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 x+3*y 1)
+  # 2D, linear field, order 2, vary number of processors
+  ADD_DISTRIB_TEST(2 2 5 x+3*y 2 true)
+  ADD_DISTRIB_TEST(4 2 5 x+3*y 2 true)
+  ADD_DISTRIB_TEST(8 2 5 x+3*y 2 true)
 
-  # 2D, linear field, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 2 5 x+3*y 2)
-  ADD_DISTRIBUTED_APPTEST(4 2 5 x+3*y 2)
+  # 3D, constant field, order 2, vary number of processors
+  ADD_DISTRIB_TEST(2 3 5 42 2 true)
+  ADD_DISTRIB_TEST(4 3 5 42 2 true)
+  ADD_DISTRIB_TEST(8 3 5 42 2 true)
 
-  # 3D, constant field, ro 1, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 3 5 42 1)
-  ADD_DISTRIBUTED_APPTEST(4 3 5 42 1)
-  
-  # 3D, constant field, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 3 5 42 2)
-  ADD_DISTRIBUTED_APPTEST(4 3 5 42 2)
-
-  # 3D, linear field, ro 1, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 3 5 x+3*y+5*z 1)
-  ADD_DISTRIBUTED_APPTEST(4 3 5 x+3*y+5*z 1)
-
-  # 3D, linear field, ro 2, vary number of processors 
-  ADD_DISTRIBUTED_APPTEST(2 3 5 x+3*y+5*z 2)
-  ADD_DISTRIBUTED_APPTEST(4 3 5 x+3*y+5*z 2)
-
-endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+  # 3D, linear field, order 2, vary number of processors
+  ADD_DISTRIB_TEST(2 3 5 x+3*y+5*z 2 true)
+  ADD_DISTRIB_TEST(4 3 5 x+3*y+5*z 2 true)
+  ADD_DISTRIB_TEST(8 3 5 x+3*y+5*z 2 true)
+endif()
 
 
