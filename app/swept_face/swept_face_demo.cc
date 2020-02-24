@@ -145,7 +145,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            int interp_order,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
-           bool intersect_based, bool mesh_output,
+           bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
            double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler);
@@ -417,11 +417,11 @@ int main(int argc, char** argv) {
 
     switch (dim) {
       case 2: remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                       limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                       1, l1_err, l2_err, profiler); break;
+                       limiter, bnd_limiter, intersect_based, mesh_output, true,
+                       result_file, 1, l1_err, l2_err, profiler); break;
       case 3: remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                       limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                        1, l1_err, l2_err, profiler); break;
+                       limiter, bnd_limiter, intersect_based, mesh_output, true,
+                       result_file, 1, l1_err, l2_err, profiler); break;
       default: break;
     }
   } else {
@@ -446,8 +446,8 @@ int main(int argc, char** argv) {
           move_points<2>(target_mesh, p_min, p_max, i, ntimesteps, scale, simple_shift);
           // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
-                   limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                   i, l1_err[i-1], l2_err[i-1], profiler);
+                   limiter, bnd_limiter, intersect_based, mesh_output, i == ntimesteps,
+                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
           break;
         case 3:
           // update source mesh if necessary
@@ -457,8 +457,8 @@ int main(int argc, char** argv) {
           move_points<3>(target_mesh, p_min, p_max, i, ntimesteps, scale, simple_shift);
           // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
-                   limiter, bnd_limiter, intersect_based, mesh_output, result_file,
-                   i, l1_err[i-1], l2_err[i-1], profiler);
+                   limiter, bnd_limiter, intersect_based, mesh_output,i == ntimesteps,
+                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
           break;
         default: break;
       }
@@ -504,7 +504,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            int interp_order,
            Portage::Limiter_type limiter,
            Portage::Boundary_Limiter_type bnd_limiter,
-           bool intersect_based, bool mesh_output,
+           bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
            double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler) {
@@ -688,7 +688,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   }
 
   // dump remapped field
-  if (not result_file.empty()) {
+  if (dump_field and not result_file.empty()) {
 
     if (rank == 0)
       std::cout << "Dump field ... " << std::flush;
@@ -707,7 +707,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     Portage::reorder(index, swap);   // sort the global ids
     Portage::reorder(value, swap);  // sort the values
 
-    result_file += "_time_" + std::to_string(iteration) +".txt";
+    result_file += ".txt";
 
     if (nb_ranks > 1) {
       int width = static_cast<int>(std::ceil(std::log10(nb_ranks)));
