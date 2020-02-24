@@ -707,6 +707,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     Portage::reorder(index, swap);   // sort the global ids
     Portage::reorder(value, swap);  // sort the values
 
+    std::string const result_dist = result_file +"_dist.txt";
     result_file += ".txt";
 
     if (nb_ranks > 1) {
@@ -721,8 +722,20 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     file << std::scientific;
     file.precision(17);
 
+    // for compare app
     for (int i = 0; i < nb_target_cells; i++)
-      file << index[i] << "\t" << value[i] << std::endl;
+      file << index[i] <<"\t"<< value[i] << std::endl;
+
+    file.close();
+    file.clear();
+    file.open(result_dist);
+    file << std::scientific;
+    file.precision(17);
+
+    for (int i = 0; i < nb_target_cells; i++)
+      file << index[i] <<"\t"<< 0 <<"\t"<< value[i] << std::endl;
+
+    file.close();
 
     MPI_Barrier(comm);
     if (rank == 0)

@@ -25,12 +25,9 @@ if (Jali_DIR)
 
     set_property(TEST "test_swept-face_${SUFFIX}"
                  PROPERTY ENVIRONMENT
-                 TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
-                 CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp
+                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_demo
+                 COMPARE=${CMAKE_BINARY_DIR}/app/apptest_cmp/apptest_cmp
                  RUN_COMMAND=${RUN_COMMAND})
-
-    set_property(TEST "test_swept-face_${SUFFIX}"
-                 PROPERTY PROCESSORS 1)
   endmacro()
 
   # create a macro to run a distributed compare test
@@ -42,8 +39,8 @@ if (Jali_DIR)
 
     set_property(TEST test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
                  PROPERTY ENVIRONMENT
-                 TESTAPPDIR="${CMAKE_CURRENT_BINARY_DIR}/.."
-                 CMPAPPDIR="${CMAKE_BINARY_DIR}/app/distributed_cmp")
+                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_demo
+                 COMPARE=${CMAKE_BINARY_DIR}/app/distributed_cmp/distributed_cmp)
   endmacro()
 
   # add the tests

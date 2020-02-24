@@ -19,7 +19,7 @@ FILE="field_rank_$1_dim_$2_cells_$3_field_$4_order_$5"
 TOLERANCE_2D=5.e-11
 TOLERANCE_3D=5.e-9
 
-rm -f "${FILE}.txt*"
+rm -f ${FILE}*.txt*
 
 # SERIAL RUN
 mpirun -np 1 ./swept_face_demo \
