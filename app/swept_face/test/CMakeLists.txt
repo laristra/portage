@@ -35,12 +35,12 @@ if (Jali_DIR)
 
   # create a macro to run a distributed compare test
   macro(ADD_DISTRIB_TEST NP DIM NCELLS FIELDS REMAP_ORDER)
-    file(COPY swept_face_demo.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+    file(COPY swept_distrib.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-    add_test(NAME swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
-             COMMAND swept_face_demo.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER})
+    add_test(NAME test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
+             COMMAND swept_distrib.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER})
 
-    set_property(TEST swept_face_demo_${NP}_${DIM}_${NCELLS}_${FIELDS}_${REMAP_ORDER}
+    set_property(TEST test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
                  PROPERTY ENVIRONMENT
                  TESTAPPDIR="${CMAKE_CURRENT_BINARY_DIR}/.."
                  CMPAPPDIR="${CMAKE_BINARY_DIR}/app/distributed_cmp")
