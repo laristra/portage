@@ -707,17 +707,17 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     Portage::reorder(index, swap);   // sort the global ids
     Portage::reorder(value, swap);  // sort the values
 
-    result_file += "_time_" + std::to_string(iteration);
+    result_file += "_time_" + std::to_string(iteration) +".txt";
 
     if (nb_ranks > 1) {
       int width = static_cast<int>(std::ceil(std::log10(nb_ranks)));
       char ext[10];
       std::snprintf(ext, sizeof(ext), "%0*d", width, rank);
-      result_file = result_file + "_rank_" + std::string(ext);
+      result_file = result_file + "." + std::string(ext);
     }
 
     // write out the values
-    std::ofstream file(result_file +".txt");
+    std::ofstream file(result_file);
     file << std::scientific;
     file.precision(17);
 
