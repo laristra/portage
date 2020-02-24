@@ -533,8 +533,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   int const nb_source_cells = source_mesh_wrapper.num_owned_cells() +
                               source_mesh_wrapper.num_ghost_cells();
-  int const nb_target_cells = target_mesh_wrapper.num_owned_cells() +
-                              target_mesh_wrapper.num_ghost_cells();
+  int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
 
 #if ENABLE_TIMINGS
   auto tic = timer::now();
