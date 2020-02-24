@@ -8,6 +8,9 @@ END
 set -e
 set -x
 
+epsilon=1.e-10
+
+# run test
 ${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
   --dim=2 \
   --ncells=10 \
@@ -16,6 +19,12 @@ ${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
   --ntimesteps=4 \
   --scale_by=10 \
   --output_meshes=false \
-  --result_file="swept_dim_2_field_const_order_1_vortex" \
+  --result_file="data_dim_2_field_const_order_1_vortex" \
   --keep_source=false \
   --simple=false
+
+# compare values with related gold file
+$CMPAPPDIR/apptest_cmp \
+  "gold_dim_2_field_const_order_1_vortex.txt" \
+  "data_dim_2_field_const_order_1_vortex.txt" \
+  ${epsilon}
