@@ -11,7 +11,7 @@ set -x
 epsilon=1.e-9
 
 # run test
-${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
+${RUN_COMMAND} ${APPTEST} \
   --dim=3 \
   --ncells=10 \
   --remap_order=1 \
@@ -24,7 +24,7 @@ ${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
   --simple=true
 
 # compare values with related gold file
-$CMPAPPDIR/apptest_cmp \
+${COMPARE} \
   "gold_dim_3_field_linear_order_1_simple.txt" \
   "data_dim_3_field_linear_order_1_simple.txt" \
   ${epsilon}

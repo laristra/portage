@@ -11,7 +11,7 @@ set -x
 epsilon=1.e-10
 
 # run test
-${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
+${RUN_COMMAND} ${APPTEST} \
   --dim=2 \
   --ncells=10 \
   --remap_order=1 \
@@ -24,7 +24,7 @@ ${RUN_COMMAND} $TESTAPPDIR/swept_face_demo \
   --simple=false
 
 # compare values with related gold file
-$CMPAPPDIR/apptest_cmp \
+${COMPARE} \
   "gold_dim_2_field_const_order_1_vortex.txt" \
   "data_dim_2_field_const_order_1_vortex.txt" \
   ${epsilon}

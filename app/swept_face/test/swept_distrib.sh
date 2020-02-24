@@ -19,10 +19,10 @@ FILE="field_rank_$1_dim_$2_cells_$3_field_$4_order_$5"
 TOLERANCE_2D=5.e-11
 TOLERANCE_3D=5.e-9
 
-rm -f ${FILE}*
+rm -f "${FILE}.txt*"
 
 # SERIAL RUN
-mpirun -np 1 $TESTAPPDIR/swept_face_demo \
+mpirun -np 1 ./swept_face_demo \
   --dim=$2 \
   --ncells=$3 \
   --field=$4 \
@@ -35,7 +35,7 @@ mpirun -np 1 $TESTAPPDIR/swept_face_demo \
   --simple=true
 
 # PARALLEL RUN
-mpirun -np $1 $TESTAPPDIR/swept_face_demo \
+mpirun -np $1 --oversubscribe ./swept_face_demo \
   --dim=$2 \
   --ncells=$3 \
   --field=$4 \
@@ -54,5 +54,5 @@ else
   TOLERANCE=${TOLERANCE_3D}
 fi
 
-$CMPAPPDIR/distributed_cmp ${FILE} ${TOLERANCE}
+${COMPARE} "${FILE}_dist.txt" ${TOLERANCE}
 
