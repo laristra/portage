@@ -569,6 +569,26 @@ violation. Furthermore, particle remap is not currently sensitive to
 multi-material data fields. 
 These difficulties will be addressed in future code releases. 
 
+## Coordinate Systems
+
+Portage provides the tools to remap in different coordinate systems.
+The available coordinate systems are
+
+- Cartesian coordinates: 1D, 2D, 3D,
+- cylindrical coordinates: 1D radial, 2D polar, 2D axisymmetric, 3D
+- spherical coordinates: 1D radial, 3D
+
+Additional coordinate systems can be implemented, following the model
+of the existing coordinate systems (see, for example,
+Wonton::CylindricalAxisymmetricCoordinates).  It is currently assumed
+that both the target and source meshes are using the same coordinate
+system.
+
+Not all components of Portage are available with non-Cartesian
+coordinate systems.
+
+More details are given in the @ref coordinate_systems section.
+
 <br>
 
 [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
