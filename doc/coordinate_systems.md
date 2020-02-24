@@ -32,6 +32,7 @@ widely-accepted standard.  Making everyone equally angry seems a reasonable
 compromise.
 
 [comment]: <> | <td colspan=2> variables </td>
+
 | symbol | meaning |
 |:------:|:--------|
 | x      | the first Cartesian coordinate |
