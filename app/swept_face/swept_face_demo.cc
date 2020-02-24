@@ -707,7 +707,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     Portage::reorder(index, swap);   // sort the global ids
     Portage::reorder(value, swap);  // sort the values
 
-    std::string const result_dist = result_file +"_dist.txt";
+    std::string result_dist = result_file +"_dist.txt";
     result_file += ".txt";
 
     if (nb_ranks > 1) {
@@ -715,6 +715,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       char ext[10];
       std::snprintf(ext, sizeof(ext), "%0*d", width, rank);
       result_file = result_file + "." + std::string(ext);
+      result_dist = result_dist + "." + std::string(ext);
     }
 
     // write out the values

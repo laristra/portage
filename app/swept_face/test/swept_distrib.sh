@@ -16,13 +16,13 @@ set -x
 # characters that can be a problem for filenames, but at the moment it works
 # and avoids file clobbers in a human readable way as opposed to hashes.
 FILE="field_rank_$1_dim_$2_cells_$3_field_$4_order_$5"
-TOLERANCE_2D=5.e-11
-TOLERANCE_3D=5.e-9
+TOLERANCE_2D=5.e-3
+TOLERANCE_3D=5.e-3
 
 rm -f ${FILE}*.txt*
 
 # SERIAL RUN
-mpirun -np 1 ./swept_face_demo \
+mpirun -np 1 ${APPTEST} \
   --dim=$2 \
   --ncells=$3 \
   --field=$4 \
@@ -35,7 +35,7 @@ mpirun -np 1 ./swept_face_demo \
   --simple=true
 
 # PARALLEL RUN
-mpirun -np $1 --oversubscribe ./swept_face_demo \
+mpirun -np $1 --oversubscribe ${APPTEST} \
   --dim=$2 \
   --ncells=$3 \
   --field=$4 \
