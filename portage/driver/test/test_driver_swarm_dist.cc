@@ -26,220 +26,223 @@ Please see the license file at the root of this repository, or at:
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 
-
 namespace {
+// avoid long namespaces
+using namespace Portage::Meshfree;
+// default numerical tolerance
+double const epsilon = 1e-6;
+// default MPI communicator
+MPI_Comm comm = MPI_COMM_WORLD;
 
-using std::shared_ptr;
-using std::make_shared;
-using Portage::Meshfree::SwarmFactory;
-
-
-double TOL = 1e-6;
-
-// This is a set of integration tests for the swarm-swarm remap driver.
-// There will be at least one test corresponding to each case found in
-// main.cc. This is a test fixture and must be derived from the
-// ::testing::Test class. Specializations of this class, such as 2D/3D
-// coincident and non-coincident remaps should be derived from this.
-
-template<size_t dim>
+/**
+ * @class BaseTest
+ *
+ * Set of unitary tests for the swarm-swarm remap driver.
+ * There will be at least one test corresponding to each case found in
+ * main.cc. This is a test fixture and specialized testcases, such as 2D/3D
+ * coincident and non-coincident remaps should be derived from this.
+ *
+ * @tparam dim: dimension of the problem.
+ */
+template<int dim>
 class BaseTest : public ::testing::Test {
- protected:
-  
-  using SmoothingLengthPtr = shared_ptr<Portage::vector<std::vector<std::vector<double>>>>;
+  // skip long type names
+  using Mesh = Wonton::Jali_Mesh_Wrapper;
 
-  // Source and target swarms
-  shared_ptr<Portage::Meshfree::Swarm<dim>> source_swarm;
-  shared_ptr<Portage::Meshfree::Swarm<dim>> target_swarm;
+public:
 
-  // Source and target mesh state
-  shared_ptr<Portage::Meshfree::SwarmState<dim>> source_state;
-  shared_ptr<Portage::Meshfree::SwarmState<dim>> target_state;
+  /**
+   * @brief Set swarms and states from distributed meshes
+   *
+   * @param source_mesh: a shared pointer to the source mesh
+   * @param target_mesh: a shared pointer to the target mesh
+   */
+  BaseTest(std::shared_ptr<Jali::Mesh> source_mesh,
+           std::shared_ptr<Jali::Mesh> target_mesh)
+    : source_swarm(Mesh(*source_mesh), Wonton::CELL),
+      target_swarm(Mesh(*target_mesh), Wonton::CELL),
+      source_state(source_swarm),
+      target_state(target_swarm) {}
 
-  SmoothingLengthPtr smoothing_lengths_;
-
-  Portage::Meshfree::WeightCenter center_;
-
-  // Constructor for Driver test
-  BaseTest(shared_ptr<Jali::Mesh> source_mesh,
-           shared_ptr<Jali::Mesh> target_mesh) :
-    smoothing_lengths_(nullptr),
-    center_(Portage::Meshfree::Gather) {
-
-    Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
-    Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
-
-    // Source and target swarms
-    source_swarm = Portage::Meshfree::SwarmFactory<dim>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-    target_swarm = Portage::Meshfree::SwarmFactory<dim>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-
-    source_state = make_shared<Portage::Meshfree::SwarmState<dim>>(*source_swarm);
-    target_state = make_shared<Portage::Meshfree::SwarmState<dim>>(*target_swarm);
-  }
-
-  void set_smoothing_lengths(shared_ptr<Portage::vector<std::vector<std::vector<double>>>>
-                             smoothing_lengths,
-			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
-    smoothing_lengths_ = smoothing_lengths;
+  /**
+   * @brief Set the smoothing lengths matrix.
+   *
+   * @param n: matrix dimensions.
+   * @param h: the h-factor.
+   * @param center: the weight center (gather, scatter).
+   */
+  void set_smoothing_lengths(const int* n, double h, WeightCenter center = Gather) {
+    assert(n != nullptr);
+    std::vector<std::vector<double>> const default_lengths(n[1], std::vector<double>(n[2], h));
+    smoothing_lengths_.resize(n[0], default_lengths);
     center_ = center;
   }
 
-  // This is the basic test method to be called for each unit test.
-  // It will work for 1, 2-D and 3-D swarms
-  //
+  /**
+   * @brief Test main method.
+   *
+   * @tparam Search: the particle search kernel to use.
+   * @tparam basis: the basis type.
+   * @param compute_initial_field: a function to compute a field to source swarm.
+   * @param expected_answer: the expected value to compare against.
+   */
   template <template<int, class, class> class Search,
-            Portage::Meshfree::Basis::Type basis>
-  void unitTest(double compute_initial_field(Wonton::Point<dim> coord),
+            Basis::Type basis>
+  void unitTest(double compute_initial_field(Wonton::Point<dim> const& coord),
                 double expected_answer) {
 
+    using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
+                                 Swarm<dim>, SwarmState<dim>,
+                                 Swarm<dim>, SwarmState<dim>>;
+
     // Fill the source state data with the specified profile
-    const int nsrcpts = source_swarm->num_owned_particles();
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr sourceData = 
-        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(nsrcpts);
+    int const nb_source = source_swarm.num_owned_particles();
+    int const nb_target = target_swarm.num_owned_particles();
+
+    Portage::vector<double> source_data(nb_source);
+    Portage::vector<double> target_data(nb_target, 0.0);
 
     // Create the source data for given function
-    for (unsigned int p = 0; p < nsrcpts; ++p) {
-      Wonton::Point<dim> coord =
-          source_swarm->get_particle_coordinates(p);
-      (*sourceData)[p] = compute_initial_field(coord);
+    for (int p = 0; p < nb_source; ++p) {
+      auto coord = source_swarm.get_particle_coordinates(p);
+      source_data[p] = compute_initial_field(coord);
     }
-    source_state->add_field("particledata", sourceData);
 
-    // Build the target state storage
-    const int ntarpts = target_swarm->num_owned_particles();
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr targetData = 
-        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(ntarpts, 0.0);
-    target_state->add_field("particledata", targetData);
+    source_state.add_field("particledata", source_data);
+    target_state.add_field("particledata", target_data);
 
     // Build the main driver data for this mesh type
     // Register the variable name and interpolation order with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.push_back("particledata");
+    std::vector<std::string> remap_fields = { "particledata" };
+    Wonton::MPIExecutor_type executor(comm);
 
-    Portage::Meshfree::SwarmDriver<Search,
-                                   Portage::Meshfree::Accumulate,
-                                   Portage::Meshfree::Estimate,
-                                   dim,
-                                   Portage::Meshfree::Swarm<dim>,
-                                   Portage::Meshfree::SwarmState<dim>,
-                                   Portage::Meshfree::Swarm<dim>,
-                                   Portage::Meshfree::SwarmState<dim>>
-        d(*source_swarm, *source_state, *target_swarm, *target_state, *smoothing_lengths_,
-          Portage::Meshfree::Weight::B4, Portage::Meshfree::Weight::ELLIPTIC, center_);
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          Portage::Meshfree::LocalRegression,
-                          basis);
+    Remapper remapper(source_swarm, source_state,
+                      target_swarm, target_state,
+                      smoothing_lengths_, Weight::B4, Weight::ELLIPTIC, center_);
 
-    Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
-    d.run(&executor);
+    remapper.set_remap_var_names(remap_fields, remap_fields, LocalRegression, basis);
+    remapper.run(&executor);
 
     // Check the answer
-    Wonton::Point<dim> nodexy;
-    double stdval, err;
-    double toterr=0.;
+    double total_error = 0.;
+    auto& remapped_field = target_state.get_field("particledata");
 
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    target_state->copy_field("particledata", vecout);
-    ASSERT_NE(nullptr, vecout);
-
-    for (int p = 0; p < ntarpts; ++p) {
-      Wonton::Point<dim> coord = target_swarm->get_particle_coordinates(p);
-      double error;
-      error = compute_initial_field(coord) - (*vecout)[p];
+    for (int i = 0; i < nb_target; ++i) {
+      auto p = target_swarm.get_particle_coordinates(i);
+      double error = compute_initial_field(p) - remapped_field[i];
       // dump diagnostics for each particle
-      if (dim == 1)
-        std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
-      else if (dim == 2)
-        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
-                    coord[1]);
-      else if (dim == 3)
-        std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
-                    coord[0], coord[1], coord[2]);
-      double dummy= (*vecout)[p];
-      std::printf("  Value = % 10.6lf  Err = % lf\n", dummy, error);
-      toterr += error*error;
+      switch (dim) {
+        case 1: std::printf("particle: %4d coord: (%5.3lf)", i, p[0]); break;
+        case 2: std::printf("particle: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
+        case 3: std::printf("particle: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
+        default: break;
+      }
+      double val = remapped_field[i];
+      std::printf(" value: %10.6lf, error: %lf\n", val, error);
+      total_error += error * error;
     }
-    
-    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-    ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
+
+    total_error = std::sqrt(total_error);
+    std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", total_error);
+    ASSERT_NEAR(expected_answer, total_error, epsilon);
   }
 
+protected:
+  // Source and target swarms
+  Swarm<dim> source_swarm;
+  Swarm<dim> target_swarm;
+  SwarmState<dim> source_state;
+  SwarmState<dim> target_state;
+
+  // smoothing lengths matrix and weight center type
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths_ {};
+  WeightCenter center_ = Gather;
 };
 
-// Class which constructs a pair of 2-D swarms (from jali) for remaps
-struct DriverTest2D : BaseTest<2> {
-  DriverTest2D() : BaseTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 16, 16),
-                            Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8))
+/**
+ * @brief Build 2D swarms from distributed meshes and remap using gather scheme.
+ *
+ */
+class DriverTest2D : public BaseTest<2> {
+public:
+  DriverTest2D()
+    : BaseTest(Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 16, 16),
+               Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 8, 8))
   {
-    size_t ntarpts = target_swarm->num_particles(Portage::Entity_type::PARALLEL_OWNED);
-    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(ntarpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/4)));
-    BaseTest::set_smoothing_lengths(smoothing_lengths);
+    int const nb_target = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
+    int const dim[] = { nb_target, 1, 2 };
+    BaseTest::set_smoothing_lengths(dim, 0.5);
   }
 };
 
-struct DriverTest2DScatter : BaseTest<2> {
-  DriverTest2DScatter() : BaseTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 8, 8),
-                                   Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4))
+/**
+ * @brief Build 2D swarms from distributed meshes and remap using scatter scheme.
+ *
+ */
+class DriverTest2DScatter : public BaseTest<2> {
+public:
+  DriverTest2DScatter()
+    : BaseTest(Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 8, 8),
+               Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 4, 4))
   {
-    size_t nsrcpts = source_swarm->num_particles(Portage::Entity_type::PARALLEL_OWNED);
-    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(2, 2.0/8)));
-    BaseTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+    int const nb_source = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
+    int const dim[] = { nb_source, 1, 2 };
+    BaseTest::set_smoothing_lengths(dim, 0.25, Scatter);
   }
 };
 
-// Class which constructs a pair of 3-D swarms (from jali) for remaps
-struct DriverTest3D : BaseTest<3> {
-  DriverTest3D(): BaseTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                                             16, 16, 16),
-                           Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,
-                                          8, 8, 8)) 
+/**
+ * @brief Build 3D swarms from distributed meshes and remap using gather scheme.
+ *
+ */
+class DriverTest3D : public BaseTest<3> {
+public:
+  DriverTest3D()
+    : BaseTest(Jali::MeshFactory(comm)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0,16, 16, 16),
+               Jali::MeshFactory(comm)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8))
   {
-    size_t ntarpts = target_swarm->num_particles(Portage::Entity_type::PARALLEL_OWNED);
-    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(ntarpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/4)));
-    BaseTest::set_smoothing_lengths(smoothing_lengths);
+    int const nb_target = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
+    int const dim[] = { nb_target, 1, 3 };
+    BaseTest::set_smoothing_lengths(dim, 0.5);
   }
 };
 
-struct DriverTest3DScatter : BaseTest<3> {
-  DriverTest3DScatter() : BaseTest(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8),
-                                   Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4))
+/**
+ * @brief Build 3D swarms from distributed meshes and remap using scatter scheme.
+ *
+ */
+class DriverTest3DScatter : public BaseTest<3> {
+public:
+  DriverTest3DScatter() : BaseTest(Jali::MeshFactory(comm)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8),
+                                   Jali::MeshFactory(comm)(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4))
   {
-    size_t nsrcpts = source_swarm->num_particles(Portage::Entity_type::PARALLEL_OWNED);
-    auto smoothing_lengths = make_shared<Portage::vector<std::vector<std::vector<double>>>>(nsrcpts,
-                   std::vector<std::vector<double>>(1, std::vector<double>(3, 2.0/8)));
-    BaseTest::set_smoothing_lengths(smoothing_lengths, Portage::Meshfree::Scatter);
+    int const nb_source = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
+    int const dim[] = { nb_source, 1, 3 };
+    BaseTest::set_smoothing_lengths(dim, 0.25, Scatter);
   }
 };
-// Methods for computing initial field values
-template<size_t Dimension>
-double compute_constant_field(Wonton::Point<Dimension> coord) {
+
+template<int dim>
+double compute_constant_field(Wonton::Point<dim> const& coord) {
   return 25.0;
 }
 
-template<size_t Dimension>
-double compute_linear_field(Wonton::Point<Dimension> coord) {
+template<int dim>
+double compute_linear_field(Wonton::Point<dim> const& coord) {
   double val = 0.0;
-  for (size_t i = 0; i < Dimension; i++) val += coord[i];
+  for (int i = 0; i < dim; i++)
+    val += coord[i];
   return val;
 }
 
-template<size_t Dimension>
-double compute_quadratic_field(Wonton::Point<Dimension> coord) {
+template<int dim>
+double compute_quadratic_field(Wonton::Point<dim> const& coord) {
   double val = 0.0;
-  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i];
+  for (int i = 0; i < dim; i++)
+    for (int j = i; j < dim; j++)
+      val += coord[i] * coord[j];
   return val;
 }
-
-template<size_t Dimension>
-double compute_cubic_field(Wonton::Point<Dimension> coord) {
-  double val = 0.0;
-  for (size_t i = 0; i < Dimension; i++) val += coord[i]*coord[i]*coord[i];
-  return val;
-}
-
 
 // Test cases: these are constructed by calling TEST_F with the name
 // of the test class you want to use.  The unit test method is then
@@ -249,62 +252,62 @@ double compute_cubic_field(Wonton::Point<Dimension> coord) {
 // fails.
 
 TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_ConstantFieldUnitaryBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_LinearFieldLinearBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_ConstantFieldUnitaryBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
       (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_LinearFieldLinearBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 }  // end namespace
