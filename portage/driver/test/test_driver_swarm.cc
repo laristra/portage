@@ -167,7 +167,7 @@ public:
    */
   template <template<int, class, class> class Search,
             Basis::Type basis>
-  void unitTest(double compute_initial_field(Wonton::Point<dim> coord),
+  void unitTest(double compute_initial_field(Wonton::Point<dim> const& coord),
                 double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
@@ -200,8 +200,7 @@ public:
       estimator = OperatorRegression;
 
     // Register the variable name with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.emplace_back("particledata");
+    std::vector<std::string> remap_fields = { "particledata" };
     remapper.set_remap_var_names(remap_fields, remap_fields,
                                  estimator, basis,
                                  operator_, domains_, operator_data_);
@@ -211,12 +210,12 @@ public:
 
     // Check the answer
     double total_error = 0.;
-    auto remapped_field = target_state.get_field("particledata");
+    auto& remapped_field = target_state.get_field("particledata");
 
     if (operator_ == Operator::LastOperator) {
       for (int i = 0; i < nb_target; ++i) {
         auto p = target_swarm.get_particle_coordinates(i);
-        auto error = compute_initial_field(p) - remapped_field[i];
+        double error = compute_initial_field(p) - remapped_field[i];
         // dump diagnostics for each particle
         switch (dim) {
           case 1: std::printf("particle: %4d coord: (%5.3lf)", i, p[0]); break;
@@ -235,8 +234,8 @@ public:
 
     } else if (operator_ == Operator::VolumeIntegral) {
       double total = 0.;
-      for (int p = 0; p < nb_target; ++p) {
-        total += remapped_field[p];
+      for (int i = 0; i < nb_target; ++i) {
+        total += remapped_field[i];
       }
       ASSERT_NEAR(expected_answer, total, epsilon);
     }
@@ -252,7 +251,7 @@ public:
    */
   template <template<int, class, class> class Search,
             Basis::Type basis>
-  void unitTestAlt(double compute_initial_field(Wonton::Point<dim> coord),
+  void unitTestAlt(double compute_initial_field(Wonton::Point<dim> const& coord),
                    double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
@@ -305,7 +304,7 @@ public:
 
     // Check the answer
     double total_error = 0.;
-    auto remapped_field = target_state.get_field("particledata");
+    auto& remapped_field = target_state.get_field("particledata");
 
     if (operator_ == Operator::LastOperator) {
       for (int i = 0; i < nb_target; ++i) {
@@ -457,7 +456,7 @@ double compute_linear_field(Wonton::Point<dim> coord) {
 }
 
 template<int dim>
-double compute_quadratic_field(Wonton::Point<dim> coord) {
+double compute_quadratic_field(Wonton::Point<dim> const& coord) {
   double val = 0.0;
   for (int i = 0; i < dim; i++)
     for (int j = i; j < dim; j++)
@@ -489,7 +488,7 @@ bool not_zero(Wonton::Point<dim> const& p) {
 // Google test will pick up each test and run it as part of the larger
 // test fixture.  If any one of these fails the whole test_driver
 // fails.
-
+//
 TEST_F(DriverTest1DGather, 1D_ConstantFieldUnitaryBasis) {
    unitTest<Portage::SearchPointsByCells, Basis::Unitary>
        (compute_constant_field<1>, 0.0);
