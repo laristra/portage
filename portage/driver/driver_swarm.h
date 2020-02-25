@@ -38,9 +38,7 @@ Please see the license file at the root of this repository, or at:
   This should serve as a good example for how to write your own driver routine
   and datastructures.
 */
-
-namespace Portage {
-namespace Meshfree {
+namespace Portage { namespace Meshfree {
 
 /*!
   @class Driver "driver_swarm.h"
@@ -57,7 +55,7 @@ namespace Meshfree {
 template <template <int, class, class> class Search,
           template <size_t, class, class> class Accumulate,
           template<size_t, class> class Estimate,
-          int Dim,
+          int dim,
           class SourceSwarm,
           class SourceState,
           class TargetSwarm = SourceSwarm,
@@ -84,8 +82,8 @@ class SwarmDriver {
     to use
     @param[in] geom_type The geometry of the support (ELLIPTIC, TENSOR,
     FACETED) to use
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
+    @param[in] center Specification of whether gather-form or scatter-form
+    weights are used.
 
     @c smoothing_lengths must have the size of @c SourceSwarm if center is @c Scatter and
     of @c TargetSwarm if center is @c Gather.
@@ -94,29 +92,27 @@ class SwarmDriver {
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              Weight::Kernel const kernel_type=Weight::B4,
-              Weight::Geometry const support_geom_type=Weight::ELLIPTIC,
+              Portage::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              Weight::Kernel const kernel_type = Weight::B4,
+              Weight::Geometry const support_geom_type = Weight::ELLIPTIC,
               WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-        smoothing_lengths_(smoothing_lengths) 
-  {
+      : source_swarm_(sourceSwarm),
+        source_state_(sourceState),
+        target_swarm_(targetSwarm),
+        target_state_(targetState),
+        smoothing_lengths_(smoothing_lengths) {
 
-    assert(Dim == sourceSwarm.space_dimension());
-    assert(Dim == targetSwarm.space_dimension());
-
+    assert(dim == sourceSwarm.space_dimension());
+    assert(dim == targetSwarm.space_dimension());
     weight_center_ = center;
-
     check_sizes_and_set_types(center, kernel_type, support_geom_type);
-
     set_extents_from_smoothing_lengths();
   }
 
   /*!
     @brief Constructor for running the Swarm driver with search extents computed inline.
     *
-    * This is used for any weights except faceted. 
+    * This is used for any weights except faceted.
     *
     @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
     @param[in] sourceState A @c SourceState for the data that lives on
@@ -133,10 +129,10 @@ class SwarmDriver {
     etc) to use
     @param[in] geom_types The geometry of the supports (ELLIPTIC, TENSOR,
     FACETED) of the weight functions to use
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
+    @param[in] center Specification of whether gather-form or scatter-form
+    weights are used.
 
-    @c smoothing_lengths, @code kernel_types, and @geom_types  
+    @c smoothing_lengths, @code kernel_types, and @geom_types
     must have the size of @c SourceSwarm if @ center is @c Scatter and
     of @c TargetSwarm if @ center is @c Gather.
   */
@@ -144,30 +140,29 @@ class SwarmDriver {
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Weight::Kernel> const &kernel_types,
-              vector<Weight::Geometry> const &geom_types,
+              Portage::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              Portage::vector<Weight::Kernel> const& kernel_types,
+              Portage::vector<Weight::Geometry> const& geom_types,
               WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-    kernel_types_(kernel_types),
-    geom_types_(geom_types),
-    smoothing_lengths_(smoothing_lengths) 
-  {
-    assert(Dim == sourceSwarm.space_dimension());
-    assert(Dim == targetSwarm.space_dimension());
+      : source_swarm_(sourceSwarm),
+        source_state_(sourceState),
+        target_swarm_(targetSwarm),
+        target_state_(targetState),
+        kernel_types_(kernel_types),
+        geom_types_(geom_types),
+        smoothing_lengths_(smoothing_lengths) {
 
+    assert(dim == sourceSwarm.space_dimension());
+    assert(dim == targetSwarm.space_dimension());
     weight_center_ = center;
-
     check_sizes(center);
-
     set_extents_from_smoothing_lengths();
   }
 
   /*!
     @brief Constructor for running the Swarm driver with search extents specified.
     *
-    * This is used for faceted weights, which will be uniformly used throughout 
+    * This is used for faceted weights, which will be uniformly used throughout
     * the swarm specified by @c center. Kernel and geometry type are set internally.
     *
     @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
@@ -184,43 +179,45 @@ class SwarmDriver {
     @param[in] sourceExtents extents for source swarm
     @param[in] targetExtents extents for target swarm
     by the value of @c center
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
+    @param[in] center Specification of whether gather-form or scatter-form
+    weights are used.
   */
   SwarmDriver(SourceSwarm& sourceSwarm,
               SourceState& sourceState,
               TargetSwarm const& targetSwarm,
               TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Point<Dim>> const &sourceExtents,
-              vector<Point<Dim>> const &targetExtents,
+              Portage::vector<std::vector<std::vector<double>>> const& smoothing_lengths,
+              Portage::vector<Point<dim>> const& sourceExtents,
+              Portage::vector<Point<dim>> const& targetExtents,
               WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-        smoothing_lengths_(smoothing_lengths)
- {
-   assert(Dim == sourceSwarm.space_dimension());
-   assert(Dim == targetSwarm.space_dimension());
-
+      : source_swarm_(sourceSwarm),
+        source_state_(sourceState),
+        target_swarm_(targetSwarm),
+        target_state_(targetState),
+        smoothing_lengths_(smoothing_lengths) {
+    
+   assert(dim == sourceSwarm.space_dimension());
+   assert(dim == targetSwarm.space_dimension());
    weight_center_ = center;
 
-   size_t tsize, ssize, swarm_size;
-   tsize = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   ssize = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
+   int nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+   int nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+   int swarm_size = 0;
+
    if (weight_center_ == Gather) {
-     swarm_size = tsize;
-     assert(targetExtents.size() == tsize);
+     swarm_size = nb_target;
+     assert(targetExtents.size() == nb_target);
    } else if (weight_center_ == Scatter) {
-     swarm_size = ssize;
-     assert(sourceExtents.size() == ssize);
+     swarm_size = nb_source;
+     assert(sourceExtents.size() == nb_source);
    }
 
    assert(smoothing_lengths.size() == swarm_size);
-   kernel_types_ = vector<Weight::Kernel>(swarm_size, Weight::POLYRAMP);
-   geom_types_ = vector<Weight::Geometry>(swarm_size, Weight::FACETED);
+   kernel_types_ = Portage::vector<Weight::Kernel>(swarm_size, Weight::POLYRAMP);
+   geom_types_ = Portage::vector<Weight::Geometry>(swarm_size, Weight::FACETED);
 
-   sourceExtents_ = std::make_shared<vector<Point<Dim>>>(sourceExtents);
-   targetExtents_ = std::make_shared<vector<Point<Dim>>>(targetExtents);
+   sourceExtents_ = std::make_shared<Portage::vector<Point<dim>>>(sourceExtents);
+   targetExtents_ = std::make_shared<Portage::vector<Point<dim>>>(targetExtents);
   }
 
   /// Copy constructor (disabled)
@@ -238,7 +235,7 @@ class SwarmDriver {
     interpolate from the source swarm to the target swarm.  This variable must
     exist in both swarms' state manager
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
+  void set_remap_var_names(std::vector<std::string> const& remap_var_names) {
     // remap variable names same in source and target swarm
     set_remap_var_names(remap_var_names, remap_var_names);
   }
@@ -256,15 +253,15 @@ class SwarmDriver {
     @param[in] operator_spec Operator specification
   */
   void set_remap_var_names(
-      std::vector<std::string> const &source_remap_var_names,
-      std::vector<std::string> const &target_remap_var_names,
+      std::vector<std::string> const& source_remap_var_names,
+      std::vector<std::string> const& target_remap_var_names,
       EstimateType const estimator_type = LocalRegression,
       Basis::Type const basis_type = Basis::Unitary,
       Operator::Type const operator_spec = Operator::LastOperator,
-      Portage::vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
-      Portage::vector<std::vector<Point<Dim>>> const &operator_data=
-      vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)), 
-      std::string part_field="NONE", double part_tolerance=0., 
+      Portage::vector<Operator::Domain> const& operator_domains = vector<Operator::Domain>(0),
+      Portage::vector<std::vector<Point<dim>>> const& operator_data=
+      vector<std::vector<Point<dim>>>(0, std::vector<Point<dim>>(0)),
+      std::string part_field="NONE", double part_tolerance=0.,
       Portage::vector<std::vector<std::vector<double>>> part_smoothing=
       Portage::vector<std::vector<std::vector<double>>>(0) )
   {
@@ -306,8 +303,8 @@ class SwarmDriver {
     return target_remap_var_names_;
   }
 
-  void remap(std::vector<std::string> const &src_varnames,
-             std::vector<std::string> const &trg_varnames,
+  void remap(std::vector<std::string> const& src_varnames,
+             std::vector<std::string> const& trg_varnames,
              Wonton::Executor_type const *executor=nullptr,
              bool report_time = true);
 
@@ -320,10 +317,10 @@ class SwarmDriver {
     bool distributed = false;
     int comm_rank = 0;
     int nprocs = 1;
-    
+
     // Will be null if it's a parallel executor
     auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-    
+
 #ifdef PORTAGE_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -369,20 +366,20 @@ class SwarmDriver {
   vector<std::vector<std::vector<double>>> smoothing_lengths_;
   vector<Weight::Kernel> kernel_types_;
   vector<Weight::Geometry> geom_types_;
-  std::shared_ptr<vector<Point<Dim>>> sourceExtents_;
-  std::shared_ptr<vector<Point<Dim>>> targetExtents_;
+  std::shared_ptr<vector<Point<dim>>> sourceExtents_;
+  std::shared_ptr<vector<Point<dim>>> targetExtents_;
   EstimateType estimator_type_;
   Basis::Type basis_type_;
   Operator::Type operator_spec_;
   Portage::vector<Operator::Domain> operator_domains_;
-  Portage::vector<std::vector<Point<Dim>>> operator_data_;
+  Portage::vector<std::vector<Point<dim>>> operator_data_;
   std::string part_field_;
   double part_tolerance_;
   Portage::vector<std::vector<std::vector<double>>> part_smoothing_;
 
- void check_sizes_and_set_types(WeightCenter const weight_center, 
-                                Weight::Kernel const kernel_type, 
-                                Weight::Geometry const support_geom_type) 
+ void check_sizes_and_set_types(WeightCenter const weight_center,
+                                Weight::Kernel const kernel_type,
+                                Weight::Geometry const support_geom_type)
  {
    size_t swarm_size;
    if (weight_center_ == Gather) {
@@ -395,7 +392,7 @@ class SwarmDriver {
    geom_types_ = vector<Weight::Geometry>(swarm_size, support_geom_type);
  }
 
- void check_sizes(WeightCenter const weight_center) 
+ void check_sizes(WeightCenter const weight_center)
  {
    size_t swarm_size;
    if (weight_center_ == Gather) {
@@ -413,25 +410,25 @@ class SwarmDriver {
    if (weight_center_ == Gather) {
      int numTargetPts = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
      assert(smoothing_lengths_.size() == numTargetPts);
-     targetExtents_ = std::make_shared<vector<Point<Dim>>>(numTargetPts);
+     targetExtents_ = std::make_shared<vector<Point<dim>>>(numTargetPts);
      for (int i = 0; i < numTargetPts; i++) {
        if (geom_types_[i] == Weight::FACETED) {
          throw std::runtime_error("FACETED geometry is not available here");
        }
        std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       Point<Dim> pt(vv[0]); 
+       Point<dim> pt(vv[0]);
        (*targetExtents_)[i]=pt;
      }
    } else if (weight_center_ == Scatter) {
      int numSourcePts = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
      assert(smoothing_lengths_.size() == numSourcePts);
-     sourceExtents_ = std::make_shared<vector<Point<Dim>>>(numSourcePts);
+     sourceExtents_ = std::make_shared<vector<Point<dim>>>(numSourcePts);
      for (int i = 0; i < numSourcePts; i++) {
        if (geom_types_[i] == Weight::FACETED) {
          throw std::runtime_error("FACETED geometry is not available here");
        }
        std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       Point<Dim> pt(vv[0]); 
+       Point<dim> pt(vv[0]);
        (*sourceExtents_)[i]=pt;
      }
    }
@@ -454,8 +451,8 @@ void SwarmDriver<Search,
                  SourceState,
                  TargetSwarm,
                  TargetState>::
-remap(std::vector<std::string> const &src_varnames,
-      std::vector<std::string> const &trg_varnames,
+remap(std::vector<std::string> const& src_varnames,
+      std::vector<std::string> const& trg_varnames,
       Wonton::Executor_type const *executor,
       bool report_time)
 {
@@ -463,7 +460,7 @@ remap(std::vector<std::string> const &src_varnames,
   bool distributed = false;
   int comm_rank = 0;
   int nprocs = 0;
-  
+
 #ifdef PORTAGE_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -532,7 +529,7 @@ remap(std::vector<std::string> const &src_varnames,
 
   // In case of faceted, scatter, and parts, obtain part assignments on target particles.
   // Eliminate neighbors that aren't in the same part.
-  // It is assumed that the faceted weight function will be non-zero only on the 
+  // It is assumed that the faceted weight function will be non-zero only on the
   // source cell it came from, which is achieved by using a smoothing factor of 1/2.
   // It is also assumed no target point will appear in more than one source cell.
   if (geom_types_[0]==Weight::FACETED and weight_center_==Scatter and part_field_!="NONE") {
@@ -658,10 +655,9 @@ remap(std::vector<std::string> const &src_varnames,
     // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
     // TO USE THRUST
 
-    typename SwarmState<Dim>::DblVecPtr target_field_shared_ptr;
-
-    target_state_.get_field(trg_varnames[i], target_field_shared_ptr);
-    Portage::pointer<double> target_field(&((*target_field_shared_ptr)[0]));
+    // TODO: perform a deep-copy back to target state
+    auto& target_data = target_state_.get_field(trg_varnames[i]);
+    Portage::pointer<double> target_field(target_data.data());
 
     Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
                        target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
@@ -720,7 +716,6 @@ remap(std::vector<std::string> const &src_varnames,
 }//remap
 
 
-}  // namespace Meshfree
-}  // namespace Portage
+}}  // namespace Portage::Meshfree
 
 #endif  // SRC_DRIVER_SWARM_H_

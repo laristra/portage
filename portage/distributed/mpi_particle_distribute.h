@@ -454,13 +454,12 @@ class MPI_Particle_Distribute {
     * Step 6: Collect integer field data from source swarm to be sent         *
     *         to other ranks                                                  *
     **************************************************************************/
-    std::vector<std::string> int_field_names = source_state.field_names_int();
+    auto int_field_names = source_state.template get_field_names<int>();
 
     for (size_t nvars = 0; nvars < int_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<vector<int>> srcdata;
-      source_state.get_field(int_field_names[nvars], srcdata);
+      auto& srcdata = source_state.get_field_int(int_field_names[nvars]);
 
       // Collect field data for source particles that need to be sent to other ranks
       std::vector<std::vector<int>> sourceSendData(commSize);
@@ -473,7 +472,7 @@ class MPI_Particle_Distribute {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
             int sid = sourcePtsToSend[i][j];
-            sourceSendData[i].push_back((*srcdata)[sid]);
+            sourceSendData[i].push_back(srcdata[sid]);
           }
         }
       }
@@ -491,13 +490,12 @@ class MPI_Particle_Distribute {
     * Step 7: Collect double field data from source swarm to be sent          *
     *         to other ranks                                                  *
     **************************************************************************/
-    std::vector<std::string> dbl_field_names = source_state.field_names_double();
+    auto dbl_field_names = source_state.template get_field_names<double>();
 
     for (size_t nvars = 0; nvars < dbl_field_names.size(); ++nvars)
     {
       // Get field data from source state
-      std::shared_ptr<vector<double>> srcdata;
-      source_state.get_field(dbl_field_names[nvars], srcdata);
+      auto& srcdata = source_state.get_field(dbl_field_names[nvars]);
 
       // Collect field data for source particles that need to be sent to other ranks
       std::vector<std::vector<double>> sourceSendData(commSize);
@@ -510,7 +508,7 @@ class MPI_Particle_Distribute {
           for (size_t j = 0; j < sourcePtsToSendSize[i]; ++j)
           {
             int sid = sourcePtsToSend[i][j];
-            sourceSendData[i].push_back((*srcdata)[sid]);
+            sourceSendData[i].push_back(srcdata[sid]);
           }
         }
       }
