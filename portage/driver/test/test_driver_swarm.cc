@@ -293,8 +293,7 @@ public:
       estimator = OperatorRegression;
 
     // Register the variable name and interpolation order with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.emplace_back("particledata");
+    std::vector<std::string> remap_fields = { "particledata" };
     remapper.set_remap_var_names(remap_fields, remap_fields,
                                  estimator, basis,
                                  operator_, domains_, operator_data_);
@@ -322,9 +321,9 @@ public:
         total_error += error * error;
       }
 
-      total_error = std::sqrt(total_error);
-      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", total_error);
-      ASSERT_NEAR(expected_answer, total_error, epsilon);
+      //total_error = std::sqrt(total_error);
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", std::sqrt(total_error));
+      ASSERT_NEAR(expected_answer, std::sqrt(total_error/nb_target), epsilon);
 
     } else if (operator_ == Operator::VolumeIntegral) {
       double total = 0.;
@@ -346,8 +345,8 @@ protected:
   Portage::vector<std::vector<std::vector<double>>> smoothing_lengths_;
 
   // kernel and geometry specifications
-  Portage::vector<Weight::Kernel> kernels_;
-  Portage::vector<Weight::Geometry> geometries_;
+  Portage::vector<Weight::Kernel> kernels_ {};
+  Portage::vector<Weight::Geometry> geometries_ {};
 
   // operator info
   WeightCenter center_;
@@ -396,7 +395,7 @@ public:
 class DriverTest1DScatter : public BaseTest<1> {
 public:
   DriverTest1DScatter() : BaseTest<1>(7, 5, 2, 0.0, 1.0) {
-    int const dim[] = { 5, 1, 1 };
+    int const dim[] = { 7, 1, 1 };
     BaseTest<1>::set_smoothing_lengths(dim, 0.5, Scatter);
   }
 };
@@ -404,7 +403,7 @@ public:
 class DriverTest2DScatter : public BaseTest<2> {
 public:
   DriverTest2DScatter() : BaseTest<2>(7*7, 5*5, 2, 0.0, 1.0, 0.0, 1.0) {
-    int const dim[] = { 5*5, 1, 2 };
+    int const dim[] = { 7*7*7, 1, 2 };
     BaseTest<2>::set_smoothing_lengths(dim, 0.5, Scatter);
   }
 };
@@ -412,7 +411,7 @@ public:
 class DriverTest3DScatter : public BaseTest<3> {
 public:
   DriverTest3DScatter() : BaseTest<3>(7*7*7, 5*5*5, 2, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0) {
-    int const dim[] = { 5*5*5, 1, 3 };
+    int const dim[] = { 7*7*7, 1, 3 };
     BaseTest<3>::set_smoothing_lengths(dim, 0.5, Scatter);
   }
 };
@@ -507,10 +506,10 @@ TEST_F(DriverTest1DGather, 1D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<1>, 0.0);
 }
 
-//TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
-//  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
-//      (compute_quadratic_field<1>, 0.0);
-//}
+TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+      (compute_quadratic_field<1>, 0.0);
+}
 
 TEST_F(DriverTest2DGather, 2D_ConstantFieldUnitaryBasis) {
   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
@@ -532,15 +531,15 @@ TEST_F(DriverTest2DGather, 2D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<2>, 0.0);
 }
 
-//TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-//  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
-//      (compute_quadratic_field<2>, 0.0);
-//}
-//
-//TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatterAlt) {
-//  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
-//      (compute_quadratic_field<2>, 0.0);
-//}
+TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
+
+TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatterAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
+      (compute_quadratic_field<2>, 0.0);
+}
 
 TEST_F(DriverTest3DGather, 3D_ConstantFieldUnitaryBasis) {
    unitTest<Portage::SearchPointsByCells, Basis::Unitary>
@@ -562,16 +561,15 @@ TEST_F(DriverTest3DGather, 3D_QuadraticFieldQuadraticBasis) {
       (compute_quadratic_field<3>, 0.0);
 }
 
-//TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-//  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
-//      (compute_quadratic_field<3>, 0.0);
-//}
-//
-//TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatterAlt) {
-//  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
-//      (compute_quadratic_field<3>, 0.0);
-//}
+TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
 
+TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatterAlt) {
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
+      (compute_quadratic_field<3>, 0.0);
+}
 
 TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
   unitTest<Portage::SearchPointsByCells, Basis::Linear>
