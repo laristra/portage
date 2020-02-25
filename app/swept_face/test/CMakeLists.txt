@@ -25,7 +25,7 @@ if (Jali_DIR)
 
     set_property(TEST "test_swept-face_${SUFFIX}"
                  PROPERTY ENVIRONMENT
-                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_demo
+                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_app
                  COMPARE=${CMAKE_BINARY_DIR}/app/apptest_cmp/apptest_cmp
                  RUN_COMMAND=${RUN_COMMAND})
   endmacro()
@@ -39,7 +39,7 @@ if (Jali_DIR)
 
     set_property(TEST test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
                  PROPERTY ENVIRONMENT
-                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_demo
+                 APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_app
                  COMPARE=${CMAKE_BINARY_DIR}/app/distributed_cmp/distributed_cmp)
   endmacro()
 

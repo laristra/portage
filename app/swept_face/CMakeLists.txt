@@ -8,8 +8,8 @@
 if (ENABLE_MPI AND Jali_DIR)
 
   # create targets
-  set(target swept_face_demo)
-  add_executable(${target} swept_face_demo.cc)
+  set(target swept_face_app)
+  add_executable(${target} swept_face_app.cc)
 
   # available build options
   set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
