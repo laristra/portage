@@ -40,7 +40,7 @@ inline float elapsed(
  @brief Dump current time and reset it afterwards.
  @param[in] tic start time  
  */ 
-inline int reset(
+inline void reset(
   std::chrono::high_resolution_clock::time_point& tic, float* cumul = nullptr
 ) {
   if (cumul != nullptr) {
@@ -112,7 +112,7 @@ public:
   inline bool dump() {
 
     // save timing for each step
-    constexpr int const nsteps = 9;
+    constexpr int const nsteps = 10;
     constexpr float const time_eps = 1.E-4;
 
     float const elap[nsteps] = {
@@ -124,27 +124,34 @@ public:
       std::max(time_eps, time.gradient),
       std::max(time_eps, time.interpolate),
       std::max(time_eps, time.mismatch),
-      std::max(time_eps, time.remap)
+      std::max(time_eps, time.remap),
+      std::max(time_eps, time.total - time.mesh_init - time.interface - time.remap)
     };
 
     int time_ratio[nsteps];
+    int max_elap = 0;
 
     for (int i = 0; i < nsteps; ++i) {
-      time_ratio[i] = static_cast<int>(elap[i] * 100 / time.total);
+      time_ratio[i] = static_cast<int>(100 * (elap[i] / time.total));
+      max_elap = std::max(max_elap, static_cast<int>(elap[i]));
     }
 
-    std::string const& path = params.output;
+    // for number formatting
+    int const n_dec = 3;
+    int const n_tot = 1 + n_dec + (max_elap > 0 ? ((int) std::floor(std::log10(max_elap))) + 1 : 0);
 
+    std::string const& path = params.output;
     std::printf("\nRecap: total elapsed time %.3f s\n", time.total);
-    std::printf("= %2d %% mesh initialization     (%6.3f s).\n", time_ratio[0], elap[0]);
-    std::printf("= %2d %% mesh redistribution     (%6.3f s).\n", time_ratio[1], elap[1]);
-    std::printf("= %2d %% interface recontruction (%6.3f s).\n", time_ratio[2], elap[2]);
-    std::printf("= %2d %% search                  (%6.3f s).\n", time_ratio[3], elap[3]);
-    std::printf("= %2d %% intersect               (%6.3f s).\n", time_ratio[4], elap[4]);
-    std::printf("= %2d %% gradient                (%6.3f s).\n", time_ratio[5], elap[5]);
-    std::printf("= %2d %% interpolate             (%6.3f s).\n", time_ratio[6], elap[6]);
-    std::printf("= %2d %% mismatch                (%6.3f s).\n", time_ratio[7], elap[7]);
-    std::printf("= %2d %% remapping               (%6.3f s).\n", time_ratio[8], elap[8]);
+    std::printf(" \u2022 %2d %% generate mesh       \e[32m(%*.3f s)\e[0m.\n", time_ratio[0], n_tot, elap[0]);
+    std::printf(" \u2022 %2d %% redistribute        \e[32m(%*.3f s)\e[0m.\n", time_ratio[1], n_tot, elap[1]);
+    std::printf(" \u2022 %2d %% interface reconst.  \e[32m(%*.3f s)\e[0m.\n", time_ratio[2], n_tot, elap[2]);
+    std::printf(" \u2022 %2d %% search              \e[32m(%*.3f s)\e[0m.\n", time_ratio[3], n_tot, elap[3]);
+    std::printf(" \u2022 %2d %% intersect           \e[32m(%*.3f s)\e[0m.\n", time_ratio[4], n_tot, elap[4]);
+    std::printf(" \u2022 %2d %% gradient            \e[32m(%*.3f s)\e[0m.\n", time_ratio[5], n_tot, elap[5]);
+    std::printf(" \u2022 %2d %% interpolate         \e[32m(%*.3f s)\e[0m.\n", time_ratio[6], n_tot, elap[6]);
+    std::printf(" \u2022 %2d %% mismatch            \e[32m(%*.3f s)\e[0m.\n", time_ratio[7], n_tot, elap[7]);
+    std::printf(" \u2022 %2d %% remap               \e[32m(%*.3f s)\e[0m.\n", time_ratio[8], n_tot, elap[8]);
+    std::printf(" \u2022 %2d %% post-process        \e[32m(%*.3f s)\e[0m.\n", time_ratio[9], n_tot, elap[9]);
     std::fflush(stdout);
 
     std::printf("Exporting stats to '%s' ... ", path.data());

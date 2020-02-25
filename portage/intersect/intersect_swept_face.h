@@ -124,6 +124,12 @@ namespace Portage {
     void set_material(int m) { material_id_ = m; }
 
     /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+    /**
      * @brief Perform the actual swept faces volumes computation.
      *
      * @param target_id: the current target cell index.
@@ -144,6 +150,7 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
@@ -288,91 +295,6 @@ namespace Portage {
     }
 
     /**
-     * @brief Compute moments using facetized method:
-     * - triangulate and compute each simplex orientation using determinant.
-     * - compute the intersection point of its couple of diagonals.
-     *
-     *     d_____c    facets: (a,b,d) and (b,c,d)
-     *     /\   /                   1    |ax  ay  1|
-     *    / \  /      area(a,b,d) = - det|bx  by  1| > 0 if counterclockwise
-     *   /  \ /                     2    |dx  dy  1|
-     *  /___\/
-     * a     b        centroid(a,b,d):  find (s,t) such that:
-     *                                  a + s(c - a) = b + t(d - b)
-     *
-     *                                resolve the equation: A.X = B
-     *                                |dx-bx  ax-cx| |t| |ax-bx|
-     *                                |dy-by  ay-cy| |s|=|ay-by|
-     *
-     * @param swept_polygon: swept polygon points coordinates.
-     * @return swept polygon moments.
-     */
-    std::vector<double> compute_moments_facetized_method
-      (std::vector<Wonton::Point<2>> const& swept_polygon) const {
-
-      std::vector<double> moment;
-
-      // retrieve quadrilateral vertices coordinates.
-      double const& ax = swept_polygon[0][0];
-      double const& ay = swept_polygon[0][1];
-      double const& bx = swept_polygon[1][0];
-      double const& by = swept_polygon[1][1];
-      double const& cx = swept_polygon[2][0];
-      double const& cy = swept_polygon[2][1];
-      double const& dx = swept_polygon[3][0];
-      double const& dy = swept_polygon[3][1];
-
-      /* step 1: compute signed area */
-      double const det[] = {
-        ax * by - ax * dy - bx * ay + bx * dy + dx * ay - dx * by,
-        bx * cy - bx * dy - cx * by + cx * dy + dx * by - dx * cy
-      };
-
-      // check that both triangles have the same orientation
-      bool const both_positive = (det[0] >= 0 and det[1] >= 0);
-      bool const both_negative = (det[0] < 0 and det[1] < 0);
-
-      if (not both_positive and not both_negative) {
-        std::cerr << "Error: twisted swept face polygon." << std::endl;
-        return moment;
-      }
-
-      double const area = 0.5 * (det[0] + det[1]);
-
-      /* step 2: compute centroid */
-      std::vector<double> centroid = { 0, 0 };
-
-      // retrieve the determinant of A to compute its inverse A^-1.
-      double const denom = (dx - bx) * (ay - cy) - (dy - by) * (ax - cx);
-
-      // check if diagonals are not colinear
-      if (std::abs(denom) > 0) {
-        // check if given value is in [0,1]
-        auto in_range = [](double x) -> bool { return 0. <= x and x <= 1.; };
-        // compute the intersection point parameter:
-        // compute the inverse of the matrix A and multiply it by the vector B
-        double const param[] = {
-          std::abs(((by - dy) * (ax - bx) + (dx - bx) * (ay - by)) / denom),
-          std::abs(((ay - cy) * (ax - bx) + (ax - cx) * (ay - by)) / denom)
-        };
-        // check if diagonals intersection lies on their respective segments
-        if (in_range(param[0]) and in_range(param[1])) {
-          #if DEBUG
-            double x[] = { ax + param[0] * (cx - ax), bx + param[1] * (dx - bx) };
-            double y[] = { ay + param[0] * (cy - ay), by + param[1] * (dy - by) };
-            assert(std::abs(x[0] - x[1]) < num_tols_.polygon_convexity_eps);
-            assert(std::abs(y[0] - y[1]) < num_tols_.polygon_convexity_eps);
-            centroid = { x[0], y[0] };
-          #else
-            centroid = { ax + param[0] * (cx - ax), ay + param[0] * (cy - ay) };
-          #endif
-          moment = { area, area * centroid[0], area * centroid[1] };
-        }
-      }
-      return moment;
-    }
-
-    /**
      * @brief Retrieve the source cell moments.
      *
      * @param source_id: index of the source cells.
@@ -433,6 +355,13 @@ namespace Portage {
     }
 
   public:
+
+    /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
     /**
      * @brief Perform the actual swept faces computation.
      *
@@ -541,13 +470,11 @@ namespace Portage {
               throw std::runtime_error("invalid stencil for source cell "+ id);
             }
             // sanity check: ensure that swept face centroid remains
-            // inside the neighbor cell.
-            else if (not centroid_inside_cell(neigh, moments)) {
-              throw std::runtime_error("invalid target mesh for swept face");
-            }
-            // append to list as current neighbor moment.
-            else {
+            // inside the neighbor cell and append to list.
+            if (not displacement_check or centroid_inside_cell(neigh, moments)) {
               swept_moments.emplace_back(neigh, moments);
+            } else {
+              throw std::runtime_error("invalid target mesh for swept face");
             }
           }
         } // end for each edge of current cell
@@ -566,6 +493,7 @@ namespace Portage {
     SourceState const &source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
@@ -785,6 +713,12 @@ namespace Portage {
 
   public:
     /**
+     * @brief Toggle target mesh displacement validity check.
+     *
+     */
+    void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+    /**
      * @brief Perform the actual swept moments computation for the given cell.
      *
      * After decomposing the cell into faces, it constructs a swept polyhedron
@@ -987,7 +921,7 @@ namespace Portage {
           }
         } // end of for each face of current cell
 
-        if (valid_displacement(source_id, swept_moments)) {
+        if (not displacement_check or valid_displacement(source_id, swept_moments)) {
           return swept_moments;
         } else
           throw std::runtime_error("invalid displacement");
@@ -1005,6 +939,7 @@ namespace Portage {
     SourceState const& source_state_;
     int material_id_ = -1;
     NumericTolerances_t num_tols_;
+    bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif

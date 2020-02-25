@@ -23,7 +23,7 @@ endif (Jali_DIR OR ENABLE_FleCSI)
 if (Jali_DIR)
   add_subdirectory(timingapp)
   add_subdirectory(part-by-part)
-  add_subdirectory(sweptfaceapp)
+  add_subdirectory(swept_face)
 endif (Jali_DIR)
 
 if (ENABLE_FleCSI)
