@@ -39,30 +39,29 @@ double const epsilon = 1e-6;
 /**
  * @class BaseTest
  *
- * This is a set of integration tests for the swarm-swarm remap driver.
+ * Set of unitary tests for the swarm-swarm remap driver.
  * There will be at least one test corresponding to each case found in
- * main.cc. This is a test fixture and must be derived from the
- * ::testing::Test class. Specializations of this class, such as 2D/3D
+ * main.cc. This is a test fixture and specialized testcases, such as 2D/3D
  * coincident and non-coincident remaps should be derived from this.
  *
  * @tparam dim: dimension of the problem.
  */
-template<size_t dim>
+template<int dim>
 class BaseTest : public ::testing::Test {
 public:
   /**
-   * @brief Constructor
+   * @brief Set swarms and states for tests, initialize the operator to use.
    *
-   * @param nb_source
-   * @param nb_target
-   * @param distrib
-   * @param x_min
-   * @param x_max
-   * @param y_min
-   * @param y_max
-   * @param z_min
-   * @param z_max
-   * @param op
+   * @param nb_source: number of source particles
+   * @param nb_target: number of target particles
+   * @param distrib: the distribution to use when generating random particles
+   * @param x_min: lower bound on particle coordinates for x-axis
+   * @param x_max: upper bound on particle coordinates for x-axis
+   * @param y_min: lower bound on particle coordinates for y-axis (for 2D/3D)
+   * @param y_max: upper bound on particle coordinates for x-axis (for 2D/3D)
+   * @param z_min: lower bound on particle coordinates for z-axis (for 3D)
+   * @param z_max: upper bound on particle coordinates for z-axis (for 3D)
+   * @param op: the operator to use (volume/surface integral, last operator)
    */
   BaseTest(int nb_source, int nb_target, int distrib,
            double x_min = 0.0, double x_max = 0.0,
@@ -145,10 +144,11 @@ public:
   }
 
   /**
+   * @brief Set the smoothing lengths matrix.
    *
-   * @param n
-   * @param h
-   * @param center
+   * @param n: matrix dimensions.
+   * @param h: the h-factor.
+   * @param center: the weight center (gather, scatter).
    */
   void set_smoothing_lengths(const int* n, double h, WeightCenter center = Gather) {
     assert(n != nullptr);
@@ -158,12 +158,12 @@ public:
   }
 
   /**
-   * @brief Basic test method to be called for each unit test.
+   * @brief Test main method.
    *
-   * @tparam Search
-   * @tparam basis
-   * @param compute_initial_field
-   * @param expected_answer
+   * @tparam Search: the particle search kernel to use.
+   * @tparam basis: the basis type.
+   * @param compute_initial_field: a function to compute a field to source swarm.
+   * @param expected_answer: the expected value to compare against.
    */
   template <template<int, class, class> class Search,
             Basis::Type basis>
@@ -242,12 +242,12 @@ public:
   }
 
   /**
-   * @brief This unit test exercises the alternate more detailed constructor.
+   * @brief Test alternate method using a more detailed constructor.
    *
-   * @tparam Search
-   * @tparam basis
-   * @param compute_initial_field
-   * @param expected_answer
+   * @tparam Search: the particle search kernel to use.
+   * @tparam basis: the basis type.
+   * @param compute_initial_field: a function to compute a field to source swarm.
+   * @param expected_answer: the expected value to compare against.
    */
   template <template<int, class, class> class Search,
             Basis::Type basis>
@@ -355,19 +355,10 @@ protected:
   Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
-//  std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
-//                                         double xmax, double ymax,
-//                                         unsigned int nparticles,
-//                                         unsigned int distribution,
-//                                         unsigned int rand_seed=0)
-
-//  Swarm(int num_particles, int distribution,
-//        unsigned user_seed = 0,
-//        double x_min = 0.0, double x_max = 0.0,
-//        double y_min = 0.0, double y_max = 0.0,
-//        double z_min = 0.0, double z_max = 0.0);
-
-// Class which constructs a pair of 1-D swarms (random distribution) for remaps
+/**
+ * @brief Remap 1D random swarm using a gather scheme.
+ *
+ */
 class DriverTest1DGather : public BaseTest<1> {
 public:
   DriverTest1DGather() : BaseTest<1>(7, 5, 2, 0.0, 1.0) {
@@ -376,6 +367,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 2D random swarm using a gather scheme.
+ *
+ */
 class DriverTest2DGather : public BaseTest<2> {
 public:
   DriverTest2DGather() : BaseTest<2>(7*7, 5*5, 2, 0.0, 1.0, 0.0, 1.0) {
@@ -384,6 +379,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 3D random swarm using a gather scheme.
+ *
+ */
 class DriverTest3DGather : public BaseTest<3> {
 public:
   DriverTest3DGather() : BaseTest<3>(7*7*7, 5*5*5, 2, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0) {
@@ -392,6 +391,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 1D random swarm using a scatter scheme.
+ *
+ */
 class DriverTest1DScatter : public BaseTest<1> {
 public:
   DriverTest1DScatter() : BaseTest<1>(7, 5, 2, 0.0, 1.0) {
@@ -400,6 +403,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 2D random swarm using a scatter scheme.
+ *
+ */
 class DriverTest2DScatter : public BaseTest<2> {
 public:
   DriverTest2DScatter() : BaseTest<2>(7*7, 5*5, 2, 0.0, 1.0, 0.0, 1.0) {
@@ -408,6 +415,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 3D random swarm using a scatter scheme.
+ *
+ */
 class DriverTest3DScatter : public BaseTest<3> {
 public:
   DriverTest3DScatter() : BaseTest<3>(7*7*7, 5*5*5, 2, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0) {
@@ -416,7 +427,10 @@ public:
   }
 };
 
-// Class which constructs a pair of 1-D swarms (ordered distribution) for remaps, and integrates
+/**
+ * @brief Remap 1D ordered swarm and integrate.
+ *
+ */
 class IntegrateDriverTest1D : public BaseTest<1> {
 public:
   IntegrateDriverTest1D() : BaseTest<1>(7, 5, 1, 0.0, 1.0,
@@ -426,6 +440,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 2D ordered swarm and integrate.
+ *
+ */
 class IntegrateDriverTest2D : public BaseTest<2> {
 public:
   IntegrateDriverTest2D() : BaseTest<2>(7*7, 5*5, 1, 0.0, 1.0,
@@ -435,6 +453,10 @@ public:
   }
 };
 
+/**
+ * @brief Remap 3D ordered swarm and integrate.
+ *
+ */
 class IntegrateDriverTest3D : public BaseTest<3> {
 public:
   IntegrateDriverTest3D() : BaseTest<3>(7*7*7, 5*5*5, 1, 0.0, 1.0,
