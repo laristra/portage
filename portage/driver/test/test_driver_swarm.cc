@@ -31,23 +31,311 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/state/simple/simple_state_wrapper.h"
 
 namespace {
-
-using std::shared_ptr;
-using std::make_shared;
-using Wonton::Point;
-
+// avoid long namespaces
 using namespace Portage::Meshfree;
+// default numerical tolerance
+double const epsilon = 1e-6;
 
-double TOL = 1e-6;
-
-// This is a set of integration tests for the swarm-swarm remap driver.
-// There will be at least one test corresponding to each case found in
-// main.cc. This is a test fixture and must be derived from the
-// ::testing::Test class. Specializations of this class, such as 2D/3D
-// coincident and non-coincident remaps should be derived from this.
-
+/**
+ * @class BaseTest
+ *
+ * This is a set of integration tests for the swarm-swarm remap driver.
+ * There will be at least one test corresponding to each case found in
+ * main.cc. This is a test fixture and must be derived from the
+ * ::testing::Test class. Specializations of this class, such as 2D/3D
+ * coincident and non-coincident remaps should be derived from this.
+ *
+ * @tparam dim: dimension of the problem.
+ */
 template<size_t dim>
 class BaseTest : public ::testing::Test {
+public:
+  /**
+   * @brief Constructor
+   *
+   * @param nb_source
+   * @param nb_target
+   * @param distrib
+   * @param x_min
+   * @param x_max
+   * @param y_min
+   * @param y_max
+   * @param z_min
+   * @param z_max
+   * @param op
+   */
+  BaseTest(int nb_source, int nb_target, int distrib,
+           double x_min = 0.0, double x_max = 0.0,
+           double y_min = 0.0, double y_max = 0.0,
+           double z_min = 0.0, double z_max = 0.0,
+           Operator::Type op = Operator::LastOperator)
+    : source_swarm(nb_source, distrib, 0, x_min, x_max, y_min, y_max, z_min, z_max),
+      target_swarm(nb_target, distrib, 0, x_min, x_max, y_min, y_max, z_min, z_max),
+      source_state(source_swarm),
+      target_state(target_swarm),
+      center_(Gather),
+      operator_(op)
+  {
+
+    if (op != Operator::LastOperator) {
+
+      int const num_owned_target = target_swarm.num_owned_particles();
+      int const npoints[] = { 2, 4, 8 };
+
+      domains_ = Portage::vector<Operator::Domain>(num_owned_target);
+      operator_data_.resize(num_owned_target, std::vector<Wonton::Point<dim>>(npoints[dim-1]));
+
+      int npdim = static_cast<int>(std::pow(1.001 * num_owned_target, 1./dim));
+      int nptot = 1;
+      for (int m = 0; m < dim; m++)
+        nptot *= npdim;
+
+      assert(nptot == num_owned_target);
+      assert(npdim > 1);
+
+      int i = 0;
+      int j = 0;
+      int k = 0;
+      int ij[npoints[dim-1]];
+      std::vector<Wonton::Point<dim>> points(npoints[dim-1]);
+
+      // Create points determining the integration volume.
+      // Assumes target swarm is created from SwarmFactory and represents a perfect cubic array of points.
+      for (int n = 0; n < nptot; n++) {
+        switch(dim) {
+          case 1:
+            i = n;
+            ij[0] = i;
+            ij[1] = (i+1);
+            break;
+          case 2:
+            i = n / npdim;
+            j = n - i * npdim;
+            ij[0] = i * npdim + j;
+            ij[1] = (i+1) * npdim + j;
+            ij[2] = (i+1) * npdim + j + 1;
+            ij[3] = i * npdim + j + 1;
+            break;
+          case 3:
+            i = n / (npdim * npdim);
+            j = (n - i * npdim * npdim) / npdim;
+            k = n - i * npdim * npdim - j * npdim;
+            ij[0] = npdim * (i * npdim + j) + k;
+            ij[1] = npdim * ((i+1) * npdim + j) + k;
+            ij[2] = npdim * ((i+1) * npdim + j + 1) + k;
+            ij[3] = npdim * (i * npdim + j + 1) + k;
+            ij[4] = npdim * (i * npdim + j) + k + 1;
+            ij[5] = npdim * ((i+1) * npdim + j) + k + 1;
+            ij[6] = npdim * ((i+1) * npdim + j + 1) + k + 1;
+            ij[7] = npdim * (i * npdim + j + 1) + k + 1;
+            break;
+          default: break;
+        }
+
+        for (int m = 0; m < npoints[dim-1]; m++) {
+          bool on_boundary = (i == npdim-1 or j == npdim-1 or k == npdim-1);
+          // particles on the upper boundaries get an integration volume of zero
+          points[m] = (on_boundary ? target_swarm.get_particle_coordinates(ij[0])
+                                   : target_swarm.get_particle_coordinates(ij[m]));
+        }
+        operator_data_[n] = points;
+        domains_[n] = Operator::domain_from_points<dim>(points);
+      }
+    }
+  }
+
+  /**
+   *
+   * @param n
+   * @param h
+   * @param center
+   */
+  void set_smoothing_lengths(const int* n, double h, WeightCenter center = Gather) {
+    assert(n != nullptr);
+    std::vector<std::vector<double>> const default_lengths(n[1], std::vector<double>(n[2], h));
+    smoothing_lengths_.resize(n[0], default_lengths);
+    center_ = center;
+  }
+
+  /**
+   * @brief Basic test method to be called for each unit test.
+   *
+   * @tparam Search
+   * @tparam basis
+   * @param compute_initial_field
+   * @param expected_answer
+   */
+  template <template<int, class, class> class Search,
+            Basis::Type basis>
+  void unitTest(double compute_initial_field(Wonton::Point<dim> coord),
+                double expected_answer) {
+
+    using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
+                                 Swarm<dim>, SwarmState<dim>,
+                                 Swarm<dim>, SwarmState<dim>>;
+
+    // Fill the source state data with the specified profile
+    const int nb_source = source_swarm.num_owned_particles();
+    const int nb_target = target_swarm.num_owned_particles();
+
+    Portage::vector<double> source_data(nb_source);
+    Portage::vector<double> target_data(nb_source, 0.0);
+
+    // Create the source data for given function
+    for (int i = 0; i < nb_source; ++i) {
+      auto coord = source_swarm.get_particle_coordinates(i);
+      source_data[i] = compute_initial_field(coord);
+    }
+
+    source_state.add_field("particledata", source_data);
+    target_state.add_field("particledata", target_data);
+
+    // Build the main driver data for this mesh type
+    Remapper remapper(source_swarm, source_state,
+                      target_swarm, target_state,
+                      smoothing_lengths_,Weight::B4, Weight::ELLIPTIC, center_);
+
+    EstimateType estimator = LocalRegression;
+    if (operator_ != Operator::LastOperator)
+      estimator = OperatorRegression;
+
+    // Register the variable name with the driver
+    std::vector<std::string> remap_fields;
+    remap_fields.emplace_back("particledata");
+    remapper.set_remap_var_names(remap_fields, remap_fields,
+                                 estimator, basis,
+                                 operator_, domains_, operator_data_);
+
+    // run on one processor (no argument implies serial run)
+    remapper.run();
+
+    // Check the answer
+    double total_error = 0.;
+    auto remapped_field = target_state.get_field("particledata");
+
+    if (operator_ == Operator::LastOperator) {
+      for (int i = 0; i < nb_target; ++i) {
+        auto p = target_swarm.get_particle_coordinates(i);
+        auto error = compute_initial_field(p) - remapped_field[i];
+        // dump diagnostics for each particle
+        switch (dim) {
+          case 1: std::printf("particle: %4d coord: (%5.3lf)", i, p[0]); break;
+          case 2: std::printf("particle: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
+          case 3: std::printf("particle: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
+          default: break;
+        }
+	      double val = remapped_field[i];
+	      std::printf(" value: %10.6lf, error: %lf\n", val, error);
+        total_error += error * error;
+      }
+
+      total_error = std::sqrt(total_error);
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", total_error);
+      ASSERT_NEAR(expected_answer, total_error, epsilon);
+
+    } else if (operator_ == Operator::VolumeIntegral) {
+      double total = 0.;
+      for (int p = 0; p < nb_target; ++p) {
+        total += remapped_field[p];
+      }
+      ASSERT_NEAR(expected_answer, total, epsilon);
+    }
+  }
+
+  /**
+   * @brief This unit test exercises the alternate more detailed constructor.
+   *
+   * @tparam Search
+   * @tparam basis
+   * @param compute_initial_field
+   * @param expected_answer
+   */
+  template <template<int, class, class> class Search,
+            Basis::Type basis>
+  void unitTestAlt(double compute_initial_field(Wonton::Point<dim> coord),
+                   double expected_answer) {
+
+    using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
+                                 Swarm<dim>, SwarmState<dim>,
+                                 Swarm<dim>, SwarmState<dim>>;
+
+    // Fill the source state data with the specified profile
+    int const nb_source = source_swarm.num_owned_particles();
+    int const nb_target = target_swarm.num_owned_particles();
+
+    Portage::vector<double> source_data(nb_source);
+    Portage::vector<double> target_data(nb_target, 0.0);
+
+    // Create the source data for given function
+    for (int p = 0; p < nb_source; ++p) {
+      auto coord = source_swarm.get_particle_coordinates(p);
+      source_data[p] = compute_initial_field(coord);
+    }
+
+    source_state.add_field("particledata", source_data);
+    target_state.add_field("particledata", target_data);
+
+    // Set kernels and geometries
+    if (center_ == Gather) {
+      kernels_.resize(nb_target, Weight::B4);
+      geometries_.resize(nb_target, Weight::ELLIPTIC);
+    } else if (center_ == Scatter) {
+      kernels_.resize(nb_source, Weight::B4);
+      geometries_.resize(nb_source, Weight::ELLIPTIC);
+    }
+
+    // Build the main driver data for this mesh type
+    Remapper remapper(source_swarm, source_state,
+                      target_swarm, target_state,
+                      smoothing_lengths_, kernels_, geometries_, center_);
+
+    EstimateType estimator = LocalRegression;
+    if (operator_ != Operator::LastOperator) 
+      estimator = OperatorRegression;
+
+    // Register the variable name and interpolation order with the driver
+    std::vector<std::string> remap_fields;
+    remap_fields.emplace_back("particledata");
+    remapper.set_remap_var_names(remap_fields, remap_fields,
+                                 estimator, basis,
+                                 operator_, domains_, operator_data_);
+
+    // run on one processor (no argument implies serial run)
+    remapper.run();
+
+    // Check the answer
+    double total_error = 0.;
+    auto remapped_field = target_state.get_field("particledata");
+
+    if (operator_ == Operator::LastOperator) {
+      for (int i = 0; i < nb_target; ++i) {
+        auto p = target_swarm.get_particle_coordinates(i);
+        auto error = compute_initial_field(p) - remapped_field[i];
+        // dump diagnostics for each particle
+        switch (dim) {
+          case 1: std::printf("particle: %4d coord: (%5.3lf)", i, p[0]); break;
+          case 2: std::printf("particle: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
+          case 3: std::printf("particle: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
+          default: break;
+        }
+        double val = remapped_field[i];
+        std::printf(" value: %10.6lf, error: %lf\n", val, error);
+        total_error += error * error;
+      }
+
+      total_error = std::sqrt(total_error);
+      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", total_error);
+      ASSERT_NEAR(expected_answer, total_error, epsilon);
+
+    } else if (operator_ == Operator::VolumeIntegral) {
+      double total = 0.;
+      for (int p = 0; p < nb_target; ++p) {
+        total += remapped_field[p];
+      }
+      ASSERT_NEAR(expected_answer, total, epsilon);
+    }
+  }
+
 protected:
   // swarms and states
   Swarm<dim> source_swarm;
@@ -66,280 +354,7 @@ protected:
   WeightCenter center_;
   Operator::Type operator_;
   Portage::vector<Operator::Domain> domains_;
-  Portage::vector<std::vector<Point<dim>>> operator_data_;
-
-  // Constructor for Driver test
-  BaseTest(int nb_source, int nb_target, int distrib,
-           double x_min = 0.0, double x_max = 0.0,
-           double y_min = 0.0, double y_max = 0.0,
-           double z_min = 0.0, double z_max = 0.0,
-           Operator::Type op = Operator::LastOperator)
-    : source_swarm(nb_source, distrib, 0,
-                   x_min, x_max, y_min, y_max, z_min, z_max),
-      target_swarm(nb_target, distrib, 0,
-                   x_min, x_max, y_min, y_max, z_min, z_max),
-      source_state(source_swarm),
-      target_state(target_swarm),
-      center_(Gather),
-      operator_(op)
-  {
-
-    if (op != Operator::LastOperator) {
-
-      int const num_owned_target = target_swarm.num_owned_particles();
-
-      domains_ = Portage::vector<Operator::Domain>(num_owned_target);
-      size_t npoints[3]={2,4,8};
-      operator_data_.resize(num_owned_target, std::vector<Point<dim>>(npoints[dim - 1]));
-
-
-      size_t npdim = static_cast<size_t>(pow(1.001*operator_data_.size(),1./dim));
-      size_t nptot = 1; for (size_t m=0; m<dim; m++) nptot *= npdim;
-      assert(nptot == target_swarm->num_owned_particles());
-      assert(npdim>1);
-      size_t n=0;
-      size_t ij[npoints[dim-1]]; 
-      size_t i=0,j=0,k=0;
-      Point<dim> pt;
-      std::vector<Point<dim>> points(npoints[dim-1]);
-
-      // Create points determining the integration volume.
-      // Assumes target swarm is created from SwarmFactory and represents a perfect cubic array of points.
-      for (size_t n=0; n<nptot; n++) {
-        switch(dim) {
-        case 1:
-          i = n;
-          ij[0]=i; ij[1]=(i+1);
-          break;
-        case 2:
-          i = n/npdim;
-          j = n - i*npdim;
-          ij[0]=i*npdim+j; ij[1]=(i+1)*npdim+j; ij[2]=(i+1)*npdim+j+1; ij[3]=i*npdim+j+1;
-          break;
-        case 3:
-          i = n/(npdim*npdim);
-          j = (n - i*npdim*npdim)/npdim;
-          k = n - i*npdim*npdim - j*npdim;
-          ij[0]=npdim*(i*npdim+j)+k;         ij[1]=npdim*((i+1)*npdim+j)+k;
-          ij[2]=npdim*((i+1)*npdim+j+1)+k;   ij[3]=npdim*(i*npdim+j+1)+k;
-          ij[4]=npdim*(i*npdim+j)+k+1;       ij[5]=npdim*((i+1)*npdim+j)+k+1;
-          ij[6]=npdim*((i+1)*npdim+j+1)+k+1; ij[7]=npdim*(i*npdim+j+1)+k+1;
-          break;
-          default: break;
-        }
-
-        for (int m=0; m<npoints[dim-1]; m++) {
-          if (i==npdim-1 or j==npdim-1 or k==npdim-1) {
-            // particles on the upper boundaries get an integration volume of zero
-            pt = target_swarm.get_particle_coordinates(ij[0]);
-          } else {
-            pt = target_swarm.get_particle_coordinates(ij[m]);
-          }
-          points[m] = pt;
-        }
-        operator_data_[n] = points;
-        domains_[n] = Operator::domain_from_points<dim>(points);
-      }
-    }
-  }
-
-  /*void set_smoothing_lengths(shared_ptr<Portage::vector<std::vector<std::vector<double>>>> smoothing_lengths,
-			     Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather) {
-    smoothing_lengths_ = smoothing_lengths;
-    center_ = center;
-  }*/
-
-  void set_smoothing_lengths(const int* n, double h, WeightCenter center = Gather) {
-    assert(n != nullptr);
-    std::vector<std::vector<double>> const default_lengths(n[1], std::vector<double>(n[2], h));
-    smoothing_lengths_.resize(n[0], default_lengths);
-    center_ = center;
-  }
-
-  // This is the basic test method to be called for each unit test.
-  // It will work for 1, 2-D and 3-D swarms
-  //
-  template <template<int, class, class> class Search,
-            Basis::Type basis>
-  void unitTest(double compute_initial_field(Wonton::Point<dim> coord),
-                double expected_answer) {
-
-    // Fill the source state data with the specified profile
-    const int nsrcpts = source_swarm.num_owned_particles();
-    const int ntarpts = target_swarm.num_owned_particles();
-//    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr sourceData =
-//        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(nsrcpts);
-
-    Portage::vector<double> sourceData(nsrcpts);
-    Portage::vector<double> targetData(nsrcpts, 0.0);
-
-    // Create the source data for given function
-    for (unsigned int p = 0; p < nsrcpts; ++p) {
-      auto coord = source_swarm.get_particle_coordinates(p);
-      sourceData[p] = compute_initial_field(coord);
-    }
-
-    source_state.add_field("particledata", sourceData);
-    target_state.add_field("particledata", targetData);
-
-    // Build the main driver data for this mesh type
-    SwarmDriver<Search, Accumulate, Estimate, dim,
-                Swarm<dim>, SwarmState<dim>,
-                Swarm<dim>, SwarmState<dim>>
-        d(source_swarm, source_state,
-          target_swarm, target_state,
-          smoothing_lengths_,
-          Weight::B4, Weight::ELLIPTIC, center_);
-
-    EstimateType estimator=LocalRegression;
-    if (operator_ != Portage::Meshfree::Operator::LastOperator) 
-      estimator = Portage::Meshfree::OperatorRegression;
-
-    // Register the variable name with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.emplace_back("particledata");
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          estimator, basis, 
-                          operator_, domains_, operator_data_);
-
-    // run on one processor (no argument implies serial run)
-    d.run();
-
-    // Check the answer
-    double toterr=0.;
-    //typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    auto vecout = target_state.get_field("particledata");
-
-    ASSERT_NE(nullptr, vecout);
-    if (operator_ == Portage::Meshfree::Operator::LastOperator) {
-      for (int p = 0; p < ntarpts; ++p) {
-        Wonton::Point<dim> coord = target_swarm.get_particle_coordinates(p);
-        double error;
-        error = compute_initial_field(coord) - vecout[p];
-        // dump diagnostics for each particle
-        if (dim == 1)
-          std::printf("Particle=% 4d Coord = (% 5.3lf)", p, coord[0]);
-        else if (dim == 2)
-          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf)", p, coord[0],
-                      coord[1]);
-        else if (dim == 3)
-          std::printf("Particle=% 4d Coord = (% 5.3lf,% 5.3lf,% 5.3lf)", p,
-                      coord[0], coord[1], coord[2]);
-	{double val=vecout[p];
-	  std::printf("  Value = % 10.6lf  Err = % lf\n", val, error);}
-        toterr += error*error;
-      }
-    
-      std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", sqrt(toterr));
-      ASSERT_NEAR(expected_answer, sqrt(toterr), TOL);
-    } else if (operator_ == Portage::Meshfree::Operator::VolumeIntegral) {
-      double total = 0.;
-      for (int p = 0; p < ntarpts; ++p) {
-        total += vecout[p];
-      }
-      ASSERT_NEAR(expected_answer, total, TOL);
-    }
-  }
-
-
-
-  // This unit test exercises the alternate more detailed constructor.
-  // It will work for 1, 2-D and 3-D swarms
-  //
-  template <template<int, class, class> class Search,
-            Portage::Meshfree::Basis::Type basis>
-  void unitTestAlt(double compute_initial_field(Wonton::Point<dim> coord),
-                double expected_answer) {
-
-    // Fill the source state data with the specified profile
-    const int nsrcpts = source_swarm->num_owned_particles();
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr sourceData = 
-        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(nsrcpts);
-
-    // Create the source data for given function
-    for (unsigned int p = 0; p < nsrcpts; ++p) {
-      Wonton::Point<dim> coord =
-          source_swarm->get_particle_coordinates(p);
-      (*sourceData)[p] = compute_initial_field(coord);
-    }
-    source_state->add_field("particledata", sourceData);
-
-    // Build the target state storage
-    const int ntarpts = target_swarm->num_owned_particles();
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr targetData = 
-        make_shared<typename Portage::Meshfree::SwarmState<dim>::DblVec>(ntarpts, 0.0);
-    target_state->add_field("particledata", targetData);
-
-    // Set kernels and geometries
-    if (center_ == Portage::Meshfree::Gather) {
-      kernels_.resize(ntarpts, Portage::Meshfree::Weight::B4);
-      geometries_.resize(ntarpts, Portage::Meshfree::Weight::ELLIPTIC); 
-    } else if (center_ == Portage::Meshfree::Scatter) {
-      kernels_.resize(nsrcpts, Portage::Meshfree::Weight::B4);
-      geometries_.resize(nsrcpts, Portage::Meshfree::Weight::ELLIPTIC); 
-    }
-
-    // Build the main driver data for this mesh type
-    Portage::Meshfree::SwarmDriver<Search,
-                                   Portage::Meshfree::Accumulate,
-                                   Portage::Meshfree::Estimate,
-                                   dim,
-                                   Portage::Meshfree::Swarm<dim>,
-                                   Portage::Meshfree::SwarmState<dim>,
-                                   Portage::Meshfree::Swarm<dim>,
-                                   Portage::Meshfree::SwarmState<dim>>
-        d(*source_swarm, *source_state, *target_swarm, *target_state, *smoothing_lengths_,
-          kernels_, geometries_, center_);
-
-    Portage::Meshfree::EstimateType estimator=Portage::Meshfree::LocalRegression;
-    if (operator_ != Portage::Meshfree::Operator::LastOperator) 
-      estimator = Portage::Meshfree::OperatorRegression;
-
-    // Register the variable name and interpolation order with the driver
-    std::vector<std::string> remap_fields;
-    remap_fields.push_back("particledata");
-    d.set_remap_var_names(remap_fields, remap_fields,
-                          estimator, basis, 
-                          operator_, domains_, operator_data_);
-
-    // run on one processor (no argument implies serial run)
-    d.run();
-
-    // Check the answer
-    double toterr=0.;
-    typename Portage::Meshfree::SwarmState<dim>::DblVecPtr vecout;
-    target_state->copy_field("particledata", vecout);
-    ASSERT_NE(nullptr, vecout);
-    if (operator_ == Portage::Meshfree::Operator::LastOperator) {
-      for (int p = 0; p < ntarpts; ++p) {
-        Wonton::Point<dim> coord = target_swarm->get_particle_coordinates(p);
-        double error;
-        error = compute_initial_field(coord) - (*vecout)[p];
-        // dump diagnostics for each particle
-        if (dim == 1)
-          std::printf("Particle=% 4d Coord = (%10.3e)", p, coord[0]);
-        else if (dim == 2)
-          std::printf("Particle=% 4d Coord = (%10.3e,%10.3e)", p, coord[0],
-                      coord[1]);
-        else if (dim == 3)
-          std::printf("Particle=% 4d Coord = (%10.3e,%10.3e,%10.3e)", p,
-                      coord[0], coord[1], coord[2]);
-	{double val=(*vecout)[p]; 
-	  std::printf("  Value = %10.3e  Err = %10.3e\n", val, error);}
-        toterr += error*error;
-      }
-    
-      std::printf("\n\nL2 NORM OF ERROR = %e10.3\n\n", sqrt(toterr));
-      ASSERT_NEAR(expected_answer, sqrt(toterr/ntarpts), TOL);
-    } else if (operator_ == Portage::Meshfree::Operator::VolumeIntegral) {
-      double total = 0.;
-      for (int p = 0; p < ntarpts; ++p) {
-        total += (*vecout)[p];
-      }
-      ASSERT_NEAR(expected_answer, total, TOL);
-    }
-  }
-
+  Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 //  std::shared_ptr<Swarm<2>> SwarmFactory(double xmin, double ymin,
@@ -433,7 +448,6 @@ double compute_constant_field(Wonton::Point<dim> coord) {
   return 25.0;
 }
 
-// Methods for computing initial field values
 template<int dim>
 double compute_linear_field(Wonton::Point<dim> coord) {
   double val = 0.0;
@@ -451,16 +465,23 @@ double compute_quadratic_field(Wonton::Point<dim> coord) {
   return val;
 }
 
-template<size_t dim>
-double compute_cubic_field(Wonton::Point<dim> coord) {
-  double val = 0.0;
-  for (int i = 0; i < dim; i++)
-    for (int j = i; j < dim; j++)
-      for (int k = j; k < dim; k++)
-      val += coord[i] * coord[j] * coord[k];
-  return val;
+/**
+ * @brief Check if a particle is strictly negative or positive.
+ *
+ * @tparam dim: particle dimension
+ * @param p: particle coordinates
+ * @return true if strictly negative or positive, false otherwise.
+ */
+template<int dim>
+bool not_zero(Wonton::Point<dim> const& p) {
+  switch (dim) {
+    case 1: return p[0] < 0. or p[0] > 0.;
+    case 2: return (p[0] < 0. and p[1] < 0.) or (p[0] > 0. and p[1] > 0.);
+    case 3: return (p[0] < 0. and p[1] < 0. and p[2] < 0.)
+                or (p[0] > 0. and p[1] > 0. and p[2] > 0.);
+    default: return false;
+  }
 }
-
 
 // Test cases: these are constructed by calling TEST_F with the name
 // of the test class you want to use.  The unit test method is then
@@ -470,318 +491,258 @@ double compute_cubic_field(Wonton::Point<dim> coord) {
 // fails.
 
 TEST_F(DriverTest1DGather, 1D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
        (compute_constant_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DGather, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DGather, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_LinearFieldLinearBasisAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatterAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_LinearFieldLinearBasisAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatterAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 
 TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<1>, 1./2.);
 }
 
 TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
       (compute_quadratic_field<1>, 1./3.);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
       (compute_linear_field<2>, 1.0);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
     (compute_quadratic_field<2>, 2./3. + 1./4.); // 0.9166666666666666
 }
 
 TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Portage::Meshfree::Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, Basis::Linear>
     (compute_linear_field<3>, 3./2.);
 }
 
-  TEST(Part, 2D) {
-    const size_t NCELLS = 4;
-    std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., NCELLS, NCELLS);
-    Wonton::Simple_Mesh &mesh = *mesh_ptr;
-    Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
-    double factor = 1.25, bfactor=0.5, dx=0.5;
+TEST(Part, 2D) {
 
-    size_t ncellsmesh = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    assert(ncellsmesh == NCELLS*NCELLS);
-    std::vector<double> values(ncellsmesh, 1.0);
-#define DEBUG_HERE 0
-#ifdef DEBUG_HERE 
-    std::cout << "src={"<<std::endl;
-#endif
-    for (int i=0; i<ncellsmesh; i++) {
-      Wonton::Point<2> pnt;
-      mwrapper.cell_centroid(i, &pnt);
-      if      (pnt[0]<0. and pnt[1]<0.) values[i] = 2.;
-      else if (pnt[0]>0. and pnt[1]>0.) values[i] = 2.;
-#ifdef DEBUG_HERE
-      std::cout<<"{"<<pnt[0]<<","<<pnt[1]<<","<<values[i]<<"}";
-      if (i<ncellsmesh-1) std::cout <<","<<std::endl;
-#endif
-    }
-    double *valptr = values.data();
-    std::cout <<"};"<<std::endl;
+  using Remapper = SwarmDriver<Portage::SearchPointsByCells,
+                               Accumulate, Estimate, 2,
+                               Swarm<2>, SwarmState<2>,
+                               Swarm<2>, SwarmState<2>>;
 
-    Wonton::Simple_State state(mesh_ptr); 
-    std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
-    Wonton::Simple_State_Wrapper swrapper(state);
+  int const nb_per_axis = 4;
+  Wonton::Simple_Mesh mesh(-1.0, -1.0, 1.0, 1.0, nb_per_axis, nb_per_axis);
+  Wonton::Simple_Mesh_Wrapper  mesh_wrapper(mesh);
 
-    std::shared_ptr<Portage::Meshfree::Swarm<2>> src_swarm_ptr = 
-      Portage::Meshfree::SwarmFactory<2, Wonton::Simple_Mesh_Wrapper>(mwrapper, Wonton::CELL);
+  int const nb_target = std::pow(2 * nb_per_axis + 2, 2);
+  int const nb_source = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  assert(nb_source == nb_per_axis * nb_per_axis);
 
-    std::shared_ptr<Portage::Meshfree::SwarmState<2>> src_state_ptr = 
-      Portage::Meshfree::SwarmStateFactory<2, Wonton::Simple_State_Wrapper>(swrapper, Wonton::CELL);
-    
-    int ntarget = (2*NCELLS+2)*(2*NCELLS+2); // keep all target swarm points from overlying any source points
-    auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,1.,1.,ntarget,1);
-    auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<2>>(*tgt_swarm_ptr);
+  std::vector<double> values(nb_source, 1.0);
 
-    auto tvalues_ptr = std::make_shared<Portage::vector<double>>(ntarget);
-    tgt_state_ptr->add_field("indicate",  tvalues_ptr);
+  for (int i = 0; i < nb_source; i++) {
+    Wonton::Point<2> p;
+    mesh_wrapper.cell_centroid(i, &p);
+    if (not_zero(p))
+      values[i] = 2.0;
+  }
 
-    Portage::vector<std::vector<std::vector<double>>> smoothing;
-    Portage::vector<Wonton::Point<2>> extents;
-    Portage::vector<Wonton::Point<2>> dummy;
-    Portage::Meshfree::Weight::faceted_setup_cell<2,Wonton::Simple_Mesh_Wrapper>
-                                           (mwrapper, smoothing, extents, 1.0, 2.0);
+  double* source_data = values.data();
 
-    Portage::Meshfree::SwarmDriver<Portage::SearchPointsByCells,
-                                   Portage::Meshfree::Accumulate,
-                                   Portage::Meshfree::Estimate,
-                                   2,
-                                   Portage::Meshfree::Swarm<2>,
-                                   Portage::Meshfree::SwarmState<2>,
-                                   Portage::Meshfree::Swarm<2>,
-                                   Portage::Meshfree::SwarmState<2>>
-      driver(*src_swarm_ptr, *src_state_ptr, *tgt_swarm_ptr, *tgt_state_ptr, smoothing,
-               extents, dummy, Portage::Meshfree::Scatter);
+  Wonton::Simple_State state(std::make_shared<Wonton::Simple_Mesh>(mesh));
+  auto& added = state.add("indicate", Wonton::CELL, source_data);
+  Wonton::Simple_State_Wrapper state_wrapper(state);
 
-    std::vector<std::string> svars={"indicate"};
-    std::vector<std::string> tvars={"indicate"};
-    Portage::vector<std::vector<std::vector<double>>> psmoothing;
-    Portage::Meshfree::Weight::faceted_setup_cell<2,Wonton::Simple_Mesh_Wrapper>
-                                           (mwrapper, psmoothing, dummy, 0.25, 1.0);
-    driver.set_remap_var_names(svars, tvars, 
-                               Portage::Meshfree::LocalRegression, 
-                               Portage::Meshfree::Basis::Unitary,
-                               Portage::Meshfree::Operator::LastOperator,
-                               Portage::vector<Portage::Meshfree::Operator::Domain>(0),
+  // create source and target swarms and states
+  Swarm<2> source_swarm(mesh_wrapper, Wonton::CELL);
+  Swarm<2> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0);
+  SwarmState<2> source_state(state_wrapper, Wonton::CELL);
+  SwarmState<2> target_state(target_swarm);
+
+  // keep all target swarm points from overlying any source points
+  Portage::vector<double> target_data(nb_target, 0.0);
+  target_state.add_field("indicate", target_data);
+
+  Portage::vector<std::vector<std::vector<double>>> smoothing;
+  Portage::vector<Wonton::Point<2>> extents;
+  Portage::vector<Wonton::Point<2>> dummy;
+  Weight::faceted_setup_cell<2, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, smoothing,
+                                                          extents, 1.0, 2.0);
+
+  Remapper remapper(source_swarm, source_state,
+                    target_swarm, target_state,
+                    smoothing, extents, dummy, Scatter);
+
+  std::vector<std::string> const fields_names = {"indicate" };
+  Portage::vector<std::vector<std::vector<double>>> psmoothing;
+  Weight::faceted_setup_cell<2, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, psmoothing,
+                                                            dummy, 0.25, 1.0);
+
+  remapper.set_remap_var_names(fields_names, fields_names,
+                               LocalRegression,
+                               Basis::Unitary,
+                               Operator::LastOperator,
+                               Portage::vector<Operator::Domain>(0),
                                Portage::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
                                "indicate", 0.25, psmoothing);
 
-    driver.run();
+  remapper.run();
 
-    Portage::Meshfree::SwarmState<2>::DblVecPtr indicator_ptr;
-    tgt_state_ptr->copy_field("indicate", indicator_ptr);
-    Portage::vector<double> &indicator=*indicator_ptr;
+  auto& indicator = target_state.get_field("indicate");
 
-#ifdef DEBUG_HERE
-    std::cout << "dat={"<<std::endl;
-    for (int i=0; i<ntarget; i++) {
-      Wonton::Point<2> p=tgt_swarm_ptr->get_particle_coordinates(i);
-      double value=0.;
-      if      (p[0]<0. and p[1]<0.) value = 2.;
-      else if (p[0]>0. and p[1]>0.) value = 2.;
-      else value = 1.0;
-      std::cout<<"{"<<p[0]<<","<<p[1]<<","<<indicator[i]<<","<<value<<"}";
-      if (i<ntarget-1) std::cout <<","<<std::endl;
-    }
-    std::cout <<"};"<<std::endl;
-#endif
-    
-    for (size_t i=0; i<ntarget; i++) {
-      Wonton::Point<2> pnt=tgt_swarm_ptr->get_particle_coordinates(i);
-      if      (pnt[0]<0. and pnt[1]<0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
-      else if (pnt[0]>0. and pnt[1]>0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
-      else                              {ASSERT_NEAR(1.0, indicator[i], 1.e-12);}
-    }
+  for (int i = 0; i < nb_target; i++) {
+    auto const p = target_swarm.get_particle_coordinates(i);
+    auto const expected = not_zero(p) ? 2.0 : 1.0;
+    ASSERT_NEAR(expected, indicator[i], 1.E-12);
+  }
+}
 
+TEST(Part, 3D) {
+
+  using Remapper = SwarmDriver<Portage::SearchPointsByCells,
+                               Accumulate, Estimate, 3,
+                               Swarm<3>, SwarmState<3>,
+                               Swarm<3>, SwarmState<3>>;
+
+  int const nb_per_axis = 4;
+  Wonton::Simple_Mesh mesh(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
+                           nb_per_axis, nb_per_axis, nb_per_axis);
+  Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+
+  int const nb_target = std::pow(2 * nb_per_axis + 2, 3);
+  int const nb_source = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  assert(nb_source == nb_per_axis * nb_per_axis * nb_per_axis);
+
+  std::vector<double> values(nb_source, 1.0);
+
+  for (int i = 0; i < nb_source; i++) {
+    Wonton::Point<3> p;
+    mesh_wrapper.cell_centroid(i, &p);
+    if (not_zero(p))
+      values[i] = 2.0;
   }
 
+  double* source_data = values.data();
 
-  TEST(Part, 3D) {
-    const size_t NCELLS = 4;
-    std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., -1., 1., 1., 1., NCELLS, NCELLS, NCELLS);
-    Wonton::Simple_Mesh &mesh = *mesh_ptr;
-    Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
-    double factor = 1.25, bfactor=0.5, dx=0.5;
+  Wonton::Simple_State state(std::make_shared<Wonton::Simple_Mesh>(mesh));
+  auto& added = state.add("indicate", Wonton::CELL, source_data);
+  Wonton::Simple_State_Wrapper state_wrapper(state);
 
-    size_t ncellsmesh = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    assert(ncellsmesh == NCELLS*NCELLS*NCELLS);
-    std::vector<double> values(ncellsmesh, 1.0);
-#ifdef DEBUG_HERE 
-    std::cout << "src={"<<std::endl;
-#endif
-    for (int i=0; i<ncellsmesh; i++) {
-      Wonton::Point<3> pnt;
-      mwrapper.cell_centroid(i, &pnt);
-      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) values[i] = 2.;
-      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) values[i] = 2.;
-#ifdef DEBUG_HERE
-      std::cout<<"{"<<pnt[0]<<","<<pnt[1]<<","<<pnt[2]<<","<<values[i]<<"}";
-      if (i<ncellsmesh-1) std::cout <<","<<std::endl;
-#endif
-    }
-    double *valptr = values.data();
-    std::cout <<"};"<<std::endl;
+  // create source and target swarms and states
+  Swarm<3> source_swarm(mesh_wrapper, Wonton::CELL);
+  Swarm<3> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  SwarmState<3> source_state(state_wrapper, Wonton::CELL);
+  SwarmState<3> target_state(target_swarm);
 
-    Wonton::Simple_State state(mesh_ptr); 
-    std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
-    Wonton::Simple_State_Wrapper swrapper(state);
+  // keep all target swarm points from overlying any source points
+  Portage::vector<double> target_data(nb_target, 0.0);
+  target_state.add_field("indicate", target_data);
 
-    std::shared_ptr<Portage::Meshfree::Swarm<3>> src_swarm_ptr = 
-      Portage::Meshfree::SwarmFactory<3, Wonton::Simple_Mesh_Wrapper>(mwrapper, Wonton::CELL);
+  Portage::vector<std::vector<std::vector<double>>> smoothing;
+  Portage::vector<Wonton::Point<3>> extents;
+  Portage::vector<Wonton::Point<3>> dummy;
+  Weight::faceted_setup_cell<3, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, smoothing,
+                                                            extents, 1.0, 2.0);
 
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> src_state_ptr = 
-      Portage::Meshfree::SwarmStateFactory<3, Wonton::Simple_State_Wrapper>(swrapper, Wonton::CELL);
-    
-    int ntarget = (2*NCELLS+2)*(2*NCELLS+2)*(2*NCELLS+2); // keep all target swarm points from overlying any source points
-    auto tgt_swarm_ptr = Portage::Meshfree::SwarmFactory(-1.,-1.,-1.,1.,1.,1.,ntarget,1);
-    auto tgt_state_ptr = std::make_shared<Portage::Meshfree::SwarmState<3>>(*tgt_swarm_ptr);
+  Remapper remapper(source_swarm, source_state,
+                    target_swarm, target_state,
+                    smoothing, extents, dummy, Scatter);
 
-    auto tvalues_ptr = std::make_shared<Portage::vector<double>>(ntarget);
-    tgt_state_ptr->add_field("indicate",  tvalues_ptr);
+  std::vector<std::string> const fields_names = {"indicate" };
+  Portage::vector<std::vector<std::vector<double>>> psmoothing;
+  Weight::faceted_setup_cell<3, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, psmoothing,
+                                                             dummy, 0.25, 1.0);
 
-    Portage::vector<std::vector<std::vector<double>>> smoothing;
-    Portage::vector<Wonton::Point<3>> extents;
-    Portage::vector<Wonton::Point<3>> dummy;
-    Portage::Meshfree::Weight::faceted_setup_cell<3,Wonton::Simple_Mesh_Wrapper>
-                                           (mwrapper, smoothing, extents, 1.0, 2.0);
-
-    Portage::Meshfree::SwarmDriver<Portage::SearchPointsByCells,
-                                   Portage::Meshfree::Accumulate,
-                                   Portage::Meshfree::Estimate,
-                                   3,
-                                   Portage::Meshfree::Swarm<3>,
-                                   Portage::Meshfree::SwarmState<3>,
-                                   Portage::Meshfree::Swarm<3>,
-                                   Portage::Meshfree::SwarmState<3>>
-      driver(*src_swarm_ptr, *src_state_ptr, *tgt_swarm_ptr, *tgt_state_ptr, smoothing,
-               extents, dummy, Portage::Meshfree::Scatter);
-
-    std::vector<std::string> svars={"indicate"};
-    std::vector<std::string> tvars={"indicate"};
-    Portage::vector<std::vector<std::vector<double>>> psmoothing;
-    Portage::Meshfree::Weight::faceted_setup_cell<3,Wonton::Simple_Mesh_Wrapper>
-                                           (mwrapper, psmoothing, dummy, 0.25, 1.0);
-    driver.set_remap_var_names(svars, tvars, 
-                               Portage::Meshfree::LocalRegression, 
-                               Portage::Meshfree::Basis::Unitary,
-                               Portage::Meshfree::Operator::LastOperator,
-                               std::vector<Portage::Meshfree::Operator::Domain>(0),
-                               std::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
+  remapper.set_remap_var_names(fields_names, fields_names,
+                               LocalRegression,
+                               Basis::Unitary,
+                               Operator::LastOperator,
+                               Portage::vector<Operator::Domain>(0),
+                               Portage::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
                                "indicate", 0.25, psmoothing);
 
-    driver.run();
+  remapper.run();
 
-    Portage::Meshfree::SwarmState<3>::DblVecPtr indicator_ptr;
-    tgt_state_ptr->copy_field("indicate", indicator_ptr);
-    Portage::vector<double> &indicator=*indicator_ptr;
+  auto& indicator = target_state.get_field("indicate");
 
-#ifdef DEBUG_HERE
-    std::cout << "dat={"<<std::endl;
-    for (int i=0; i<ntarget; i++) {
-      Wonton::Point<3> p=tgt_swarm_ptr->get_particle_coordinates(i);
-      double value=0.;
-      if      (p[0]<0. and p[1]<0. and p[2]<0.) value = 2.;
-      else if (p[0]>0. and p[1]>0. and p[2]>0.) value = 2.;
-      else value = 1.0;
-      std::cout<<"{"<<p[0]<<","<<p[1]<<","<<p[2]<<","<<indicator[i]<<","<<value<<"}";
-      if (i<ntarget-1) std::cout <<","<<std::endl;
-    }
-    std::cout <<"};"<<std::endl;
-#endif
-#undef DEBUG_HERE
-    
-    for (size_t i=0; i<ntarget; i++) {
-      Wonton::Point<3> pnt=tgt_swarm_ptr->get_particle_coordinates(i);
-      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
-      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) {ASSERT_NEAR(2.0, indicator[i], 1.e-12);}
-      else                                            {ASSERT_NEAR(1.0, indicator[i], 1.e-12);}
-    }
-
+  for (int i = 0; i < nb_target; i++) {
+    auto const p = target_swarm.get_particle_coordinates(i);
+    auto const expected = not_zero(p) ? 2.0 : 1.0;
+    ASSERT_NEAR(expected, indicator[i], 1.E-12);
   }
+}
 
 }  // end namespace
