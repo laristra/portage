@@ -171,7 +171,7 @@ public:
    * @param name: field name.
    * @param value: field values list.
    */
-  template<typename T>
+  template<typename T = double>
   void add_field(std::string name, Portage::vector<T> const& value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
@@ -196,7 +196,7 @@ public:
    * @param name: field name.
    * @param value: field values list.
    */
-  template<typename T>
+  template<typename T = double>
   void add_field(std::string name, std::vector<T> const&  value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
@@ -221,7 +221,7 @@ public:
    * @param name: field name.
    * @param value: field values array.
    */
-  template<typename T>
+  template<typename T = double>
   void add_field(std::string name, const T* const value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
@@ -286,7 +286,7 @@ public:
    * @param name field name.
    * @param value a pointer to field values.
    */
-  template<typename T>
+  template<typename T = double>
   void copy_field(std::string name, T* value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
@@ -316,7 +316,7 @@ public:
    * @tparam T: field values type (int or double)
    * @return the list of field names
    */
-  template<typename T>
+  template<typename T = double>
   std::vector<std::string> get_field_names() {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
