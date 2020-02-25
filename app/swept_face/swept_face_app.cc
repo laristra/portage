@@ -845,10 +845,10 @@ void update_mesh(std::shared_ptr<Jali::Mesh> source_mesh,
  * Its coordinates is updated using a periodic vortex velocity:
  *   t: current timestep
  *   dT = T/n with n: number of timesteps
- *   u = -2*sin(PI*t/T) * sin(PI*x)^2 * sin(PI*y)*cos(PI*y);
- *   v =  2*sin(PI*t/T) * sin(PI*x)*cos(PI*x) * sin(PI*y)^2;
- *   x += x_old + u*t * dT
- *   y += y_old + v*t * dT
+ *   u = -2*sin(PI*t/T) * sin(PI*x)^2 * sin(PI*y) * cos(PI*y);
+ *   v =  2*sin(PI*t/T) * sin(PI*x) * cos(PI*x) * sin(PI*y)^2;
+ *   x += u * t * dT
+ *   y += v * t * dT
  *
  * @param coords     coordinates of the given point
  * @param iter       current iteration
@@ -876,9 +876,13 @@ void rotate_vortex<2>(double* coords, int iter, int ntimesteps, int scale) {
  * @brief Move the three-dimensional point.
  * Its coordinate is updated as follow:
  *   t: current timestep
- *   x += 0.1 * sin(2*PI*x/(n-t))
- *   y += 0.1 * sin(2*PI*y/(n-t))
- *   z += 0.1 * sin(2*PI*z/(n-t))
+ *   dT = T/n with n: number of timesteps
+ *   u = -2*sin(PI*t/T) * sin(PI*x)^2 * sin(PI*y) * cos(PI*y);
+ *   v =  2*sin(PI*t/T) * sin(PI*x) * cos(PI*x) * sin(PI*y)^2;
+ *   w = -2*sin(PI*t/T) * sin(PI*x*y) * cos(PI*x*y) * sin(PI*z)^2;
+ *   x += u * t * dT
+ *   y += v * t * dT
+ *   z += w * t * dT
  *
  * @param coords     coordinates of the given point
  * @param iter       current iteration (unused)
