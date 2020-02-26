@@ -788,7 +788,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   
   // Use default numerical tolerances in case they were not set earlier
-  if (num_tols_.tolerances_set == false) {
+  if (not num_tols_.tolerances_set) {
     NumericTolerances_t default_num_tols;
     default_num_tols.use_default();
     set_num_tols(default_num_tols);
@@ -854,35 +854,44 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
   Portage::vector<Vector<D>> gradients;
+  // to check interpolation order
+  using Interpolator = Interpolate<D, CELL,
+                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
+                                   SourceState_Wrapper2, TargetState_Wrapper,
+                                   double, InterfaceReconstructorType,
+                                   Matpoly_Splitter, Matpoly_Clipper>;
+
 
   for (int i = 0; i < nvars; ++i) {
     std::string const& srcvar = src_meshvar_names[i];
     std::string const& trgvar = trg_meshvar_names[i];
 
-    Limiter_type limiter = DEFAULT_LIMITER;
-    auto const& it1 = limiters_.find(srcvar);
-    if (it1 != limiters_.end()) limiter = it1->second;
-
-    Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
-    auto const& it2 = bnd_limiters_.find(srcvar);
-    if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
-
-    auto gradients =
-        coredriver_cell.compute_source_gradient(srcvar, limiter, bndlimiter);
-    
-    coredriver_cell.template interpolate_mesh_var<double, Interpolate>
+    if (Interpolator::order == 2) {
+      // set slope limiters
+      auto limiter = (limiters_.count(srcvar) ? limiters_[srcvar] : DEFAULT_LIMITER);
+      auto bndlimit = (bnd_limiters_.count(srcvar) ? bnd_limiters_[srcvar] : DEFAULT_BND_LIMITER);
+      // compute gradient field
+      gradients = coredriver_cell.compute_source_gradient(srcvar, limiter, bndlimit);
+      // interpolate
+      coredriver_cell.template interpolate_mesh_var<double, Interpolate>
         (srcvar, trgvar, source_ents_and_weights, &gradients);
+    } else /* order 1 */ {
+      // just interpolate
+      coredriver_cell.template interpolate_mesh_var<double, Interpolate>
+        (srcvar, trgvar, source_ents_and_weights);
+    }
 
-    if (coredriver_cell.has_mismatch())
-      coredriver_cell.fix_mismatch(srcvar, trgvar, 
-          double_lower_bounds_[trgvar],
-          double_upper_bounds_[trgvar],
-          conservation_tol_[trgvar],
-          max_fixup_iter_,
-          partial_fixup_types_[trgvar],
-          empty_fixup_types_[trgvar]
+    // fix mismatch if necessary
+    if (coredriver_cell.has_mismatch()) {
+      coredriver_cell.fix_mismatch(srcvar, trgvar,
+                                   double_lower_bounds_[trgvar],
+                                   double_upper_bounds_[trgvar],
+                                   conservation_tol_[trgvar],
+                                   max_fixup_iter_,
+                                   partial_fixup_types_[trgvar],
+                                   empty_fixup_types_[trgvar]
       );
-
+    }
   }
 
   gettimeofday(&end_timeval, 0);
@@ -898,28 +907,30 @@ int MMDriver<Search, Intersect, Interpolate, D,
         coredriver_cell.template intersect_materials<Intersect>(candidates);
     
     int nmatvars = src_matvar_names.size();
+    std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+
     for (int i = 0; i < nmatvars; ++i) {
       std::string const& srcvar = src_matvar_names[i];
       std::string const& trgvar = trg_matvar_names[i];
-      
-      std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
-      
-      Limiter_type limiter = DEFAULT_LIMITER;
-      auto const& it1 = limiters_.find(srcvar);
-      if (it1 != limiters_.end()) limiter = it1->second;
-      
-      Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
-      auto const& it2 = bnd_limiters_.find(srcvar);
-      if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
-      
-      for (int m = 0; m < nmats; m++)
-        matgradients[m] =
+
+      if (Interpolator::order == 2) {
+        // set slope limiters
+        auto limiter = (limiters_.count(srcvar) ? limiters_[srcvar] : DEFAULT_LIMITER);
+        auto bndlimit = (bnd_limiters_.count(srcvar) ? bnd_limiters_[srcvar] : DEFAULT_BND_LIMITER);
+        // compute gradient field for each material
+        for (int m = 0; m < nmats; m++) {
+          matgradients[m] =
             coredriver_cell.compute_source_gradient(src_matvar_names[i],
-                                                    limiter, bndlimiter,
-                                                    m);
-      
-      coredriver_cell.template interpolate_mat_var<double, Interpolate>
+                                                    limiter, bndlimit, m);
+        }
+        // interpolate
+        coredriver_cell.template interpolate_mat_var<double, Interpolate>
           (srcvar, trgvar, source_ents_and_weights_mat, &matgradients);
+      } else {
+        // interpolate
+        coredriver_cell.template interpolate_mat_var<double, Interpolate>
+          (srcvar, trgvar, source_ents_and_weights_mat);
+      }
     }  // nmatvars
   }
   
@@ -1065,35 +1076,43 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
   Portage::vector<Vector<D>> gradients;
+  // to check interpolation order
+  using Interpolator = Interpolate<D, NODE,
+                                   SourceMesh_Wrapper2, TargetMesh_Wrapper,
+                                   SourceState_Wrapper2, TargetState_Wrapper,
+                                   double, InterfaceReconstructorType,
+                                   Matpoly_Splitter, Matpoly_Clipper>;
 
   for (int i = 0; i < nvars; ++i) {
     std::string const& srcvar = src_meshvar_names[i];
     std::string const& trgvar = trg_meshvar_names[i];
 
-    Limiter_type limiter = DEFAULT_LIMITER;
-    auto const& it1 = limiters_.find(srcvar);
-    if (it1 != limiters_.end()) limiter = it1->second;
-
-    Boundary_Limiter_type bndlimiter = DEFAULT_BND_LIMITER;
-    auto const& it2 = bnd_limiters_.find(srcvar);
-    if (it2 != bnd_limiters_.end()) bndlimiter = it2->second;
-
-    auto gradients =
-        coredriver_node.compute_source_gradient(srcvar, limiter, bndlimiter);
-    
-    coredriver_node.template interpolate_mesh_var<double, Interpolate>
+    if (Interpolator::order == 2) {
+      // set slope limiters
+      auto limiter = (limiters_.count(srcvar) ? limiters_[srcvar] : DEFAULT_LIMITER);
+      auto bndlimit = (bnd_limiters_.count(srcvar) ? bnd_limiters_[srcvar] : DEFAULT_BND_LIMITER);
+      // compute gradient field
+      gradients = coredriver_node.compute_source_gradient(srcvar, limiter, bndlimit);
+      // interpolate
+      coredriver_node.template interpolate_mesh_var<double, Interpolate>
         (srcvar, trgvar, source_ents_and_weights, &gradients);
-        
-    if (coredriver_node.has_mismatch())
-      coredriver_node.fix_mismatch(srcvar, trgvar, 
-          double_lower_bounds_[trgvar],
-          double_upper_bounds_[trgvar],
-          conservation_tol_[trgvar],
-          max_fixup_iter_,
-          partial_fixup_types_[trgvar],
-          empty_fixup_types_[trgvar]
-      );
+    } else /* order 1 */ {
+      // just interpolate
+      coredriver_node.template interpolate_mesh_var<double, Interpolate>
+        (srcvar, trgvar, source_ents_and_weights);
+    }
 
+    // fix mismatch if necessary
+    if (coredriver_node.has_mismatch()) {
+      coredriver_node.fix_mismatch(srcvar, trgvar,
+                                   double_lower_bounds_[trgvar],
+                                   double_upper_bounds_[trgvar],
+                                   conservation_tol_[trgvar],
+                                   max_fixup_iter_,
+                                   partial_fixup_types_[trgvar],
+                                   empty_fixup_types_[trgvar]
+      );
+    }
   }
 
   gettimeofday(&end_timeval, 0);
