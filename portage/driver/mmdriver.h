@@ -449,25 +449,19 @@ class MMDriver {
     }
 #endif
 
-    int nvars = src_meshvar_names.size();
+    int const nvars = src_meshvar_names.size();
       
     // loop over mesh variables
     for (int i = 0; i < nvars; i++) {
     
-      std::string const& src_var = src_meshvar_names[i];
-      std::string const& trg_var = trg_meshvar_names[i];
-    
-      double lower_bound, upper_bound;
-      
+      auto& src_var = src_meshvar_names[i];
+      auto& trg_var = trg_meshvar_names[i];
+
       // See if we have caller specified bounds, if so, keep them. 
       // Otherwise, determine sensible values
-      try {  
-        
-        double_lower_bounds_.at(trg_var);
-        double_upper_bounds_.at(trg_var);
-        
-      } catch (const std::out_of_range& oor) {
-      
+      if (not double_lower_bounds_.count(trg_var) or
+          not double_upper_bounds_.count(trg_var)) {
+
         // Since caller has not specified bounds for variable, attempt
         // to derive them from source state. This code should go into
         // Wonton into each state manager (or better yet, deprecated :-))
@@ -477,8 +471,8 @@ class MMDriver {
         
         double const *source_data;
         source_state_.mesh_get_data(onwhat, src_var, &source_data);
-        lower_bound = *std::min_element(source_data, source_data + nsrcents);
-        upper_bound = *std::max_element(source_data, source_data + nsrcents);
+        double lower_bound = *std::min_element(source_data, source_data + nsrcents);
+        double upper_bound = *std::max_element(source_data, source_data + nsrcents);
         
 #ifdef PORTAGE_ENABLE_MPI
         if (mycomm != MPI_COMM_NULL) {
@@ -490,7 +484,7 @@ class MMDriver {
         }
 #endif
 
-        double relbounddiff = fabs((upper_bound-lower_bound)/lower_bound);
+        double relbounddiff = std::abs((upper_bound-lower_bound)/lower_bound);
         if (relbounddiff < consttol_) {
           // The field is constant over the source mesh/part. We HAVE to
           // relax the bounds to be able to conserve the integral quantity
@@ -503,14 +497,12 @@ class MMDriver {
         set_remap_var_bounds(trg_var, lower_bound, upper_bound);      
       }
         
-      // see if caller has specified a tolerance for conservation  
-      try {  
-        conservation_tol_.at(trg_var);
-      } catch ( const std::out_of_range& oor) {
+      // see if caller has specified a tolerance for conservation
+      if (not conservation_tol_.count(trg_var)) {
         set_conservation_tolerance(trg_var, DEFAULT_CONSERVATION_TOL);     
       }      
     }
-  }  // fix_mismatch
+  }  // compute_bounds
 
 
 
