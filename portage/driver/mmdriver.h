@@ -141,10 +141,10 @@ class MMDriver {
   MMDriver & operator = (const MMDriver &) = delete;
 
   /// Destructor
-  ~MMDriver() {}
+  ~MMDriver() = default;
 
   /// Enable move semantics
-  MMDriver(MMDriver &&) = default;
+  MMDriver(MMDriver &&) noexcept = default;
 
   /*!
     @brief Specify the names of the variables to be interpolated
@@ -393,10 +393,10 @@ class MMDriver {
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
                  SourceState_Wrapper2 const & source_state2,
-                 std::vector<std::string> const &source_meshvar_names,
-                 std::vector<std::string> const &target_meshvar_names,
-                 std::vector<std::string> const &source_matvar_names,
-                 std::vector<std::string> const &target_matvar_names,
+                 std::vector<std::string> const &src_meshvar_names,
+                 std::vector<std::string> const &trg_meshvar_names,
+                 std::vector<std::string> const &src_matvar_names,
+                 std::vector<std::string> const &trg_matvar_names,
                  Wonton::Executor_type const *executor = nullptr);
 
 
@@ -415,8 +415,8 @@ class MMDriver {
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int node_remap(SourceMesh_Wrapper2 const & source_mesh2,
                  SourceState_Wrapper2 const & source_state2,
-                 std::vector<std::string> const &source_meshvar_names,
-                 std::vector<std::string> const &target_meshvar_names,
+                 std::vector<std::string> const &src_meshvar_names,
+                 std::vector<std::string> const &trg_meshvar_names,
                  Wonton::Executor_type const *executor = nullptr);
 
 
