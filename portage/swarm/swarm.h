@@ -179,10 +179,10 @@ private:
 
 /* -------------------------------------------------------------------------- */
 template<>
-Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
-                double x_min, double x_max,
-                double /* unused */, double /* unused */,
-                double /* unused */, double /* unused */) {
+inline Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                       double x_min, double x_max,
+                       double /* unused */, double /* unused */,
+                       double /* unused */, double /* unused */) {
 
   assert(num_particles > 0);
   assert(0 <= distribution and distribution <= 2);
@@ -218,10 +218,10 @@ Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
 /* -------------------------------------------------------------------------- */
 template<>
-Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
-                double x_min, double x_max,
-                double y_min, double y_max,
-                double /* unused */, double /* unused */) {
+inline Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                       double x_min, double x_max,
+                       double y_min, double y_max,
+                       double /* unused */, double /* unused */) {
 
   assert(num_particles > 0);
   assert(0 <= distribution and distribution <= 2);
@@ -267,10 +267,10 @@ Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
 /* -------------------------------------------------------------------------- */
 template<>
-Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
-                double x_min, double x_max,
-                double y_min, double y_max,
-                double z_min, double z_max) {
+inline Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
+                       double x_min, double x_max,
+                       double y_min, double y_max,
+                       double z_min, double z_max) {
 
   assert(num_particles > 0);
   assert(0 <= distribution and distribution <= 2);
