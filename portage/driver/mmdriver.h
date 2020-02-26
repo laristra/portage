@@ -7,8 +7,6 @@
 #ifndef PORTAGE_DRIVER_MMDRIVER_H_
 #define PORTAGE_DRIVER_MMDRIVER_H_
 
-#include <sys/time.h>
-
 #include <algorithm>
 #include <vector>
 #include <iterator>
@@ -21,13 +19,12 @@
 #include <cmath>
 
 #ifdef HAVE_TANGRAM
-#include "tangram/driver/driver.h"
+  #include "tangram/driver/driver.h"
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-
 #include "portage/support/portage.h"
-
+#include "portage/support/timer.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
@@ -41,7 +38,7 @@
 #include "portage/driver/coredriver.h"
 
 #ifdef PORTAGE_ENABLE_MPI
-#include "portage/distributed/mpi_bounding_boxes.h"
+  #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
 /*!
@@ -514,7 +511,7 @@ class MMDriver {
           std::string *errmsg = nullptr) {
     std::string message;
 
-    struct timeval begin_timeval, end_timeval, diff_timeval;
+    auto tic = timer::now();
 
     bool distributed = false;
     int comm_rank = 0;
@@ -597,7 +594,7 @@ class MMDriver {
       // REDISTRIBUTION; OTHERWISE, WE JUST INVOKE REMAP WITH THE
       // ORIGINAL WRAPPER
 
-      gettimeofday(&begin_timeval, 0);
+      tic = timer::now();
 
       source_mesh_flat.initialize(source_mesh_);
 
@@ -612,10 +609,8 @@ class MMDriver {
       distributor.distribute(source_mesh_flat, source_state_flat,
                              target_mesh_, target_state_);
 
-      gettimeofday(&end_timeval, 0);
-      timersub(&end_timeval, &begin_timeval, &diff_timeval);
 #ifdef ENABLE_DEBUG
-      float tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+      float tot_seconds_dist = timer::elapsed(tic);
       std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
           tot_seconds_dist << std::endl;
 #endif
@@ -666,7 +661,7 @@ class MMDriver {
       }
     }
 
-    if (src_meshvar_names.size()) {
+    if (not src_meshvar_names.empty()) {
 #ifdef PORTAGE_ENABLE_MPI
       if (distributed)
         node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
@@ -763,9 +758,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-  // Will be null if it's a parallel executor
-  auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -776,11 +768,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-
-  
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+
+  auto tic = timer::now();
 
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
@@ -811,12 +802,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif  
   
   // SEARCH
-
   auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_srch = timer::elapsed(tic, true);
 
   int nmats = source_state2.num_materials();
 
@@ -825,15 +813,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   //--------------------------------------------------------------------
 
   // INTERSECT MESHES
-
-  gettimeofday(&begin_timeval, 0);
-
   auto source_ents_and_weights =
       coredriver_cell.template intersect_meshes<Intersect>(candidates);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect += timer::elapsed(tic);
 
   // check for mesh mismatch
   coredriver_cell.check_mismatch(source_ents_and_weights);
@@ -844,7 +827,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
   
   // INTERPOLATE (one variable at a time)
-  gettimeofday(&begin_timeval, 0);
+  tic = timer::now();
   int nvars = src_meshvar_names.size();
 #ifdef ENABLE_DEBUG
   if (comm_rank == 0) {
@@ -894,9 +877,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_interp += timer::elapsed(tic, true);
 
   if (nmats > 1) {
     //--------------------------------------------------------------------
@@ -933,10 +914,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }  // nmatvars
   }
-  
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+
+  tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 #ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Cell remap on Rank " <<
@@ -987,9 +966,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-  // Will be null if it's a parallel executor
-  auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -1004,7 +980,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   float tot_seconds = 0.0, tot_seconds_srch = 0.0,
       tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
+
+  auto tic = timer::now();
 
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
@@ -1012,7 +989,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   
   // Use default numerical tolerances in case they were not set earlier
-  if (num_tols_.tolerances_set == false) {
+  if (not num_tols_.tolerances_set) {
     NumericTolerances_t default_num_tols;
     default_num_tols.use_default();
     set_num_tols(default_num_tols);
@@ -1036,9 +1013,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_srch = timer::elapsed(tic, true);
 
   int nmats = source_state2.num_materials();
 
@@ -1047,15 +1022,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
   //--------------------------------------------------------------------
 
   // INTERSECT MESHES
-
-  gettimeofday(&begin_timeval, 0);
-
   auto source_ents_and_weights =
       coredriver_node.template intersect_meshes<Intersect>(candidates);
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+  tot_seconds_xsect += timer::elapsed(tic);
 
   // check for mesh mismatch
   coredriver_node.check_mismatch(source_ents_and_weights);
@@ -1066,7 +1036,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
   // INTERPOLATE (one variable at a time)
-  gettimeofday(&begin_timeval, 0);
+  tic = timer::now();
   int nvars = src_meshvar_names.size();
 #ifdef ENABLE_DEBUG
   if (comm_rank == 0) {
@@ -1115,14 +1085,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_interp += diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
+  tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 #ifdef ENABLE_DEBUG
   std::cout << "Transform Time for Node remap on Rank " <<
