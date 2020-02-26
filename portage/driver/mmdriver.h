@@ -436,7 +436,7 @@ class MMDriver {
   */
   
   template<class SourceState_Wrapper2,Entity_kind onwhat>
-  int compute_bounds(SourceState_Wrapper2 const& source_state2,
+  void compute_bounds(SourceState_Wrapper2 const& source_state2,
                    std::vector<std::string> const& src_meshvar_names,
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
