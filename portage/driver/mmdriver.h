@@ -440,23 +440,12 @@ class MMDriver {
                    std::vector<std::string> const& src_meshvar_names,
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
-    
-    // Will be null if it's a parallel executor
-    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-
-    bool distributed = false;
-    int comm_rank = 0;
-    int nprocs = 1;
 
 #ifdef PORTAGE_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
-      MPI_Comm_rank(mycomm, &comm_rank);
-      MPI_Comm_size(mycomm, &nprocs);
-      if (nprocs > 1)
-        distributed = true;
     }
 #endif
 
@@ -493,14 +482,11 @@ class MMDriver {
         
 #ifdef PORTAGE_ENABLE_MPI
         if (mycomm != MPI_COMM_NULL) {
-          double global_lower_bound=0.0, global_upper_bound=0.0;
-          MPI_Allreduce(&lower_bound, &global_lower_bound, 1, MPI_DOUBLE,
-                        MPI_MIN, mycomm);
-          lower_bound = global_lower_bound;
-          
-          MPI_Allreduce(&upper_bound, &global_upper_bound, 1, MPI_DOUBLE,
-                        MPI_MAX, mycomm);
-          upper_bound = global_upper_bound;
+          double global_bounds[2] = { 0.0, 0.0 };
+          MPI_Allreduce(&lower_bound, global_bounds+0, 1, MPI_DOUBLE, MPI_MIN, mycomm);
+          MPI_Allreduce(&upper_bound, global_bounds+1, 1, MPI_DOUBLE, MPI_MAX, mycomm);
+          lower_bound = global_bounds[0];
+          upper_bound = global_bounds[1];
         }
 #endif
 
