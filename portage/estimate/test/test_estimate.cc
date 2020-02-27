@@ -26,12 +26,12 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
   using Estimator = Estimate<dim, SwarmState<dim>>;
 
   // create the source and target swarms input data
-  const size_t nb_sides = 3;
-  const double jitter = 0.;  // 0.25*smoothing;
-  const size_t nb_source = powl(nb_sides + 1, dim);
-  const size_t nb_target = powl(nb_sides + 3, dim);
-  const double source_smoothing = 1. / nb_sides;
-  const double target_smoothing = 1. / (nb_sides + 2);
+  int const nb_sides = 3;
+  double const jitter = 0.;  // 0.25*smoothing;
+  int const nb_source = static_cast<int>(std::pow(nb_sides + 1, dim));
+  int const nb_target = static_cast<int>(std::pow(nb_sides + 3, dim));
+  double const source_smoothing = 1. / nb_sides;
+  double const target_smoothing = 1. / (nb_sides + 2);
 
   Portage::vector<Point<dim>> source_points(nb_source);
   Portage::vector<Point<dim>> target_points(nb_target);
@@ -39,13 +39,18 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
   Portage::vector<Point<dim>> target_extents(nb_target);
   Portage::vector<Point<dim>> extents(nb_target);
 
+  // set the random engine and generator
+  std::random_device device;
+  std::mt19937 engine { device() };
+  std::uniform_real_distribution<double> generator(0.0, 0.5);
+
   for (int i = 0; i < nb_source; i++) {
     int offset = 0;
     for (int k = 0; k < dim; k++) {
       int index = (i - offset)/powl(nb_sides + 1, dim - k - 1);
       offset += index * powl(nb_sides + 1, dim - k - 1);
 
-      double delta = 2.*(((double)rand())/RAND_MAX -.5) * jitter * 1.5;
+      double const delta = 2. * generator(engine) * jitter * 1.5;
       Point<dim> p = source_points[i];
       p[k] = -0.25 + 1.5 * index * source_smoothing + delta;
       source_points[i] = p;
@@ -65,7 +70,7 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
       int index = (i - offset)/powl(nb_sides + 3, dim - k - 1);
       offset += index*powl(nb_sides + 3, dim - k - 1);
 
-      double delta = 2.*(((double)rand())/RAND_MAX -.5) * jitter;
+      double const delta = 2. * generator(engine) * jitter * 1.5;
       Point<dim> p = target_points[i];
       p[k] = index * target_smoothing + delta;
       target_points[i] = p;
