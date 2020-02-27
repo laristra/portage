@@ -163,10 +163,7 @@ public:
    *
    */
   void extend_particle_list(std::vector<Wonton::Point<dim>> const& list) {
-    int const old_size = points_.size();
-    int const new_size = old_size + list.size();
-    points_.resize(new_size);
-    std::copy(list.begin(), list.end(), points_.begin() + old_size);
+    points_.insert(points_.end(), list.begin(), list.end());
   }
 
 private:

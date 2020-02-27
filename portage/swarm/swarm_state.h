@@ -349,18 +349,12 @@ public:
 
     if (std::is_integral<T>::value) {
       assert(fields_int_.count(name));
-      // resize and perform a deep copy
-      int const old_size = fields_int_[name].size();
-      int const new_size = old_size + values.size();
-      fields_int_[name].resize(new_size);
-      std::copy(values.begin(), values.end(), fields_int_[name].begin());
+      auto& field = fields_int_[name];
+      field.insert(field.begin(), values.begin(), values.end());
     } else {
       assert(fields_dbl_.count(name));
-      // resize and perform a deep copy
-      int const old_size = fields_dbl_[name].size();
-      int const new_size = old_size + values.size();
-      fields_dbl_[name].resize(new_size);
-      std::copy(values.begin(), values.end(), fields_dbl_[name].begin());
+      auto& field = fields_dbl_[name];
+      field.insert(field.end(), values.begin(), values.end());
     }
   }
 
