@@ -32,8 +32,10 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
   const double deltax = 1./nside;
   const double smoothing = 2.5*deltax;
   const double jitter = 0.2;
-  auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
-  auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+
+  Portage::vector<Point<dim>> src_pts(npoints);
+  Portage::vector<Point<dim>> tgt_pts(npoints);
+
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -44,14 +46,14 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
       Point<dim> pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      pt = (*src_pts)[i];
+      pt = src_pts[i];
       pt[k] = index*deltax + delta;
-      (*src_pts)[i] = pt;
+      src_pts[i] = pt;
 
       delta = 2.*(((double)rand())/RAND_MAX -.5)*jitter*deltax;
-      pt = (*tgt_pts)[i];
+      pt = tgt_pts[i];
       pt[k] = index*deltax + delta;
-      (*tgt_pts)[i] = pt;
+      tgt_pts[i] = pt;
     }
   }
 
@@ -138,7 +140,9 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
   const double deltax = 1./nside;
   const double jitter = 0.3;
   const double smoothing = 2.5*(1.+jitter)*deltax;
-  auto src_pts = make_shared<typename Swarm<dim>::PointVec>(npoints);
+
+  Portage::vector<Point<dim>> src_pts(npoints);
+
   for (size_t i=0; i<npoints; i++) {
     size_t offset = 0, index;
     for (size_t k=0; k<dim; k++) {
@@ -148,14 +152,14 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
       double delta;
 
       delta = (((double)rand())/RAND_MAX)*jitter*deltax;
-      Point<dim> pt = (*src_pts)[i];
+      Point<dim> pt = src_pts[i];
       pt[k] = index*deltax + delta;
-      (*src_pts)[i] = pt;
+      src_pts[i] = pt;
     }
   } 
 
   // create the target swarm input geometry data based on integration domains.
-  auto tgt_pts = make_shared<typename Swarm<dim>::PointVec>(1);
+  Portage::vector<Point<dim>> tgt_pts(1);
   Portage::vector<std::vector<Point<dim>>> domain_points(1);
   domain_points[0] = reference_points<domain>();
   Portage::vector<Point<dim>> refpnts = reference_points<domain>();
@@ -165,9 +169,9 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
   }
   for (int k=0; k<dim; k++) {
     centroid[k] /= refpnts.size();
-    Point<dim> pt = (*tgt_pts)[0];
+    Point<dim> pt = tgt_pts[0];
     pt[k] = centroid[k];
-    (*tgt_pts)[0] = pt;
+    tgt_pts[0] = pt;
   }
   Portage::vector<Portage::Meshfree::Operator::Domain> domains(1);
   domains[0] = domain;

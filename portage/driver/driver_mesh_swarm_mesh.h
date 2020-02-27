@@ -246,7 +246,7 @@ public:
 
     auto tic = timer::now();
 
-    // CELL VARIABLE SECTION ---------------------------------------------------
+    // Wonton::CELL VARIABLE SECTION ---------------------------------------------------
 
     // get cell variable names
     std::vector<std::string> source_cellvar_names;
@@ -254,7 +254,7 @@ public:
 
     for (int i = 0; i < nvars; ++i) {
       auto onwhat = source_state_.get_entity(source_vars_[i]);
-      if (onwhat == CELL) {
+      if (onwhat == Wonton::CELL) {
         source_cellvar_names.emplace_back(source_vars_[i]);
         target_cellvar_names.emplace_back(target_vars_[i]);
       }
@@ -263,10 +263,10 @@ public:
     // Collect all cell based variables and remap them
     if (not source_cellvar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, CELL);
-      Swarm<dim> target_swarm(target_mesh_, CELL);
-      SwarmState<dim> source_swarm_state(source_state_, CELL);
-      SwarmState<dim> target_swarm_state(target_state_, CELL);
+      Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
+      Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
+      SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
+      SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
 
       // set up smoothing lengths and extents
       Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
@@ -368,7 +368,7 @@ public:
       for (auto&& name : target_cellvar_names) {
         auto& swarm_field = target_swarm_state.get_field(name);
         double* mesh_field;
-        target_state_.mesh_get_data(CELL, name, &mesh_field);
+        target_state_.mesh_get_data(Wonton::CELL, name, &mesh_field);
         for (int i = 0; i < target_swarm_state.get_size(); i++)
           mesh_field[i] = swarm_field[i];
       }
@@ -376,14 +376,14 @@ public:
       delete swarm_remap_ptr;
     }
 
-    // NODE VARIABLE SECTION ---------------------------------------------------
+    // Wonton::NODE VARIABLE SECTION ---------------------------------------------------
 
     // get node variable names
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
     for (int i = 0; i < nvars; ++i) {
       auto onwhat = source_state_.get_entity(source_vars_[i]);
-      if (onwhat == Entity_kind::NODE) {
+      if (onwhat == Wonton::NODE) {
         source_nodevar_names.emplace_back(source_vars_[i]);
         target_nodevar_names.emplace_back(target_vars_[i]);
       }
@@ -391,10 +391,10 @@ public:
 
     if (not source_nodevar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, NODE);
-      Swarm<dim> target_swarm(target_mesh_, NODE);
-      SwarmState<dim> source_swarm_state(source_state_, NODE);
-      SwarmState<dim> target_swarm_state(target_state_, NODE);
+      Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
+      Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
+      SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
+      SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
 
       // create smoothing lengths
       Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
@@ -439,7 +439,7 @@ public:
       for (auto&& name : target_nodevar_names) {
         auto& swarm_field = target_swarm_state.get_field(name);
         double* mesh_field;
-        target_state_.mesh_get_data(NODE, name, &mesh_field);
+        target_state_.mesh_get_data(Wonton::NODE, name, &mesh_field);
         for (int i = 0; i < target_swarm_state.get_size(); i++)
           mesh_field[i] = swarm_field[i];
       }
