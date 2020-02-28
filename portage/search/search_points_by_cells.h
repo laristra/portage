@@ -94,7 +94,7 @@ public:
     if (do_scatter) {
       for (int i = 0; i < nb_source; i++ ) {
         for (int m = 0; m < dim; m++) {
-          auto p = source_extents_[i];
+          Point<dim> p = source_extents_[i];
           extents_vp[m][i] = p[m];
           source_extents_[i] = p;
         }
@@ -102,14 +102,14 @@ public:
     } else if (center_ == Gather) {
       for (int i = 0; i < nb_target; i++ ) {
         for (int m = 0; m < dim; m++) {
-          auto p = target_extents_[i];
+          Point<dim> p = target_extents_[i];
           extents_vp[m][i] = p[m];
           target_extents_[i] = p;
         }
       }
     }
     // h on source for scatter and on target for gather
-    pair_finder_ = Pairs::CellPairFinder(source_vp, target_vp, extents_vp, do_scatter);
+    pair_finder_ = std::make_shared<Pairs::CellPairFinder>(source_vp, target_vp, extents_vp, do_scatter);
   }
 
   //! Copy constructor - use default - std::transform needs this
@@ -131,7 +131,7 @@ public:
     points in the source swarm.
   */
   std::vector<int> operator() (int pointId) const {
-    auto result = pair_finder_.find(pointId);
+    auto result = pair_finder_->find(pointId);
     return std::vector<int>(result.begin(), result.end());
   }
 
@@ -141,7 +141,7 @@ private:
   TargetSwarm const& target_swarm_;
   Portage::vector<Point<dim>> source_extents_;
   Portage::vector<Point<dim>> target_extents_;
-  Meshfree::Pairs::CellPairFinder pair_finder_;
+  std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;
   Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
 }; // class SearchPointsByCells
