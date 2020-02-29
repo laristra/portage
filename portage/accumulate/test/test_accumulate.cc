@@ -85,7 +85,7 @@ void test_accumulate(Portage::Meshfree::EstimateType etype,
     ASSERT_EQ(jsize[1], bsize);
 
     // list of src swarm particles (indices)
-    std::vector<unsigned int> src_particles(npoints);
+    std::vector<int> src_particles(npoints);
     for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
     // Loop through target particles
@@ -204,7 +204,7 @@ void test_operator(Portage::Meshfree::WeightCenter center) {
   size_t jsize = Operator::Operator<opertype, btype, domain>::operator_size;
 
   // list of src swarm particles (indices)
-  std::vector<unsigned int> src_particles(npoints);
+  std::vector<int> src_particles(npoints);
   for (size_t i=0; i<npoints; i++) src_particles[i] = i;
 
   std::vector<std::vector<double>> sums(bsize, std::vector<double>(jsize,0.));
