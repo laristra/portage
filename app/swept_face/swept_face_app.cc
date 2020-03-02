@@ -778,12 +778,29 @@ void move_points(std::shared_ptr<Jali::Mesh> mesh,
   // only valid for internally generated grids.
   // skip all boundary points in 2D and only corners in 3D
   auto skip = [&](auto const& p) -> bool {
-    bool const skip_only_corners = (dim == 3);
-    for (int d = 0; d < dim; ++d) {
-      if (std::abs(p[d] - p_min) < epsilon or std::abs(p[d] - p_max) < epsilon)
-        return not skip_only_corners;
+    // check if two real numbers are equal
+    auto equals = [&](double const& u, double const& v) -> bool {
+      return std::abs(u - v) < epsilon;
+    };
+
+    double const& x = p[0];
+    double const& y = p[1];
+    if (dim == 3) {
+      double const& z = p[2];
+      // skip only corners
+      return (equals(x, p_min) and equals(y, p_min) and equals(z, p_min))
+          or (equals(x, p_min) and equals(y, p_min) and equals(z, p_max))
+          or (equals(x, p_min) and equals(y, p_max) and equals(z, p_min))
+          or (equals(x, p_min) and equals(y, p_max) and equals(z, p_max))
+          or (equals(x, p_max) and equals(y, p_min) and equals(z, p_min))
+          or (equals(x, p_max) and equals(y, p_min) and equals(z, p_max))
+          or (equals(x, p_max) and equals(y, p_max) and equals(z, p_min))
+          or (equals(x, p_max) and equals(y, p_max) and equals(z, p_max));
+    } else {
+      // skip boundary points
+      return equals(x, p_min) or equals(x, p_max)
+          or equals(y, p_min) or equals(y, p_max);
     }
-    return skip_only_corners;
   };
   // --------------------------------------
   if (not simple) {
