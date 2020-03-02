@@ -177,7 +177,7 @@ double MomentumRemap<D>::TotalMass(
   double sum(0.0), sum_glb;
   for (int n = 0; n < nrows; ++n) sum += mass[n];
 
-  MPI_Reduce(&sum, &sum_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&sum, &sum_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   return sum_glb;
 }
 
@@ -218,12 +218,12 @@ Wonton::Point<D> MomentumRemap<D>::TotalMomentum(
 
   Wonton::Point<D> momentum;
 
-  MPI_Reduce(&mx, &mx_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&my, &my_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&mx, &mx_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&my, &my_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
   if (D == 2) {
     momentum = {mx_glb, my_glb};
   } else {
-    MPI_Reduce(&mz, &mz_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&mz, &mz_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     momentum = {mx_glb, my_glb, mz_glb};
   }
 
@@ -249,14 +249,14 @@ Wonton::Point<D> MomentumRemap<D>::VelocityMin(
     if (D == 3) uzmin = std::min(uzmin, uz[n]);
   }
 
-  MPI_Reduce(&uxmin, &uxmin_glb, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&uymin, &uymin_glb, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&uxmin, &uxmin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  MPI_Allreduce(&uymin, &uymin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
 
   Wonton::Point<D> umin;
   if (D == 2) {
     umin = { uxmin_glb, uymin_glb };
   } else {
-    MPI_Reduce(&uzmin, &uzmin_glb, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&uzmin, &uzmin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
     umin = { uxmin_glb, uymin_glb, uzmin_glb };
   }
 
@@ -278,14 +278,14 @@ Wonton::Point<D> MomentumRemap<D>::VelocityMax(
     if (D == 3) uzmax = std::max(uzmax, uz[n]);
   }
 
-  MPI_Reduce(&uxmax, &uxmax_glb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
-  MPI_Reduce(&uymax, &uymax_glb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&uxmax, &uxmax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&uymax, &uymax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
 
   Wonton::Point<D> umax;
   if (D == 2) {
     umax = { uxmax_glb, uymax_glb };
   } else {
-    MPI_Reduce(&uzmax, &uzmax_glb, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    MPI_Allreduce(&uzmax, &uzmax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     umax = { uxmax_glb, uymax_glb, uzmax_glb };
   }
   return umax;
@@ -334,9 +334,9 @@ void MomentumRemap<D>::ErrorVelocity(
   int nrows_glb;
   double l2err_glb, l2norm_glb;
 
-  MPI_Reduce(&nrows, &nrows_glb, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(l2err, &l2err_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-  MPI_Reduce(l2norm, &l2norm_glb, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Allreduce(&nrows, &nrows_glb, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(l2err, &l2err_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(l2norm, &l2norm_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
   *l2err = std::sqrt(l2err_glb / nrows_glb);
   *l2norm = std::sqrt(l2norm_glb / nrows_glb);
