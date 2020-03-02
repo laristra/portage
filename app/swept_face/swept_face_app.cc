@@ -147,7 +147,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
-           double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler);
 
 /**
@@ -412,22 +411,16 @@ int main(int argc, char** argv) {
               ntimesteps, not update_source, simple_shift);
 
   if (not generated_grids) {
-    double l1_err = 0.;
-    double l2_err = 0.;
-
     switch (dim) {
       case 2: remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                        limiter, bnd_limiter, intersect_based, mesh_output, true,
-                       result_file, 1, l1_err, l2_err, profiler); break;
+                       result_file, 1, profiler); break;
       case 3: remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                        limiter, bnd_limiter, intersect_based, mesh_output, true,
-                       result_file, 1, l1_err, l2_err, profiler); break;
+                       result_file, 1, profiler); break;
       default: break;
     }
   } else {
-    std::vector<double> l1_err(ntimesteps, 0.0);
-    std::vector<double> l2_err(ntimesteps, 0.0);
-
     for (int i = 1; i <= ntimesteps; i++) {
       if (rank == 0) {
         std::cout << std::endl;
@@ -447,7 +440,7 @@ int main(int argc, char** argv) {
           // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, i == ntimesteps,
-                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
+                   result_file, i, profiler);
           break;
         case 3:
           // update source mesh if necessary
@@ -458,7 +451,7 @@ int main(int argc, char** argv) {
           // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output,i == ntimesteps,
-                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
+                   result_file, i, profiler);
           break;
         default: break;
       }
@@ -506,7 +499,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
-           double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler) {
 
   if (rank == 0)
@@ -592,9 +584,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (rank == 0)
     std::cout << "Extract stats ... " << std::flush;
 
-  L1_error = 0.0;
-  L2_error = 0.0;
-
   double const* target_field;
   double min_source_val   = std::numeric_limits<double>::max();
   double max_source_val   = std::numeric_limits<double>::min();
@@ -607,6 +596,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   double total_mass[]     = {0.0, 0.0};
   double global_error[]   = {0.0, 0.0};
   double total_volume     = 0.0;
+  double L1_error         = 0.0;
+  double L2_error         = 0.0;
 
   target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_field);
 
