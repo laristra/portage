@@ -66,9 +66,6 @@ TEST(PartByParticle, 2D) {
   Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
-  Portage::vector<Wonton::Point<2>> extents;
-
   int const nb_source = source_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
   int const nb_target = target_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
   assert(nb_source == ncells * ncells);
@@ -126,12 +123,9 @@ TEST(PartByParticle, 3D) {
   Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
-  Portage::vector<Wonton::Point<3>> extents;
-
   int const nb_source = source_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
   int const nb_target = target_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-  assert(nb_source == ncells * ncells);
+  assert(nb_source == ncells * ncells * ncells);
 
   double source_values[nb_source];
   double target_values[nb_target];
