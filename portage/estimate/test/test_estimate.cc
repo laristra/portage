@@ -118,7 +118,7 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
   ASSERT_EQ(jsize[1], bsize);
 
   // list of src swarm particles (indices)
-  std::vector<unsigned> source_particles(nb_source);
+  std::vector<int> source_particles(nb_source);
   for (int i = 0; i < nb_source; i++)
     source_particles[i] = i;
 

@@ -24,7 +24,7 @@ using std::string;
  * @code Accumulate::operator()@endcode and use it to
  *  estimate derivatives of the source state data.
  */
-template<size_t dim, class TargetSwarmState>
+template<int dim, class TargetSwarmState>
 class Estimate {
  public:
   /** 

@@ -45,8 +45,8 @@ namespace Portage { namespace Meshfree {
  * @tparam TargetState: the wrapper type of the input target state.
  */
 template <template <int, class, class> class Search,
-          template <size_t, class, class> class Accumulate,
-          template<size_t, class> class Estimate,
+          template <int, class, class> class Accumulate,
+          template<int, class> class Estimate,
           int dim,
           class SourceSwarm, class SourceState,
           class TargetSwarm = SourceSwarm,

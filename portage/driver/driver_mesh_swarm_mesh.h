@@ -64,8 +64,8 @@ namespace Portage {
   manager implementation that provides certain functionality.
 */
 template <template <int, class, class> class Search,
-          template <size_t, class, class> class Accumulate,
-          template<size_t, class> class Estimate,
+          template<int, class, class> class Accumulate,
+          template<int, class> class Estimate,
           int dim,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
