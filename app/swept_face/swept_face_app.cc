@@ -537,8 +537,11 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     throw std::runtime_error("expression parsing failure");
 
   double source_field[nb_source_cells];
+
   for (int c = 0; c < nb_source_cells; ++c) {
-    source_field[c] = exact_value(source_mesh->cell_centroid(c));
+    Wonton::Point<dim> centroid;
+    source_mesh_wrapper.cell_centroid(c, &centroid);
+    source_field[c] = exact_value(centroid);
   }
 
   source_state_wrapper.mesh_add_data(Portage::CELL, "density", source_field);
@@ -611,7 +614,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     }
   }
 
-  Wonton::Point<dim> centroid;
   for (int c = 0; c < nb_target_cells; ++c) {
     // skip ghost cells to avoid duplicated values
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
@@ -619,6 +621,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       min_target_val = std::min(min_target_val, target_field[c]);
       max_target_val = std::max(max_target_val, target_field[c]);
       // compute difference between exact and remapped value
+      Wonton::Point<dim> centroid;
       target_mesh_wrapper.cell_centroid(c, &centroid);
       double const volume = target_mesh_wrapper.cell_volume(c);
       double const error = exact_value(centroid) - target_field[c];
