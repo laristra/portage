@@ -765,9 +765,7 @@ void move_points(std::shared_ptr<Jali::Mesh> mesh,
   double const epsilon = 1.E-16;
 
   // --------------------------------------
-  // identify internal points to skip them.
-  // only valid for internally generated grids.
-  // skip all boundary points in 2D and only corners in 3D
+  // check if the given point should be skipped or not.
   auto skip = [&](auto const& p) -> bool {
     // check if two real numbers are equal
     auto equals = [&](double const& u, double const& v) -> bool {
