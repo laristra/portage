@@ -16,318 +16,392 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 
-namespace Portage {
-namespace Meshfree {
-namespace Weight {
-
-using std::pow;
-using std::abs;
-using std::array;
-using std::vector;
-using std::numeric_limits;
+namespace Portage { namespace Meshfree { namespace Weight {
 
 //\///////////////////////////////////////////////////////////////////////////
-// constants
+// constants and maths functions
 //\///////////////////////////////////////////////////////////////////////////
 
-/// usual constant
-const double Pi = 3.141592653589793;
+/**
+ * @brief normalization constants for cubic B-spline
+ *        (linear, cylindrical, and spherical).
+ */
+double const normconst[4] = { 2./3., 1./(.7 * M_PI), 1./M_PI, 1./M_PI };
 
-/// normalization constants for cubic B-spline:
-/** linear, cylindrical, and spherical */
-const double normconst[4] = {2./3., 1./(.7*Pi), 1./Pi, 1./Pi};
+/**
+ * @brief Numerical tolerance.
+ */
+double const epsilon = std::numeric_limits<double>::epsilon();
 
-//\///////////////////////////////////////////////////////////////////////////
-// math functions
-//\///////////////////////////////////////////////////////////////////////////
-
-/// scalar sign function
-inline double Sign(double x) {
-  double result;
-  if(x>0.) result =  1.;
-  else if(x<0.) result =  -1.;
-  else result= 0.;
-  return result;
-}
+/**
+ * @brief scalar sign function.
+ *
+ * @param x: given scalar.
+ * @return its sign.
+ */
+inline double sign(double x) { return x > 0. ? 1. : (x < 0. ? -1. : 0.); }
 
 /// scalar step function
-inline double UnitStep(double x){
-  return .5*(1.+Sign(x));
-}
-
-/// translation of scalar exponentiation from Mathematica
-inline double Power(double x, double y){double z; z=pow(x,y); return z;}
-
-/// translation of scalar exponentiation from Mathematica
-inline double Power(double x, int y){double z; z=pow(x,static_cast<double>(y)); return z;}
-
-/// translation of scalar absolute value from Mathematica
-inline double Abs(double x){double y; y=abs(x); return y;}
+inline double unit_step(double x) { return 0.5 * (1. + sign(x)); }
 
 //\///////////////////////////////////////////////////////////////////////////
 // various scalar kernels and derivatives
 //\///////////////////////////////////////////////////////////////////////////
 
-/// scalar cubic b-spline
-inline double b4(double x){
-  double y=
-      (Power(2. - Abs(x),3)*UnitStep(2. - Abs(x))*UnitStep(-1. + Abs(x)))/4. +
-      (1. - 1.5*Power(x,2) + 0.75*Power(Abs(x),3))*UnitStep(1. - Abs(x));
-  return y;
+/**
+ * @brief scalar cubic b-spline.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double b4(double x) {
+  return (std::pow(2. - std::abs(x), 3) * unit_step(2. - std::abs(x))
+          * unit_step(-1. + std::abs(x))) / 4.
+          + (1. - 1.5 * std::pow(x, 2)
+          + 0.75 * std::pow(std::abs(x), 3)) * unit_step(1. - std::abs(x));
 }
 
-/// scalar cubic b-spline derivative
-inline double db4(double x){
-  double y=
-      (-3.*x + (9.*Power(x,2)*Sign(x))/4.)*UnitStep(1. - Abs(x)) -
-      (3.*Power(2. - Abs(x),2)*Sign(x)*UnitStep(2. - Abs(x))*
-          UnitStep(-1. + Abs(x)))/4.;
-  return y;
+/**
+ * @brief scalar cubic b-spline derivative.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double db4(double x) {
+  return (-3. * x + (9. * std::pow(x, 2) * sign(x)) / 4.)
+         * unit_step(1. - std::abs(x)) - (3. * std::pow(2. - std::abs(x), 2)
+         * sign(x) * unit_step(2. - std::abs(x)) * unit_step(-1. + std::abs(x))) / 4.;
 }
 
-/// scalar cubic b-spline second derivative
-inline double ddb4(double x){
-  double y=
-      (-3. + (9.*x*Sign(x))/2.)*UnitStep(1. - Abs(x)) +
-      (3.*(2. - Abs(x))*UnitStep(2. - Abs(x))*
-          UnitStep(-1. + Abs(x)))/2.;
-  return y;
+/**
+ * @brief scalar cubic b-spline second derivative.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double ddb4(double x) {
+  return (-3. + (9. * x * sign(x)) / 2.) * unit_step(1. - std::abs(x))
+          + (3. * (2. - std::abs(x)) * unit_step(2. - std::abs(x))
+          * unit_step(-1. + std::abs(x))) / 2.;
 }
 
-/// scalar cubic b-spline anti-derivative
-inline double ib4(double x){
-  double y=
-      UnitStep(-2. + x) + 0.6666666666666666*
-      ((1.4375 + (0.25 - Power(-2. + x,4)/4.)/4.)*
-          UnitStep(2. - x)*UnitStep(-1. + x) +
-          (0.75 + x - Power(x,3)/2. + (3.*Power(x,4))/16.)*
-          UnitStep(1. - x)*UnitStep(x) +
-          (0.75 + x - Power(x,3)/2. - (3.*Power(x,4))/16.)*
-          UnitStep(-x)*UnitStep(1. + x) +
-          (Power(2. + x,4)*UnitStep(-1. - x)*UnitStep(2. + x))/16.);
-  return y;
+/**
+ * @brief scalar cubic b-spline anti-derivative.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double ib4(double x) {
+  return unit_step(-2. + x) + 0.6666666666666666 *
+         ((1.4375 + (0.25 - std::pow(-2. + x, 4) / 4.) / 4.) *
+         unit_step(2. - x) * unit_step(-1. + x) +
+         (0.75 + x - std::pow(x, 3) / 2. + (3. * std::pow(x, 4)) / 16.) *
+         unit_step(1. - x) * unit_step(x) +
+         (0.75 + x - std::pow(x, 3) / 2. - (3. * std::pow(x, 4)) / 16.) *
+         unit_step(-x) * unit_step(1. + x) +
+         (std::pow(2. + x, 4) * unit_step(-1. - x) * unit_step(2. + x)) / 16.);
 }
 
-/// scalar left half cubic b-spline
-inline double b4lh(double x){
-  double y=
-      0.0625*Power(2. - Abs(x),3)*(1. + Sign(-1. - x))*
-      (1. + Sign(2. + x)) +
-      0.5*(1. - (3.*Power(x,2))/2. + (3.*Power(Abs(x),3))/4.)*
-      (1. + Sign(1. + x))*UnitStep(-x);
-  return y;
+/**
+ * @brief scalar left half cubic b-spline.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double b4lh(double x) {
+  return 0.0625 * std::pow(2. - std::abs(x), 3) * (1. + sign(-1. - x)) *
+         (1. + sign(2. + x)) +
+         0.5 * (1. - (3. * std::pow(x, 2)) / 2. + (3. * std::pow(std::abs(x), 3)) / 4.) *
+         (1. + sign(1. + x)) * unit_step(-x);
 }
 
-/// scalar right half cubic b-spline
-inline double b4rh(double x){
-  double y=
-      0.0625*Power(2. - Abs(x),3)*(1. + Sign(2. - x))*
-      (1. + Sign(-1. + x)) +
-      0.5*(1. - (3.*Power(x,2))/2. + (3.*Power(Abs(x),3))/4.)*
-      (1. + Sign(1. - x))*UnitStep(x);
-  return y;
+/**
+ * @brief scalar right half cubic b-spline.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
+inline double b4rh(double x) {
+  return 0.0625 * std::pow(2. - std::abs(x), 3) * (1. + sign(2. - x)) *
+         (1. + sign(-1. + x)) +
+         0.5 * (1. - (3. * std::pow(x, 2)) / 2. + (3. * std::pow(std::abs(x), 3)) / 4.) *
+         (1. + sign(1. - x)) * unit_step(x);
 }
 
-/// scalar epanechnikov kernel
+/**
+ * @brief scalar epanechnikov kernel.
+ *
+ * @param x: given scalar
+ * @return its value at x.
+ */
 inline double epanechnikov(double x) {
-  double y= .375*(1.-x*x*.25);
-  if (fabs(x)>=2.) y=0.;
-  return y;
+  return std::abs(x) >= 2. ? 0. : 0.375 * (1. - x * x * 0.25);
 }
 
-/// scalar epanechnikov kernel derivative
-inline double depanechnikov(double x) {
-  double y=  -.1875*x;
-  if (fabs(x)>=2.) y=0.;
-  return y;
+/**
+ * @brief scalar epanechnikov kernel derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double depanechnikov(double x) { return std::abs(x) >= 2. ? 0. : -.1875 * x; }
+
+/**
+ * @brief scalar epanechnikov kernel second derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddepanechnikov(double x) { return std::abs(x) >= 2. ? 0. : -.1875; }
+
+/**
+ * @brief scalar square kernel.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double square(double x) { return std::abs(x) <= 2. ? 1. : 0.; }
+
+/**
+ * @brief scalar square kernel derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double dsquare(double x) { return 0.; }
+
+/**
+ * @brief scalar square kernel second derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddsquare(double x) { return 0.; }
+
+/**
+ * @brief scalar smooth ramp for faceted weight.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double polyramp(double x) {
+  return (x < 0. ? 1.
+                 : (((1.5 - x) * (1. + sign(1. - x))) * .5
+                 + ((2. + (-2. + .5 * x) * x) * (1. + sign(2. - x))
+                 * (1. + sign(-1. + x))) * .25) / 1.5);  // normalize to 1 at x=0
 }
 
-/// scalar epanechnikov kernel second derivative
-inline double ddepanechnikov(double x) {
-  double y= -.1875;
-  if (fabs(x)>=2.) y=0.;
-  return y;
+/**
+ * @brief scalar smooth ramp for faceted weight derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double dpolyramp(double x) {
+  return (((-1.) * (1. + sign(1. - x))) * .5 +
+         ((-2. + x) * (1. + sign(2. - x)) * (1. + sign(-1. + x))) / 4.) / 1.5;
 }
 
-/// scalar square kernel
-inline double square(double x) {
-  double y= Abs(x);
-  if (y<=2.) return 1.;
-  else return 0.;
+/**
+ * @brief scalar smooth ramp for faceted weight derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddpolyramp(double x) {
+  return (((0.) * (1. + sign(1. - x))) * .5 +
+         ((1.) * (1. + sign(2. - x)) * (1. + sign(-1. + x))) / 4.) / 1.5;
 }
 
-/// scalar square kernel derivative
-inline double dsquare(double x) {
-  return 0.;
+/**
+ * @brief inverse square root kernel.
+ * 
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double invsqrt(double x) {
+  double const ax = std::abs(x);
+  return 0.5 * (1. + sign(2. - ax)) * ((ax - 2.) * ax + 4.) *
+         pow(ax + epsilon, -0.5);
 }
 
-/// scalar square kernel second derivative
-inline double ddsquare(double x) {
-  return 0.;
+/**
+ * @brief derivative of inverse square root kernel.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double dinvsqrt(double x) {
+  double const sx = 1.; //x > 0 ? 1. : 1.;
+  double const ax = std::abs(x);
+  return 0.25 * (1. + sign(2. - ax)) * sx * ((3. * ax - 4.) * ax - 4.) *
+         std::pow(ax + epsilon, -1.5);
 }
 
-/// scalar smooth ramp for faceted weight
-inline double polyramp(double x){
-  double y;
-  if (x<0.) return 1.;
-  y=((1.5 - x)*(1. + Sign(1. - x)))*.5 +
-      ((2. + (-2. + .5*x)*x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))*.25;
-  y /= 1.5;  // Normalize to 1 at x=0
-  return y;
+/**
+ * @brief second derivative of inverse square root kernel.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddinvsqrt(double x) {
+  double const ax = abs(x);
+  return 0.125 * (1. + sign(2. - ax)) * ((3. * ax + 4.) * ax + 12.) *
+         std::pow(ax + epsilon, -2.5);
 }
 
-/// scalar smooth ramp for faceted weight derivative
-inline double dpolyramp(double x){
-  double y;
-  y=((-1.)*(1. + Sign(1. - x)))*.5 +
-      ((- 2. + x)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
-  y /= 1.5;
-  return y;
-}
+/**
+ * @brief coulomb weight.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double coulomb(double x) { return 1. / (std::abs(x) + epsilon); }
 
-/// scalar smooth ramp for faceted weight derivative
-inline double ddpolyramp(double x){
-  double y;
-  y=((0.)*(1. + Sign(1. - x)))*.5 +
-      ((1.)*(1. + Sign(2. - x))*(1. + Sign(-1. + x)))/4.;
-  y /= 1.5;
-  return y;
-}
+/**
+ * @brief coulomb weight derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double dcoulomb(double x) { return -sign(x) / (x * x + epsilon); }
 
-/// inverse square root kernel and derivatives
-inline double invsqrt(double x){
-  double ax,y;
-  ax = abs(x);
-  y= .5*(1. + Sign(2. - ax))*((ax-2.)*ax+4.)*
-      pow(ax+numeric_limits<double>::epsilon(),-.5);
-  return y;
-}
-inline double dinvsqrt(double x){
-  double sx,ax,y;
-  sx = x>0?1.:1.;
-  ax = abs(x);
-  y= .25*(1. + Sign(2. - ax))*sx*((3.*ax-4.)*ax-4.)*
-      pow(ax+numeric_limits<double>::epsilon(),-1.5);
-  return y;
-}
-inline double ddinvsqrt(double x){
-  double ax,y;
-  ax = abs(x);
-  y= .125*(1. + Sign(2. - ax))*((3.*ax+4.)*ax+12.)*
-      pow(ax+numeric_limits<double>::epsilon(),-2.5);
-  return y;
-}
+/**
+ * @brief coulomb weight second derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddcoulomb(double x) { return 2. / (x * x * std::abs(x) + epsilon); }
 
-/// coulomb weight
-inline double coulomb(double x){
-  double y;
-  y = 1./(abs(x)+numeric_limits<double>::epsilon());
-  return y;
-}
+/**
+ * @brief step weight.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double step(double x) { return x <= 2 ? 1. : 0.; }
 
-/// coulomb weight derivative
-inline double dcoulomb(double x){
-  double y;
-  y = -Sign(x)/(x*x+numeric_limits<double>::epsilon());
-  return y;
-}
+/**
+ * @brief step weight derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double dstep(double x) { return 0.; }
 
-/// coulomb weight second derivative
-inline double ddcoulomb(double x){
-  double y;
-  y = 2./(x*x*abs(x)+numeric_limits<double>::epsilon());
-  return y;
-}
+/**
+ * @brief step weight second derivative.
+ *
+ * @param x: given scalar.
+ * @return its value at x.
+ */
+inline double ddstep(double x) { return 0.; }
 
-/// step weight
-inline double step(double x){
-  double y=0.;
-  if (x<=2) y=1.;
-  return y;
-}
+/**
+ * @brief Kernel types.
+ */
+enum Kernel { B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB, STEP };
 
-/// step weight derivative
-inline double dstep(double x){
-  double y=0.;
-  return y;
-}
-
-/// step weight second derivative
-inline double ddstep(double x){
-  double y=0.;
-  return y;
-}
-
-enum Kernel {B4, SQUARE, EPANECHNIKOV, POLYRAMP, INVSQRT, COULOMB, STEP};
-
-/// general kernel function
-inline
-double kernel(const Kernel kern, double x) {
-  double result;
+/**
+ * @brief General kernel function.
+ *
+ * @param kern: kernel type.
+ * @param x: given scalar.
+ * @return related value.
+ */
+inline double kernel(const Kernel kern, double x) {
   switch (kern) {
-    case B4:{result = b4(x); break;}
-    case SQUARE:{result = square(x); break;}
-    case EPANECHNIKOV:{result = epanechnikov(x); break;}
-    case POLYRAMP:{result = polyramp(x); break;}
-    case INVSQRT:{result = invsqrt(x); break;}
-    case COULOMB:{result = coulomb(x); break;}
-    case STEP:{result = step(x); break;}
-    default:
-      assert(false);
+    case B4:           return b4(x);
+    case SQUARE:       return square(x);
+    case EPANECHNIKOV: return epanechnikov(x);
+    case POLYRAMP:     return polyramp(x);
+    case INVSQRT:      return invsqrt(x);
+    case COULOMB:      return coulomb(x);
+    case STEP:         return step(x);
+    default: return 0.;
   }
-  return result;
 }
 
 //\///////////////////////////////////////////////////////////////////////////
 // general multi-dimensional evaluation function - what the public uses
 //\///////////////////////////////////////////////////////////////////////////
 
-enum Geometry {ELLIPTIC, TENSOR, FACETED};
+/**
+ * @brief Geometry types.
+ */
+enum Geometry { ELLIPTIC, TENSOR, FACETED };
 
-/// generic elliptically symmetric weight function argument
-template<size_t dim>
-double elliptic(Wonton::Point<dim> x, Wonton::Point<dim> y, array<double,dim> &h) {
-  double distance = 0.0, result;
-  for (size_t i=0; i<dim; i++) {
-    distance += (x[i]-y[i])*(x[i]-y[i])/(h[i]*h[i]);
+/**
+ * @brief generic elliptically symmetric weight function argument.
+ *
+ * @tparam dim: spatial dimension.
+ * @param x: first point
+ * @param y: second point
+ * @param h: size metric
+ * @return sqrt(sum_i (xi - yi)^2 / hi^2)
+ */
+template<int dim>
+double elliptic(Wonton::Point<dim> const& x,
+                Wonton::Point<dim> const& y,
+                std::array<double,dim> const& h) {
+  double distance = 0.;
+  for (int i = 0; i < dim; i++) {
+    distance += (x[i] - y[i]) * (x[i] - y[i]) / (h[i] * h[i]);
   }
-  distance = sqrt(distance);
-  return distance;
+  return std::sqrt(distance);
 }
 
-/// generic tensor weight function arguments
-// template<double f(double), size_t dim>
-template<size_t dim>
-array<double,dim> tensor(Wonton::Point<dim> x, Wonton::Point<dim> y, array<double,dim> &h) {
-  array<double,dim> result;
-  for (size_t i=0; i<dim; i++) {
-    result[i] = (x[i]-y[i])/h[i];
+/**
+ * @brief generic tensor weight function arguments.
+ *
+ * @tparam dim: spatial dimension.
+ * @param x: first point
+ * @param y: second point
+ * @param h: size metric
+ * @return [(xi - yi) / hi]_{i=0,dim-1}
+ */
+template<int dim>
+std::array<double,dim> tensor(Wonton::Point<dim> const& x,
+                              Wonton::Point<dim> const& y,
+                              std::array<double,dim> const& h) {
+  std::array<double,dim> result;
+  for (int i = 0; i < dim; i++) {
+    result[i] = (x[i] - y[i]) / h[i];
   }
   return result;
 }
 
-/// evaluation function for elliptic or tensor product weights
-template<size_t dim>
-double eval(const Geometry geo,
-            const Kernel kern,
-            const Wonton::Point<dim> x, const Wonton::Point<dim> y,
-            array<double,dim> h)
-{
-  double result;
-  double norm = kernel(kern, 0.0);
-  switch (geo) {
+/**
+ * @brief evaluation function for elliptic or tensor product weights.
+ *
+ * @tparam dim: spatial dimension.
+ * @param geometry: the geometry to consider.
+ * @param kern: the kernel to consider.
+ * @param x: first point
+ * @param y: second point
+ * @param h: size metric
+ * @return evaluated kernel value.
+ */
+template<int dim>
+double eval(Geometry const geometry,
+            Kernel const kern,
+            Wonton::Point<dim> const& x,
+            Wonton::Point<dim> const& y,
+            std::array<double,dim> const& h) {
+  double result = 0.;
+  double const norm = kernel(kern, 0.0);
+  switch (geometry) {
     case ELLIPTIC: {
-      double arg = elliptic<dim>(x,y,h);
+      auto const arg = elliptic<dim>(x, y, h);
       result = kernel(kern, arg) / norm;
       break;
     }
-
-    case TENSOR:{
+    case TENSOR: {
       result = 1.;
-      array<double,dim> arg = tensor<dim>(x,y,h);
-      for (size_t i=0; i<dim; i++) {
+      auto const arg = tensor<dim>(x, y, h);
+      for (int i = 0; i < dim; i++)
         result *= kernel(kern, arg[i]) / norm;
-      }
       break;
     }
     default:
@@ -336,67 +410,86 @@ double eval(const Geometry geo,
   return result;
 }
 
-/// data for specifying a faceted weight
-template<size_t dim>
+/**
+ * @brief data for specifying a faceted weight.
+ *
+ * @tparam dim: spatial dimension.
+ */
+template<int dim>
 struct FacetData {
   double smoothing;
-  array<double,dim> normal;
+  std::array<double,dim> normal;
 };
 
-/// faceted weight function
-template<size_t dim>
-  double faceted(const Kernel kern, 
-                 const Wonton::Point<dim> x, const Wonton::Point<dim> y,
-                 vector<FacetData<dim>> facets, size_t nsides)
-{
-  assert(kern==POLYRAMP or kern==STEP);
+/**
+ * @brief faceted weight function
+ *
+ * @tparam dim: spatial dimension.
+ * @param kern: the kernel to use.
+ * @param x: first point.
+ * @param y: second point.
+ * @param facets: list of facets.
+ * @param nsides: number of sides.
+ * @return evaluated kernel value.
+ */
+template<int dim>
+double faceted(Kernel const kern,
+               Wonton::Point<dim> const& x,
+               Wonton::Point<dim> const& y,
+               std::vector<FacetData<dim>> const& facets,
+               size_t nsides) {
+  assert(kern == POLYRAMP or kern == STEP);
   double result = 1.;
-  for (size_t i=0; i<nsides; i++) {
+  for (size_t i = 0; i < nsides; i++) {
     double arg = 0.;
-    for (size_t j=0; j<dim; j++) arg += facets[i].normal[j]*(y[j]-x[j]);
+    for (size_t j = 0; j < dim; j++)
+      arg += facets[i].normal[j] * (y[j] - x[j]);
     arg /= facets[i].smoothing;
     result *= kernel(kern, arg);
   }
   return result;
 }
 
-/// evaluation function for any weight
-template<size_t dim>
-double eval(const Geometry geo,
-            const Kernel kern,
-            const Wonton::Point<dim> x, const Wonton::Point<dim> y,
-            vector<vector<double>> vh)
-{
-  double result;
-  double norm = kernel(kern, 0.0);
+/**
+ * @brief evaluation function for any weight.
+ *
+ * @tparam dim: spatial dimension.
+ * @param geo: the geometry to consider.
+ * @param kern: the kernel to consider.
+ * @param x: first point.
+ * @param y: second point.
+ * @param vh: size matrix.
+ * @return evaluated kernel value.
+ */
+template<int dim>
+double eval(Geometry const geo,
+            Kernel const kern,
+            Wonton::Point<dim> const& x,
+            Wonton::Point<dim> const& y,
+            std::vector<std::vector<double>> const& vh) {
   switch (geo) {
     case TENSOR:
     case ELLIPTIC: {
-      array<double, dim> h;
-      for (size_t i=0; i<dim; i++) h[i] = vh[0][i];
-      result = eval<dim>(geo,kern,x,y,h);
-      break;
+      std::array<double,dim> h;
+      for (size_t i = 0; i < dim; i++)
+        h[i] = vh[0][i];
+      return eval<dim>(geo, kern, x, y, h);
     }
-
-    case FACETED:{
-      size_t nsides = vh.size();
-      vector<FacetData<dim>> facets(nsides);
-      for (size_t i=0; i<nsides; i++) {
-        for (size_t j=0; j<dim; j++) facets[i].normal[j] = vh[i][j];
+    case FACETED: {
+      int const nsides = vh.size();
+      std::vector<FacetData<dim>> facets(nsides);
+      for (int i = 0; i < nsides; i++) {
+        for (int j = 0; j < dim; j++)
+          facets[i].normal[j] = vh[i][j];
         facets[i].smoothing = vh[i][dim];
       }
-      result = faceted<dim>(kern,x,y,facets,nsides);
-      break;
+      return faceted<dim>(kern, x, y, facets, nsides);
     }
-
     default:
       throw std::runtime_error("invalid weight geometry");
   }
-  return result;
 }
 
-}  // namespace Weight
-}  // namespace Meshfree
-}  // namespace Portage
+}}}  // namespace Portage::Meshfree::Weight
 
 #endif  // PORTAGE_SUPPORT_WEIGHT_H_
