@@ -5,19 +5,10 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 END
 
-# Exit on error
-#set -e
-
 # Echo each command
 set -x
 
-# This should probably be changed at some time
-# In particular $4 is a field expression and can contain non alphanumeric
-# characters that can be a problem for filenames, but at the moment it works
-# and avoids file clobbers in a human readable way as opposed to hashes.
-FILE="field_rank_$1_dim_$2_cells_$3_field_$4_order_$5"
-TOLERANCE_2D=5.e-3
-TOLERANCE_3D=5.e-3
+FILE="field_rank_$1_dim_$2_cells_$3_field_$6_order_$5"
 
 rm -f ${FILE}*.txt*
 
@@ -47,12 +38,6 @@ mpirun -np $1 --oversubscribe ${APPTEST} \
   --keep_source=false \
   --simple=true
 
-# COMPARE  
-if [[ "$2" -eq "2" ]]; then
-  TOLERANCE=${TOLERANCE_2D}
-else 
-  TOLERANCE=${TOLERANCE_3D}
-fi
-
-${COMPARE} "${FILE}_dist.txt" ${TOLERANCE}
+# COMPARE
+${COMPARE} "${FILE}_dist.txt" 5.e-2
 

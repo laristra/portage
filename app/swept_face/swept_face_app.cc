@@ -147,7 +147,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
-           double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler);
 
 /**
@@ -412,22 +411,16 @@ int main(int argc, char** argv) {
               ntimesteps, not update_source, simple_shift);
 
   if (not generated_grids) {
-    double l1_err = 0.;
-    double l2_err = 0.;
-
     switch (dim) {
       case 2: remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                        limiter, bnd_limiter, intersect_based, mesh_output, true,
-                       result_file, 1, l1_err, l2_err, profiler); break;
+                       result_file, 1, profiler); break;
       case 3: remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                        limiter, bnd_limiter, intersect_based, mesh_output, true,
-                       result_file, 1, l1_err, l2_err, profiler); break;
+                       result_file, 1, profiler); break;
       default: break;
     }
   } else {
-    std::vector<double> l1_err(ntimesteps, 0.0);
-    std::vector<double> l2_err(ntimesteps, 0.0);
-
     for (int i = 1; i <= ntimesteps; i++) {
       if (rank == 0) {
         std::cout << std::endl;
@@ -447,7 +440,7 @@ int main(int argc, char** argv) {
           // perform actual remap and output related errors
           remap<2>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output, i == ntimesteps,
-                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
+                   result_file, i, profiler);
           break;
         case 3:
           // update source mesh if necessary
@@ -458,7 +451,7 @@ int main(int argc, char** argv) {
           // perform actual remap and output related errors
           remap<3>(source_mesh, target_mesh, field_expression, interp_order,
                    limiter, bnd_limiter, intersect_based, mesh_output,i == ntimesteps,
-                   result_file, i, l1_err[i-1], l2_err[i-1], profiler);
+                   result_file, i, profiler);
           break;
         default: break;
       }
@@ -506,7 +499,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
            Portage::Boundary_Limiter_type bnd_limiter,
            bool intersect_based, bool mesh_output, bool dump_field,
            std::string result_file, int iteration,
-           double& L1_error, double& L2_error,
            std::shared_ptr<Profiler> profiler) {
 
   if (rank == 0)
@@ -545,8 +537,11 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     throw std::runtime_error("expression parsing failure");
 
   double source_field[nb_source_cells];
+
   for (int c = 0; c < nb_source_cells; ++c) {
-    source_field[c] = exact_value(source_mesh->cell_centroid(c));
+    Wonton::Point<dim> centroid;
+    source_mesh_wrapper.cell_centroid(c, &centroid);
+    source_field[c] = exact_value(centroid);
   }
 
   source_state_wrapper.mesh_add_data(Portage::CELL, "density", source_field);
@@ -592,9 +587,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (rank == 0)
     std::cout << "Extract stats ... " << std::flush;
 
-  L1_error = 0.0;
-  L2_error = 0.0;
-
   double const* target_field;
   double min_source_val   = std::numeric_limits<double>::max();
   double max_source_val   = std::numeric_limits<double>::min();
@@ -607,6 +599,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   double total_mass[]     = {0.0, 0.0};
   double global_error[]   = {0.0, 0.0};
   double total_volume     = 0.0;
+  double L1_error         = 0.0;
+  double L2_error         = 0.0;
 
   target_state_wrapper.mesh_get_data<double>(Portage::CELL, "density", &target_field);
 
@@ -620,7 +614,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
     }
   }
 
-  Wonton::Point<dim> centroid;
   for (int c = 0; c < nb_target_cells; ++c) {
     // skip ghost cells to avoid duplicated values
     if (target_mesh_wrapper.cell_get_type(c) == Portage::Entity_type::PARALLEL_OWNED) {
@@ -628,6 +621,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       min_target_val = std::min(min_target_val, target_field[c]);
       max_target_val = std::max(max_target_val, target_field[c]);
       // compute difference between exact and remapped value
+      Wonton::Point<dim> centroid;
       target_mesh_wrapper.cell_centroid(c, &centroid);
       double const volume = target_mesh_wrapper.cell_volume(c);
       double const error = exact_value(centroid) - target_field[c];
@@ -774,16 +768,31 @@ void move_points(std::shared_ptr<Jali::Mesh> mesh,
   double const epsilon = 1.E-16;
 
   // --------------------------------------
-  // identify internal points to skip them.
-  // only valid for internally generated grids.
-  // skip all boundary points in 2D and only corners in 3D
+  // check if the given point should be skipped or not.
   auto skip = [&](auto const& p) -> bool {
-    bool const skip_only_corners = (dim == 3);
-    for (int d = 0; d < dim; ++d) {
-      if (std::abs(p[d] - p_min) < epsilon or std::abs(p[d] - p_max) < epsilon)
-        return not skip_only_corners;
+    // check if two real numbers are equal
+    auto equals = [&](double const& u, double const& v) -> bool {
+      return std::abs(u - v) < epsilon;
+    };
+
+    double const& x = p[0];
+    double const& y = p[1];
+    if (dim == 3) {
+      double const& z = p[2];
+      // skip only corners
+      return (equals(x, p_min) and equals(y, p_min) and equals(z, p_min))
+          or (equals(x, p_min) and equals(y, p_min) and equals(z, p_max))
+          or (equals(x, p_min) and equals(y, p_max) and equals(z, p_min))
+          or (equals(x, p_min) and equals(y, p_max) and equals(z, p_max))
+          or (equals(x, p_max) and equals(y, p_min) and equals(z, p_min))
+          or (equals(x, p_max) and equals(y, p_min) and equals(z, p_max))
+          or (equals(x, p_max) and equals(y, p_max) and equals(z, p_min))
+          or (equals(x, p_max) and equals(y, p_max) and equals(z, p_max));
+    } else {
+      // skip boundary points
+      return equals(x, p_min) or equals(x, p_max)
+          or equals(y, p_min) or equals(y, p_max);
     }
-    return skip_only_corners;
   };
   // --------------------------------------
   if (not simple) {
