@@ -800,7 +800,7 @@ protected:
   {}
 };
 
-void usage() {
+void print_usage() {
   std::cout << "Usage: msmapp file [-domm | -nomm]" << std::endl;
   std::cout << "\
     Uses specifications in \"file\" to perform a mesh-mesh and also a mesh-swarm-mesh remap and compare.\n\
@@ -947,7 +947,7 @@ void runjob3(Controls<3> ctl0, std::string filename)
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    usage();
+    print_usage();
     return 0;
   }
 
