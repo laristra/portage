@@ -183,8 +183,9 @@ int main(int argc, char** argv) {
   std::vector<double> uz_src(nnodes_src);
 
   kind = mr.VelocityKind();
-  mr.InitVelocity(srcmesh_wrapper, ini_velx, ini_vely, ini_velz,
-                  ux_src, uy_src, uz_src);
+  mr.InitVelocity(srcmesh_wrapper, ini_velx, ux_src);
+  mr.InitVelocity(srcmesh_wrapper, ini_vely, uy_src);
+  mr.InitVelocity(srcmesh_wrapper, ini_velz, uz_src);
 
   srcstate->add("velocity_x", srcmesh, kind, type, &(ux_src[0]));
   srcstate->add("velocity_y", srcmesh, kind, type, &(uy_src[0]));

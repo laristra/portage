@@ -54,13 +54,11 @@ class MomentumRemap {
   // initialization
   void InitMass(
       const Wonton::Jali_Mesh_Wrapper& mesh,
-      user_field_t& formula,
-      std::vector<double>& mass);
+      user_field_t& formula, std::vector<double>& mass);
 
   void InitVelocity(
       const Wonton::Jali_Mesh_Wrapper& mesh,
-      user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
-      std::vector<double>& ux, std::vector<double>& uy, std::vector<double>& uz);
+      user_field_t& formula, std::vector<double>& u);
 
   // field type
   Jali::Entity_kind MassKind() const {
@@ -144,13 +142,11 @@ void MomentumRemap<D>::InitMass(
 template<int D>
 void MomentumRemap<D>::InitVelocity(
     const Wonton::Jali_Mesh_Wrapper& mesh,
-    user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
-    std::vector<double>& ux, std::vector<double>& uy, std::vector<double>& uz)
+    user_field_t& formula, std::vector<double>& u)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() + mesh.num_ghost_nodes()
                                : mesh.num_owned_cells() + mesh.num_ghost_cells();
-  ux.resize(nrows);
-  uy.resize(nrows);
+  u.resize(nrows);
 
   Wonton::Point<D> xyz;
 
@@ -160,9 +156,7 @@ void MomentumRemap<D>::InitVelocity(
     else
       mesh.cell_centroid(n, &xyz);
 
-    ux[n] = formula_x(xyz);
-    uy[n] = formula_y(xyz);
-    if (D == 3) uz[n] = formula_z(xyz);
+    u[n] = formula(xyz);
   }
 }
 
