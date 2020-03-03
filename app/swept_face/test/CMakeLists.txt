@@ -31,13 +31,13 @@ if (Jali_DIR)
   endmacro()
 
   # create a macro to run a distributed compare test
-  macro(ADD_DISTRIB_TEST NP DIM NCELLS FIELDS REMAP_ORDER)
+  macro(ADD_DISTRIB_TEST NP DIM NCELLS FIELDS REMAP_ORDER FIELD_ALIAS)
     file(COPY swept_distrib.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-    add_test(NAME test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
-             COMMAND swept_distrib.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER})
+    add_test(NAME test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELD_ALIAS}
+             COMMAND swept_distrib.sh ${NP} ${DIM} ${NCELLS} ${FIELDS} ${REMAP_ORDER} ${FIELD_ALIAS})
 
-    set_property(TEST test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELDS}
+    set_property(TEST test_swept-face_distrib_rank_${NP}_dim_${DIM}_field_${FIELD_ALIAS}
                  PROPERTY ENVIRONMENT
                  APPTEST=${CMAKE_BINARY_DIR}/app/swept_face/swept_face_app
                  COMPARE=${CMAKE_BINARY_DIR}/app/distributed_cmp/distributed_cmp)
@@ -59,24 +59,24 @@ if (Jali_DIR)
 
   if (ENABLE_MPI)
     # 2D, constant field, order 2
-    ADD_DISTRIB_TEST(2 2 5 "42" 2)
-    ADD_DISTRIB_TEST(4 2 5 "42" 2)
-    ADD_DISTRIB_TEST(8 2 5 "42" 2)
+    ADD_DISTRIB_TEST(2 2 5 "42" 2 const)
+    ADD_DISTRIB_TEST(4 2 5 "42" 2 const)
+    ADD_DISTRIB_TEST(8 2 5 "42" 2 const)
 
     # 2D, linear field, order 2
-    ADD_DISTRIB_TEST(2 2 5 "x+2y" 2)
-    ADD_DISTRIB_TEST(4 2 5 "x+2y" 2)
-    ADD_DISTRIB_TEST(8 2 5 "x+2y" 2)
+    ADD_DISTRIB_TEST(2 2 5 "x+2y" 2 linear)
+    ADD_DISTRIB_TEST(4 2 5 "x+2y" 2 linear)
+    ADD_DISTRIB_TEST(8 2 5 "x+2y" 2 linear)
 
     # 3D, constant field, order 2
-    ADD_DISTRIB_TEST(2 3 5 "42" 2)
-    ADD_DISTRIB_TEST(4 3 5 "42" 2)
-    ADD_DISTRIB_TEST(8 3 5 "42" 2)
+    ADD_DISTRIB_TEST(2 3 5 "42" 2 const)
+    ADD_DISTRIB_TEST(4 3 5 "42" 2 const)
+    ADD_DISTRIB_TEST(8 3 5 "42" 2 const)
 
     # 3D, linear field, order 2
-    ADD_DISTRIB_TEST(2 3 5 "x+2y+3z" 2)
-    ADD_DISTRIB_TEST(4 3 5 "x+2y+3z" 2)
-    ADD_DISTRIB_TEST(8 3 5 "x+2y+3z" 2)
+    ADD_DISTRIB_TEST(2 3 5 "x+2y+3z" 2 linear)
+    ADD_DISTRIB_TEST(4 3 5 "x+2y+3z" 2 linear)
+    ADD_DISTRIB_TEST(8 3 5 "x+2y+3z" 2 linear)
   endif()
 
 endif(Jali_DIR)
