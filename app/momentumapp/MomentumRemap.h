@@ -35,12 +35,6 @@ Please see the license file at the root of this repository, or at:
 const int SGH = 1;
 const int CCH = 2;
 
-Wonton::Entity_kind EkToEk(Jali::Entity_kind kind) {
-  if (kind == Jali::Entity_kind::CELL) return Wonton::Entity_kind::CELL;
-  if (kind == Jali::Entity_kind::NODE) return Wonton::Entity_kind::NODE;
-  if (kind == Jali::Entity_kind::CORNER) return Wonton::Entity_kind::CORNER;
-};
-
 /* ******************************************************************
 * App class that handles initialization and verification of fields
 * since it is different in SCH and CCH methods.
@@ -61,11 +55,11 @@ class MomentumRemap {
       user_field_t& formula, std::vector<double>& u);
 
   // field type
-  Jali::Entity_kind MassKind() const {
-    return (method_ == SGH) ? Jali::Entity_kind::CORNER : Jali::Entity_kind::CELL;
+  Wonton::Entity_kind MassKind() const {
+    return (method_ == SGH) ? Wonton::Entity_kind::CORNER : Wonton::Entity_kind::CELL;
   }
-  Jali::Entity_kind VelocityKind() const {
-    return (method_ == SGH) ? Jali::Entity_kind::NODE : Jali::Entity_kind::CELL;
+  Wonton::Entity_kind VelocityKind() const {
+    return (method_ == SGH) ? Wonton::Entity_kind::NODE : Wonton::Entity_kind::CELL;
   }
 
   // main remap method
@@ -363,12 +357,12 @@ void MomentumRemap<D>::RemapND(
   auto kind = MassKind();
 
   const double *mass_src, *ux_src, *uy_src, *uz_src;
-  srcstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_src);
+  srcstate_wrapper.mesh_get_data(kind, "mass", &mass_src);
 
   kind = VelocityKind();
-  srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_x", &ux_src);
-  srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_y", &uy_src);
-  if (D == 3) srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_z", &uz_src);
+  srcstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_src);
+  srcstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_src);
+  if (D == 3) srcstate_wrapper.mesh_get_data(kind, "velocity_z", &uz_src);
 
   // Step 1 (SGH only)
   // -- gather cell-centered mass from corner masses
@@ -489,22 +483,21 @@ void MomentumRemap<D>::RemapND(
   double *mass_trg, *ux_trg, *uy_trg, *uz_trg;
 
   kind = MassKind();
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_trg);
+  trgstate_wrapper.mesh_get_data(kind, "mass", &mass_trg);
 
   kind = VelocityKind();
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_x", &ux_trg);
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_y", &uy_trg);
-  if (D == 3) trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_z", &uz_trg);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_trg);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_trg);
+  if (D == 3) trgstate_wrapper.mesh_get_data(kind, "velocity_z", &uz_trg);
 
   //    extract auxiliary (cell-centerd) data
   double *density_trg, *momentum_x_trg, *momentum_y_trg, *momentum_z_trg;
 
-  kind = Jali::Entity_kind::CELL;
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "density", &density_trg);
-
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_x", &momentum_x_trg);
-  trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_y", &momentum_y_trg);
-  if (D == 3) trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_z", &momentum_z_trg);
+  kind = Wonton::Entity_kind::CELL;
+  trgstate_wrapper.mesh_get_data(kind, "density", &density_trg);
+  trgstate_wrapper.mesh_get_data(kind, "momentum_x", &momentum_x_trg);
+  trgstate_wrapper.mesh_get_data(kind, "momentum_y", &momentum_y_trg);
+  if (D == 3) trgstate_wrapper.mesh_get_data(kind, "momentum_z", &momentum_z_trg);
 
   //    integrate
   std::vector<double> momentum_cn_x, momentum_cn_y, momentum_cn_z;  // work memory
@@ -577,9 +570,9 @@ void MomentumRemap<D>::RemapND(
     }
 
     for (int v = 0; v < nnodes_trg; ++v) {
-      ux_trg[v] += momentum_v_x[v] / mass_v[v];
-      uy_trg[v] += momentum_v_y[v] / mass_v[v];
-      if (D == 3) uz_trg[v] += momentum_v_z[v] / mass_v[v];
+      ux_trg[v] = momentum_v_x[v] / mass_v[v];
+      uy_trg[v] = momentum_v_y[v] / mass_v[v];
+      if (D == 3) uz_trg[v] = momentum_v_z[v] / mass_v[v];
     }
   }
 }

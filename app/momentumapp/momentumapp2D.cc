@@ -44,7 +44,7 @@ Please see the license file at the root of this repository, or at:
     C. Verification of output data: cell-centered massed and velocities
 
   Assumptions: meshes are matching.
- */
+*/
 
 
 void print_usage() {
@@ -169,22 +169,21 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper trgstate_wrapper(*trgstate);
 
   // -- register velocity components with the states
+  //    target state does not need data, but code re-use does the task easier
   MomentumRemap<2> mr(method);
 
-  Jali::Entity_kind kind;
-  Jali::Entity_type type = Jali::Entity_type::ALL;
-  std::vector<double> ux_src(nnodes_src);
-  std::vector<double> uy_src(nnodes_src);
+  std::vector<double> ux_src, uy_src, tmp;
 
-  kind = mr.VelocityKind();
+  auto kind = mr.VelocityKind();
   mr.InitVelocity(srcmesh_wrapper, ini_velx, ux_src);
   mr.InitVelocity(srcmesh_wrapper, ini_vely, uy_src);
 
-  srcstate->add("velocity_x", srcmesh, kind, type, &(ux_src[0]));
-  srcstate->add("velocity_y", srcmesh, kind, type, &(uy_src[0]));
+  srcstate_wrapper.mesh_add_data(kind, "velocity_x", &(ux_src[0]));
+  srcstate_wrapper.mesh_add_data(kind, "velocity_y", &(uy_src[0]));
 
-  trgstate->add<double, Jali::Mesh, Jali::UniStateVector>("velocity_x", trgmesh, kind, type);
-  trgstate->add<double, Jali::Mesh, Jali::UniStateVector>("velocity_y", trgmesh, kind, type);
+  mr.InitVelocity(trgmesh_wrapper, ini_velx, tmp);
+  trgstate_wrapper.mesh_add_data(kind, "velocity_x", &(tmp[0]));
+  trgstate_wrapper.mesh_add_data(kind, "velocity_y", &(tmp[0]));
 
   // -- register mass with the states
   std::vector<double> mass_src;
@@ -192,9 +191,9 @@ int main(int argc, char** argv) {
   kind = mr.MassKind();
   mr.InitMass(srcmesh_wrapper, ini_rho, mass_src);
 
-  srcstate->add("mass", srcmesh, kind, type, &(mass_src[0]));
-  trgstate->add<double, Jali::Mesh, Jali::UniStateVector>(
-                "mass", trgmesh, kind, type);
+  srcstate_wrapper.mesh_add_data(kind, "mass", &(mass_src[0]));
+  mr.InitMass(trgmesh_wrapper, ini_rho, tmp);
+  trgstate_wrapper.mesh_add_data(kind, "mass", &(tmp[0]));
 
   // -- summary
   auto total_mass_src = mr.TotalMass(srcmesh_wrapper, mass_src);
@@ -220,16 +219,14 @@ int main(int argc, char** argv) {
   //
   // Verification 
   //
-  Jali::UniStateVector<double, Jali::Mesh> mass_trg;
-  Jali::UniStateVector<double, Jali::Mesh> ux_trg, uy_trg;
+  const double *mass_trg, *ux_trg, *uy_trg;
 
   kind = mr.MassKind();
-  type = Jali::Entity_type::ALL;
-  trgstate->get("mass", trgmesh, kind, type, &mass_trg);
+  trgstate_wrapper.mesh_get_data(kind, "mass", &mass_trg);
 
   kind = mr.VelocityKind();
-  trgstate->get("velocity_x", trgmesh, kind, type, &ux_trg);
-  trgstate->get("velocity_y", trgmesh, kind, type, &uy_trg);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_trg);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_trg);
 
   // use 2D/3D routines with dummy parameters 
   auto total_mass_trg = mr.TotalMass(trgmesh_wrapper, mass_trg);
