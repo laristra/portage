@@ -367,7 +367,6 @@ void MomentumRemap<D>::RemapND(
 
   // state fields
   auto kind = MassKind();
-  Jali::Entity_type type = Jali::Entity_type::ALL;
 
   const double *mass_src, *ux_src, *uy_src, *uz_src;
   srcstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_src);
@@ -496,7 +495,6 @@ void MomentumRemap<D>::RemapND(
   double *mass_trg, *ux_trg, *uy_trg, *uz_trg;
 
   kind = MassKind();
-  type = Jali::Entity_type::ALL;
   trgstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_trg);
 
   kind = VelocityKind();
