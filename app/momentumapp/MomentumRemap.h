@@ -35,6 +35,12 @@ Please see the license file at the root of this repository, or at:
 const int SGH = 1;
 const int CCH = 2;
 
+Wonton::Entity_kind EkToEk(Jali::Entity_kind kind) {
+  if (kind == Jali::Entity_kind::CELL) return Wonton::Entity_kind::CELL;
+  if (kind == Jali::Entity_kind::NODE) return Wonton::Entity_kind::NODE;
+  if (kind == Jali::Entity_kind::CORNER) return Wonton::Entity_kind::CORNER;
+};
+
 /* ******************************************************************
 * App class that handles initialization and verification of fields
 * since it is different in SCH and CCH methods.
@@ -65,14 +71,10 @@ class MomentumRemap {
   }
 
   // main remap method
-  void RemapND(std::shared_ptr<Jali::Mesh> srcmesh,
-               const Wonton::Jali_Mesh_Wrapper& srcmesh_wrapper,
-               std::shared_ptr<Jali::State> srcstate,
+  void RemapND(const Wonton::Jali_Mesh_Wrapper& srcmesh_wrapper,
                Wonton::Jali_State_Wrapper& srcstate_wrapper,
                //
-               std::shared_ptr<Jali::Mesh> trgmesh,
                const Wonton::Jali_Mesh_Wrapper& trgmesh_wrapper,
-               std::shared_ptr<Jali::State> trgstate,
                Wonton::Jali_State_Wrapper& trgstate_wrapper,
                //
                Portage::Limiter_type limiter);
@@ -349,14 +351,10 @@ void MomentumRemap<D>::ErrorVelocity(
 template<int D>
 inline
 void MomentumRemap<D>::RemapND(
-    std::shared_ptr<Jali::Mesh> srcmesh,
     const Wonton::Jali_Mesh_Wrapper& srcmesh_wrapper,
-    std::shared_ptr<Jali::State> srcstate,
     Wonton::Jali_State_Wrapper& srcstate_wrapper,
     //
-    std::shared_ptr<Jali::Mesh> trgmesh,
     const Wonton::Jali_Mesh_Wrapper& trgmesh_wrapper,
-    std::shared_ptr<Jali::State> trgstate,
     Wonton::Jali_State_Wrapper& trgstate_wrapper,
     //
     Portage::Limiter_type limiter)
@@ -371,15 +369,13 @@ void MomentumRemap<D>::RemapND(
   auto kind = MassKind();
   Jali::Entity_type type = Jali::Entity_type::ALL;
 
-  Jali::UniStateVector<double, Jali::Mesh> mass_src;
-  Jali::UniStateVector<double, Jali::Mesh> ux_src, uy_src, uz_src;
-
-  srcstate->get("mass", srcmesh, kind, type, &mass_src);
+  const double *mass_src, *ux_src, *uy_src, *uz_src;
+  srcstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_src);
 
   kind = VelocityKind();
-  srcstate->get("velocity_x", srcmesh, kind, type, &ux_src);
-  srcstate->get("velocity_y", srcmesh, kind, type, &uy_src);
-  if (D == 3) srcstate->get("velocity_z", srcmesh, kind, type, &uz_src);
+  srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_x", &ux_src);
+  srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_y", &uy_src);
+  if (D == 3) srcstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_z", &uz_src);
 
   // Step 1 (SGH only)
   // -- gather cell-centered mass from corner masses
@@ -462,13 +458,10 @@ void MomentumRemap<D>::RemapND(
     field_pointers.push_back(&(momentum_z_src[0]));
   }
 
+  std::vector<double> tmp(ncells_trg);
   for (int i = 0; i < field_names.size(); ++i) {
-    srcstate->add(field_names[i], srcmesh, Jali::Entity_kind::CELL,
-                  Jali::Entity_type::ALL, field_pointers[i]);
-
-    trgstate->add<double, Jali::Mesh, Jali::UniStateVector>(
-                  field_names[i], trgmesh, Jali::Entity_kind::CELL,
-                  Jali::Entity_type::ALL);
+    srcstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], field_pointers[i]);
+    trgstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], &(tmp[0]));
 
     auto gradients = cd.compute_source_gradient(field_names[i], limiter);
 
@@ -500,28 +493,26 @@ void MomentumRemap<D>::RemapND(
 
   // Step 6 (SGH and CCH)
   // -- integrate density and specific momentum on the target mesh
-  Jali::UniStateVector<double, Jali::Mesh> mass_trg;
-  Jali::UniStateVector<double, Jali::Mesh> ux_trg, uy_trg, uz_trg;
+  double *mass_trg, *ux_trg, *uy_trg, *uz_trg;
 
   kind = MassKind();
   type = Jali::Entity_type::ALL;
-  trgstate->get("mass", trgmesh, kind, type, &mass_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "mass", &mass_trg);
 
   kind = VelocityKind();
-  trgstate->get("velocity_x", trgmesh, kind, type, &ux_trg);
-  trgstate->get("velocity_y", trgmesh, kind, type, &uy_trg);
-  if (D == 3) trgstate->get("velocity_z", trgmesh, kind, type, &uz_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_x", &ux_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_y", &uy_trg);
+  if (D == 3) trgstate_wrapper.mesh_get_data(EkToEk(kind), "velocity_z", &uz_trg);
 
   //    extract auxiliary (cell-centerd) data
-  Jali::UniStateVector<double, Jali::Mesh> density_trg;
-  Jali::UniStateVector<double, Jali::Mesh> momentum_x_trg, momentum_y_trg, momentum_z_trg;
+  double *density_trg, *momentum_x_trg, *momentum_y_trg, *momentum_z_trg;
 
   kind = Jali::Entity_kind::CELL;
-  trgstate->get("density", trgmesh, kind, type, &density_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "density", &density_trg);
 
-  trgstate->get("momentum_x", trgmesh, kind, type, &momentum_x_trg);
-  trgstate->get("momentum_y", trgmesh, kind, type, &momentum_y_trg);
-  if (D == 3) trgstate->get("momentum_z", trgmesh, kind, type, &momentum_z_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_x", &momentum_x_trg);
+  trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_y", &momentum_y_trg);
+  if (D == 3) trgstate_wrapper.mesh_get_data(EkToEk(kind), "momentum_z", &momentum_z_trg);
 
   //    integrate
   std::vector<double> momentum_cn_x, momentum_cn_y, momentum_cn_z;  // work memory

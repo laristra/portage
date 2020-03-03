@@ -222,9 +222,8 @@ int main(int argc, char** argv) {
   //
   // SEVEN-step REMAP algorithm 
   //
-  mr.RemapND(srcmesh, srcmesh_wrapper, srcstate, srcstate_wrapper,
-             trgmesh, trgmesh_wrapper, trgstate, trgstate_wrapper,
-             limiter);
+  mr.RemapND(srcmesh_wrapper, srcstate_wrapper,
+             trgmesh_wrapper, trgstate_wrapper, limiter);
 
   //
   // Verification 
