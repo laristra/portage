@@ -39,7 +39,7 @@ class MomentumRemap {
   MomentumRemap(int method) : method_(method) {};
   ~MomentumRemap() {};
 
-  // initialization
+  // initialization using formula for density
   void InitMass(
       const Mesh_Wrapper& mesh,
       user_field_t& formula, std::vector<double>& mass);
@@ -88,7 +88,7 @@ class MomentumRemap {
 
 
 /* ******************************************************************
-* Initiaization of mass
+* Initialization of mass
 ****************************************************************** */
 template<int D, class Mesh_Wrapper>
 void MomentumRemap<D, Mesh_Wrapper>::InitMass(
