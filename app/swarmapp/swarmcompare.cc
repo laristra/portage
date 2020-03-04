@@ -11,6 +11,8 @@ Please see the license file at the root of this repository, or at:
 #include <cstdlib>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
+#include <cmath>
 
 namespace {
 // numerical tolerance
@@ -128,7 +130,7 @@ int main(int argc, char* argv[]) {
 
   // check if two real values are equal
   auto equals = [](double const& u, double const& v) -> bool {
-    return std::abs(u - v) < epsilon;
+    return std::fabs(u - v) < epsilon;
   };
 
   int const dim = gold.dim;
