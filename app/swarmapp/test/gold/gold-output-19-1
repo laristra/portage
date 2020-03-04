@@ -1,18 +1,17 @@
 starting swarm app...
 running example 19
-in SwarmDriver::run()...
-Number of target particles in target swarm on rank 0: 343
+in SwarmDriver::run() ... 
 number of variables to remap is 1
-Remapping swarm variable remapdata to variable remapdata
-Swarm Transform Time Rank 0 (s): 0.256424
+Remap remapdata to remapdata
+Swarm Transform Time Rank 0 (s): 0.051
   Swarm Distribution Time Rank 0 (s): 0
-  Swarm Search Time Rank 0 (s): 0.030963
-  Swarm Accumulate Time Rank 0 (s): 0.224406
-  Swarm Estimate Time Rank 0 (s): 0.001055
-Max number of neighbors: 123
-Min number of neighbors: 40
-Avg number of neighbors: 82
-Std Dev for number of neighbors: 18.9959
+  Swarm Search Time Rank 0 (s): 0.007
+  Swarm Accumulate Time Rank 0 (s): 0.044
+  Swarm Estimate Time Rank 0 (s): 0
+Max number of neighbors: 127
+Min number of neighbors: 33
+Avg number of neighbors: 86
+Std Dev for number of neighbors: 20.2021
 
 weight center = 1
 distribution = 0
@@ -20,7 +19,7 @@ dimension = 3
 seed = 12345678
 
 smoothing length = 3.66666666666666696e-01
-Linf NORM OF ERROR = 2.23618644287816415e-01
-L1 NORM OF ERROR = 1.60580467126889212e-02
-L2 NORM OF ERROR = 3.33188107443650877e-02
+Linf NORM OF ERROR = 2.41481486379549776e-01
+L1 NORM OF ERROR = 1.64017464409101921e-02
+L2 NORM OF ERROR = 3.32209660322398473e-02
 finishing swarm app...
