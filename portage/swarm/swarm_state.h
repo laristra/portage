@@ -250,7 +250,7 @@ public:
    * @return value the values in the field
    */
   Portage::vector<int>& get_field_int(std::string name) const {
-    assert(fields_int_.count("name"));
+    assert(fields_int_.count(name));
     using T = Portage::vector<int>;
     return const_cast<T&>(fields_int_.at(name));
   }
@@ -266,7 +266,7 @@ public:
    * @return value the values in the field
    */
   Portage::vector<double>& get_field_dbl(std::string name) const {
-    assert(fields_dbl_.count("name"));
+    assert(fields_dbl_.count(name));
     using T = Portage::vector<double>;
     return const_cast<T&>(fields_dbl_.at(name));
   }
@@ -293,11 +293,11 @@ public:
     assert(value != nullptr);
 
     if (std::is_integral<T>::value) {
-      assert(fields_int_.count("name"));
+      assert(fields_int_.count(name));
       auto& field = fields_int_[name];
       std::copy(field.begin(), field.end(), value);
     } else {
-      assert(fields_dbl_.count("name"));
+      assert(fields_dbl_.count(name));
       auto& field = fields_dbl_[name];
       std::copy(field.begin(), field.end(), value);
     }
@@ -323,11 +323,11 @@ public:
 
     std::vector<std::string> list;
     if (std::is_integral<T>::value) {
-      assert(fields_int_.count("name"));
+      assert(fields_int_.count(name));
       for (auto&& field : fields_int_)
         list.emplace_back(field.first);
     } else {
-      assert(fields_dbl_.count("name"));
+      assert(fields_dbl_.count(name));
       for (auto&& field : fields_dbl_)
         list.emplace_back(field.first);
     }
