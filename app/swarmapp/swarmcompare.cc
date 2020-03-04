@@ -134,6 +134,7 @@ int main(int argc, char* argv[]) {
   };
 
   int const dim = gold.dim;
+  bool failure = false;
 
   for (int i = 0; i < gold.size(); i++) {
     bool coords_match = true;
@@ -155,15 +156,19 @@ int main(int argc, char* argv[]) {
           std::cerr << ", ";
       }
       std::cerr << "]." << std::endl;
-      return EXIT_FAILURE;
+      failure = true;
+      //return EXIT_FAILURE;
     }
 
     if (not equals(gold.values[i], test.values[i])) {
       std::cerr << "Error: mismatched values at line " << i << std::endl;
       std::cerr << "\tgold: " << gold.values[i] <<", test: " << test.values[i] << std::endl;
-      return EXIT_FAILURE;
+      failure = true;
+      //return EXIT_FAILURE;
     }
   }
+  if (failure)
+    return EXIT_FAILURE;
 
   std::cout << "files agree" << std::endl;
   return EXIT_SUCCESS;
