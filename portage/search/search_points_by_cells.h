@@ -67,9 +67,9 @@ public:
 
     // check sizes
     if (do_scatter) {
-      assert(nb_source == source_extents_->size());
+      assert(nb_source == source_extents_.size());
     } else {
-      assert(nb_target == target_extents_->size());
+      assert(nb_target == target_extents_.size());
     }
 
     // transpose geometry data to lre namespace structures

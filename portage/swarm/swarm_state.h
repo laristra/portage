@@ -167,16 +167,16 @@ public:
   /**
    * @brief Set a field on the swarm.
    *
-   * @tparam T: field values type (int, double).
+   * @tparam T: field values type (int, double)
    * @param name: field name.
    * @param value: field values list.
    */
   template<typename T = double>
-  void add_field(std::string name, Portage::vector<T> const& value) {
+  void add_field(std::string name, Portage::vector<T> const&  value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert (value.size() == num_owned_points_);
+    assert(value.size() == num_owned_points_);
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
