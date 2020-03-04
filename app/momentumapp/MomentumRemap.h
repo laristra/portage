@@ -375,9 +375,11 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   
   // Step 3 (SGH and CCH)
   // -- compute cell-centered specific momentum
-  std::vector<double> momentum_x_src(ncells_src, 0.0);
-  std::vector<double> momentum_y_src(ncells_src, 0.0);
-  std::vector<double> momentum_z_src(ncells_src, 0.0);
+  std::string momentum[3] = { "momentum_x", "momentum_y", "momentum_z" };
+  std::vector<double> momentum_src[D];
+  for (int i = 0; i < D; ++i) {
+    momentum_src[i].resize(ncells_src, 0.0);
+  }
 
   for (int c = 0; c < ncells_src; ++c) {
     if (method_ == SGH) {
@@ -385,20 +387,20 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
 
       for (auto cn : corners) { 
         int v = srcmesh_wrapper.corner_get_node(cn);
-        momentum_x_src[c] += mass_src[cn] * u_src[0][v];
-        momentum_y_src[c] += mass_src[cn] * u_src[1][v];
-        if (D == 3) momentum_z_src[c] += mass_src[cn] * u_src[2][v];
+        for (int i = 0; i < D; ++i) {
+          momentum_src[i][c] += mass_src[cn] * u_src[i][v];
+        }
       }
     } else {
-      momentum_x_src[c] += mass_src[c] * u_src[0][c];
-      momentum_y_src[c] += mass_src[c] * u_src[1][c];
-      if (D == 3) momentum_z_src[c] += mass_src[c] * u_src[2][c];
+      for (int i = 0; i < D; ++i) {
+        momentum_src[i][c] += mass_src[c] * u_src[i][c];
+      }
     }
 
     double volume = srcmesh_wrapper.cell_volume(c);
-    momentum_x_src[c] /= volume;
-    momentum_y_src[c] /= volume;
-    if (D == 3) momentum_z_src[c] /= volume;
+    for (int i = 0; i < D; ++i) {
+      momentum_src[i][c] /= volume;
+    }
   }
 
   // Step 4 (SGH and CCH)
@@ -422,15 +424,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   field_names.push_back("density");
   field_pointers.push_back(&(density[0]));
 
-  field_names.push_back("momentum_x");
-  field_pointers.push_back(&(momentum_x_src[0]));
-
-  field_names.push_back("momentum_y");
-  field_pointers.push_back(&(momentum_y_src[0]));
-
-  if (D == 3) {
-    field_names.push_back("momentum_z");
-    field_pointers.push_back(&(momentum_z_src[0]));
+  for (int i = 0; i < D; ++i) {
+    field_names.push_back(momentum[i]);
+    field_pointers.push_back(&(momentum_src[i][0]));
   }
 
   std::vector<double> tmp(ncells_trg);
@@ -479,21 +475,22 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   }
 
   //    extract auxiliary (cell-centerd) data
-  double *density_trg, *momentum_x_trg, *momentum_y_trg, *momentum_z_trg;
+  double *density_trg;
+  const double *momentum_trg[D];
 
   kind = Wonton::Entity_kind::CELL;
   trgstate_wrapper.mesh_get_data(kind, "density", &density_trg);
-  trgstate_wrapper.mesh_get_data(kind, "momentum_x", &momentum_x_trg);
-  trgstate_wrapper.mesh_get_data(kind, "momentum_y", &momentum_y_trg);
-  if (D == 3) trgstate_wrapper.mesh_get_data(kind, "momentum_z", &momentum_z_trg);
+  for (int i = 0; i < D; ++i) {
+    trgstate_wrapper.mesh_get_data(kind, momentum[i], &momentum_trg[i]);
+  }
 
   //    integrate
-  std::vector<double> momentum_cn_x, momentum_cn_y, momentum_cn_z;  // work memory
+  std::vector<double> momentum_cn[D]; // work memory
 
   if (method_ == SGH) {
-    momentum_cn_x.resize(ncorners_trg);
-    momentum_cn_y.resize(ncorners_trg);
-    if (D == 3) momentum_cn_z.resize(ncorners_trg);
+    for (int i = 0; i < D; ++i) {
+      momentum_cn[i].resize(ncorners_trg);
+    }
 
     Wonton::Point<D> xc, xcn;
     Wonton::Vector<D> grad;
@@ -516,15 +513,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
         grad = gradients[0][c];
         mass_trg[cn] = cnvol * (density_trg[c] + dot(grad, xcn - xc));
 
-        grad = gradients[1][c];
-        momentum_cn_x[cn] = cnvol * (momentum_x_trg[c] + dot(grad, xcn - xc));
-
-        grad = gradients[2][c];
-        momentum_cn_y[cn] = cnvol * (momentum_y_trg[c] + dot(grad, xcn - xc));
-
-        if (D == 3) {
-          grad = gradients[3][c];
-          momentum_cn_z[cn] = cnvol * (momentum_z_trg[c] + dot(grad, xcn - xc));
+        for (int i = 0; i < D; ++i) {
+          grad = gradients[i + 1][c];
+          momentum_cn[i][cn] = cnvol * (momentum_trg[i][c] + dot(grad, xcn - xc));
         }
       }
     }
@@ -533,10 +524,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
     for (int c = 0; c < ncells_trg; ++c) {
       double vol = trgmesh_wrapper.cell_volume(c);
       mass_trg[c] = density_trg[c] * vol;
-
-      u_trg[0][c] = momentum_x_trg[c] / density_trg[c];
-      u_trg[1][c] = momentum_y_trg[c] / density_trg[c];
-      if (D == 3) u_trg[2][c] = momentum_z_trg[c] / density_trg[c];
+      for (int i = 0; i < D; ++i) {
+        u_trg[i][c] = momentum_trg[i][c] / density_trg[c];
+      }
     }
   }
 
@@ -545,22 +535,23 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   if (method_ == SGH) {
     int nnodes_all = nnodes_trg + trgmesh_wrapper.num_ghost_nodes();
     std::vector<double> mass_v(nnodes_all, 0.0);  // work memory
-    std::vector<double> momentum_v_x(nnodes_all, 0.0);
-    std::vector<double> momentum_v_y(nnodes_all, 0.0);
-    std::vector<double> momentum_v_z(nnodes_all, 0.0);
+    std::vector<double> momentum_v[D];
+    for (int i = 0; i < D; ++i) {
+      momentum_v[i].resize(nnodes_all, 0.0);
+    }
 
     for (int cn = 0; cn < ncorners_trg; ++cn) {
       int v = trgmesh_wrapper.corner_get_node(cn);
       mass_v[v] += mass_trg[cn];
-      momentum_v_x[v] += momentum_cn_x[cn];
-      momentum_v_y[v] += momentum_cn_y[cn];
-      if (D == 3) momentum_v_z[v] += momentum_cn_z[cn];
+      for (int i = 0; i < D; ++i) {
+        momentum_v[i][v] += momentum_cn[i][cn];
+      }
     }
 
     for (int v = 0; v < nnodes_trg; ++v) {
-      u_trg[0][v] = momentum_v_x[v] / mass_v[v];
-      u_trg[1][v] = momentum_v_y[v] / mass_v[v];
-      if (D == 3) u_trg[2][v] = momentum_v_z[v] / mass_v[v];
+      for (int i = 0; i < D; ++i) {
+        u_trg[i][v] = momentum_v[i][v] / mass_v[v];
+      }
     }
   }
 }
