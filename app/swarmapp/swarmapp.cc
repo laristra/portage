@@ -293,7 +293,7 @@ void run<2>(int example_num, int n_source, int n_target,
   file << " X, Y, Value\n";
 
   for (int i = 0; i < num_source_particles; ++i) {
-    auto p = source_swarm.get_particle_coordinates(i);
+    auto const p = source_swarm.get_particle_coordinates(i);
     file << p[0] << ", " << p[1] << ", " << source_data[i] << std::endl;
   }
 
@@ -308,7 +308,7 @@ void run<2>(int example_num, int n_source, int n_target,
   file << " X, Y, Value\n";
 
   for (int i = 0; i < num_target_particles; ++i) {
-    auto p = target_swarm.get_particle_coordinates(i);
+    auto const p = target_swarm.get_particle_coordinates(i);
     file << p[0] << ", " << p[1] << ", " << target_field[i] << std::endl;
   }
 
@@ -457,7 +457,7 @@ void run<3>(int example_num, int n_source, int n_target,
   file << " X, Y, Value\n";
 
   for (int i = 0; i < num_source_particles; ++i) {
-    auto p = source_swarm.get_particle_coordinates(i);
+    auto const p = source_swarm.get_particle_coordinates(i);
     file << p[0] << ", " << p[1] << ", " << p[2] << ", "<< source_data[i] << std::endl;
   }
 
@@ -471,7 +471,7 @@ void run<3>(int example_num, int n_source, int n_target,
   file << " X, Y, Value\n";
 
   for (int i = 0; i < num_target_particles; ++i) {
-    auto p = target_swarm.get_particle_coordinates(i);
+    auto const p = target_swarm.get_particle_coordinates(i);
     file << p[0] << ", " << p[1] << ", " << p[2] << ", " << target_field[i] << std::endl;
   }
 

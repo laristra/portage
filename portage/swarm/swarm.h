@@ -127,7 +127,8 @@ public:
    * @return its coordinates.
    */
   Wonton::Point<dim> get_particle_coordinates(int index) const {
-    return points_[index];
+    Wonton::Point<dim> point = points_[index];
+    return point;
   }
 
   /**
