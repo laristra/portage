@@ -50,7 +50,6 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   double minxyz = 0.0, maxxyz = 1.0; 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
   targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
-  double dst_tol = Portage::DEFAULT_NUMERIC_TOLERANCES<2>.min_absolute_distance;
 
   //-------------------------------------------------------------------
   // Shift internal nodes of the targetmesh
@@ -68,8 +67,8 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
     // Move only the internal nodes because we don't want to mess with
     // boundary conditions
     
-    if (fabs(pnt[0]-minxyz) <= dst_tol || fabs(pnt[0]-maxxyz) <= dst_tol ||
-        fabs(pnt[1]-minxyz) <= dst_tol || fabs(pnt[1]-maxxyz) <= dst_tol)
+    if (fabs(pnt[0]-minxyz) < 1.0e-16 || fabs(pnt[0]-maxxyz) < 1.0e-16 ||
+        fabs(pnt[1]-minxyz) < 1.0e-16 || fabs(pnt[1]-maxxyz) < 1.0e-16)
       continue;  // boundary point - don't move
 
     pnt[0] += 0.1*sin(2*M_PI*pnt[0]);
@@ -279,6 +278,10 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
+
+  Portage::NumericTolerances_t default_num_tols;
+  default_num_tols.use_default();
+  d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchSweptFace>();
   auto srcwts = d.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
