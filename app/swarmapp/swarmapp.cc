@@ -285,31 +285,26 @@ void run<2>(int example_num, int n_source, int n_target,
   std::string source_values_csv = "infield" + std::to_string(example_num) + ".csv";
   std::string target_values_csv = "outfield-"+ std::to_string(example_num) +"-"+ std::to_string(center) + ".csv";
 
-  std::ofstream file;
-  file.open(source_values_csv);
-  assert(file.good());
-  file << std::scientific;
-  file.precision(17);
-  file << " X, Y, Value\n";
+  std::ofstream file[2];
+  file[0].open(source_values_csv);
+  file[0] << std::scientific;
+  file[0].precision(17);
+  file[0] << " X, Y, Value\n";
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto const p = source_swarm.get_particle_coordinates(i);
-    file << p[0] << ", " << p[1] << ", " << source_data[i] << std::endl;
+    file[0] << p[0] << ", " << p[1] << ", " << source_data[i] << std::endl;
   }
 
-  file.close();
-  file.clear();
-
   // Create the output file for comparison.
-  file.open(target_values_csv);
-  assert(file.good());
-  file << std::scientific;
-  file.precision(17);
-  file << " X, Y, Value\n";
+  file[1].open(target_values_csv);
+  file[1] << std::scientific;
+  file[1].precision(17);
+  file[1] << " X, Y, Value\n";
 
   for (int i = 0; i < num_target_particles; ++i) {
     auto const p = target_swarm.get_particle_coordinates(i);
-    file << p[0] << ", " << p[1] << ", " << target_field[i] << std::endl;
+    file[1] << p[0] << ", " << p[1] << ", " << target_field[i] << std::endl;
   }
 
   std::cout << "finishing swarm app..." << std::endl;
@@ -450,29 +445,26 @@ void run<3>(int example_num, int n_source, int n_target,
   std::string source_values_csv = "infield" + std::to_string(example_num) + ".csv";
   std::string target_values_csv = "outfield-"+ std::to_string(example_num) +"-"+ std::to_string(center) + ".csv";
 
-  std::ofstream file;
-  file.open(source_values_csv);
-  file << std::scientific;
-  file.precision(17);
-  file << " X, Y, Value\n";
+  std::ofstream file[2];
+  file[0].open(source_values_csv);
+  file[0] << std::scientific;
+  file[0].precision(17);
+  file[0] << " X, Y, Value\n";
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto const p = source_swarm.get_particle_coordinates(i);
-    file << p[0] << ", " << p[1] << ", " << p[2] << ", "<< source_data[i] << std::endl;
+    file[0] << p[0] << ", " << p[1] << ", " << p[2] << ", "<< source_data[i] << std::endl;
   }
 
-  file.close();
-  file.clear();
-
   // Create the output file for comparison.
-  file.open(target_values_csv);
-  file << std::scientific;
-  file.precision(17);
-  file << " X, Y, Value\n";
+  file[1].open(target_values_csv);
+  file[1] << std::scientific;
+  file[1].precision(17);
+  file[1] << " X, Y, Z, Value\n";
 
   for (int i = 0; i < num_target_particles; ++i) {
     auto const p = target_swarm.get_particle_coordinates(i);
-    file << p[0] << ", " << p[1] << ", " << p[2] << ", " << target_field[i] << std::endl;
+    file[1] << p[0] << ", " << p[1] << ", " << p[2] << ", " << target_field[i] << std::endl;
   }
 
   std::cout << "finishing swarm app..." << std::endl;
