@@ -21,13 +21,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 
 // wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "wonton/support/Point.h"
-
-// Jali includes
-#include "JaliState.h"
-#include "JaliStateVector.h"
 
 // App includes
 #include "corner_get_centroid.h"
@@ -39,7 +33,7 @@ const int CCH = 2;
 * App class that handles initialization and verification of fields
 * since it is different in SCH and CCH methods.
 ****************************************************************** */
-template<int D>
+template<int D, class Mesh_Wrapper>
 class MomentumRemap {
  public:
   MomentumRemap(int method) : method_(method) {};
@@ -47,11 +41,11 @@ class MomentumRemap {
 
   // initialization
   void InitMass(
-      const Wonton::Jali_Mesh_Wrapper& mesh,
+      const Mesh_Wrapper& mesh,
       user_field_t& formula, std::vector<double>& mass);
 
   void InitVelocity(
-      const Wonton::Jali_Mesh_Wrapper& mesh,
+      const Mesh_Wrapper& mesh,
       user_field_t& formula, std::vector<double>& u);
 
   // field type
@@ -63,33 +57,31 @@ class MomentumRemap {
   }
 
   // main remap method
-  void RemapND(const Wonton::Jali_Mesh_Wrapper& srcmesh_wrapper,
-               Wonton::Jali_State_Wrapper& srcstate_wrapper,
-               //
-               const Wonton::Jali_Mesh_Wrapper& trgmesh_wrapper,
-               Wonton::Jali_State_Wrapper& trgstate_wrapper,
-               //
-               Portage::Limiter_type limiter);
+  template<class State_Wrapper>
+  void RemapND(
+      const Mesh_Wrapper& srcmesh_wrapper, State_Wrapper& srcstate_wrapper,
+      const Mesh_Wrapper& trgmesh_wrapper, State_Wrapper& trgstate_wrapper,
+      Portage::Limiter_type limiter);
 
   // V&V
   template<class T>
-  double TotalMass(const Wonton::Jali_Mesh_Wrapper& mesh, const T& mass) const;
+  double TotalMass(const Mesh_Wrapper& mesh, const T& mass) const;
 
   template<class T> 
-  Wonton::Point<D> TotalMomentum(const Wonton::Jali_Mesh_Wrapper& mesh,
-                                 const T& mass,
-                                 const T& ux, const T& uy, const T& uz) const;
+  Wonton::Point<D> TotalMomentum(
+      const Mesh_Wrapper& mesh,
+      const T& mass, const T& ux, const T& uy, const T& uz) const;
 
   template<class T>
-  Wonton::Point<D> VelocityMin(const Wonton::Jali_Mesh_Wrapper& mesh,
-                               const T& ux, const T& uy, const T& uz);
+  Wonton::Point<D> VelocityMin(
+      const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz);
   template<class T>
-  Wonton::Point<D> VelocityMax(const Wonton::Jali_Mesh_Wrapper& mesh,
-                               const T& ux, const T& uy, const T& uz);
+  Wonton::Point<D> VelocityMax(
+      const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz);
 
   template<class T>
   void ErrorVelocity(
-      const Wonton::Jali_Mesh_Wrapper& mesh,
+      const Mesh_Wrapper& mesh,
       user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
       const T& ux, const T& uy, const T& uz,
       double* l2err, double* l2norm);
@@ -102,11 +94,10 @@ class MomentumRemap {
 /* ******************************************************************
 * Initiaization of mass
 ****************************************************************** */
-template<int D>
-void MomentumRemap<D>::InitMass(
-    const Wonton::Jali_Mesh_Wrapper& mesh,
-    user_field_t& formula,
-    std::vector<double>& mass)
+template<int D, class Mesh_Wrapper>
+void MomentumRemap<D, Mesh_Wrapper>::InitMass(
+    const Mesh_Wrapper& mesh,
+    user_field_t& formula, std::vector<double>& mass)
   {
   int nrows = (method_ == SGH) ? mesh.num_owned_corners() + mesh.num_ghost_corners()
                                : mesh.num_owned_cells() + mesh.num_ghost_cells();
@@ -133,10 +124,9 @@ void MomentumRemap<D>::InitMass(
 /* ******************************************************************
 * Initiaization of velocity
 ****************************************************************** */
-template<int D>
-void MomentumRemap<D>::InitVelocity(
-    const Wonton::Jali_Mesh_Wrapper& mesh,
-    user_field_t& formula, std::vector<double>& u)
+template<int D, class Mesh_Wrapper>
+void MomentumRemap<D, Mesh_Wrapper>::InitVelocity(
+    const Mesh_Wrapper& mesh, user_field_t& formula, std::vector<double>& u)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() + mesh.num_ghost_nodes()
                                : mesh.num_owned_cells() + mesh.num_ghost_cells();
@@ -158,10 +148,10 @@ void MomentumRemap<D>::InitVelocity(
 /* ******************************************************************
 * Calculate total momentum 
 ****************************************************************** */
-template<int D>
+template<int D, class Mesh_Wrapper>
 template<class T>
-double MomentumRemap<D>::TotalMass(
-    const Wonton::Jali_Mesh_Wrapper& mesh, const T& mass) const
+double MomentumRemap<D, Mesh_Wrapper>::TotalMass(
+    const Mesh_Wrapper& mesh, const T& mass) const
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_corners() : mesh.num_owned_cells();
   double sum(0.0), sum_glb;
@@ -175,10 +165,10 @@ double MomentumRemap<D>::TotalMass(
 /* ******************************************************************
 * Calculate total momentum 
 ****************************************************************** */
-template<int D> 
+template<int D, class Mesh_Wrapper>
 template<class T> 
-Wonton::Point<D> MomentumRemap<D>::TotalMomentum(
-    const Wonton::Jali_Mesh_Wrapper& mesh,
+Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::TotalMomentum(
+    const Mesh_Wrapper& mesh,
     const T& mass, const T& ux, const T& uy, const T& uz) const
 {
   double mx(0.0), my(0.0), mz(0.0), mx_glb, my_glb, mz_glb;
@@ -224,10 +214,10 @@ Wonton::Point<D> MomentumRemap<D>::TotalMomentum(
 /* ******************************************************************
 * Velocity bounds
 ****************************************************************** */
-template<int D>
+template<int D, class Mesh_Wrapper>
 template<class T>
-Wonton::Point<D> MomentumRemap<D>::VelocityMin(
-    const Wonton::Jali_Mesh_Wrapper& mesh,
+Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::VelocityMin(
+    const Mesh_Wrapper& mesh,
     const T& ux, const T& uy, const T& uz)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
@@ -254,10 +244,10 @@ Wonton::Point<D> MomentumRemap<D>::VelocityMin(
 }
 
 
-template<int D>
+template<int D, class Mesh_Wrapper>
 template<class T>
-Wonton::Point<D> MomentumRemap<D>::VelocityMax(
-    const Wonton::Jali_Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz)
+Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::VelocityMax(
+    const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
   double uxmax(ux[0]), uymax(uy[0]), uzmax(uz[0]), uxmax_glb, uymax_glb, uzmax_glb;
@@ -285,10 +275,10 @@ Wonton::Point<D> MomentumRemap<D>::VelocityMax(
 /* ******************************************************************
 * Error in velocity
 ****************************************************************** */
-template<int D>
+template<int D, class Mesh_Wrapper>
 template<class T>
-void MomentumRemap<D>::ErrorVelocity(
-    const Wonton::Jali_Mesh_Wrapper& mesh,
+void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
+    const Mesh_Wrapper& mesh,
     user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
     const T& ux, const T& uy, const T& uz,
     double* l2err, double* l2norm)
@@ -336,15 +326,12 @@ void MomentumRemap<D>::ErrorVelocity(
 /* ******************************************************************
 * 2D and 3D remap algorithm
 ****************************************************************** */
-template<int D>
+template<int D, class Mesh_Wrapper>
+template<class State_Wrapper>
 inline
-void MomentumRemap<D>::RemapND(
-    const Wonton::Jali_Mesh_Wrapper& srcmesh_wrapper,
-    Wonton::Jali_State_Wrapper& srcstate_wrapper,
-    //
-    const Wonton::Jali_Mesh_Wrapper& trgmesh_wrapper,
-    Wonton::Jali_State_Wrapper& trgstate_wrapper,
-    //
+void MomentumRemap<D, Mesh_Wrapper>::RemapND(
+    const Mesh_Wrapper& srcmesh_wrapper, State_Wrapper& srcstate_wrapper,
+    const Mesh_Wrapper& trgmesh_wrapper, State_Wrapper& trgstate_wrapper,
     Portage::Limiter_type limiter)
 {
   // mesh data
@@ -415,8 +402,7 @@ void MomentumRemap<D>::RemapND(
   // Step 4 (SGH and CCH)
   // -- remap density and specific momentum following three basic
   //    steps: search, intersect, and interpolate
-  Portage::CoreDriver<D, Wonton::Entity_kind::CELL,
-                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+  Portage::CoreDriver<D, Wonton::Entity_kind::CELL, Mesh_Wrapper, State_Wrapper>
       cd(srcmesh_wrapper, srcstate_wrapper,
          trgmesh_wrapper, trgstate_wrapper);
 
@@ -466,7 +452,7 @@ void MomentumRemap<D>::RemapND(
   if (method_ == SGH) {
     for (int i = 0; i < field_names.size(); ++i) {
       Portage::Limited_Gradient<D, Wonton::Entity_kind::CELL, 
-                                Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+                                Mesh_Wrapper, State_Wrapper>
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
                           field_names[i], limiter, Portage::BND_NOLIMITER);
 

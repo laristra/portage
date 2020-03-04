@@ -173,7 +173,7 @@ int main(int argc, char** argv) {
 
   // -- register velocity components with the states
   //    target state does not need data, but code re-use does the task easier
-  MomentumRemap<3> mr(method);
+  MomentumRemap<3, Wonton::Jali_Mesh_Wrapper> mr(method);
 
   std::vector<double> ux_src, uy_src, uz_src, tmp;
 
@@ -219,8 +219,9 @@ int main(int argc, char** argv) {
   //
   // SEVEN-step REMAP algorithm 
   //
-  mr.RemapND(srcmesh_wrapper, srcstate_wrapper,
-             trgmesh_wrapper, trgstate_wrapper, limiter);
+  mr.RemapND<Wonton::Jali_State_Wrapper>(srcmesh_wrapper, srcstate_wrapper,
+                                         trgmesh_wrapper, trgstate_wrapper,
+                                         limiter);
 
   //
   // Verification 
