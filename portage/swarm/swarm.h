@@ -234,9 +234,15 @@ inline Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
     num_owned_points_ = num_particles;
     points_.resize(num_owned_points_);
 
-    for (auto&& current : points_)
-      current = Wonton::Point<2>(x_min + (x_max - x_min) * generator(engine),
-                                 y_min + (y_max - y_min) * generator(engine));
+    for (auto&& current : points_) {
+      // point coordinates are not always initialized in order
+      // so enforce random number picking sequence
+      double const noise[] = { generator(engine),
+                               generator(engine) };
+
+      current = Wonton::Point<2>(x_min + (x_max - x_min) * noise[0],
+                                 y_min + (y_max - y_min) * noise[1]);
+    }
   } else {
     // resize field
     int const num_per_dim = std::floor(std::sqrt(num_particles));
@@ -253,9 +259,14 @@ inline Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
     if (distribution == 2) {
       for (auto&& current : points_) {
+        // point coordinates are not always initialized in order
+        // so enforce random number picking sequence
+        double const noise[] = { generator(engine),
+                                 generator(engine) };
+
         Wonton::Point<2> copy = current;
-        copy[0] += 0.25 * hx * (2 * generator(engine) - 1);
-        copy[1] += 0.25 * hy * (2 * generator(engine) - 1);
+        copy[0] += 0.25 * hx * (2 * noise[0] - 1);
+        copy[1] += 0.25 * hy * (2 * noise[1] - 1);
         current = Wonton::Point<2>(std::max(x_min, std::min(x_max, copy[0])),
                                    std::max(y_min, std::min(y_max, copy[1])));
       }
@@ -283,10 +294,18 @@ inline Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
     num_owned_points_ = num_particles;
     points_.resize(num_owned_points_);
 
-    for (int i = 0; i < num_particles; i++)
-      points_[i] = Wonton::Point<3>(x_min + (x_max - x_min) * generator(engine),
-                                    y_min + (y_max - y_min) * generator(engine),
-                                    z_min + (z_max - z_min) * generator(engine));
+    for (int i = 0; i < num_particles; i++) {
+      // point coordinates are not always initialized in order
+      // so enforce random number picking sequence
+      double const noise[] = { generator(engine),
+                               generator(engine),
+                               generator(engine) };
+
+      points_[i] = Wonton::Point<3>(x_min + (x_max - x_min) * noise[0],
+                                    y_min + (y_max - y_min) * noise[1],
+                                    z_min + (z_max - z_min) * noise[2]);
+    }
+
   } else {
     auto const cubic_root = std::pow(num_particles, 1./3.);
     auto const num_per_dim = static_cast<int>(std::ceil(cubic_root));
@@ -309,10 +328,16 @@ inline Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
     if (distribution == 2) {
       for (auto&& current : points_) {
+        // point coordinates are not always initialized in order
+        // so enforce random number picking sequence
+        double const noise[] = { generator(engine),
+                                 generator(engine),
+                                 generator(engine) };
+
         Wonton::Point<3> copy = current;
-        copy[0] += 0.25 * hx * (2 * generator(engine) - 1);
-        copy[1] += 0.25 * hy * (2 * generator(engine) - 1);
-        copy[2] += 0.25 * hz * (2 * generator(engine) - 1);
+        copy[0] += 0.25 * hx * (2 * noise[0] - 1);
+        copy[1] += 0.25 * hy * (2 * noise[1] - 1);
+        copy[2] += 0.25 * hz * (2 * noise[2] - 1);
         current = Wonton::Point<3>(std::max(x_min, std::min(x_max, copy[0])),
                                    std::max(y_min, std::min(y_max, copy[1])),
                                    std::max(z_min, std::min(z_max, copy[2])));

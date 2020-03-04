@@ -259,9 +259,13 @@ TEST_F(SwarmTest, Sanity_Check_3D) {
   Portage::vector<Wonton::Point<3>> points(n);
 
   for (auto&& current : points) {
-    current = Wonton::Point<3>(generator(engine),
-                               generator(engine),
-                               generator(engine));
+    // point coordinates are not always initialized in order
+    // so enforce random number picking sequence
+    double const noise[] = { generator(engine),
+                             generator(engine),
+                             generator(engine) };
+
+    current = Wonton::Point<3>(noise[0], noise[1], noise[2]);
   }
 
   // create particle field from point list

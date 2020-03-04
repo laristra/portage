@@ -38,9 +38,13 @@ TEST(SwarmState, basic) {
   Portage::vector<Wonton::Point<3>> points(num_points);
 
   for (int i = 0; i < num_points; i++) {
-    points[i] = Wonton::Point<3>(generator(engine),
-                                 generator(engine),
-                                 generator(engine));
+    // point coordinates are not always initialized in order
+    // so enforce random number picking sequence
+    double const noise[] = { generator(engine),
+                             generator(engine),
+                             generator(engine) };
+
+    points[i] = Wonton::Point<3>(noise[0], noise[1], noise[2]);
   }
 
   // create state
