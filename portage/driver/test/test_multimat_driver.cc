@@ -152,7 +152,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] >= 
+            Portage::DEFAULT_NUMERIC_TOLERANCES<2>.min_absolute_volume) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
@@ -284,7 +285,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] >= 
+            Portage::DEFAULT_NUMERIC_TOLERANCES<2>.min_absolute_volume) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
@@ -671,7 +673,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-8);
 
     Portage::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);

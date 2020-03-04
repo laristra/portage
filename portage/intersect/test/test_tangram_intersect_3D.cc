@@ -320,8 +320,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
        Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default<3>();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Hope for a miracle with intersection
   std::vector<double> moments(
@@ -362,8 +361,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold) {
        Wonton::Point<3>{0., 1., 0.}, Wonton::Point<3>{0., 0., 1.}}};
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default<3>();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -409,8 +407,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold2) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default<3>();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -457,8 +454,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold3) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default<3>();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(
@@ -505,8 +501,7 @@ TEST(TANGRAM_3D, test_intersect_matpoly_gold4) {
   target_mesh_wrapper.decompose_cell_into_tets(0, &tcoords, planar_hex);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default<3>();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Intersect
   std::vector<double> moments(Portage::intersect_polys_r3d(

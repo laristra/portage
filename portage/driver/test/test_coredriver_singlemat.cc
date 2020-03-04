@@ -85,10 +85,6 @@ TEST(CellDriver, 2D_2ndOrder) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default<2>();
-  d.set_num_tols(default_num_tols);
-
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
 
@@ -181,10 +177,6 @@ TEST(CellDriver, 3D_2ndOrder) {
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
-
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default<3>();
-  d.set_num_tols(default_num_tols);
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);

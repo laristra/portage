@@ -385,6 +385,25 @@ class CoreDriverBase {
 
 
   /*!
+    @brief Set numerical tolerances for small distances and volumes
+
+    @param Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+
+  template<Entity_kind ONWHAT>
+  void
+  set_num_tols(const double min_absolute_distance, 
+               const double min_absolute_volume) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->set_num_tols(min_absolute_distance, min_absolute_volume);
+  }
+
+  /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
 
     @tparam Entity_kind  what kind of entity are we setting for
@@ -394,7 +413,7 @@ class CoreDriverBase {
 
   template<Entity_kind ONWHAT>
   void
-  set_num_tols(NumericTolerances_t num_tols) {
+  set_num_tols(const NumericTolerances_t& num_tols) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->set_num_tols(num_tols);
@@ -577,19 +596,15 @@ class CoreDriver : public CoreDriverBase<D,
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
-    // Use default numerical tolerances in case they were not set earlier
-    if (num_tols_.tolerances_set == false) {
-      NumericTolerances_t default_num_tols;
-      default_num_tols.use_default<D>();
 #ifdef HAVE_TANGRAM
-      if (!reconstructor_tols_.empty()) {
-        default_num_tols.min_absolute_distance = reconstructor_tols_[0].arg_eps;
-        default_num_tols.min_absolute_volume = reconstructor_tols_[0].fun_eps;
-      }
-#endif
-      set_num_tols(default_num_tols);
+    // If user set tolerances for Tangram, but not for Portage,
+    // use Tangram tolerances
+    if ( (num_tols_.user_tolerances == false) &&
+         (!reconstructor_tols_.empty()) ) {
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
-#ifdef HAVE_TANGRAM
+    // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
                                      num_tols_.min_absolute_volume},
@@ -615,8 +630,16 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
-  /// Set numerical tolerances
-  void set_num_tols(NumericTolerances_t num_tols) {
+  /// Set core numerical tolerances
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {
+    num_tols_.min_absolute_distance = min_absolute_distance;
+    num_tols_.min_absolute_volume = min_absolute_volume;
+    num_tols_.user_tolerances = true;
+  }
+
+  /// Set all numerical tolerances
+  void set_num_tols(const NumericTolerances_t& num_tols) {
     num_tols_ = num_tols;
   }
 
@@ -1339,7 +1362,7 @@ class CoreDriver : public CoreDriverBase<D,
   SourceState const & source_state_;
   TargetState & target_state_;
 
-  NumericTolerances_t num_tols_;
+  NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;
   int nprocs_ = 1;

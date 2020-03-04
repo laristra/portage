@@ -56,7 +56,7 @@ public:
       source_state_wrapper(*source_state),
       target_state_wrapper(*target_state)
   {
-    num_tols.use_default<3>();
+    num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
   }
 
   /**
@@ -330,7 +330,7 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(nb_hex_faces - 1));
-  ASSERT_DOUBLE_EQ(target_volume, 0.0);
+  ASSERT_NEAR(target_volume, 0.0, 1.0e-15);
   ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
 
   for (auto const& moments : weights_boundary) {

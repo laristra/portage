@@ -30,7 +30,9 @@
 #include "portage/support/portage.h"
 
 #include "portage/search/search_kdtree.h"
+#include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
+#include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
@@ -322,14 +324,42 @@ class UberDriver {
   }
 
 
+
+  /*!
+    @brief Set numerical tolerances for small distances and volumes
+    in core driver
+
+    @tparam Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {   
+    for (Entity_kind onwhat : entity_kinds_) {
+      switch (onwhat) {
+        case CELL:
+          core_driver_serial_[CELL]->template set_num_tols<CELL>(
+            min_absolute_distance, min_absolute_volume); break;
+        case NODE:
+          core_driver_serial_[NODE]->template set_num_tols<NODE>(
+            min_absolute_distance, min_absolute_volume); break;
+        default:
+          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+          
+      }
+    }
+  }
+  
   /*!
     @brief set numerical tolerances in core driver
 
-     @tparam Entity_kind  what kind of entity are we setting for
+    @tparam Entity_kind  what kind of entity are we setting for
 
-     @tparam num_tols     struct of selected numerical tolerances
+    @param num_tols     struct of selected numerical tolerances
   */
-  void set_num_tols(NumericTolerances_t num_tols) {   
+  void set_num_tols(const NumericTolerances_t& num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -342,7 +372,6 @@ class UberDriver {
       }
     }
   }
-  
 
   /*!
     @brief search for candidate source entities whose control volumes
@@ -500,8 +529,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
 
     interpolate<T, ONWHAT, Interpolate>(srcvarname, srcvarname,
                                         lower_bound, upper_bound,
@@ -554,8 +583,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
     
     assert(source_state_.get_entity(srcvarname) == ONWHAT);
     assert(mesh_intersection_completed_[ONWHAT]);

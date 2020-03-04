@@ -535,10 +535,6 @@ int main(int argc, char** argv) {
       cd(srcmesh_wrapper, srcstate_wrapper,
          trgmesh_wrapper, trgstate_wrapper);
 
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default<2>();
-  cd.set_num_tols(default_num_tols);
-
   auto candidates = cd.search<Portage::SearchKDTree>();
   auto srcwts = cd.intersect_meshes<Portage::IntersectR2D>(candidates);
 
