@@ -69,22 +69,18 @@ class MomentumRemap {
 
   template<class T> 
   Wonton::Point<D> TotalMomentum(
-      const Mesh_Wrapper& mesh,
-      const T& mass, const T& ux, const T& uy, const T& uz) const;
+      const Mesh_Wrapper& mesh, const T& mass, const T u[D]) const;
 
   template<class T>
-  Wonton::Point<D> VelocityMin(
-      const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz);
+  Wonton::Point<D> VelocityMin(const Mesh_Wrapper& mesh, const T u[D]);
   template<class T>
-  Wonton::Point<D> VelocityMax(
-      const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz);
+  Wonton::Point<D> VelocityMax(const Mesh_Wrapper& mesh, const T u[D]);
 
   template<class T>
   void ErrorVelocity(
       const Mesh_Wrapper& mesh,
       user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
-      const T& ux, const T& uy, const T& uz,
-      double* l2err, double* l2norm);
+      const T u[D], double* l2err, double* l2norm);
 
  private:
   int method_;
@@ -168,10 +164,9 @@ double MomentumRemap<D, Mesh_Wrapper>::TotalMass(
 template<int D, class Mesh_Wrapper>
 template<class T> 
 Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::TotalMomentum(
-    const Mesh_Wrapper& mesh,
-    const T& mass, const T& ux, const T& uy, const T& uz) const
+    const Mesh_Wrapper& mesh, const T& mass, const T u[D]) const
 {
-  double mx(0.0), my(0.0), mz(0.0), mx_glb, my_glb, mz_glb;
+  std::vector<double> m_loc(D, 0.0), m_glb(D);
 
   if (method_ == SGH) {
     std::vector<int> corners;
@@ -181,31 +176,24 @@ Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::TotalMomentum(
 
       for (auto cn : corners) { 
         int v = mesh.corner_get_node(cn);
-        mx += mass[cn] * ux[v];
-        my += mass[cn] * uy[v];
-        if (D == 3) mz += mass[cn] * uz[v];
+        for (int i = 0; i < D; ++i) {
+          m_loc[i] += mass[cn] * u[i][v];
+        }
       }
     }
   }
 
   else if (method_ == CCH) {
     for (int c = 0; c < mesh.num_owned_cells(); ++c) {
-      mx += mass[c] * ux[c];
-      my += mass[c] * uy[c];
-      if (D == 3) mz += mass[c] * uz[c];
+      for (int i = 0; i < D; ++i) {
+        m_loc[i] += mass[c] * u[i][c];
+      }
     }
   }
 
-  Wonton::Point<D> momentum;
 
-  MPI_Allreduce(&mx, &mx_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(&my, &my_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-  if (D == 2) {
-    momentum = {mx_glb, my_glb};
-  } else {
-    MPI_Allreduce(&mz, &mz_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    momentum = {mx_glb, my_glb, mz_glb};
-  }
+  MPI_Allreduce(&(m_loc[0]), &(m_glb[0]), D, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  Wonton::Point<D> momentum(m_glb);
 
   return momentum;
 }
@@ -217,28 +205,19 @@ Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::TotalMomentum(
 template<int D, class Mesh_Wrapper>
 template<class T>
 Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::VelocityMin(
-    const Mesh_Wrapper& mesh,
-    const T& ux, const T& uy, const T& uz)
+    const Mesh_Wrapper& mesh, const T u[D])
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
-  double uxmin(ux[0]), uymin(uy[0]), uzmin(uz[0]), uxmin_glb, uymin_glb, uzmin_glb;
+  std::vector<double> umin_loc(D, 1e+99), umin_glb(D);
  
   for (int n = 1; n < nrows; ++n) {
-    uxmin = std::min(uxmin, ux[n]);
-    uymin = std::min(uymin, uy[n]);
-    if (D == 3) uzmin = std::min(uzmin, uz[n]);
+    for (int i = 0; i < D; ++i) {
+      umin_loc[i] = std::min(umin_loc[i], u[i][n]);
+    }
   }
 
-  MPI_Allreduce(&uxmin, &uxmin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-  MPI_Allreduce(&uymin, &uymin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-
-  Wonton::Point<D> umin;
-  if (D == 2) {
-    umin = { uxmin_glb, uymin_glb };
-  } else {
-    MPI_Allreduce(&uzmin, &uzmin_glb, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
-    umin = { uxmin_glb, uymin_glb, uzmin_glb };
-  }
+  MPI_Allreduce(&(umin_loc[0]), &(umin_glb[0]), D, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  Wonton::Point<D> umin(umin_glb);
 
   return umin;
 }
@@ -247,27 +226,20 @@ Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::VelocityMin(
 template<int D, class Mesh_Wrapper>
 template<class T>
 Wonton::Point<D> MomentumRemap<D, Mesh_Wrapper>::VelocityMax(
-    const Mesh_Wrapper& mesh, const T& ux, const T& uy, const T& uz)
+    const Mesh_Wrapper& mesh, const T u[D])
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
-  double uxmax(ux[0]), uymax(uy[0]), uzmax(uz[0]), uxmax_glb, uymax_glb, uzmax_glb;
+  std::vector<double> umax_loc(D, -1e+99), umax_glb(D);
  
   for (int n = 1; n < nrows; ++n) {
-    uxmax = std::max(uxmax, ux[n]);
-    uymax = std::max(uymax, uy[n]);
-    if (D == 3) uzmax = std::max(uzmax, uz[n]);
+    for (int i = 0; i < D; ++i) {
+      umax_loc[i] = std::max(umax_loc[i], u[i][n]);
+    }
   }
 
-  MPI_Allreduce(&uxmax, &uxmax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  MPI_Allreduce(&uymax, &uymax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Allreduce(&(umax_loc[0]), &(umax_glb[0]), D, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+  Wonton::Point<D> umax(umax_glb);
 
-  Wonton::Point<D> umax;
-  if (D == 2) {
-    umax = { uxmax_glb, uymax_glb };
-  } else {
-    MPI_Allreduce(&uzmax, &uzmax_glb, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    umax = { uxmax_glb, uymax_glb, uzmax_glb };
-  }
   return umax;
 }
 
@@ -280,8 +252,7 @@ template<class T>
 void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     const Mesh_Wrapper& mesh,
     user_field_t& formula_x, user_field_t& formula_y, user_field_t& formula_z,
-    const T& ux, const T& uy, const T& uz,
-    double* l2err, double* l2norm)
+    const T u[D], double* l2err, double* l2norm)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
   double ux_exact, uy_exact, uz_exact;
@@ -299,14 +270,14 @@ void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     ux_exact = formula_x(xyz);
     uy_exact = formula_y(xyz);
 
-    *l2err += (ux_exact - ux[n]) * (ux_exact - ux[n])
-            + (uy_exact - uy[n]) * (uy_exact - uy[n]);
+    *l2err += (ux_exact - u[0][n]) * (ux_exact - u[0][n])
+            + (uy_exact - u[1][n]) * (uy_exact - u[1][n]);
 
     *l2norm += ux_exact * ux_exact + uy_exact * uy_exact;
 
     if (D == 3) {
       uz_exact = formula_z(xyz);
-      *l2err += (uz_exact - uz[n]) * (uz_exact - uz[n]);
+      *l2err += (uz_exact - u[2][n]) * (uz_exact - u[2][n]);
       *l2norm += uz_exact * uz_exact;
     }
   }

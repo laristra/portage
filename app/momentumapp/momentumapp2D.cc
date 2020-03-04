@@ -172,14 +172,14 @@ int main(int argc, char** argv) {
   //    target state does not need data, but code re-use does the task easier
   MomentumRemap<2, Wonton::Jali_Mesh_Wrapper> mr(method);
 
-  std::vector<double> ux_src, uy_src, tmp;
+  std::vector<double> u_src[2], tmp;
 
   auto kind = mr.VelocityKind();
-  mr.InitVelocity(srcmesh_wrapper, ini_velx, ux_src);
-  mr.InitVelocity(srcmesh_wrapper, ini_vely, uy_src);
+  mr.InitVelocity(srcmesh_wrapper, ini_velx, u_src[0]);
+  mr.InitVelocity(srcmesh_wrapper, ini_vely, u_src[1]);
 
-  srcstate_wrapper.mesh_add_data(kind, "velocity_x", &(ux_src[0]));
-  srcstate_wrapper.mesh_add_data(kind, "velocity_y", &(uy_src[0]));
+  srcstate_wrapper.mesh_add_data(kind, "velocity_x", &(u_src[0][0]));
+  srcstate_wrapper.mesh_add_data(kind, "velocity_y", &(u_src[1][0]));
 
   mr.InitVelocity(trgmesh_wrapper, ini_velx, tmp);
   trgstate_wrapper.mesh_add_data(kind, "velocity_x", &(tmp[0]));
@@ -197,10 +197,9 @@ int main(int argc, char** argv) {
 
   // -- summary
   auto total_mass_src = mr.TotalMass(srcmesh_wrapper, mass_src);
-  auto total_momentum_src = mr.TotalMomentum(srcmesh_wrapper, mass_src,
-                                             ux_src, uy_src, uy_src);  // last arg is dummy
-  auto umin = mr.VelocityMin(srcmesh_wrapper, ux_src, uy_src, uy_src);
-  auto umax = mr.VelocityMax(srcmesh_wrapper, ux_src, uy_src, uy_src);
+  auto total_momentum_src = mr.TotalMomentum(srcmesh_wrapper, mass_src, u_src);
+  auto umin = mr.VelocityMin(srcmesh_wrapper, u_src);
+  auto umax = mr.VelocityMax(srcmesh_wrapper, u_src);
   if (rank == 0) {
     std::cout << "=== SOURCE data ===" << std::endl;
     std::cout << "mesh:           " << nx << " x " << ny << std::endl;
@@ -220,21 +219,20 @@ int main(int argc, char** argv) {
   //
   // Verification 
   //
-  const double *mass_trg, *ux_trg, *uy_trg;
+  const double *mass_trg, *u_trg[2];
 
   kind = mr.MassKind();
   trgstate_wrapper.mesh_get_data(kind, "mass", &mass_trg);
 
   kind = mr.VelocityKind();
-  trgstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_trg);
-  trgstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_trg);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_x", &u_trg[0]);
+  trgstate_wrapper.mesh_get_data(kind, "velocity_y", &u_trg[1]);
 
   // use 2D/3D routines with dummy parameters 
   auto total_mass_trg = mr.TotalMass(trgmesh_wrapper, mass_trg);
-  auto total_momentum_trg = mr.TotalMomentum(trgmesh_wrapper, mass_trg,
-                                             ux_trg, uy_trg, uy_trg);
-  umin = mr.VelocityMin(trgmesh_wrapper, ux_trg, uy_trg, uy_trg);
-  umax = mr.VelocityMax(trgmesh_wrapper, ux_trg, uy_trg, uy_trg);
+  auto total_momentum_trg = mr.TotalMomentum(trgmesh_wrapper, mass_trg, u_trg);
+  umin = mr.VelocityMin(trgmesh_wrapper, u_trg);
+  umax = mr.VelocityMax(trgmesh_wrapper, u_trg);
 
   if (rank == 0) {
     std::cout << "\n=== TARGET data ===" << std::endl;
@@ -256,7 +254,7 @@ int main(int argc, char** argv) {
 
   double l2err, l2norm;
   mr.ErrorVelocity(trgmesh_wrapper, ini_velx, ini_vely, ini_vely,
-                   ux_trg, uy_trg, uy_trg, &l2err, &l2norm);
+                   u_trg, &l2err, &l2norm);
 
   if (rank == 0) {
     std::cout << "\n=== Remap error ===" << std::endl;
