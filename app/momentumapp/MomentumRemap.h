@@ -341,15 +341,17 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   int ncorners_trg = trgmesh_wrapper.num_owned_corners();
 
   // state fields
-  auto kind = MassKind();
+  std::string velocity[3] = { "velocity_x", "velocity_y", "velocity_z" };
 
-  const double *mass_src, *ux_src, *uy_src, *uz_src;
+  auto kind = MassKind();
+  const double *mass_src;
   srcstate_wrapper.mesh_get_data(kind, "mass", &mass_src);
 
   kind = VelocityKind();
-  srcstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_src);
-  srcstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_src);
-  if (D == 3) srcstate_wrapper.mesh_get_data(kind, "velocity_z", &uz_src);
+  const double *u_src[D];
+  for (int i = 0; i < D; ++i) {
+    srcstate_wrapper.mesh_get_data(kind, velocity[i], &u_src[i]);
+  }
 
   // Step 1 (SGH only)
   // -- gather cell-centered mass from corner masses
@@ -383,14 +385,14 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
 
       for (auto cn : corners) { 
         int v = srcmesh_wrapper.corner_get_node(cn);
-        momentum_x_src[c] += mass_src[cn] * ux_src[v];
-        momentum_y_src[c] += mass_src[cn] * uy_src[v];
-        if (D == 3) momentum_z_src[c] += mass_src[cn] * uz_src[v];
+        momentum_x_src[c] += mass_src[cn] * u_src[0][v];
+        momentum_y_src[c] += mass_src[cn] * u_src[1][v];
+        if (D == 3) momentum_z_src[c] += mass_src[cn] * u_src[2][v];
       }
     } else {
-      momentum_x_src[c] += mass_src[c] * ux_src[c];
-      momentum_y_src[c] += mass_src[c] * uy_src[c];
-      if (D == 3) momentum_z_src[c] += mass_src[c] * uz_src[c];
+      momentum_x_src[c] += mass_src[c] * u_src[0][c];
+      momentum_y_src[c] += mass_src[c] * u_src[1][c];
+      if (D == 3) momentum_z_src[c] += mass_src[c] * u_src[2][c];
     }
 
     double volume = srcmesh_wrapper.cell_volume(c);
@@ -466,15 +468,15 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
 
   // Step 6 (SGH and CCH)
   // -- integrate density and specific momentum on the target mesh
-  double *mass_trg, *ux_trg, *uy_trg, *uz_trg;
-
+  double *mass_trg;
   kind = MassKind();
   trgstate_wrapper.mesh_get_data(kind, "mass", &mass_trg);
 
   kind = VelocityKind();
-  trgstate_wrapper.mesh_get_data(kind, "velocity_x", &ux_trg);
-  trgstate_wrapper.mesh_get_data(kind, "velocity_y", &uy_trg);
-  if (D == 3) trgstate_wrapper.mesh_get_data(kind, "velocity_z", &uz_trg);
+  double *u_trg[D];
+  for (int i = 0; i < D; ++i) {
+    trgstate_wrapper.mesh_get_data(kind, velocity[i], &u_trg[i]);
+  }
 
   //    extract auxiliary (cell-centerd) data
   double *density_trg, *momentum_x_trg, *momentum_y_trg, *momentum_z_trg;
@@ -532,9 +534,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       double vol = trgmesh_wrapper.cell_volume(c);
       mass_trg[c] = density_trg[c] * vol;
 
-      ux_trg[c] = momentum_x_trg[c] / density_trg[c];
-      uy_trg[c] = momentum_y_trg[c] / density_trg[c];
-      if (D == 3) uz_trg[c] = momentum_z_trg[c] / density_trg[c];
+      u_trg[0][c] = momentum_x_trg[c] / density_trg[c];
+      u_trg[1][c] = momentum_y_trg[c] / density_trg[c];
+      if (D == 3) u_trg[2][c] = momentum_z_trg[c] / density_trg[c];
     }
   }
 
@@ -556,9 +558,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
     }
 
     for (int v = 0; v < nnodes_trg; ++v) {
-      ux_trg[v] = momentum_v_x[v] / mass_v[v];
-      uy_trg[v] = momentum_v_y[v] / mass_v[v];
-      if (D == 3) uz_trg[v] = momentum_v_z[v] / mass_v[v];
+      u_trg[0][v] = momentum_v_x[v] / mass_v[v];
+      u_trg[1][v] = momentum_v_y[v] / mass_v[v];
+      if (D == 3) u_trg[2][v] = momentum_v_z[v] / mass_v[v];
     }
   }
 }
