@@ -104,6 +104,15 @@ Data parse(const char* path) {
   return data;
 }
 
+/**
+ * @brief Check if two real scalars are equal.
+ *
+ * @param u: first scalar
+ * @param v: second scalar
+ * @return true if equal.
+ */
+bool equals(double const& u, double const& v) { return std::fabs(u - v) < epsilon; }
+
 } // end anonymous namespace
 
 /**
@@ -124,19 +133,14 @@ int main(int argc, char* argv[]) {
   auto const test = parse(argv[2]);
 
   if (gold.size() != test.size()) {
-    std::cerr << "Error: mismatch on gold and test data sizes" << std::endl;
+    std::cerr << "Error: mismatched data sizes" << std::endl;
     return EXIT_FAILURE;
   }
 
-  // check if two real values are equal
-  auto equals = [](double const& u, double const& v) -> bool {
-    return std::fabs(u - v) < epsilon;
-  };
-
   int const dim = gold.dim;
-  bool failure = false;
+  int const nb_particles = gold.size();
 
-  for (int i = 0; i < gold.size(); i++) {
+  for (int i = 0; i < nb_particles; i++) {
     bool coords_match = true;
     for (int j = 0; j < dim; ++j)
       coords_match &= equals(gold.coords[i][j], test.coords[i][j]);
@@ -144,32 +148,23 @@ int main(int argc, char* argv[]) {
     if (not coords_match) {
       std::cerr << "Error: mismatched coordinates at line " << i << std::endl;
       std::cerr << "\tgold: [";
-      for (int j = 0; j < dim; ++j) {
-        std::cerr << gold.coords[i][j];
-        if (j < dim - 1)
-          std::cerr << ", ";
-      }
+      for (int j = 0; j < dim; ++j)
+        std::cerr << gold.coords[i][j] << (j < dim - 1 ? ", " : "");
+
       std::cerr << "], test: [";
-      for (int j = 0; j < dim; ++j) {
-        std::cerr << test.coords[i][j];
-        if (j < dim - 1)
-          std::cerr << ", ";
-      }
+      for (int j = 0; j < dim; ++j)
+        std::cerr << test.coords[i][j] << (j < dim - 1 ? ", " : "");
       std::cerr << "]." << std::endl;
-      failure = true;
-      //return EXIT_FAILURE;
+
+      return EXIT_FAILURE;
     }
 
     if (not equals(gold.values[i], test.values[i])) {
       std::cerr << "Error: mismatched values at line " << i << std::endl;
       std::cerr << "\tgold: " << gold.values[i] <<", test: " << test.values[i] << std::endl;
-      failure = true;
-      //return EXIT_FAILURE;
+      return EXIT_FAILURE;
     }
   }
-  if (failure)
-    return EXIT_FAILURE;
 
-  std::cout << "files agree" << std::endl;
   return EXIT_SUCCESS;
 }
