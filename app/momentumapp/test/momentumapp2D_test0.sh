@@ -11,8 +11,8 @@ set -e
 # Echo each command
 set -x
 
-# 2nd order momentum CCH remapwil limiters of quadratic density and velocity
-${RUN_COMMAND} $TESTAPPDIR/momentumapp 8 6 2 1 "1 + x + x * y" "x * x" "2 * y * y"
+# 2nd order momentum SGH remap of quadratic density and velocity
+${RUN_COMMAND} $TESTAPPDIR/momentumapp2D 8 6 1 0 "1 + x + x * y" "x * x" "2 * y * y"
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp errors_gold1.txt errors1.txt 1e-10 1e-4
+$CMPAPPDIR/apptest_cmp errors2D_gold0.txt errors2D_0.txt 1e-10 1e-4
