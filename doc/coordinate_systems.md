@@ -30,7 +30,7 @@ Figure ([\[fig:variables\]](#fig:variables)).
 |   \(y\)    | the second Cartesian coordinate                                                                         |
 |   \(z\)    | the third Cartesian coordinate; \(\hat{\boldsymbol{x}}\times\hat{\boldsymbol{y}}=\hat{\boldsymbol{z}}\) |
 |   \(r\)    | the distance from the origin (spherical radius)                                                         |
-|  \(\rho\)  | the distance from the \(z\) axis (cylindrical radius)                                                   |
+|  $$\rho$$  | the distance from the \(z\) axis (cylindrical radius)                                                   |
 |  \(\phi\)  | the azimuthal angle (around the \(z\) axis, starting at the positive \(x\) axis)                        |
 | \(\theta\) | the angle of declination (descending from the positive \(z\) axis)                                      |
 
