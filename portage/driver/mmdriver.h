@@ -792,21 +792,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
 
-  
 #ifdef HAVE_TANGRAM
-    // If user set tolerances for Tangram, but not for Portage,
-    // use Tangram tolerances
-    if ( (num_tols_.user_tolerances == false) &&
-         (!reconstructor_tols_.empty()) ) {
-      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
-      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
-    }
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
                                      num_tols_.min_absolute_volume},
                               {100, num_tols_.min_absolute_distance,
                                     num_tols_.min_absolute_distance} };
+    }
+    // If user set tolerances for Tangram, but not for Portage,
+    // use Tangram tolerances
+    else if (num_tols_.user_tolerances == false) {
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
 #endif
 

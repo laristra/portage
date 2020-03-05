@@ -102,6 +102,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   //     *-------------:------------*
   //    0,0           0.5,0         1,0
 
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
+  double vol_tol = 1.0e-12;
   constexpr int nmats = 3;
   std::string matnames[nmats] = {"mat0", "mat1", "mat2"};
 
@@ -152,8 +154,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] >= 
-            Portage::DEFAULT_NUMERIC_TOLERANCES<2>.min_absolute_volume) {  // non-trivial intersection
+        if (xmoments[0] >= vol_tol) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
@@ -256,6 +257,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
+  d.set_num_tols(dst_tol, vol_tol);
   d.run();  // No argument implies serial run
 
 
@@ -267,6 +269,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   //-------------------------------------------------------------------
 
   std::vector<int> matcells_trg[nmats];
+  std::vector<double> matv_trg[nmats];
   std::vector<double> matvf_trg[nmats];
   std::vector<Portage::Point<2>> matcen_trg[nmats];
 
@@ -285,9 +288,9 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] >= 
-            Portage::DEFAULT_NUMERIC_TOLERANCES<2>.min_absolute_volume) {  // non-trivial intersection
+        if (xmoments[0] >= vol_tol) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
+          matv_trg[m].push_back(xmoments[0]);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
           Portage::Point<2> mcen(xmoments[1]/xmoments[0],
@@ -434,6 +437,8 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
   //     *-------------:------------*
   //    0,0           0.5,0         1,0
 
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
+  double vol_tol = 1.0e-12;
   constexpr int nmats = 3;
   std::string matnames[nmats] = {"mat0", "mat1", "mat2"};
 
@@ -483,7 +488,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<3>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
@@ -589,7 +594,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
-
+  d.set_num_tols(dst_tol, vol_tol);
   Wonton::SerialExecutor_type executor;
   d.run(&executor);
 
@@ -620,7 +625,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<3>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
@@ -768,6 +773,8 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
   //     *-------------:------------*
   //    0,0           0.5,0         1,0
 
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
+  double vol_tol = 1.0e-12;
   constexpr int nmats = 2;
   std::string matnames[nmats] = {"mat0", "mat1"};
 
@@ -810,7 +817,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
         }
@@ -906,6 +913,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
+  d.set_num_tols(dst_tol, vol_tol);
   d.run();  // No argument implies serial run
 
 
@@ -934,7 +942,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
         }
@@ -1065,6 +1073,8 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
   //     *-------------:------------*
   //    0,0           0.5,0         1,0
 
+  double dst_tol = sqrt(3)*std::numeric_limits<double>::epsilon();
+  double vol_tol = 1.0e-12;
   constexpr int nmats = 2;
   std::string matnames[nmats] = {"mat0", "mat1"};
 
@@ -1106,7 +1116,7 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<3>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
         }
@@ -1204,7 +1214,7 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);
-
+  d.set_num_tols(dst_tol, vol_tol);
   Wonton::SerialExecutor_type executor;
   d.run(&executor);
 
@@ -1234,7 +1244,7 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
     for (int m = 0; m < nmats; m++) {
       if (BOX_INTERSECT::intersect_boxes<3>(matlo[m], mathi[m],
                                             cell_lo, cell_hi, &xmoments)) {
-        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+        if (xmoments[0] > vol_tol) {  // non-trivial intersection
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
         }

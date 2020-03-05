@@ -154,11 +154,6 @@ struct NumericTolerances_t {
     // tolerances, this flaq need to be set to true.
     bool   user_tolerances;
 
-    // r2d_orient polygon convexity check - if a cross product of
-    // any two successive vertex positions is smaller that this value
-    // the polygon is marked as not convex.
-    double polygon_convexity_eps;
-
     // Check wheather the volume returned by r2d reduce is positive
     // (or slightly negative). If the volume is smaller, we throw an
     // error.
@@ -190,9 +185,13 @@ struct NumericTolerances_t {
 template <int D>
 const NumericTolerances_t DEFAULT_NUMERIC_TOLERANCES = {
   false,                                           //user_tolerances
-  1.0e-14,                                         //polygon_convexity_eps
   -1.0e-14,                                        //minimal_intersection_volume
-  sqrt(D)*std::numeric_limits<double>::epsilon(),  //min_absolute_distance
+  sqrt(D)*std::numeric_limits<double>::epsilon(),  //min_absolute_distance: for two points
+  // to be distinct, we need at least one coordinate to differ by machine epsilon or more.
+  // In the worst case, when difference along all coordinate axes is the same, it corresponds to
+  // the distance of sqrt(D)*machine_epsilon or more. Because we use distance criterion in 
+  // order to not introduce a direction bias, we have to impose the worst case tolerance even 
+  // though some points that are closer can technically be distinguished.
   std::numeric_limits<double>::epsilon(),          //min_absolute_volume
   100*std::numeric_limits<double>::epsilon(),      //relative_conservation_eps
   5                                                //max_num_fixup_iter
