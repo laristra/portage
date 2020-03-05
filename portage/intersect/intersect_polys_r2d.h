@@ -85,7 +85,7 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
     Wonton::Vector<2> fv2mv = target_poly[imv] - target_poly[ifv];
     double dst = Wonton::dot(fv2mv, normal);
 
-    if (dst <= num_tols.min_absolute_distance) {
+    if (dst <= -num_tols.min_absolute_distance) {
       trg_convex = false;
       break;
     }
@@ -125,7 +125,7 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
       Wonton::Vector<2> fv2mv = source_poly[imv] - source_poly[ifv];
       double dst = Wonton::dot(fv2mv, normal);
 
-      if (dst <= num_tols.min_absolute_distance) {
+      if (dst <= -num_tols.min_absolute_distance) {
         src_convex = false;
         break;
       }
