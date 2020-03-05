@@ -39,7 +39,8 @@ Coordinate system variables as defined by ISO
 
 ![Coordinate system conventions used in this document, based on
 standards defined in ISO
-80000-2:2009.<span label="fig:variables"></span>](Physics_Coordinates.png)
+80000-2:2009.<span label="fig:variables"></span>](Physics_Coordinates.png
+=300x300)
 
 # Coordinate Systems
 
