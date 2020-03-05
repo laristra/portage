@@ -125,7 +125,7 @@ public:
   MSM_Driver(const MSM_Driver &) = delete;
 
   /// Assignment operator (disabled)
-  MSM_Driver & operator = (const MSM_Driver &) = delete;
+  MSM_Driver& operator = (const MSM_Driver &) = delete;
 
   /// Destructor
   ~MSM_Driver() = default;
@@ -159,10 +159,8 @@ public:
                            Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
                            Meshfree::Basis::Type const& basis_type = Meshfree::Basis::Unitary,
                            Meshfree::Operator::Type operator_spec = Meshfree::Operator::LastOperator,
-                           Portage::vector<Meshfree::Operator::Domain> const& operator_domains =
-                             Portage::vector<Meshfree::Operator::Domain>(0),
-                           Portage::vector<std::vector<Point<dim>>> const& operator_data =
-                           Portage::vector<std::vector<Point<dim>>>(0, std::vector<Point<dim>>(0))) {
+                           Portage::vector<Meshfree::Operator::Domain> const& operator_domains = {},
+                           Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
 
     assert(source_vars.size() == target_vars.size());
 

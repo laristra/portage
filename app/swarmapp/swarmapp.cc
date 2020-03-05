@@ -185,18 +185,16 @@ void run<2>(int example_num, int n_source, int n_target,
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_data(num_source_particles, 0.);
-  Portage::vector<double> target_data(num_target_particles, 0.);
-  std::vector<std::string> remap_fields;
+  Portage::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto p = source_swarm.get_particle_coordinates(i);
-    source_data[i] = field_func<2>(example.field_order, p);
+    source_field[i] = field_func<2>(example.field_order, p);
   }
-  
-  source_state.add_field("remapdata", source_data);
-  target_state.add_field("remapdata", target_data);
-  remap_fields.emplace_back("remapdata");
+
+  std::vector<std::string> remap_fields = { "remapdata" };
+  source_state.add_field("remapdata", source_field);
+  target_state.add_field("remapdata", 0.0);
 
   // Smoothing lengths (or in other words "size" of the support function) in each dimension
   double h = 0.;
@@ -293,7 +291,7 @@ void run<2>(int example_num, int n_source, int n_target,
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto const p = source_swarm.get_particle_coordinates(i);
-    file[0] << p[0] << ", " << p[1] << ", " << source_data[i] << std::endl;
+    file[0] << p[0] << ", " << p[1] << ", " << source_field[i] << std::endl;
   }
 
   // Create the output file for comparison.
@@ -345,18 +343,16 @@ void run<3>(int example_num, int n_source, int n_target,
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_data(num_source_particles, 0.);
-  Portage::vector<double> target_data(num_target_particles, 0.);
-  std::vector<std::string> remap_fields;
+  Portage::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto coord = source_swarm.get_particle_coordinates(i);
-    source_data[i] = field_func<3>(example.field_order, coord);
+    source_field[i] = field_func<3>(example.field_order, coord);
   }
 
-  source_state.add_field("remapdata", source_data);
-  target_state.add_field("remapdata", target_data);
-  remap_fields.emplace_back("remapdata");
+  std::vector<std::string> remap_fields = { "remapdata" };
+  source_state.add_field("remapdata", source_field);
+  target_state.add_field("remapdata", 0.0);
 
   // Smoothing lengths (or in other words "size" of the support function) in each dimension
   double h = 0.;
@@ -454,7 +450,7 @@ void run<3>(int example_num, int n_source, int n_target,
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto const p = source_swarm.get_particle_coordinates(i);
-    file[0] << p[0] << ", " << p[1] << ", " << p[2] << ", "<< source_data[i] << std::endl;
+    file[0] << p[0] << ", " << p[1] << ", " << p[2] << ", " << source_field[i] << std::endl;
   }
 
   // Create the output file for comparison.

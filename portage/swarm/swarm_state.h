@@ -240,6 +240,27 @@ public:
   }
 
   /**
+   * @brief Set an empty field on the swarm.
+   *
+   * @tparam T: field values type (int, double)
+   * @param name: field name.
+   * @param value: default field elements value.
+   */
+  template<typename T=double>
+  void add_field(std::string name, T value) {
+
+    static_assert(std::is_arithmetic<T>::value, "only numeric fields");
+
+    if (std::is_integral<T>::value) {
+      auto& field = fields_int_[name];
+      field.resize(num_owned_points_, value);
+    } else {
+      auto& field = fields_dbl_[name];
+      field.resize(num_owned_points_, value);
+    }
+  }
+
+  /**
    * @brief Retrieve a specified integer field.
    *
    * One cannot specialize template method without

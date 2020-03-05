@@ -262,17 +262,16 @@ public:
     int const nb_source = source_swarm.num_owned_particles();
     int const nb_target = target_swarm.num_owned_particles();
 
-    Portage::vector<double> source_data(nb_source);
-    Portage::vector<double> target_data(nb_target, 0.0);
-
     // Create the source data for given function
+    Portage::vector<double> source_data(nb_source);
+
     for (int p = 0; p < nb_source; ++p) {
       auto coord = source_swarm.get_particle_coordinates(p);
       source_data[p] = compute_initial_field(coord);
     }
 
     source_state.add_field("particledata", source_data);
-    target_state.add_field("particledata", target_data);
+    target_state.add_field("particledata", 0.0);
 
     // Set kernels and geometries
     if (center_ == Gather) {
@@ -303,12 +302,12 @@ public:
 
     // Check the answer
     double total_error = 0.;
-    auto& remapped_field = target_state.get_field("particledata");
+    auto const& target_data = target_state.get_field("particledata");
 
     if (operator_ == Operator::LastOperator) {
       for (int i = 0; i < nb_target; ++i) {
         auto p = target_swarm.get_particle_coordinates(i);
-        auto error = compute_initial_field(p) - remapped_field[i];
+        auto error = compute_initial_field(p) - target_data[i];
         // dump diagnostics for each particle
         switch (dim) {
           case 1: std::printf("particle: %4d coord: (%5.3lf)", i, p[0]); break;
@@ -316,7 +315,7 @@ public:
           case 3: std::printf("particle: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
           default: break;
         }
-        double val = remapped_field[i];
+        double val = target_data[i];
         std::printf(" value: %10.6lf, error: %lf\n", val, error);
         total_error += error * error;
       }
@@ -328,7 +327,7 @@ public:
     } else if (operator_ == Operator::VolumeIntegral) {
       double total = 0.;
       for (int p = 0; p < nb_target; ++p) {
-        total += remapped_field[p];
+        total += target_data[p];
       }
       ASSERT_NEAR(expected_answer, total, epsilon);
     }

@@ -65,8 +65,8 @@ public:
       source_mesh_wrapper(*source_mesh),
       target_mesh_wrapper(*target_mesh),
       source_state(source_mesh_wrapper),
-      target_state_1(target_mesh_wrapper),
-      target_state_2(target_mesh_wrapper) {}
+      target_state_one(target_mesh_wrapper),
+      target_state_two(target_mesh_wrapper) {}
 
   /**
    * @brief Test main method.
@@ -149,28 +149,21 @@ public:
     target_data[2].resize(nb_target_nodes);
     target_data[3].resize(nb_target_nodes);
 
-    target_state_1.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[0]));
-    target_state_2.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[1]));
-    target_state_1.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[2]));
-    target_state_2.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[3]));
+    target_state_one.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[0]));
+    target_state_two.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[1]));
+    target_state_one.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[2]));
+    target_state_two.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[3]));
 
     // Make list of field names
     std::vector<std::string> remap_fields = { "celldata" };
     if (not faceted)
       remap_fields.emplace_back("nodedata");
 
-    std::cout << "OK fields init" << std::endl;
-
-        //  Build the mesh-mesh driver data for this mesh type
+    //  Build the mesh-mesh driver data for this mesh type
     MeshRemap mesh_remap(source_mesh_wrapper, source_state,
-                         target_mesh_wrapper, target_state_1);
+                         target_mesh_wrapper, target_state_one);
     mesh_remap.set_remap_var_names(remap_fields);
-
-    std::cout << "OK set remap var names" << std::endl;
-
     mesh_remap.run();  // run in serial (executor argument defaults to nullptr)
-
-    std::cout << "OK mesh remap" << std::endl;
 
     // Set up the operator information if needed
     Portage::vector<std::vector<Wonton::Point<dim>>> data;
@@ -178,8 +171,6 @@ public:
     Operator::Domain domain_types[3] = { Operator::Interval,
                                          Operator::Quadrilateral,
                                          Operator::Hexahedron };
-
-    std::cout << "OK domain types" << std::endl;
 
     if (op == Operator::VolumeIntegral) {
       int ncells = target_mesh->num_entities(Wonton::CELL,Wonton::ALL);
@@ -202,65 +193,52 @@ public:
                              domain_types[dim-1], data[i], result);
         if (dim == 2) {
           switch (basis) {
-            case Basis::Linear: exact[i] = result[1][0] + result[2][0]; break;
-            case Basis::Quadratic: exact[i] = 2. * result[3][0] + result[4][0] + 2. * result[5][0]; break;
-            default: break;
+            case Basis::Linear:
+              exact[i] = result[1][0] + result[2][0]; break;
+            case Basis::Quadratic:
+              exact[i] = 2. * result[3][0] + result[4][0] + 2. * result[5][0]; break;
+            default:
+              break;
           }
         } else if (dim == 3) {
           switch (basis) {
-            case Basis::Linear: exact[i] = result[1][0] + result[2][0] + result[3][0]; break;
-            case Basis::Quadratic: exact[i] = 2. * result[4][0] + result[5][0] + result[6][0] +
-                                              2.*result[7][0] + result[8][0] +2.*result[9][0]; break;
-            default: break;
+            case Basis::Linear:
+              exact[i] = result[1][0] + result[2][0] + result[3][0]; break;
+            case Basis::Quadratic:
+              exact[i] = 2. * result[4][0] + result[5][0] + result[6][0]
+                       + 2. * result[7][0] + result[8][0] + 2. * result[9][0]; break;
+            default:
+              break;
           }
         }
       }
     }
-    std::cout << "OK here" << std::endl;
+
     //  Build the mesh-swarm-mesh driver data for this mesh type
-    SwarmRemap* driver_ptr = nullptr;
+    SwarmRemap swarm_remap(source_mesh_wrapper, source_state,
+                           target_mesh_wrapper, target_state_two,
+                           smoothing_factor, smoothing_factor,
+                           faceted ? Weight::FACETED : Weight::TENSOR,
+                           faceted ? Weight::POLYRAMP : Weight::B4, center);
 
-    if (faceted) {
-      driver_ptr = new SwarmRemap(source_mesh_wrapper, source_state,
-                                  target_mesh_wrapper, target_state_2,
-                                  smoothing_factor, smoothing_factor,
-                                  Weight::FACETED, Weight::POLYRAMP,
-                                  center, std::string("NONE"),
-                                  std::numeric_limits<double>::infinity());
-    } else {
-      driver_ptr = new SwarmRemap(source_mesh_wrapper, source_state,
-                                  target_mesh_wrapper, target_state_2,
-                                  smoothing_factor, smoothing_factor,
-                                  Weight::TENSOR, Weight::B4, center);
-    }
+    auto estimator = (op == Operator::VolumeIntegral ? OperatorRegression
+                                                     : LocalRegression);
 
-    auto estimator = (op == Operator::VolumeIntegral ? OperatorRegression : LocalRegression);
-    std::cout << "OK estimator" << std::endl;
-    SwarmRemap& swarm_remap(*driver_ptr);
     swarm_remap.set_remap_var_names(remap_fields, remap_fields, estimator,
                                     basis, op, domains_, data);
-    swarm_remap.run();  // run in serial (executor argument defaults to nullptr)
-
-    std::cout << "OK swarm remap" << std::endl;
+    swarm_remap.run();
 
     // Check the answer
     double stdval, err;
     double toterr = 0.;
 
-    auto& cell_field1 = target_state_1.get<Field>("celldata")->get_data();
-    auto& cell_field2 = target_state_2.get<Field>("celldata")->get_data();
-    auto& node_field1 = target_state_1.get<Field>("nodedata")->get_data();
-    auto& node_field2 = target_state_2.get<Field>("nodedata")->get_data();
-
-    //auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(target_state_1.get("celldata"))->get_data();
-    //auto& cellvecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(target_state_2.get("celldata"))->get_data();
-    //auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(target_state_1.get("nodedata"))->get_data();
-    //auto& nodevecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(target_state_2.get("nodedata"))->get_data();
+    auto& cell_field1 = target_state_one.get<Field>("celldata")->get_data();
+    auto& cell_field2 = target_state_two.get<Field>("celldata")->get_data();
+    auto& node_field1 = target_state_one.get<Field>("nodedata")->get_data();
+    auto& node_field2 = target_state_two.get<Field>("nodedata")->get_data();
 
     Wonton::Flat_Mesh_Wrapper<double> target_flat_mesh;
     target_flat_mesh.initialize(target_mesh_wrapper);
-
-    std::cout << "OK fields retrieval" << std::endl;
 
     if (op != Operator::VolumeIntegral) {
       for (int i = 0; i < nb_target_cells; ++i) {
@@ -270,20 +248,24 @@ public:
         double const mesh_error  = cell_field1[i] - value;
         double const swarm_error = cell_field2[i] - value;
 
-        //  dump diagnostics for each cell
-        switch (dim) {
-          case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
-          case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
-          default: break;
-        }
+        #if ENABLE_DEBUG
+          //  dump diagnostics for each cell
+          switch (dim) {
+            case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
+            case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
+            default: break;
+          }
 
-        std::printf(" value: %10.6lf,", value);
-        std::printf(" mesh: %10.6lf error: %lf", cell_field1[i], mesh_error);
-        std::printf(" swarm: %10.6lf error: %lf\n", cell_field2[i], swarm_error);
+          std::printf(" value: %10.6lf,", value);
+          std::printf(" mesh: %10.6lf error: %lf", cell_field1[i], mesh_error);
+          std::printf(" swarm: %10.6lf error: %lf\n", cell_field2[i], swarm_error);
+        #endif
         toterr = std::max(toterr, std::abs(swarm_error));
       }
 
-      std::printf("\n\nL^inf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
+      #if ENABLE_DEBUG
+        std::printf("\n\nL^inf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
+      #endif
       ASSERT_LT(toterr, epsilon);
 
       if (not faceted) {
@@ -295,20 +277,24 @@ public:
           double const mesh_error  = node_field1[i] - value;
           double const swarm_error = node_field2[i] - value;
 
-          //  dump diagnostics for each node
-          switch (dim) {
-            case 2: std::printf("node: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
-            case 3: std::printf("node: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
-            default: break;
-          }
+          #if ENABLE_DEBUG
+            //  dump diagnostics for each node
+            switch (dim) {
+              case 2: std::printf("node: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
+              case 3: std::printf("node: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
+              default: break;
+            }
 
-          std::printf(" value: %10.6lf,", value);
-          std::printf(" mesh: %10.6lf error: %lf", node_field1[i], mesh_error);
-          std::printf(" swarm: %10.6lf error: %lf\n", node_field2[i], swarm_error);
+            std::printf(" value: %10.6lf,", value);
+            std::printf(" mesh: %10.6lf error: %lf", node_field1[i], mesh_error);
+            std::printf(" swarm: %10.6lf error: %lf\n", node_field2[i], swarm_error);
+          #endif
           toterr = std::max(toterr, std::abs(swarm_error));
         }
 
-        std::printf("\n\nL^inf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
+        #if ENABLE_DEBUG
+          std::printf("\n\nL^inf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
+        #endif
         ASSERT_LT(toterr, epsilon);
       }
     } else {
@@ -318,21 +304,23 @@ public:
         target_flat_mesh.cell_centroid(i, &c);
         double const error = cell_field2[i] - exact[i];
 
-        switch (dim) {
-          case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
-          case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
-          default: break;
-        }
-        std::printf(" exact: %10.6lf,", exact[i]);
-        std::printf(" swarm: %10.6lf error: %10.6lf\n", cell_field2[i], error);
+        #if ENABLE_DEBUG
+          switch (dim) {
+            case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
+            case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
+            default: break;
+          }
+          std::printf(" exact: %10.6lf,", exact[i]);
+          std::printf(" swarm: %10.6lf error: %10.6lf\n", cell_field2[i], error);
+        #endif
         toterr = std::max(toterr, std::abs(error));
       }
 
-      std::printf("\n\nL^inf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
+      #if ENABLE_DEBUG
+        std::printf("\n\nL^inf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
+      #endif
       ASSERT_LT(toterr, epsilon);
     }
-
-    delete driver_ptr;
   }
 
 protected:
@@ -344,8 +332,8 @@ protected:
   Wonton::Simple_Mesh_Wrapper source_mesh_wrapper;
   Wonton::Simple_Mesh_Wrapper target_mesh_wrapper;
   Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> source_state;
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_1;
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_2;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_one;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
 
   // Operator domains and data
   Portage::vector<Operator::Domain> domains_;
