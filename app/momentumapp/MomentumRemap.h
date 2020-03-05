@@ -381,10 +381,6 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       cd(srcmesh_wrapper, srcstate_wrapper,
          trgmesh_wrapper, trgstate_wrapper);
 
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
-  cd.set_num_tols(default_num_tols);
-
   auto candidates = cd.template search<Portage::SearchKDTree>();
   auto srcwts = cd.template intersect_meshes<Portage::IntersectRND<D>::template Intersect>(candidates);
 
