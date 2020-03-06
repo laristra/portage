@@ -23,13 +23,31 @@ COPY portage /home/portage/portage
 USER root
 RUN chown -R portage:portage /home/portage/portage
 USER portage
-WORKDIR /home/portage/portage
+
+# for tangram
+WORKDIR /home/portage
+RUN git clone https://github.com/laristra/tangram.git 
+WORKDIR tangram
+RUN git submodule update --init --recursive
+RUN git checkout v0.9.7 
 RUN mkdir build
 WORKDIR build
-RUN cmake -D CMAKE_BUILD_TYPE=Debug -D ENABLE_UNIT_TESTS=True \
+ENV TANGRAM_DIR /home/portage/tangram/install 
+RUN cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_PREFIX_PATH=$TANGRAM_DIR \ 
+    -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} \
-    -D ENABLE_MPI_CXX_BINDINGS=True ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} \
-    -D ENABLE_DOXYGEN=True ..
+    -D ENABLE_MPI_CXX_BINDINGS=True .. 
+RUN make && make test 
+RUN make install
+
+WORKDIR ../../portage
+RUN mkdir build
+WORKDIR build
+RUN cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_PREFIX_PATH=$TANGRAM_DIR \ 
+    -D ENABLE_UNIT_TESTS=True -D ENABLE_APP_TESTS=True 
+    -D ENABLE_MPI=${MPI} -D ENABLE_MPI_CXX_BINDINGS=True \
+    ${COVERAGE:+-DENABLE_COVERAGE_BUILD=ON} -D ENABLE_DOXYGEN=True \
+    -D TANGRAM_DIR=$TANGRAM_DIR ..
 RUN make VERBOSE=1 -j2
 RUN make test
 RUN cd .. && if [ ${COVERAGE} ]; then \
