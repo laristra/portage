@@ -32,34 +32,19 @@ using namespace Portage::swarm;
 class SwarmTest : public testing::Test {
 protected:
   // particles per axis count and bounds, spatial step.
-  static constexpr int const n = 17;
-  static constexpr double const p_min = -4.0;
-  static constexpr double const p_max =  4.0;
-  static constexpr double const step = (p_max - p_min) / (n - 1);
-  static constexpr double const epsilon = 1.E-12;
+  int const n = 17;
+  double const p_min = -4.0;
+  double const p_max =  4.0;
+  double const step = (p_max - p_min) / (n - 1);
+  double const epsilon = 1.E-12;
 
   // distribution for generated particle fields
-  static constexpr unsigned const seed = 1234;
-  static constexpr unsigned const no_seed = 0;
-  static constexpr int const random = 0;
-  static constexpr int const regular = 1;
-  static constexpr int const perturbed = 2;
+  unsigned const seed = 1234;
+  unsigned const no_seed = 0;
+  int const random = 0;
+  int const regular = 1;
+  int const perturbed = 2;
 };
-
-// constants definitions
-int const SwarmTest::n;
-int const SwarmTest::random;
-int const SwarmTest::regular;
-int const SwarmTest::perturbed;
-
-unsigned const SwarmTest::seed;
-unsigned const SwarmTest::no_seed;
-
-double const SwarmTest::p_min;
-double const SwarmTest::p_max;
-double const SwarmTest::step;
-double const SwarmTest::epsilon;
-
 
 TEST_F(SwarmTest, Check_1D_random) {
 
