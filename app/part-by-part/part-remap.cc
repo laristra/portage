@@ -81,7 +81,7 @@ struct Params {
 
   /* remap */
   int order = 1;
-  double tolerance = Portage::DEFAULT_CONSERVATION_TOL;
+  double tolerance = Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps;
   Wonton::Entity_kind kind = Wonton::Entity_kind::CELL;
   std::map<std::string, std::string> fields {};
   std::map<std::string, std::vector<entity::part>> parts {};

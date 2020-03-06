@@ -111,8 +111,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   meshWrapper.cell_get_coordinates(0, &target_points);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // actually intersect
   std::vector<double> moments =
@@ -164,8 +163,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   meshWrapper.cell_get_coordinates(0, &target_points);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // actually intersect
   std::vector<double> moments =

@@ -248,10 +248,6 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
-  d.set_num_tols(default_num_tols);
-
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
 
   double dblmin = -std::numeric_limits<double>::max();
@@ -622,10 +618,6 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
-  d.set_num_tols(default_num_tols);
-
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
 
   
@@ -722,7 +714,7 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-8);
 
     Wonton::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
@@ -731,7 +723,7 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
       for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
+        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-8);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -987,10 +979,6 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
                       Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
-
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
-  d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
 
@@ -1336,10 +1324,6 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
                       Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
-
-  Portage::NumericTolerances_t default_num_tols;
-  default_num_tols.use_default();
-  d.set_num_tols(default_num_tols);
 
   d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
 

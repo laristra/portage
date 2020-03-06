@@ -123,8 +123,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (CONSTANT,EXTRAPOLATE)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::CONSTANT, Portage::EXTRAPOLATE);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, 
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps, 
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter, 
+      Portage::CONSTANT, Portage::EXTRAPOLATE);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_E[c], targetvec[c], TOL);
@@ -136,8 +138,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (LOCALLY_CONSERVATIVE,EXTRAPOLATE)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::LOCALLY_CONSERVATIVE, Portage::EXTRAPOLATE);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
+      Portage::LOCALLY_CONSERVATIVE, Portage::EXTRAPOLATE);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_E[c], targetvec[c], TOL);
@@ -149,8 +153,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (SHIFTED_CONSERVATIVE,EXTRAPOLATE)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::SHIFTED_CONSERVATIVE, Portage::EXTRAPOLATE);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
+      Portage::SHIFTED_CONSERVATIVE, Portage::EXTRAPOLATE);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
@@ -162,8 +168,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (CONSTANT,LEAVE_EMPTY)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::CONSTANT, Portage::LEAVE_EMPTY);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
+      Portage::CONSTANT, Portage::LEAVE_EMPTY);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_C_L[c], targetvec[c], TOL);
@@ -175,8 +183,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (LOCALLY_CONSERVATIVE,LEAVE_EMPTY)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::LOCALLY_CONSERVATIVE, Portage::LEAVE_EMPTY);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
+      Portage::LOCALLY_CONSERVATIVE, Portage::LEAVE_EMPTY);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_L_L[c], targetvec[c], TOL);
@@ -188,8 +198,10 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // test (SHIFTED_CONSERVATIVE,LEAVE_EMPTY)
   if (driver.has_mismatch())
-    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax, Portage::DEFAULT_CONSERVATION_TOL, 
-      Portage::DEFAULT_MAX_FIXUP_ITER, Portage::SHIFTED_CONSERVATIVE, Portage::LEAVE_EMPTY);
+    driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
+      Portage::SHIFTED_CONSERVATIVE, Portage::LEAVE_EMPTY);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_L[c], targetvec[c], TOL);

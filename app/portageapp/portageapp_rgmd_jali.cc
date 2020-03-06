@@ -1199,7 +1199,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
-      driver.set_reconstructor_options(ims_tols, source_convex_cells);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
       driver.run(executor);
     } else if (interp_order == 2) {
       Portage::MMDriver<
@@ -1219,7 +1219,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
       driver.set_bnd_limiter(bnd_limiter);
-      driver.set_reconstructor_options(ims_tols, source_convex_cells);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
       driver.run(executor);
     }
   } else {  // 3D
@@ -1239,7 +1239,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           driver(sourceMeshWrapper, sourceStateWrapper,
                  targetMeshWrapper, targetStateWrapper);
       driver.set_remap_var_names(remap_fields);
-      driver.set_reconstructor_options(ims_tols, source_convex_cells);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
       driver.run(executor);
     } else {  // 2nd order & 3D
       Portage::MMDriver<
@@ -1259,7 +1259,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       driver.set_remap_var_names(remap_fields);
       driver.set_limiter(limiter);
       driver.set_bnd_limiter(bnd_limiter);
-      driver.set_reconstructor_options(ims_tols, source_convex_cells);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
       driver.run(executor);
     }
   }

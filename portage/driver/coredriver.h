@@ -385,6 +385,25 @@ class CoreDriverBase {
 
 
   /*!
+    @brief Set numerical tolerances for small distances and volumes
+
+    @param Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+
+  template<Entity_kind ONWHAT>
+  void
+  set_num_tols(const double min_absolute_distance, 
+               const double min_absolute_volume) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->set_num_tols(min_absolute_distance, min_absolute_volume);
+  }
+
+  /*!
     @brief Set numerical tolerances for small volumes, distances, etc.
 
     @tparam Entity_kind  what kind of entity are we setting for
@@ -394,7 +413,7 @@ class CoreDriverBase {
 
   template<Entity_kind ONWHAT>
   void
-  set_num_tols(NumericTolerances_t num_tols) {
+  set_num_tols(const NumericTolerances_t& num_tols) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->set_num_tols(num_tols);
@@ -403,16 +422,23 @@ class CoreDriverBase {
 
 #ifdef HAVE_TANGRAM
   /*!
-    @brief set tolerances and options for interface reconstructor driver  
-    @param tols The vector of tolerances for each moment during reconstruction
-    @param all_convex Should be set to false if the source mesh contains 
-    non-convex cells.  
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
   */
-  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
-                                 bool all_convex) {
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
     assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
-    derived_class_ptr->set_interface_reconstructor_options(tols, all_convex);
+    derived_class_ptr->set_interface_reconstructor_options(all_convex, tols);
   }
 
 #endif
@@ -570,12 +596,21 @@ class CoreDriver : public CoreDriverBase<D,
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
-    // Use default numerical tolerances in case they were not set earlier
-    if (num_tols_.tolerances_set == false) {
-        NumericTolerances_t default_num_tols;
-        default_num_tols.use_default();
-      set_num_tols(default_num_tols);
+#ifdef HAVE_TANGRAM
+    // If user did NOT set tolerances for Tangram, use Portage tolerances
+    if (reconstructor_tols_.empty()) {
+      reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
+                                     num_tols_.min_absolute_volume},
+                              {100, num_tols_.min_absolute_distance,
+                                    num_tols_.min_absolute_distance} };
     }
+    // If user set tolerances for Tangram, but not for Portage,
+    // use Tangram tolerances
+    else if (num_tols_.user_tolerances == false) {
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
+#endif
 
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
@@ -594,20 +629,35 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
-  /// Set numerical tolerances
-  void set_num_tols(NumericTolerances_t num_tols) {
+  /// Set core numerical tolerances
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {
+    num_tols_.min_absolute_distance = min_absolute_distance;
+    num_tols_.min_absolute_volume = min_absolute_volume;
+    num_tols_.user_tolerances = true;
+  }
+
+  /// Set all numerical tolerances
+  void set_num_tols(const NumericTolerances_t& num_tols) {
     num_tols_ = num_tols;
   }
 
 #ifdef HAVE_TANGRAM
   /*!
-    @brief set tolerances and options for interface reconstructor driver  
-    @param tols The vector of tolerances for each moment during reconstruction
-    @param all_convex Should be set to false if the source mesh contains 
-    non-convex cells.  
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
   */
-  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
-                                 bool all_convex) {
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
     reconstructor_tols_ = tols; 
     reconstructor_all_convex_ = all_convex; 
   }
@@ -649,9 +699,6 @@ class CoreDriver : public CoreDriverBase<D,
                   Matpoly_Splitter, Matpoly_Clipper >) !=
            typeid(DummyInterfaceReconstructor<SourceMesh, D,
                   Matpoly_Splitter, Matpoly_Clipper>));
-
-    std::vector<Tangram::IterativeMethodTolerances_t>
-        tols(2, {1000, 1e-12, 1e-12});
 
     // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
     // interface_reconstructor_ =
@@ -755,13 +802,10 @@ class CoreDriver : public CoreDriverBase<D,
         int nwts = cell_mat_sources_and_weights.size();
         for (int s = 0; s < nwts; s++) {
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
-          if (wts[0] > 0.0) {
-            double vol = target_mesh_.cell_volume(c);
-            // Check that the volume of material we are adding to c is not miniscule
-            if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
-              matcellstgt.push_back(c);
-              break;
-            }
+          // Check that the volume of material we are adding to c is not miniscule
+          if (wts[0] > num_tols_.min_absolute_volume) {
+            matcellstgt.push_back(c);
+            break;
           }
         }
       }
@@ -1317,7 +1361,7 @@ class CoreDriver : public CoreDriverBase<D,
   SourceState const & source_state_;
   TargetState & target_state_;
 
-  NumericTolerances_t num_tols_;
+  NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;
   int nprocs_ = 1;
@@ -1345,8 +1389,7 @@ class CoreDriver : public CoreDriverBase<D,
   // user-specific values. Otherwise, the remapper will use the
   // default values.
 
-  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_ = 
-  {{1000, 1e-12, 1e-12}, {1000, 1e-12, 1e-12}};
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_;
   bool reconstructor_all_convex_ = true;  
 
   // Pointer to the interface reconstructor object (required by the

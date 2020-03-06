@@ -98,14 +98,8 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     }
   }
 
-  double MAXLEN = -1e99;
-  for (int j = 0; j < 3; j++) {
-    double len = source_cell_bounds[2*j+1]-source_cell_bounds[2*j];
-    if (MAXLEN < len) MAXLEN = len;
-  }
-
   // used only for bounding box check not for intersections
-  double bbeps = num_tols.intersect_bb_relative_distance*MAXLEN;
+  double bbeps = num_tols.min_absolute_distance;
 
   int num_faces = srcpoly.facetpoints.size();
   r3d_int *face_num_verts = new r3d_int[num_faces];
