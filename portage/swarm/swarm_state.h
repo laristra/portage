@@ -189,6 +189,7 @@ public:
     }
   }
 
+#ifdef PORTAGE_ENABLE_THRUST
   /**
    * @brief Set a field on the swarm.
    *
@@ -213,6 +214,7 @@ public:
       std::copy(value.begin(), value.end(), field.begin());
     }
   }
+#endif
 
   /**
    * @brief Set a field on the swarm.
