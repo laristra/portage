@@ -26,8 +26,7 @@ TEST(intersectR3D, simple1) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -62,8 +61,7 @@ TEST(intersectR3D, simple2) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -98,8 +96,7 @@ TEST(intersectR3D, simple3) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -134,8 +131,7 @@ TEST(intersectR3D, simple4) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -170,8 +166,7 @@ TEST(intersectR3D, simple5) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -206,8 +201,7 @@ TEST(intersectR3D, simple6) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -273,8 +267,7 @@ TEST(intersectR3D, simple7) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -308,8 +301,7 @@ TEST(intersectR3D, simple8) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -343,8 +335,7 @@ TEST(intersectR3D, simple9) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -380,8 +371,7 @@ TEST(intersectR3D, cube_no_intersect) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,
@@ -406,8 +396,7 @@ TEST(intersectR3D, cube_0_1) {
 
   const double eps = 1e-12;
 
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
                               Wonton::Simple_Mesh_Wrapper,

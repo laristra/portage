@@ -21,6 +21,8 @@
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
@@ -28,13 +30,14 @@
 #include "portage/support/portage.h"
 
 #include "portage/search/search_kdtree.h"
+#include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
+#include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
-// DWS unnecessary #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
 
@@ -105,6 +108,7 @@ class UberDriver {
                      InterfaceReconstructorType,
                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
   
+  // NOTE: Unused
   using ParallelDriverType =
       CoreDriverBase<D, Flat_Mesh_Wrapper<>,
                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
@@ -320,16 +324,42 @@ class UberDriver {
   }
 
 
+
+  /*!
+    @brief Set numerical tolerances for small distances and volumes
+    in core driver
+
+    @tparam Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {   
+    for (Entity_kind onwhat : entity_kinds_) {
+      switch (onwhat) {
+        case CELL:
+          core_driver_serial_[CELL]->template set_num_tols<CELL>(
+            min_absolute_distance, min_absolute_volume); break;
+        case NODE:
+          core_driver_serial_[NODE]->template set_num_tols<NODE>(
+            min_absolute_distance, min_absolute_volume); break;
+        default:
+          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+          
+      }
+    }
+  }
+  
   /*!
     @brief set numerical tolerances in core driver
 
-     @tparam Entity_kind  what kind of entity are we setting for
+    @tparam Entity_kind  what kind of entity are we setting for
 
-     @tparam num_tols     struct of selected numerical tolerances
+    @param num_tols     struct of selected numerical tolerances
   */
-  template<Entity_kind ONWHAT>
-    void set_num_tols(NumericTolerances_t num_tols) {
-
+  void set_num_tols(const NumericTolerances_t& num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -338,11 +368,10 @@ class UberDriver {
           core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
         default:
           std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-
+          
       }
     }
   }
-
 
   /*!
     @brief search for candidate source entities whose control volumes
@@ -390,11 +419,41 @@ class UberDriver {
   Portage::vector<std::vector<Portage::Weights_t>>         // return type
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
+
+    const auto& weights = core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+    
+    // Check the mesh mismatch once, to make sure the mismatch is cached
+    // prior to interpolation with fixup. This is the correct place to automatically do the
+    // check because it reqires the intersection weights which were just computed.
+    core_driver_serial_[ONWHAT]->template check_mismatch<ONWHAT>(weights);
+    
     mesh_intersection_completed_[ONWHAT] = true;
-
-    return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
-
+    
+    return weights;
   }
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
+  */
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(all_convex, tols);
+  }
+
+#endif
+
+  
 
   /* @brief intersect target cells with source material polygons
 
@@ -470,8 +529,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
 
     interpolate<T, ONWHAT, Interpolate>(srcvarname, srcvarname,
                                         lower_bound, upper_bound,
@@ -524,8 +583,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
     
     assert(source_state_.get_entity(srcvarname) == ONWHAT);
     assert(mesh_intersection_completed_[ONWHAT]);
@@ -643,15 +702,18 @@ class UberDriver {
                                                                         bnd_limiter);
 
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound, nullptr, &gradients
+        srcvarname, trgvarname, sources_and_weights_in, &gradients
       );
     } else {
       driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in,
-        lower_bound, upper_bound
+        srcvarname, trgvarname, sources_and_weights_in
       );
     }
+    
+    if (driver->template has_mismatch<ONWHAT>())
+      driver->template fix_mismatch<ONWHAT>(srcvarname, trgvarname, lower_bound, upper_bound, conservation_tol, 
+        max_fixup_iter, partial_fixup_type, empty_fixup_type);
+
   }
 
   /*!
@@ -726,7 +788,7 @@ class UberDriver {
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
-      Portage::vector<Vector<D>> gradients[nb_mats];
+      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
                                                                       limiter,
@@ -734,12 +796,11 @@ class UberDriver {
       }
       driver->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound, gradients
+        &gradients
       );
     } else {
       driver->template interpolate_mat_var<T, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        lower_bound, upper_bound
+        srcvarname, trgvarname, sources_and_weights_by_mat_in
       );
     }
 #endif

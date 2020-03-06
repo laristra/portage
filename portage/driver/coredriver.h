@@ -24,12 +24,12 @@
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include <portage/interpolate/gradient.h>
+#include "portage/interpolate/gradient.h"
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/parts.h"
+#include "portage/driver/fix_mismatch.h"
 
 /*!
   @file coredriver.h
@@ -213,8 +213,9 @@ class CoreDriverBase {
   }
 
   /*!
-    Interpolate a mesh variable of type T residing on entity kind ONWHAT using
-    previously computed intersection weights
+
+    Interpolate a mesh variable of type T residing on entity kind
+    ONWHAT using previously computed intersection weights
 
     @tparam T   type of variable
 
@@ -226,10 +227,7 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
-    @param[in] lower_bound  Lower bound for variable
-
-    @param[in] upper_bound  Upper bound for variable
-
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template<typename T = double,
@@ -240,16 +238,53 @@ class CoreDriverBase {
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            T lower_bound, T upper_bound,
-                            const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* parts_pair = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->
         template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
                                                       sources_and_weights,
-                                                      lower_bound, upper_bound,
+                                                      gradients);
+  }
+
+  /*!
+
+    (Part-by-part) Interpolate a cell variable of type T residing on
+    entity kind ONWHAT using previously computed intersection weights
+
+    @tparam T   type of variable
+
+    @tparam ONWHAT  Entity_kind that field resides on (enabled only for CELLs)
+
+    @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
+
+    @param[in] srcvarname   Variable name on source mesh
+
+    @param[in] trgvarname   Variable name on target mesh
+
+    @param[in] parts_pair   Pair of parts between which we have to remap
+
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
+
+    Enabled only for cells using SFINAE
+  */
+  
+  template<typename T = double,
+           Entity_kind ONWHAT,
+           template<int, Entity_kind, class, class, class, class, class,
+                    template <class, int, class, class> class,
+                    class, class, class> class Interpolate>
+  typename std::enable_if<ONWHAT == CELL, void>
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                            const PartPair<D, SourceMesh, SourceState,
+                            TargetMesh, TargetState>* parts_pair,
+                            Portage::vector<Vector<D>>* gradients = nullptr) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->
+        template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
+                                                      sources_and_weights,
                                                       parts_pair,
                                                       gradients);
   }
@@ -262,29 +297,110 @@ class CoreDriverBase {
 
     @param[in] trgvarname   Variable name on target mesh
 
-    @param[in] lower_bound  Lower bound for variable
-
-    @param[in] upper_bound  Upper bound for variable
+    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
   */
   
   template <typename T = double,
             template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
-                     class, class, class> class Interpolate
-            >
+                     class, class, class> class Interpolate>
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           T lower_bound, T upper_bound,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
+                           std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
 
-    assert(onwhat() == CELL);
     auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
      derived_class_ptr->
          template interpolate_mat_var<T, Interpolate>(srcvarname,
                                                       trgvarname,
                                                       sources_and_weights_by_mat,
-                                                      lower_bound, upper_bound,
                                                       gradients);
+  }
+
+
+  /*!
+    @brief Check if meshes are mismatched (don't cover identical
+    portions of space)
+
+    @tparam Entity_kind  What kind of entity are we performing intersection of
+
+    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->check_mismatch(source_weights);
+  }
+
+
+  /*!
+    @brief Return if meshes are mismatched (check_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  has_mismatch() {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->has_mismatch();
+  }
+
+
+  /*!
+    @brief Return if meshes are mismatched (check_mismatch must already have been
+    called)
+
+    @returns   Whether the meshes are mismatched
+  */
+
+  template<Entity_kind ONWHAT>
+  bool 
+  fix_mismatch(std::string const & src_var_name,
+               std::string const & trg_var_name,
+               double global_lower_bound = -std::numeric_limits<double>::max(),
+               double global_upper_bound = std::numeric_limits<double>::max(),
+               double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+               int maxiter = 5,
+               Partial_fixup_type partial_fixup_type =
+               Partial_fixup_type::SHIFTED_CONSERVATIVE,
+               Empty_fixup_type empty_fixup_type =
+               Empty_fixup_type::EXTRAPOLATE) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    return derived_class_ptr->fix_mismatch(src_var_name,
+               trg_var_name,
+               global_lower_bound,
+               global_upper_bound,
+               conservation_tol,
+               maxiter,
+               partial_fixup_type,
+               empty_fixup_type);
+}
+
+
+  /*!
+    @brief Set numerical tolerances for small distances and volumes
+
+    @param Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+
+  template<Entity_kind ONWHAT>
+  void
+  set_num_tols(const double min_absolute_distance, 
+               const double min_absolute_volume) {
+    assert(ONWHAT == onwhat());
+    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
+    derived_class_ptr->set_num_tols(min_absolute_distance, min_absolute_volume);
   }
 
   /*!
@@ -297,11 +413,35 @@ class CoreDriverBase {
 
   template<Entity_kind ONWHAT>
   void
-  set_num_tols(NumericTolerances_t num_tols) {
+  set_num_tols(const NumericTolerances_t& num_tols) {
     assert(ONWHAT == onwhat());
     auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
     derived_class_ptr->set_num_tols(num_tols);
   }
+
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
+  */
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+    assert(onwhat() == CELL);
+    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
+    derived_class_ptr->set_interface_reconstructor_options(all_convex, tols);
+  }
+
+#endif
 
 };
 
@@ -456,12 +596,21 @@ class CoreDriver : public CoreDriverBase<D,
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
-    // Use default numerical tolerances in case they were not set earlier
-    if (num_tols_.tolerances_set == false) {
-        NumericTolerances_t default_num_tols;
-        default_num_tols.use_default();
-      set_num_tols(default_num_tols);
+#ifdef HAVE_TANGRAM
+    // If user did NOT set tolerances for Tangram, use Portage tolerances
+    if (reconstructor_tols_.empty()) {
+      reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
+                                     num_tols_.min_absolute_volume},
+                              {100, num_tols_.min_absolute_distance,
+                                    num_tols_.min_absolute_distance} };
     }
+    // If user set tolerances for Tangram, but not for Portage,
+    // use Tangram tolerances
+    else if (num_tols_.user_tolerances == false) {
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
+#endif
 
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
@@ -480,10 +629,40 @@ class CoreDriver : public CoreDriverBase<D,
   }
 
 
-  /// Set numerical tolerances
-  void set_num_tols(NumericTolerances_t num_tols) {
+  /// Set core numerical tolerances
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {
+    num_tols_.min_absolute_distance = min_absolute_distance;
+    num_tols_.min_absolute_volume = min_absolute_volume;
+    num_tols_.user_tolerances = true;
+  }
+
+  /// Set all numerical tolerances
+  void set_num_tols(const NumericTolerances_t& num_tols) {
     num_tols_ = num_tols;
   }
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
+  */
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+    reconstructor_tols_ = tols; 
+    reconstructor_all_convex_ = all_convex; 
+  }
+
+#endif
 
 
   /*! 
@@ -521,9 +700,6 @@ class CoreDriver : public CoreDriverBase<D,
            typeid(DummyInterfaceReconstructor<SourceMesh, D,
                   Matpoly_Splitter, Matpoly_Clipper>));
 
-    std::vector<Tangram::IterativeMethodTolerances_t>
-        tols(2, {1000, 1e-12, 1e-12});
-
     // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
     // interface_reconstructor_ =
     //     std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
@@ -539,7 +715,8 @@ class CoreDriver : public CoreDriverBase<D,
                         >(new Tangram::Driver<InterfaceReconstructorType, D,
                           SourceMesh,
                           Matpoly_Splitter,
-                          Matpoly_Clipper>(source_mesh_, tols, true));
+                          Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
+                                           reconstructor_all_convex_));
     
     int nsourcecells = source_mesh_.num_entities(CELL, ALL);
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
@@ -625,13 +802,10 @@ class CoreDriver : public CoreDriverBase<D,
         int nwts = cell_mat_sources_and_weights.size();
         for (int s = 0; s < nwts; s++) {
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
-          if (wts[0] > 0.0) {
-            double vol = target_mesh_.cell_volume(c);
-            // Check that the volume of material we are adding to c is not miniscule
-            if (wts[0]/vol > num_tols_.driver_relative_min_mat_vol) {
-              matcellstgt.push_back(c);
-              break;
-            }
+          // Check that the volume of material we are adding to c is not miniscule
+          if (wts[0] > num_tols_.min_absolute_volume) {
+            matcellstgt.push_back(c);
+            break;
           }
         }
       }
@@ -804,9 +978,7 @@ class CoreDriver : public CoreDriverBase<D,
    * @param[in] srcvarname          source mesh variable to remap
    * @param[in] trgvarname          target mesh variable to remap
    * @param[in] sources_and_weights weights for mesh-mesh interpolation
-   * @param[in] lower_bound         lower bound of variable value 
-   * @param[in] upper_bound         upper bound of variable value 
-   * @param[in] partition           source and target entities list for part-by-part
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
    */
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
@@ -815,10 +987,77 @@ class CoreDriver : public CoreDriverBase<D,
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
                             Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            T lower_bound, T upper_bound,
-                            const PartPair<D, SourceMesh, SourceState,
-                                              TargetMesh, TargetState>* partition = nullptr,
                             Portage::vector<Vector<D>>* gradients = nullptr) {
+
+    if (source_state_.get_entity(srcvarname) != ONWHAT) {
+      std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
+                << ONWHAT << ". Skipping!" << std::endl;
+      return;
+    }
+
+
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+    Interpolator interpolator(source_mesh_, target_mesh_, source_state_,
+                              num_tols_);
+    interpolator.set_interpolation_variable(srcvarname, gradients);
+
+    // get a handle to a memory location where the target state
+    // would like us to write this material variable into.
+    T* target_mesh_field = nullptr;
+    target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
+
+    Portage::pointer<T> target_field(target_mesh_field);
+    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                       target_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                       sources_and_weights.begin(),
+                       target_field, interpolator);
+  }
+
+
+  /**
+   * @brief Interpolate mesh variable from source part to target part
+   *
+   * @param[in] srcvarname          source mesh variable to remap
+   * @param[in] trgvarname          target mesh variable to remap
+   * @param[in] sources_and_weights weights for mesh-mesh interpolation
+   * @param[in] lower_bound         lower bound of variable value 
+   * @param[in] upper_bound         upper bound of variable value 
+   * @param[in] partition           structure containing source and target part
+   * @param[in] gradients           gradients of variable on source mesh (can be nullptr for 1st order remap)
+
+   Enable only for cells using SFINAE. Here the class, rather than the
+   function is templated on ONWHAT (as opposed to the equivalent
+   method in the base class); so we have to create a dummy template
+   parameter ONWHAT1 and rely on that to use SFINAE with a _second_
+   dummy template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
+   */
+  template<typename T = double,
+           template<int, Entity_kind, class, class, class, class, class,
+                    template<class, int, class, class> class,
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
+                       Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                       const PartPair<D, SourceMesh, SourceState,
+                       TargetMesh, TargetState>* partition,
+                       Portage::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -843,87 +1082,80 @@ class CoreDriver : public CoreDriverBase<D,
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
 
     // perform part-by-part interpolation
-    if (ONWHAT == Entity_kind::CELL and partition != nullptr) {
+    assert(ONWHAT == Entity_kind::CELL && partition != nullptr);
 
-      // 1. Do some basic checks on supplied source and target parts
-      // to prevent bugs when interpolating values:
-      // check that each entity id is within the
-      // mesh entity index space.
+    // 1. Do some basic checks on supplied source and target parts
+    // to prevent bugs when interpolating values:
+    // check that each entity id is within the
+    // mesh entity index space.
+    
+    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+    auto const& source_part = partition->source();
+    auto const& target_part = partition->target();
 
-      int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
-      int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
-      auto const& source_part = partition->source();
-      auto const& target_part = partition->target();
+    Portage::for_each(source_part.cells().begin(),
+                      source_part.cells().end(),
+                      [&](int current){ assert(current <= max_source_id); });
 
-      Portage::for_each(source_part.cells().begin(),
-                        source_part.cells().end(),
-                        [&](int current){ assert(current <= max_source_id); });
+    Portage::for_each(target_part.cells().begin(),
+                      target_part.cells().end(),
+                      [&](int current){ assert(current <= max_target_id); });
 
-      Portage::for_each(target_part.cells().begin(),
-                        target_part.cells().end(),
-                        [&](int current){ assert(current <= max_target_id); });
+    int const target_mesh_size = sources_and_weights.size();
+    int const target_part_size = target_part.size();
 
-      int const target_mesh_size = sources_and_weights.size();
-      int const target_part_size = target_part.size();
+    // 2. Filter intersection weights list.
+    // To restrict interpolation only to source-target parts, we need
+    // to filter the intersection weights list to keep only that of the
+    // entities of the source part. Notice that this step can be avoided
+    // when the part-by-part intersection is implemented.
 
-      // 2. Filter intersection weights list.
-      // To restrict interpolation only to source-target parts, we need
-      // to filter the intersection weights list to keep only that of the
-      // entities of the source part. Notice that this step can be avoided
-      // when the part-by-part intersection is implemented.
-
-      auto filter_weights = [&](int entity) {
-        // For a given target entity, we aim to filter its source weights
-        // list to keep only those which are in the source part list.
-        // that way, we ensure that only the contribution of source part entities
-        // weights are taken into account when doing the interpolation.
-        // For that, we just iterate on the related weight list, and add the
-        // current couple of entity/weights if it belongs to the source part.
-        // nb: 'auto' may imply unexpected behavior with thrust enabled.
-        entity_weights_t const& entity_weights = sources_and_weights[entity];
-        entity_weights_t heap;
-        heap.reserve(10); // size of a local vicinity
-        for (auto&& weight : entity_weights) {
-          // constant-time lookup in average case.
-          if(source_part.contains(weight.entityID)) {
-            heap.emplace_back(weight);
-          }
+    auto filter_weights = [&](int entity) {
+      // For a given target entity, we aim to filter its source weights
+      // list to keep only those which are in the source part list.
+      // that way, we ensure that only the contribution of source part entities
+      // weights are taken into account when doing the interpolation.
+      // For that, we just iterate on the related weight list, and add the
+      // current couple of entity/weights if it belongs to the source part.
+      // nb: 'auto' may imply unexpected behavior with thrust enabled.
+      entity_weights_t const& entity_weights = sources_and_weights[entity];
+      entity_weights_t heap;
+      heap.reserve(10); // size of a local vicinity
+      for (auto&& weight : entity_weights) {
+        // constant-time lookup in average case.
+        if(source_part.contains(weight.entityID)) {
+          heap.emplace_back(weight);
         }
-        heap.shrink_to_fit();
-        return heap;
-      };
-
-      Portage::vector<entity_weights_t> parts_weights(target_part_size);
-      Portage::transform(target_part.cells().begin(),
-                         target_part.cells().end(),
-                         parts_weights.begin(), filter_weights);
-
-      // 3. Process interpolation.
-      // Now that intersection weights is filtered, perform the interpolation.
-      // Notice that we need to store the interpolated values in a temporary
-      // array since they are indexed with respect to the target part
-      // and not to the target mesh. Hence we need to copy them back in the
-      // target state at their correct (absolute index) memory locations.
-      T temporary_storage[target_part_size];
-      Portage::pointer<T> target_part_field(temporary_storage);
-
-      Portage::transform(target_part.cells().begin(),
-                         target_part.cells().end(),
-                         parts_weights.begin(), target_part_field, interpolator);
-
-      for (int i=0; i < target_part_size; ++i) {
-        auto const& j = target_part.cells()[i];
-        target_mesh_field[j] = target_part_field[i];
       }
-    } else /* mesh-mesh interpolation */ {
-      Portage::pointer<T> target_field(target_mesh_field);
-      Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                         target_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         sources_and_weights.begin(),
-                         target_field, interpolator);
+      heap.shrink_to_fit();
+      return heap;
+    };
+
+    Portage::vector<entity_weights_t> parts_weights(target_part_size);
+    Portage::transform(target_part.cells().begin(),
+                       target_part.cells().end(),
+                       parts_weights.begin(), filter_weights);
+
+    // 3. Process interpolation.
+    // Now that intersection weights is filtered, perform the interpolation.
+    // Notice that we need to store the interpolated values in a temporary
+    // array since they are indexed with respect to the target part
+    // and not to the target mesh. Hence we need to copy them back in the
+    // target state at their correct (absolute index) memory locations.
+    T temporary_storage[target_part_size];
+    Portage::pointer<T> target_part_field(temporary_storage);
+
+    Portage::transform(target_part.cells().begin(),
+                       target_part.cells().end(),
+                       parts_weights.begin(), target_part_field, interpolator);
+
+    for (int i=0; i < target_part_size; ++i) {
+      auto const& j = target_part.cells()[i];
+      target_mesh_field[j] = target_part_field[i];
     }
   }
-
+  
 
 #ifdef HAVE_TANGRAM
   
@@ -940,18 +1172,33 @@ class CoreDriver : public CoreDriverBase<D,
     @param[in] lower_bound Lower bound of variable value
 
     @param[in] upper_bound Upper bound of variable value
+
+    Enable only for cells using SFINAE. Here the class, rather than
+    the function is templated on ONWHAT; so we have to create a dummy
+    template parameter ONWHAT1 and rely on that for SFINAE using a
+    _second_ template parameter
+
+   **** Note ****
+   If you encounter errors about not being able to find an appropriate
+   overload for interpolate_mesh_var in your application code
+   (particularly something like "no type named 'type' in struct
+   std::enable_if<false, void>"), make sure the compiler does see the
+   possiblity of calling this function with Entity_kinds that are not
+   type CELL (restricting the code flow using 'if' statements will not
+   be enough)
   */
 
   template<typename T = double,
            template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           T lower_bound, T upper_bound,
-                           Portage::vector<Vector<D>>* gradients = nullptr) {
-
+                    class, class, class> class Interpolate,
+           Entity_kind ONWHAT1 = ONWHAT,
+           typename = typename std::enable_if<ONWHAT1 == CELL>::type>
+  void
+  interpolate_mat_var(std::string srcvarname, std::string trgvarname,
+                      std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                      std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
+    
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
@@ -971,7 +1218,7 @@ class CoreDriver : public CoreDriverBase<D,
       //                               // which material values we have
       //                               // to grab from the source state
 
-      auto mat_grad = (gradients != nullptr ? &(gradients[m]) : nullptr);
+      auto mat_grad = (gradients != nullptr ? &((*gradients)[m]) : nullptr);
       // FEATURE ;-)  Have to set interpolation variable AFTER setting 
       // the material for multimaterial variables
       interpolator.set_interpolation_variable(srcvarname, mat_grad);
@@ -1010,6 +1257,103 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif  // HAVE_TANGRAM
 
+
+  /*! 
+    Check mismatch between meshes
+
+    @param[in] sources_and_weights Intersection sources and moments
+    (vols, centroids)
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+
+    // Instantiate mismatch fixer for later use
+    if (not mismatch_fixer_) {
+      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
+      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
+      //                                                  SourceMesh, SourceState,
+      //                                                  TargetMesh,  TargetState>
+      //                                    >
+      //     (source_mesh_, source_state_, target_mesh_, target_state_,
+      //      source_weights, executor_);
+
+      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                                      SourceMesh, SourceState,
+                                                      TargetMesh,  TargetState>
+                                        >(new MismatchFixer<D, ONWHAT,
+                                          SourceMesh, SourceState,
+                                          TargetMesh,  TargetState>
+                                          (source_mesh_, source_state_, target_mesh_, target_state_,
+                                           executor_));
+    }
+
+    return mismatch_fixer_->check_mismatch(source_weights);
+  }
+
+  
+  /*! 
+    Return mismatch between meshes
+
+    @returns   Whether the meshes are mismatched
+  */
+  bool
+  has_mismatch() {
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
+    return mismatch_fixer_->has_mismatch();
+  }
+
+  /// @brief Repair the remapped field to account for boundary mismatch
+  /// @param src_var_name        field variable on source mesh
+  /// @param trg_var_name        field variable on target mesh
+  /// @param global_lower_bound  lower limit on variable
+  /// @param global_upper_bound  upper limit on variable
+  /// @param partial_fixup_type  type of fixup in case of partial mismatch
+  /// @param empty_fixup_type    type of fixup in empty target entities
+  ///
+  /// partial_fixup_type can be one of three types:
+  ///
+  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
+  ///            NON-CONSERVATIVE (constant preserving, not linearity
+  ///            preserving)
+  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                        will preserve the integral quantities received from
+  ///                        source mesh overlap) but perturbations will
+  ///                        occur in the field (constant fields may not stay
+  ///                        constant if there is mismatch)
+  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
+  ///                        perturbations will be minimum but field
+  ///                        values may be shifted (Constant fields
+  ///                        will be shifted to different constant; no
+  ///                        guarantees on linearity preservation)
+  ///
+  /// empty_fixup_type can be one of two types:
+  ///
+  /// LEAVE_EMPTY - Leave empty cells as is
+  /// EXTRAPOLATE - Fill empty cells with extrapolated values
+  /// FILL        - Fill empty cells with specified values (not yet implemented)
+  bool fix_mismatch(std::string const & src_var_name,
+                    std::string const & trg_var_name,
+                    double global_lower_bound = -std::numeric_limits<double>::max(),
+                    double global_upper_bound = std::numeric_limits<double>::max(),
+                    double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
+                    int maxiter = 5,
+                    Partial_fixup_type partial_fixup_type =
+                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Empty_fixup_type empty_fixup_type =
+                    Empty_fixup_type::EXTRAPOLATE) {
+
+    assert(mismatch_fixer_ && "check_mismatch must be called first!");
+
+    if (source_state_.field_type(ONWHAT, src_var_name) ==
+        Field_type::MESH_FIELD)
+      return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
+                                  global_lower_bound, global_upper_bound,
+                                  conservation_tol, maxiter,
+                                  partial_fixup_type, empty_fixup_type);
+    return false;
+  }
   
  private:
   SourceMesh const & source_mesh_;
@@ -1017,7 +1361,7 @@ class CoreDriver : public CoreDriverBase<D,
   SourceState const & source_state_;
   TargetState & target_state_;
 
-  NumericTolerances_t num_tols_;
+  NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;
   int nprocs_ = 1;
@@ -1029,6 +1373,24 @@ class CoreDriver : public CoreDriverBase<D,
 #endif
 
 #ifdef HAVE_TANGRAM
+
+  // The following tolerances as well as the all-convex flag are
+  // required for the interface reconstructor driver. The size of the
+  // tols vector is currently set to two since MOF requires two
+  // different set of tolerances to match the 0th-order and 1st-order
+  // moments. VOF on the other does not require the second tolerance.
+  // If a new IR method which requires tolerances for higher moment is
+  // added to Tangram, then this vector size should be
+  // generalized. The boolean all_convex flag is to specify if a mesh
+  // contains only convex cells and set to true in that case.
+  //
+  // There is an associated method called
+  // set_interface_reconstructor_options that should be invoked to set
+  // user-specific values. Otherwise, the remapper will use the
+  // default values.
+
+  std::vector<Tangram::IterativeMethodTolerances_t> reconstructor_tols_;
+  bool reconstructor_all_convex_ = true;  
 
   // Pointer to the interface reconstructor object (required by the
   // interface to be shared)
@@ -1058,6 +1420,7 @@ class CoreDriver : public CoreDriverBase<D,
     std::vector<double> cell_mat_volfracs_full(nsourcecells*nmats, 0.0);
     std::vector<Wonton::Point<D>> cell_mat_centroids_full(nsourcecells*nmats);
 
+    bool have_centroids = true;
     int nvals = 0;
     for (int m = 0; m < nmats; m++) {
       std::vector<int> cellids;
@@ -1077,8 +1440,11 @@ class CoreDriver : public CoreDriverBase<D,
 
       Wonton::Point<D> const *matcenvec;
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-      for (int ic = 0; ic < cellids.size(); ic++)
-        cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+      if (cellids.size() && !matcenvec)
+        have_centroids = false;  // VOF
+      else
+        for (int ic = 0; ic < cellids.size(); ic++)
+          cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
     }
 
     // At this point nvals contains the number of non-zero volume
@@ -1088,7 +1454,7 @@ class CoreDriver : public CoreDriverBase<D,
 
     cell_mat_ids.resize(nvals);
     cell_mat_volfracs.resize(nvals);
-    cell_mat_centroids.resize(nvals);
+    cell_mat_centroids.resize(nvals);  // dummy vals for VOF
 
     int idx = 0;
     for (int c = 0; c < nsourcecells; c++) {
@@ -1096,7 +1462,8 @@ class CoreDriver : public CoreDriverBase<D,
         int matid = cell_mat_ids_full[c*nmats+m];
         cell_mat_ids[idx] = matid;
         cell_mat_volfracs[idx] = cell_mat_volfracs_full[c*nmats+matid];
-        cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
+        if (have_centroids)
+          cell_mat_centroids[idx] = cell_mat_centroids_full[c*nmats+matid];
         idx++;
       }
     }
@@ -1104,7 +1471,11 @@ class CoreDriver : public CoreDriverBase<D,
 
 #endif
 
-};  // CoreDriverBase
+  std::unique_ptr<MismatchFixer<D, ONWHAT,
+                                SourceMesh, SourceState,
+                                TargetMesh, TargetState>> mismatch_fixer_;
+
+};  // CoreDriver
 
 
 // Core Driver Factory

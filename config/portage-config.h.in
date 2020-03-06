@@ -19,7 +19,7 @@ Please see the license file at the root of this repository, or at:
 
 // Is PORTAGE compiled with MPI
 
-#cmakedefine PORTAGE_ENABLE_MPI
+#cmakedefine PORTAGE_ENABLE_MPI 
 
 // Is PORTAGE compiled with Thrust
 

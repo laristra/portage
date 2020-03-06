@@ -12,6 +12,7 @@ add_subdirectory(distributed_cmp)
 add_subdirectory(simple_mesh_app)
 add_subdirectory(swarmapp)
 add_subdirectory(msmapp)
+add_subdirectory(momentumapp)
 
 option(ENABLE_APP_TIMINGS "Enable timing in apps" OFF)
 
@@ -22,6 +23,7 @@ endif (Jali_DIR OR ENABLE_FleCSI)
 if (Jali_DIR)
   add_subdirectory(timingapp)
   add_subdirectory(part-by-part)
+  add_subdirectory(swept_face)
 endif (Jali_DIR)
 
 if (ENABLE_FleCSI)

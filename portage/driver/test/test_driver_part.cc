@@ -267,18 +267,12 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
+      "density", "density", weights, &(parts[i])
     );
       
     // test for mismatch and compute volumes
     parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
-    
-    // this block won't run since no mismatch, but make sure syntactically correct
-    if (parts[i].has_mismatch())
-      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
-      Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
+    assert(not parts[i].has_mismatch());    
   }
 
   // compare remapped values with analytically computed ones
@@ -329,7 +323,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
   for (int i = 0; i < 2; ++i) {
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i])
+      "density", "density", weights, &(parts[i])
     );
     
     // test for mismatch and compute volumes
@@ -348,7 +342,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
 
   // interpolate density on whole source mesh
   remapper.interpolate_mesh_var<double, Portage::Interpolate_1stOrder>(
-    "density", "density", weights, lower_bound, upper_bound
+    "density", "density", weights
   );
 
   // now compare remapped value for each cell
@@ -406,17 +400,15 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
     // interpolate density for current part
     remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-      "density", "density", weights, lower_bound, upper_bound, &(parts[i]), &gradients
+      "density", "density", weights, &(parts[i]), &gradients
     );
 
-    // test for mismatch and compute volumes
-    parts[i].check_mismatch(weights);
-    assert(not parts[i].has_mismatch());
 
     // this block won't run since no mismatch, but make sure syntactically correct
     if (parts[i].has_mismatch())
-      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<2>.max_num_fixup_iter,
       Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
   }
 

@@ -30,7 +30,7 @@
  * topology remains unchanged, hence source and target cells
  * and faces indices are kept.
  */
-class IntersectSweptBase : public testing::Test {
+class IntersectSweptBase2D : public testing::Test {
 
 protected:
   using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
@@ -44,7 +44,7 @@ public:
   /**
    * @brief Disabled default constructor
    */
-  IntersectSweptBase() = delete;
+  IntersectSweptBase2D() = delete;
 
   /**
    * @brief Setup each test-case.
@@ -52,7 +52,7 @@ public:
    * It initializes both source and target meshes and states,
    * then computes and assigns a density field on source mesh.
    */
-  IntersectSweptBase(double x0, double y0, double x1, double y1)
+  IntersectSweptBase2D(double x0, double y0, double x1, double y1)
     : source_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 6.0, 6.0, 3, 3)),
       target_mesh(Jali::MeshFactory(MPI_COMM_WORLD)(x0, y0, x1, y1, 3, 3)),
       source_state(Jali::State::create(source_mesh)),
@@ -62,12 +62,12 @@ public:
       source_state_wrapper(*source_state),
       target_state_wrapper(*target_state)
   {
-    num_tols.use_default();
+    num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
 #ifdef HAVE_TANGRAM
     // Volume and angle tolerances
-    double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
-    double vol_tol = std::numeric_limits<double>::epsilon();
+    double dst_tol = num_tols.min_absolute_distance;
+    double vol_tol = num_tols.min_absolute_volume;
     std::vector< Tangram::IterativeMethodTolerances_t> ir_tols(2);
     ir_tols[0] = {1000, dst_tol, vol_tol};
     ir_tols[1] = {100, 1.0e-15, 1.0e-15};  
@@ -106,7 +106,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return: the total area of all swept faces.
    */
-  double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_swept_area(std::vector<Wonton::Weights_t> const& moments) {
     return std::accumulate(moments.begin(), moments.end(), 0.0,
                            [](double previous, auto const& moment) {
                              return previous + moment.weights[0];
@@ -120,7 +120,7 @@ public:
    * @param moments: list of previously computed moments.
    * @return the area contribution of the given cell.
    */
-  double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) const {
+  static double compute_contribution(int id, std::vector<Wonton::Weights_t> const& moments) {
     double contrib = 0.;
     for (auto const& moment : moments) {
       if (moment.entityID == id) {
@@ -136,7 +136,7 @@ public:
    * @param moment: current cell moments
    * @return its centroid coordinates
    */
-  Wonton::Point<2> deduce_centroid(Wonton::Weights_t const& moment) const {
+  static Wonton::Point<2> deduce_centroid(Wonton::Weights_t const& moment) {
     return Wonton::createP2(moment.weights[1] / moment.weights[0],
                             moment.weights[2] / moment.weights[0]);
   }
@@ -188,9 +188,9 @@ protected:
  *  |___|___|___|
  *  0   2   4   6
  */
-class IntersectSweptForward : public IntersectSweptBase {
+class IntersectSweptForward2D : public IntersectSweptBase2D {
 protected:
-  IntersectSweptForward() : IntersectSweptBase(1, 1, 7, 7) {}
+  IntersectSweptForward2D() : IntersectSweptBase2D(1, 1, 7, 7) {}
 };
 
 /**
@@ -207,9 +207,9 @@ protected:
  *  :...:...:...:
  *    0   2   4   6
  */
-class IntersectSweptBackward : public IntersectSweptBase {
+class IntersectSweptBackward2D : public IntersectSweptBase2D {
 protected:
-  IntersectSweptBackward() : IntersectSweptBase(-1, -1, 5, 5) {}
+  IntersectSweptBackward2D() : IntersectSweptBase2D(-1, -1, 5, 5) {}
 };
 
 /**
@@ -225,12 +225,12 @@ protected:
  *  |_:_|_:_|_:_|.:
  *  0   2   4   6
  */
-class IntersectSweptOneAxis : public IntersectSweptBase {
+class IntersectSweptOneAxis2D : public IntersectSweptBase2D {
 protected:
-  IntersectSweptOneAxis() : IntersectSweptBase(1, 0, 7, 6) {}
+  IntersectSweptOneAxis2D() : IntersectSweptBase2D(1, 0, 7, 6) {}
 };
 
-TEST_F(IntersectSweptForward, MomentsCheck) {
+TEST_F(IntersectSweptForward2D, MomentsCheck) {
 
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
@@ -404,7 +404,7 @@ TEST_F(IntersectSweptForward, MomentsCheck) {
 }
 
 
-TEST_F(IntersectSweptBackward, MomentsCheck) {
+TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
@@ -590,7 +590,7 @@ TEST_F(IntersectSweptBackward, MomentsCheck) {
   }
 }
 
-TEST_F(IntersectSweptOneAxis, MomentsCheck) {
+TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
 
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
