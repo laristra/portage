@@ -465,10 +465,10 @@ namespace Portage {
       //                                                containing material_id_      
       bool const source_cell_mat = 
         (std::find(cellmats.begin(), cellmats.end(), material_id_) != cellmats.end());
-      bool const single_mat = !nb_mats || (material_id_ == -1) || 
-                              (nb_mats == 1 && source_cell_mat);
+      bool const single_mat_src_cell = !nb_mats || (material_id_ == -1) || 
+                                       (nb_mats == 1 && source_cell_mat);
 
-      if (single_mat) {
+      if (single_mat_src_cell) {
 #endif
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
@@ -556,7 +556,7 @@ namespace Portage {
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
 #ifdef HAVE_TANGRAM
-          if (single_mat) {
+          if (single_mat_src_cell) {
 #endif          
             swept_moments.emplace_back(source_id, moments);
 #ifdef HAVE_TANGRAM
@@ -574,38 +574,43 @@ namespace Portage {
             continue;
           }
           // sanity check: ensure that incident cell belongs to the stencil.
-          else if (not in_stencil(neigh)) {
+          if (!in_stencil(neigh)) {
             auto id = std::to_string(source_id);
             throw std::runtime_error("invalid stencil for source cell "+ id);
           }
-#if DEBUG            
           // sanity check: ensure that swept face centroid remains
-          // inside the neighbor cell.
-          else if (not centroid_inside_cell(neigh, moments)) {
-            throw std::runtime_error("invalid target mesh for swept face");          
+          // inside the neighbor cell and append to list.
+          if (displacement_check && !centroid_inside_cell(neigh, moments)) {
+            throw std::runtime_error("invalid target mesh for swept face");
           }
-#endif            
           // append to list as current neighbor moment.
-          else {
 #ifdef HAVE_TANGRAM
-            if (single_mat) {
+          int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
+          std::vector<int> adj_cellmats;
+          source_state_.cell_get_mats(neigh, &adj_cellmats);
+          // adj_cell_nb_mats == 0 -- no materials ==> single material
+          // material_id_ == -1 -- intersect with mesh not a particular material
+          // adj_cell_nb_mats == 1 && adj_cellmats[0] == material_id_ -- intersection with pure cell
+          //                                                             containing material_id_      
+          bool const adj_cell_mat = 
+            (std::find(adj_cellmats.begin(), adj_cellmats.end(), material_id_) != adj_cellmats.end());
+          bool const single_mat_adj_cell = !adj_cell_nb_mats || (material_id_ == -1) || 
+                                            (adj_cell_nb_mats == 1 && adj_cell_mat);
+
+          if (single_mat_adj_cell) {
 #endif
-              swept_moments.emplace_back(neigh, moments);
+            swept_moments.emplace_back(neigh, moments);
 #ifdef HAVE_TANGRAM
-            } else {
-              //Skip if the neighboring cell doesn't contain material_id_
-              std::vector<int> neighmats;
-              source_state_.cell_get_mats(neigh, &neighmats);
-              if (std::find(neighmats.begin(), neighmats.end(), material_id_) ==
-                  neighmats.end())
-                continue;
-              
-              //Compute and append moments for the neighbor
-              swept_moments.emplace_back(neigh, 
-                compute_face_group_moments(neigh, edges[i], std::fabs(moments[0])));
-            }
-#endif  
+          } else {
+            //Skip if the neighboring cell doesn't contain material_id_
+            if (!adj_cell_mat)
+              continue;
+            
+            //Compute and append moments for the neighbor
+            swept_moments.emplace_back(neigh, 
+              compute_face_group_moments(neigh, edges[i], std::fabs(moments[0])));
           }
+#endif  
         }
       } // end for each edge of current cell
      
