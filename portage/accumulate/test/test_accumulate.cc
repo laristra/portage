@@ -17,6 +17,8 @@ Please see the license file at the root of this repository, or at:
 using namespace Portage::Meshfree;
 using Wonton::Point;
 
+using namespace Portage::Meshfree::reference;
+
 template<int dim>
 void test_accumulate(EstimateType etype, Basis::Type btype, WeightCenter center) {
 
@@ -149,8 +151,8 @@ void test_operator(WeightCenter center) {
   // create the target swarm input geometry data based on integration domains.
   Portage::vector<Point<dim>> target_points(1);
   Portage::vector<std::vector<Point<dim>>> domain_points(1);
-  domain_points[0] = reference_points<domain>();
-  auto reference_point = reference_points<domain>();
+  domain_points[0] = reference::points<domain>();
+  auto reference_point = reference::points<domain>();
   Point<dim> centroid(std::vector<double>(dim, 0.));
 
   for (int i = 0; i < reference_point.size(); i++) {
@@ -215,32 +217,32 @@ void test_operator(WeightCenter center) {
         switch (btype) {
           case Basis::Unitary: {
             switch (domain) {
-              case Interval:      ASSERT_NEAR(sums[k][m],exactUnitaryInterval[k], 1.e-12);     break;
-              case Quadrilateral: ASSERT_NEAR(sums[k][m],exactUnitaryQuadrilateral[k], 1.e-12);break;
-              case Triangle:      ASSERT_NEAR(sums[k][m],exactUnitaryTriangle[k], 1.e-12);     break;
-              case Hexahedron:    ASSERT_NEAR(sums[k][m],exactUnitaryHexahedron[k], 1.e-12);   break;
-              case Wedge:         ASSERT_NEAR(sums[k][m],exactUnitaryWedge[k], 1.e-12);        break;
-              case Tetrahedron:   ASSERT_NEAR(sums[k][m],exactUnitaryTetrahedron[k], 1.e-12);  break;
+              case Interval:      ASSERT_NEAR(sums[k][m], unitary_interval[k], 1.e-12);     break;
+              case Quadrilateral: ASSERT_NEAR(sums[k][m], unitary_quadrilateral[k], 1.e-12);break;
+              case Triangle:      ASSERT_NEAR(sums[k][m], unitary_triangle[k], 1.e-12);     break;
+              case Hexahedron:    ASSERT_NEAR(sums[k][m], unitary_hexahedron[k], 1.e-12);   break;
+              case Wedge:         ASSERT_NEAR(sums[k][m], unitary_wedge[k], 1.e-12);        break;
+              case Tetrahedron:   ASSERT_NEAR(sums[k][m], unitary_tetrahedron[k], 1.e-12);  break;
               default: break;
             }
           }
           case Basis::Linear: {
             switch (domain) {
-              case Interval:      ASSERT_NEAR(sums[k][m],exactLinearInterval[k], 1.e-12);     break;
-              case Quadrilateral: ASSERT_NEAR(sums[k][m],exactLinearQuadrilateral[k], 1.e-12);break;
-              case Triangle:      ASSERT_NEAR(sums[k][m],exactLinearTriangle[k], 1.e-12);     break;
-              case Hexahedron:    ASSERT_NEAR(sums[k][m],exactLinearHexahedron[k], 1.e-12);   break;
-              case Wedge:         ASSERT_NEAR(sums[k][m],exactLinearWedge[k], 1.e-12);        break;
-              case Tetrahedron:   ASSERT_NEAR(sums[k][m],exactLinearTetrahedron[k], 1.e-12);  break;
+              case Interval:      ASSERT_NEAR(sums[k][m], linear_interval[k], 1.e-12);     break;
+              case Quadrilateral: ASSERT_NEAR(sums[k][m], linear_quadrilateral[k], 1.e-12);break;
+              case Triangle:      ASSERT_NEAR(sums[k][m], linear_triangle[k], 1.e-12);     break;
+              case Hexahedron:    ASSERT_NEAR(sums[k][m], linear_hexahedron[k], 1.e-12);   break;
+              case Wedge:         ASSERT_NEAR(sums[k][m], linear_wedge[k], 1.e-12);        break;
+              case Tetrahedron:   ASSERT_NEAR(sums[k][m], linear_tetrahedron[k], 1.e-12);  break;
               default: break;
               }
           }
           case Basis::Quadratic: {
             switch (domain) {
-              case Interval:      ASSERT_NEAR(sums[k][m],exactQuadraticInterval[k], 1.e-12);     break;
-              case Quadrilateral: ASSERT_NEAR(sums[k][m],exactQuadraticQuadrilateral[k], 1.e-12);break;
-              case Triangle:      ASSERT_NEAR(sums[k][m],exactQuadraticTriangle[k], 1.e-12);     break;
-              case Tetrahedron:   ASSERT_NEAR(sums[k][m],exactQuadraticTetrahedron[k], 1.e-12);  break;
+              case Interval:      ASSERT_NEAR(sums[k][m], quadratic_interval[k], 1.e-12);     break;
+              case Quadrilateral: ASSERT_NEAR(sums[k][m], quadratic_quadrilateral[k], 1.e-12);break;
+              case Triangle:      ASSERT_NEAR(sums[k][m], quadratic_triangle[k], 1.e-12);     break;
+              case Tetrahedron:   ASSERT_NEAR(sums[k][m], quadratic_tetrahedron[k], 1.e-12);  break;
               default: break;
             }
           }

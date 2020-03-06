@@ -674,6 +674,14 @@ inline void get_result(const std::vector<Wonton::Point<OP::dim>>& points,
   }
 }
 
+template<class OP>
+inline std::vector<std::vector<double>>
+get_result(const std::vector<Wonton::Point<OP::dim>>& points, bool center = true) {
+  std::vector<std::vector<double>> result;
+  get_result<OP>(points, result, center);
+  return result;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Dynamic Accessor
 ////////////////////////////////////////////////////////////////////////////////
