@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
-#include "portage/support/test_operator_data.h"
+#include "portage/support/operator_references.h"
 #include "wonton/support/Point.h"
 
 using namespace Portage::swarm;

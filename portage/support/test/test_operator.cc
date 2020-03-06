@@ -4,7 +4,7 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include "portage/support/test_operator_data.h"
+#include "portage/support/operator_references.h"
 
 using namespace Portage::swarm::oper;
 using namespace Portage::swarm::basis;
