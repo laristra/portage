@@ -33,11 +33,12 @@ RUN git checkout v0.9.7
 RUN mkdir build
 WORKDIR build
 ENV TANGRAM_DIR /home/portage/tangram/install 
-RUN cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_PREFIX_PATH=$TANGRAM_DIR \ 
+RUN cmake -D CMAKE_BUILD_TYPE=Debug -D CMAKE_INSTALL_PREFIX=$TANGRAM_DIR \ 
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True -D ENABLE_MPI=${MPI} \
     -D ENABLE_MPI_CXX_BINDINGS=True .. 
 RUN make && make test 
+RUN echo $TANGRAM_DIR
 RUN make install
 
 WORKDIR ../../portage
