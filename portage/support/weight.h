@@ -16,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 
-namespace Portage { namespace Meshfree { namespace Weight {
+namespace Portage { namespace swarm { namespace Weight {
 
 //\///////////////////////////////////////////////////////////////////////////
 // constants and maths functions

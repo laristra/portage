@@ -24,7 +24,7 @@
 TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
   using Wonton::Point;
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;
@@ -115,7 +115,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
 
 TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;
@@ -203,7 +203,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
 
   using Wonton::Point;
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;
@@ -293,7 +293,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
 
 TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;
@@ -380,7 +380,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
 TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
 
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;
@@ -482,7 +482,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
 
 TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
 
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
 
   // set MPI info
   int rank = 0;

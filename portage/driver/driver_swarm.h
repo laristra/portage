@@ -28,7 +28,7 @@
   #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
-namespace Portage { namespace Meshfree {
+namespace Portage { namespace swarm {
   // avoid very long type names.
   using SmoothingLengths = Portage::vector<std::vector<std::vector<double>>>;
 
@@ -242,9 +242,9 @@ public:
   void set_remap_var_names(std::vector<std::string> const& source_vars,
                            std::vector<std::string> const& target_vars,
                            EstimateType const estimator_type = LocalRegression,
-                           Basis::Type const basis_type = Basis::Unitary,
-                           Operator::Type const operator_spec = Operator::LastOperator,
-                           Portage::vector<Operator::Domain> const& operator_domains = {},
+                           basis::Type const basis_type = basis::Unitary,
+                           oper::Type const operator_spec = oper::LastOperator,
+                           Portage::vector<oper::Domain> const& operator_domains = {},
                            Portage::vector<std::vector<Point<dim>>> const& operator_data = {},
                            std::string part_field = "NONE",
                            double part_tolerance = 0.0,
@@ -261,7 +261,7 @@ public:
     operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
     operator_data_    = operator_data;
-    if (operator_spec_ != Operator::LastOperator) {
+    if (operator_spec_ != oper::LastOperator) {
       assert(operator_domains_.size() == target_swarm_.num_owned_particles());
       assert(operator_data_.size() == target_swarm_.num_owned_particles());
     }
@@ -618,9 +618,9 @@ private:
   Portage::vector<Point<dim>> source_extents_ {};
   Portage::vector<Point<dim>> target_extents_ {};
   EstimateType estimator_type_ {};
-  Basis::Type basis_type_ {};
-  Operator::Type operator_spec_ {};
-  Portage::vector<Operator::Domain> operator_domains_ {};
+  basis::Type basis_type_ {};
+  oper::Type operator_spec_ {};
+  Portage::vector<oper::Domain> operator_domains_ {};
   Portage::vector<std::vector<Point<dim>>> operator_data_ {};
   std::string part_field_ = "";
   double part_tolerance_ = 0.0;

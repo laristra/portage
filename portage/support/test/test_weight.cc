@@ -12,24 +12,24 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "wonton/support/Point.h"
 
-using Portage::Meshfree::Weight::Geometry;
-using Portage::Meshfree::Weight::ELLIPTIC;
-using Portage::Meshfree::Weight::TENSOR;
-using Portage::Meshfree::Weight::FACETED;
+using Portage::swarm::Weight::Geometry;
+using Portage::swarm::Weight::ELLIPTIC;
+using Portage::swarm::Weight::TENSOR;
+using Portage::swarm::Weight::FACETED;
 
-using Portage::Meshfree::Weight::Kernel;
-using Portage::Meshfree::Weight::B4;
-using Portage::Meshfree::Weight::SQUARE;
-using Portage::Meshfree::Weight::EPANECHNIKOV;
-using Portage::Meshfree::Weight::POLYRAMP;
-using Portage::Meshfree::Weight::INVSQRT;
-using Portage::Meshfree::Weight::COULOMB;
-using Portage::Meshfree::Weight::STEP;
+using Portage::swarm::Weight::Kernel;
+using Portage::swarm::Weight::B4;
+using Portage::swarm::Weight::SQUARE;
+using Portage::swarm::Weight::EPANECHNIKOV;
+using Portage::swarm::Weight::POLYRAMP;
+using Portage::swarm::Weight::INVSQRT;
+using Portage::swarm::Weight::COULOMB;
+using Portage::swarm::Weight::STEP;
 
-using Portage::Meshfree::Weight::eval;
+using Portage::swarm::Weight::eval;
 
-using Portage::Meshfree::Weight::FacetData;
-using Portage::Meshfree::Weight::faceted;
+using Portage::swarm::Weight::FacetData;
+using Portage::swarm::Weight::faceted;
 
 
 using Wonton::Point;

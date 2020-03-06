@@ -90,9 +90,9 @@ public:
                   Portage::vector<std::vector<std::vector<double>>>& smoothing_lengths,
                   Portage::vector<Point<dim>>& source_extents,
                   Portage::vector<Point<dim>>& target_extents,
-                  Portage::vector<Meshfree::Weight::Kernel>& kernel_types,
-                  Portage::vector<Meshfree::Weight::Geometry>& geom_types,
-                  Meshfree::WeightCenter center = Meshfree::WeightCenter::Gather) {
+                  Portage::vector<swarm::Weight::Kernel>& kernel_types,
+                  Portage::vector<swarm::Weight::Geometry>& geom_types,
+                  swarm::WeightCenter center = swarm::WeightCenter::Gather) {
     // Get the MPI communicator size and rank information
     int nb_ranks, rank;
     MPI_Comm_size(comm_, &nb_ranks);
@@ -104,12 +104,12 @@ public:
     int nb_target_points = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
     int nb_source_points = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
 
-    if (center == Meshfree::WeightCenter::Gather) {
+    if (center == swarm::WeightCenter::Gather) {
       assert(smoothing_lengths.size() == nb_target_points);
       assert(target_extents.size() == nb_target_points);
       assert(kernel_types.size() == nb_target_points);
       assert(geom_types.size() == nb_target_points);
-    } else if (center == Meshfree::WeightCenter::Scatter) {
+    } else if (center == swarm::WeightCenter::Scatter) {
       assert(smoothing_lengths.size() == nb_source_points);
       assert(source_extents.size() == nb_source_points);
       assert(kernel_types.size() == nb_source_points);
@@ -132,15 +132,15 @@ public:
     for (int c = 0; c < nb_target_points; ++c) {
       Point<dim> coord = target_swarm.get_particle_coordinates(c);
       Point<dim> ext;
-      if (center == Meshfree::WeightCenter::Gather) {
+      if (center == swarm::WeightCenter::Gather) {
         ext = target_extents[c];
       }
       for (int k = 0; k < dim; ++k) {
         double val0 = 0., val1 = 0.;
-        if (center == Meshfree::WeightCenter::Gather) {
+        if (center == swarm::WeightCenter::Gather) {
           val0 = coord[k] - ext[k];
           val1 = coord[k] + ext[k];
-        } else if (center == Meshfree::WeightCenter::Scatter) {
+        } else if (center == swarm::WeightCenter::Scatter) {
           val0 = coord[k];
           val1 = coord[k];
         }
@@ -188,17 +188,17 @@ public:
         for (int c = 0; c < nb_source_points; ++c) {
           Point<dim> coord = source_swarm.get_particle_coordinates(c);
           Point<dim> ext;
-          if (center == Meshfree::WeightCenter::Scatter) {
+          if (center == swarm::WeightCenter::Scatter) {
             ext = source_extents[c];
           }
           bool thisPt = true;
           for (int k = 0; k < dim; ++k) {
             double val0 = 0., val1 = 0.;
 
-            if (center == Meshfree::WeightCenter::Gather) {
+            if (center == swarm::WeightCenter::Gather) {
               val0 = coord[k];
               val1 = coord[k];
-            } else if (center == Meshfree::WeightCenter::Scatter) {
+            } else if (center == swarm::WeightCenter::Scatter) {
               val0 = coord[k] - ext[k];
               val1 = coord[k] + ext[k];
             }
@@ -256,7 +256,7 @@ public:
     *         for source particles that need to be sent to other ranks for    *
     *         the Scatter scheme                                              *
     ***************************************************************************/
-    if (center == Meshfree::WeightCenter::Scatter) {
+    if (center == swarm::WeightCenter::Scatter) {
       //collect smoothing length sizes and get max
       std::vector<std::vector<double>> h0 = smoothing_lengths[0];
       int smlen_dim = h0[0].size();
@@ -335,7 +335,7 @@ public:
 
       //-----------------------------------------------
       //communicate extents
-      if (center == Meshfree::WeightCenter::Scatter) {
+      if (center == swarm::WeightCenter::Scatter) {
         std::vector<std::vector<double>> sourceSendExtents(nb_ranks);
         for (int i = 0; i < nb_ranks; ++i) {
           if ((!sendFlags[i]) || (i == rank))
@@ -382,7 +382,7 @@ public:
 
       // update local source swarm with received kernel types
       for (int i = 0; i < src_info.new_num; ++i) {
-        kernel_types.push_back(static_cast<Meshfree::Weight::Kernel>(sourceRecvKernels[i]));
+        kernel_types.push_back(static_cast<swarm::Weight::Kernel>(sourceRecvKernels[i]));
       }
 
       //-----------------------------------------------
@@ -404,7 +404,7 @@ public:
 
       // update local source swarm with received geom types
       for (int i = 0; i < src_info.new_num; ++i) {
-        geom_types.push_back(static_cast<Meshfree::Weight::Geometry>(sourceRecvGeoms[i]));
+        geom_types.push_back(static_cast<swarm::Weight::Geometry>(sourceRecvGeoms[i]));
       }
     }
     /**************************************************************************

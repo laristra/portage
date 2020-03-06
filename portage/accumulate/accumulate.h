@@ -20,7 +20,7 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/support/Matrix.h"
 
-namespace Portage { namespace Meshfree {
+namespace Portage { namespace swarm {
 
 /**
  * @brief Different kinds of estimates to do
@@ -73,8 +73,8 @@ class Accumulate {
              Portage::vector<Weight::Kernel> const& kernels,
              Portage::vector<Weight::Geometry> const& geometries,
              Portage::vector<std::vector<std::vector<double>>> const& smoothing,
-             Basis::Type basis,Operator::Type operator_spec = Operator::LastOperator,
-             Portage::vector<Operator::Domain> const& operator_domain = {},
+             basis::Type basis, oper::Type operator_spec = oper::LastOperator,
+             Portage::vector<oper::Domain> const& operator_domain = {},
              Portage::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
     : source_(source),
       target_(target),
@@ -95,7 +95,7 @@ class Accumulate {
     assert(n_particles == kernels_.size());
     assert(n_particles == geometries_.size());
     assert(n_particles == smoothing_.size());
-    if (operator_spec_ != Operator::LastOperator) {
+    if (operator_spec_ != oper::LastOperator) {
       assert(operator_data_.size() == target_.num_owned_particles());
       assert(operator_domain_.size() == target_.num_owned_particles());
     }
@@ -152,7 +152,7 @@ class Accumulate {
       }
       case OperatorRegression:
       case LocalRegression: {
-        size_t nbasis = Basis::function_size<dim>(basis_);
+        size_t nbasis = basis::function_size<dim>(basis_);
         Wonton::Point<dim> x = target_.get_particle_coordinates(particleA);
 
 	      // If too few particles, set estimate to zero for this target
@@ -169,7 +169,7 @@ class Accumulate {
           for (auto const& particleB : source_particles) {
             weight_val[iB] = weight(particleA, particleB); // save weights for later
             Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-            auto basis = Basis::shift<dim>(basis_,x,y);
+            auto basis = basis::shift<dim>(basis_, x, y);
             for (size_t i=0; i<nbasis; i++) {
               for (size_t j=0; j<nbasis; j++) {
                 moment[i][j] += basis[i]*basis[j]*weight_val[iB];
@@ -185,7 +185,7 @@ class Accumulate {
         for (auto const& particleB : source_particles) {
 	        std::vector<double> pair_result(nbasis);
           Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-	        std::vector<double> basis = Basis::shift<dim>(basis_,x,y);
+	        std::vector<double> basis = basis::shift<dim>(basis_, x, y);
 
           // recast as a Portage::Matrix
           Wonton::Matrix basis_matrix(nbasis,1);
@@ -212,13 +212,13 @@ class Accumulate {
 
           // If an operator is being applied, adjust final weights.
           if (estimate_ == OperatorRegression) {
-            auto ijet = Basis::inverse_jet<dim>(basis_, x);
+            auto ijet = basis::inverse_jet<dim>(basis_, x);
             std::vector<std::vector<double>> basisop;
-            Operator::apply<dim>(operator_spec_, basis_,
-                                 operator_domain_[particleA],
-                                 operator_data_[particleA], basisop);
-            size_t opsize = Operator::size_info(operator_spec_, basis_,
-                                                operator_domain_[particleA])[0];
+            oper::apply<dim>(operator_spec_, basis_,
+                             operator_domain_[particleA],
+                             operator_data_[particleA], basisop);
+            size_t opsize = oper::size_info(operator_spec_, basis_,
+                                            operator_domain_[particleA])[0];
             std::vector<double> operator_result(opsize, 0.);
             for (int j=0; j<opsize; j++) {
               for (int k=0; k<nbasis; k++) {
@@ -249,9 +249,9 @@ class Accumulate {
   Portage::vector<Weight::Kernel> const& kernels_;
   Portage::vector<Weight::Geometry> const& geometries_;
   Portage::vector<std::vector<std::vector<double>>> const& smoothing_;
-  Basis::Type basis_;
-  Operator::Type operator_spec_;
-  Portage::vector<Operator::Domain> operator_domain_;
+  basis::Type basis_;
+  oper::Type operator_spec_;
+  Portage::vector<oper::Domain> operator_domain_;
   Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 

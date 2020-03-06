@@ -28,7 +28,7 @@ Please see the license file at the root of this repository, or at:
   #include "portage/search/search_kdtree_nanoflann.h"
 #endif
 
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 
 //////////////////////////////////////////////////////////////////////
 // Helper routines and data structures
@@ -232,13 +232,13 @@ void run<2>(int example_num, int n_source, int n_target,
   switch (example.estimation_order) {
     case 0: remapper.set_remap_var_names(remap_fields, remap_fields,
                                          LocalRegression,
-                                         Basis::Unitary); break;
+                                         basis::Unitary); break;
     case 1: remapper.set_remap_var_names(remap_fields, remap_fields,
-                                        LocalRegression,
-                                        Basis::Linear); break;
+                                         LocalRegression,
+                                         basis::Linear); break;
     case 2: remapper.set_remap_var_names(remap_fields, remap_fields,
                                          LocalRegression,
-                                         Basis::Quadratic); break;
+                                         basis::Quadratic); break;
     default: break;
   }
 
@@ -390,13 +390,13 @@ void run<3>(int example_num, int n_source, int n_target,
   switch (example.estimation_order) {
     case 0: remapper.set_remap_var_names(remap_fields, remap_fields,
                                          LocalRegression,
-                                         Basis::Unitary); break;
+                                         basis::Unitary); break;
     case 1: remapper.set_remap_var_names(remap_fields, remap_fields,
                                          LocalRegression,
-                                         Basis::Linear); break;
+                                         basis::Linear); break;
     case 2: remapper.set_remap_var_names(remap_fields, remap_fields,
                                          LocalRegression,
-                                         Basis::Quadratic); break;
+                                         basis::Quadratic); break;
     default: break;
   }
 

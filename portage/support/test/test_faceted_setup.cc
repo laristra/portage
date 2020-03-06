@@ -31,7 +31,7 @@ TEST(Faceted_Setup, Simple2D) {
   Portage::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor = 1.5;
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
@@ -68,7 +68,7 @@ TEST(Faceted_Setup, Simple3D) {
   Portage::vector<Wonton::Point<3>> extents;
   double factor = 1.5, bfactor = 1.5;
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
@@ -127,7 +127,7 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
   Portage::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor = 1.5;
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
@@ -180,7 +180,7 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
   Portage::vector<Wonton::Point<3>> extents;
   double factor = 1.5, bfactor = 1.5;
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
@@ -245,7 +245,7 @@ TEST(Faceted_Setup, Simple2DFace) {
   Portage::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor=0.5;
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
@@ -318,7 +318,7 @@ TEST(Faceted_Setup, InternalBoundary) {
   std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
   Wonton::Simple_State_Wrapper swrapper(state);
 
-  Portage::Meshfree::Weight::faceted_setup_cell
+  Portage::swarm::Weight::faceted_setup_cell
     (mwrapper, swrapper, "indicate", 0.25, 
      smoothing, extents, 
      factor, bfactor);

@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
 
 TEST(search_simple_points, scatter_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Portage::swarm::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
@@ -74,7 +74,7 @@ TEST(search_simple_points, scatter_2d) {
 
 TEST(search_simple_points, scatter_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Portage::swarm::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
@@ -144,7 +144,7 @@ TEST(search_simple_points, scatter_3d) {
 
 TEST(search_simple_points, gather_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Portage::swarm::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
@@ -178,7 +178,7 @@ TEST(search_simple_points, gather_2d) {
 
   Portage::SearchSimplePoints<2, Swarm<2>, Swarm<2>>
     search(source_swarm, target_swarm,
-           source_extent, target_extent, Portage::Meshfree::Gather);
+           source_extent, target_extent, Portage::swarm::Gather);
 
   for (int j = 0; j < 3; ++j) {
     for (int i = 0; i < 3; ++i) {
@@ -200,7 +200,7 @@ TEST(search_simple_points, gather_2d) {
 
 TEST(search_simple_points, gather_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Portage::swarm::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
@@ -242,7 +242,7 @@ TEST(search_simple_points, gather_3d) {
 
   Portage::SearchSimplePoints<3, Swarm<3>, Swarm<3>>
     search(source_swarm, target_swarm,
-           source_extent, target_extent, Portage::Meshfree::Gather);
+           source_extent, target_extent, Portage::swarm::Gather);
 
   for (int k = 0; k < 2; ++k) {
     for (int j = 0; j < 2; ++j) {

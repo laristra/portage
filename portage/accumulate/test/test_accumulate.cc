@@ -14,13 +14,13 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/test_operator_data.h"
 #include "wonton/support/Point.h"
 
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 using Wonton::Point;
 
-using namespace Portage::Meshfree::reference;
+using namespace Portage::swarm::reference;
 
 template<int dim>
-void test_accumulate(EstimateType etype, Basis::Type btype, WeightCenter center) {
+void test_accumulate(EstimateType etype, basis::Type btype, WeightCenter center) {
 
   using Accumulator = Accumulate<dim, Swarm<dim>, Swarm<dim>>;
 
@@ -71,8 +71,8 @@ void test_accumulate(EstimateType etype, Basis::Type btype, WeightCenter center)
                           kernels, geometries, smoothing_h, btype);
 
   // check sizes and allocate test array
-  auto bsize = Basis::function_size<dim>(btype);
-  auto jsize = Basis::jet_size<dim>(btype);
+  auto bsize = basis::function_size<dim>(btype);
+  auto jsize = basis::jet_size<dim>(btype);
   ASSERT_EQ(jsize[0], bsize);
   ASSERT_EQ(jsize[1], bsize);
 
@@ -96,11 +96,11 @@ void test_accumulate(EstimateType etype, Basis::Type btype, WeightCenter center)
     } else {
       // test for reproducing property
       auto x = tgt_swarm.get_particle_coordinates(i);
-      auto jetx = Basis::jet<dim>(btype, x);
+      auto jetx = basis::jet<dim>(btype, x);
 
       for (size_t j = 0; j < npoints; j++) {
         auto y = src_swarm.get_particle_coordinates(j);
-        auto basisy = Basis::function<dim>(btype, y);
+        auto basisy = basis::function<dim>(btype, y);
         for (size_t k = 0; k < jsize[0]; k++) {
           for (size_t m = 0; m < jsize[1]; m++) {
             sums[k][m] += basisy[k] * (shape_vecs[j]).weights[m];
@@ -120,11 +120,11 @@ void test_accumulate(EstimateType etype, Basis::Type btype, WeightCenter center)
 
 
 // Test the reproducing property of basis integration operators
-template<Basis::Type btype, Operator::Type opertype, Operator::Domain domain>
+template<basis::Type btype, oper::Type opertype, oper::Domain domain>
 void test_operator(WeightCenter center) {
 
   // create the source swarm input geometry data
-  constexpr int dim = Operator::dimension(domain);
+  constexpr int dim = oper::dimension(domain);
   const size_t nside = 6;
   const size_t npoints = powl(nside,dim);
   const double deltax = 1./nside;
@@ -169,7 +169,7 @@ void test_operator(WeightCenter center) {
     target_points[0] = pt;
   }
 
-  Portage::vector<Operator::Domain> domains(1);
+  Portage::vector<oper::Domain> domains(1);
   domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
@@ -186,8 +186,8 @@ void test_operator(WeightCenter center) {
                           opertype, domains, domain_points);
 
   // check sizes and allocate test array
-  auto bsize = Basis::function_size<dim>(btype);
-  auto jsize = Operator::Operator<opertype, btype, domain>::operator_size;
+  auto bsize = basis::function_size<dim>(btype);
+  auto jsize = oper::Operator<opertype, btype, domain>::operator_size;
 
   // list of src swarm particles (indices)
   std::vector<int> source_particles(npoints);
@@ -201,7 +201,7 @@ void test_operator(WeightCenter center) {
 
   for (size_t j = 0; j < npoints; j++) {
     auto y = source_swarm.get_particle_coordinates(j);
-    auto basisy = Basis::function<dim>(btype, y);
+    auto basisy = basis::function<dim>(btype, y);
     for (size_t k = 0; k < bsize; k++) {
       for (size_t m = 0; m < jsize; m++) {
         sums[k][m] += basisy[k] * (shape_vecs[j]).weights[m];
@@ -211,11 +211,11 @@ void test_operator(WeightCenter center) {
 
   for (size_t k = 0; k < bsize; k++) {
     for (size_t m = 0; m < jsize; m++) {
-      if (opertype == Operator::VolumeIntegral) {
+      if (opertype == oper::VolumeIntegral) {
         ASSERT_EQ(jsize, 1);
-        using namespace Operator;
+        using namespace oper;
         switch (btype) {
-          case Basis::Unitary: {
+          case basis::Unitary: {
             switch (domain) {
               case Interval:      ASSERT_NEAR(sums[k][m], unitary_interval[k], 1.e-12);     break;
               case Quadrilateral: ASSERT_NEAR(sums[k][m], unitary_quadrilateral[k], 1.e-12);break;
@@ -226,7 +226,7 @@ void test_operator(WeightCenter center) {
               default: break;
             }
           }
-          case Basis::Linear: {
+          case basis::Linear: {
             switch (domain) {
               case Interval:      ASSERT_NEAR(sums[k][m], linear_interval[k], 1.e-12);     break;
               case Quadrilateral: ASSERT_NEAR(sums[k][m], linear_quadrilateral[k], 1.e-12);break;
@@ -237,7 +237,7 @@ void test_operator(WeightCenter center) {
               default: break;
               }
           }
-          case Basis::Quadratic: {
+          case basis::Quadratic: {
             switch (domain) {
               case Interval:      ASSERT_NEAR(sums[k][m], quadratic_interval[k], 1.e-12);     break;
               case Quadrilateral: ASSERT_NEAR(sums[k][m], quadratic_quadrilateral[k], 1.e-12);break;
@@ -257,258 +257,258 @@ void test_operator(WeightCenter center) {
 
 TEST(accumulate, 1d_KUG) {
   test_accumulate<1>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 2d_KUG) {
   test_accumulate<2>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 3d_KUG) {
   test_accumulate<3>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 1d_KUS) {
   test_accumulate<1>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 2d_KUS) {
   test_accumulate<2>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 3d_KUS) {
   test_accumulate<3>(EstimateType::KernelDensity,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 1d_RUG) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 2d_RUG) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 3d_RUG) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 1d_RUS) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 2d_RUS) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 3d_RUS) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Unitary,
+                     basis::Type::Unitary,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 1d_RLG) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 2d_RLG) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 3d_RLG) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 1d_RLS) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 2d_RLS) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 3d_RLS) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Linear,
+                     basis::Type::Linear,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 1d_RQG) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 2d_RQG) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 3d_RQG) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Gather);
 }
 
 TEST(accumulate, 1d_RQS) {
   test_accumulate<1>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 2d_RQS) {
   test_accumulate<2>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Scatter);
 }
 
 TEST(accumulate, 3d_RQS) {
   test_accumulate<3>(EstimateType::LocalRegression,
-                     Basis::Type::Quadratic,
+                     basis::Type::Quadratic,
                      WeightCenter::Scatter);
 }
 
 // test the operator capability
 
 TEST(operator, UnitaryInterval) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral,
- 		            Operator::Interval>(WeightCenter::Scatter);
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+ 		            oper::Interval>(WeightCenter::Scatter);
 }
 
 TEST(operator, UnitaryQuadrilateral) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral, 
-		Operator::Quadrilateral>
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+		oper::Quadrilateral>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, UnitaryTriangle) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral, 
-		Operator::Triangle>
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+		oper::Triangle>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, UnitaryHexahedron) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral, 
-		Operator::Hexahedron>
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+		oper::Hexahedron>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, UnitaryWedge) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral, 
-		Operator::Wedge>
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+		oper::Wedge>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, UnitaryTetrahedron) {
-  test_operator<Basis::Type::Unitary,
-                Operator::VolumeIntegral, 
-		Operator::Tetrahedron>
+  test_operator<basis::Type::Unitary,
+                oper::VolumeIntegral,
+		oper::Tetrahedron>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearInterval) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Interval>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Interval>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearQuadrilateral) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Quadrilateral>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Quadrilateral>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearTriangle) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Triangle>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Triangle>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearHexahedron) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Hexahedron>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Hexahedron>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearWedge) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Wedge>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Wedge>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, LinearTetrahedron) {
-  test_operator<Basis::Type::Linear,
-                Operator::VolumeIntegral, 
-		Operator::Tetrahedron>
+  test_operator<basis::Type::Linear,
+                oper::VolumeIntegral,
+		oper::Tetrahedron>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, QuadraticInterval) {
-  test_operator<Basis::Type::Quadratic,
-                Operator::VolumeIntegral, 
-		Operator::Interval>
+  test_operator<basis::Type::Quadratic,
+                oper::VolumeIntegral,
+		oper::Interval>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, QuadraticQuadrilateral) {
-  test_operator<Basis::Type::Quadratic,
-                Operator::VolumeIntegral, 
-		Operator::Quadrilateral>
+  test_operator<basis::Type::Quadratic,
+                oper::VolumeIntegral,
+		oper::Quadrilateral>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, QuadraticTriangle) {
-  test_operator<Basis::Type::Quadratic,
-                Operator::VolumeIntegral, 
-		Operator::Triangle>
+  test_operator<basis::Type::Quadratic,
+                oper::VolumeIntegral,
+		oper::Triangle>
     (WeightCenter::Scatter);
 }
 
 TEST(operator, QuadraticTetrahedron) {
-  test_operator<Basis::Type::Quadratic,
-                Operator::VolumeIntegral, 
-		Operator::Tetrahedron>
+  test_operator<basis::Type::Quadratic,
+                oper::VolumeIntegral,
+		oper::Tetrahedron>
     (WeightCenter::Scatter);
 }
 

@@ -15,10 +15,10 @@
 #include "portage/support/basis.h"
 #include "wonton/support/Point.h"
 
-namespace Portage { namespace Meshfree { namespace Operator {
+namespace Portage { namespace swarm { namespace oper {
 
-using Basis::Traits;
-using Basis::transfactor;
+using basis::Traits;
+using basis::transfactor;
 
 /**
  *
@@ -92,11 +92,11 @@ Domain domain_from_points(std::vector<Wonton::Point<dim>> const& points) {
 // Template for integral operator base class
 ////////////////////////////////////////////////////////////////////////////////
 
-template<Type type, Basis::Type basis_type, Domain domain_type>
+template<Type type, basis::Type basis_type, Domain domain_type>
 class OperatorBase {
 public:
   Type operator_type = type;
-  static constexpr Basis::Type basis = basis_type;
+  static constexpr basis::Type basis = basis_type;
   static constexpr Domain domain = domain_type;
 };
 
@@ -104,7 +104,7 @@ public:
 // Template for integral operators
 ////////////////////////////////////////////////////////////////////////////////
 
-template<Type type, Basis::Type basis_type, Domain domain_type>
+template<Type type, basis::Type basis_type, Domain domain_type>
 class Operator: public OperatorBase<type,basis_type,domain_type> {
 public:
   static constexpr size_t dim = dimension(domain_type);
@@ -126,14 +126,14 @@ public:
 
 // 1D
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Interval>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Interval>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Interval);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 2;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -148,14 +148,14 @@ public:
 
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Interval>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Interval>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Interval);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 2;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -170,14 +170,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Quadratic, Interval>:
-  public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
+class Operator<VolumeIntegral, basis::Quadratic, Interval>:
+  public OperatorBase<VolumeIntegral, basis::Quadratic, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Interval);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Quadratic, dim>::function_size;
+    basis::Traits<basis::Quadratic, dim>::function_size;
   static constexpr size_t point_size = 2;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -195,14 +195,14 @@ public:
 // 2D Triangle
 
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Triangle>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Triangle>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Triangle);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 3;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -216,14 +216,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Triangle>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Triangle>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Triangle);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 3;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -239,14 +239,14 @@ public:
 };
 
 template<>
-  class Operator<VolumeIntegral, Basis::Quadratic, Triangle>:
-    public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
+  class Operator<VolumeIntegral, basis::Quadratic, Triangle>:
+    public OperatorBase<VolumeIntegral, basis::Quadratic, Interval>
   {
   public:
     static constexpr size_t dim = dimension(Triangle);
     static constexpr size_t operator_size = 1;
     static constexpr size_t basis_size =
-      Basis::Traits<Basis::Quadratic, dim>::function_size;
+      basis::Traits<basis::Quadratic, dim>::function_size;
     static constexpr size_t point_size = 3;
 
     using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -267,14 +267,14 @@ template<>
 // 2D Quadrilateral
 
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Quadrilateral>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Quadrilateral);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -288,14 +288,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Quadrilateral>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Quadrilateral>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Quadrilateral);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -311,14 +311,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>:
-  public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
+class Operator<VolumeIntegral, basis::Quadratic, Quadrilateral>:
+  public OperatorBase<VolumeIntegral, basis::Quadratic, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Quadrilateral);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Quadratic, dim>::function_size;
+    basis::Traits<basis::Quadratic, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -339,14 +339,14 @@ public:
 // 3D Hexahedron
 
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Hexahedron>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Hexahedron>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Hexahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 8;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -360,14 +360,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Hexahedron>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Hexahedron>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Hexahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 8;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -386,14 +386,14 @@ public:
 // 3D Wedge
 
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Wedge>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Wedge>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Hexahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 6;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -407,14 +407,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Wedge>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Wedge>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Wedge);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 6;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -433,14 +433,14 @@ public:
 // 3D Tetrahedron
 
 template<>
-class Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>:
-  public OperatorBase<VolumeIntegral, Basis::Unitary, Interval>
+class Operator<VolumeIntegral, basis::Unitary, Tetrahedron>:
+  public OperatorBase<VolumeIntegral, basis::Unitary, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Tetrahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Unitary, dim>::function_size;
+    basis::Traits<basis::Unitary, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -454,14 +454,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Linear, Tetrahedron>:
-  public OperatorBase<VolumeIntegral, Basis::Linear, Interval>
+class Operator<VolumeIntegral, basis::Linear, Tetrahedron>:
+  public OperatorBase<VolumeIntegral, basis::Linear, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Tetrahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Linear, dim>::function_size;
+    basis::Traits<basis::Linear, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -478,14 +478,14 @@ public:
 };
 
 template<>
-class Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>:
-  public OperatorBase<VolumeIntegral, Basis::Quadratic, Interval>
+class Operator<VolumeIntegral, basis::Quadratic, Tetrahedron>:
+  public OperatorBase<VolumeIntegral, basis::Quadratic, Interval>
 {
 public:
   static constexpr size_t dim = dimension(Tetrahedron);
   static constexpr size_t operator_size = 1;
   static constexpr size_t basis_size =
-    Basis::Traits<Basis::Quadratic, dim>::function_size;
+    basis::Traits<basis::Quadratic, dim>::function_size;
   static constexpr size_t point_size = 4;
 
   using result_t = std::array<std::array<double, operator_size>, basis_size>;
@@ -510,84 +510,84 @@ public:
 ////////////////////////////////////////////////////////////////////////////////
 // Dynamic size information
 ////////////////////////////////////////////////////////////////////////////////
-inline std::array<size_t,3> size_info(Type type, Basis::Type basis, Domain domain) {
+inline std::array<size_t,3> size_info(Type type, basis::Type basis, Domain domain) {
 
   if (type == VolumeIntegral) {
     switch (basis) {
-      case Basis::Unitary:
+      case basis::Unitary:
         switch (domain) {
           case Interval: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Interval>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Interval>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Quadrilateral: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Quadrilateral>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Triangle: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Triangle>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Triangle>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Hexahedron: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Hexahedron>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Hexahedron>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Wedge: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Wedge>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Wedge>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Tetrahedron: {
-            using OP = Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>;
+            using OP = Operator<VolumeIntegral, basis::Unitary, Tetrahedron>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           default: break;
         }
         break;
-      case Basis::Linear:
+      case basis::Linear:
         switch (domain) {
           case Interval: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Interval>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Interval>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Quadrilateral: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Quadrilateral>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Quadrilateral>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Triangle: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Triangle>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Triangle>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Hexahedron: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Hexahedron>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Hexahedron>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Wedge: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Wedge>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Wedge>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Tetrahedron: {
-            using OP = Operator<VolumeIntegral, Basis::Linear, Tetrahedron>;
+            using OP = Operator<VolumeIntegral, basis::Linear, Tetrahedron>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           default: break;
         }
         break;
-      case Basis::Quadratic:
+      case basis::Quadratic:
         switch (domain) {
           case Interval: {
-            using OP = Operator<VolumeIntegral, Basis::Quadratic, Interval>;
+            using OP = Operator<VolumeIntegral, basis::Quadratic, Interval>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Quadrilateral: {
-            using OP = Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>;
+            using OP = Operator<VolumeIntegral, basis::Quadratic, Quadrilateral>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Triangle: {
-            using OP = Operator<VolumeIntegral, Basis::Quadratic, Triangle>;
+            using OP = Operator<VolumeIntegral, basis::Quadratic, Triangle>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           case Tetrahedron: {
-            using OP = Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>;
+            using OP = Operator<VolumeIntegral, basis::Quadratic, Tetrahedron>;
             return { OP::operator_size, OP::basis_size, OP::point_size };
           }
           default: break;
@@ -657,7 +657,7 @@ inline void get_result(const std::vector<Wonton::Point<OP::dim>>& points,
   if (center) {
     Wonton::Point<OP::dim> c = centroid<OP>(apts);
     shift_points<OP>(c, apts);
-    auto tf = Basis::transfactor<OP::dim>(OP::basis, c);
+    auto tf = basis::transfactor<OP::dim>(OP::basis, c);
     typename OP::result_t ares = OP::apply(apts);
     for (int i = 0; i < OP::basis_size; i++)
       for (int j = 0; j < OP::operator_size; j++) {
@@ -687,13 +687,13 @@ get_result(const std::vector<Wonton::Point<OP::dim>>& points, bool center = true
 ////////////////////////////////////////////////////////////////////////////////
 
 template<size_t dim>
-void apply(const Type type, const Basis::Type basis_type,
+void apply(const Type type, const basis::Type basis_type,
            const Domain domain_type, const std::vector<Wonton::Point<dim>> &points,
            std::vector<std::vector<double>> &result);
 
 template<>
 inline
-void apply<1>(const Type type, const Basis::Type basis_type,
+void apply<1>(const Type type, const basis::Type basis_type,
               const Domain domain_type, const std::vector<Wonton::Point<1>>& points,
               std::vector<std::vector<double>>& result) {
   bool center = true;
@@ -702,18 +702,18 @@ void apply<1>(const Type type, const Basis::Type basis_type,
       switch (domain_type) {
         case Interval:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Interval>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Interval>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Interval>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Interval>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Quadratic: {
-              using OP = Operator<VolumeIntegral, Basis::Quadratic, Interval>;
+            case basis::Quadratic: {
+              using OP = Operator<VolumeIntegral, basis::Quadratic, Interval>;
               get_result<OP>(points, result, center);
             }
               break;
@@ -732,7 +732,7 @@ void apply<1>(const Type type, const Basis::Type basis_type,
 
 template<>
 inline
-void apply<2>(const Type type, const Basis::Type basis_type,
+void apply<2>(const Type type, const basis::Type basis_type,
               const Domain domain_type, const std::vector<Wonton::Point<2>>& points,
               std::vector<std::vector<double>>& result) {
   bool center = true;
@@ -741,18 +741,18 @@ void apply<2>(const Type type, const Basis::Type basis_type,
       switch (domain_type) {
         case Quadrilateral:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Quadrilateral>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Quadrilateral>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Quadrilateral>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Quadrilateral>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Quadratic: {
-              using OP = Operator<VolumeIntegral, Basis::Quadratic, Quadrilateral>;
+            case basis::Quadratic: {
+              using OP = Operator<VolumeIntegral, basis::Quadratic, Quadrilateral>;
               get_result<OP>(points, result, center);
             }
               break;
@@ -762,18 +762,18 @@ void apply<2>(const Type type, const Basis::Type basis_type,
           break;
         case Triangle:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Triangle>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Triangle>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Triangle>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Triangle>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Quadratic: {
-              using OP = Operator<VolumeIntegral, Basis::Quadratic, Triangle>;
+            case basis::Quadratic: {
+              using OP = Operator<VolumeIntegral, basis::Quadratic, Triangle>;
               get_result<OP>(points, result, center);
             }
               break;
@@ -792,7 +792,7 @@ void apply<2>(const Type type, const Basis::Type basis_type,
 
 template<>
 inline
-void apply<3>(const Type type, const Basis::Type basis_type,
+void apply<3>(const Type type, const basis::Type basis_type,
               const Domain domain_type, const std::vector<Wonton::Point<3>>& points,
               std::vector<std::vector<double>>& result) {
   bool center = true;
@@ -801,13 +801,13 @@ void apply<3>(const Type type, const Basis::Type basis_type,
       switch (domain_type) {
         case Hexahedron:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Hexahedron>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Hexahedron>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Hexahedron>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Hexahedron>;
               get_result<OP>(points, result, center);
             }
               break;
@@ -817,13 +817,13 @@ void apply<3>(const Type type, const Basis::Type basis_type,
           break;
         case Wedge:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Wedge>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Wedge>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Wedge>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Wedge>;
               get_result<OP>(points, result, center);
             }
               break;
@@ -833,18 +833,18 @@ void apply<3>(const Type type, const Basis::Type basis_type,
           break;
         case Tetrahedron:
           switch (basis_type) {
-            case Basis::Unitary: {
-              using OP = Operator<VolumeIntegral, Basis::Unitary, Tetrahedron>;
+            case basis::Unitary: {
+              using OP = Operator<VolumeIntegral, basis::Unitary, Tetrahedron>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Linear: {
-              using OP = Operator<VolumeIntegral, Basis::Linear, Tetrahedron>;
+            case basis::Linear: {
+              using OP = Operator<VolumeIntegral, basis::Linear, Tetrahedron>;
               get_result<OP>(points, result, center);
             }
               break;
-            case Basis::Quadratic: {
-              using OP = Operator<VolumeIntegral, Basis::Quadratic, Tetrahedron>;
+            case basis::Quadratic: {
+              using OP = Operator<VolumeIntegral, basis::Quadratic, Tetrahedron>;
               get_result<OP>(points, result, center);
             }
               break;

@@ -28,7 +28,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 // avoid long namespaces
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 // default numerical tolerance
 double const epsilon = 1e-6;
 // default MPI communicator
@@ -87,7 +87,7 @@ public:
    * @param expected_answer: the expected value to compare against.
    */
   template <template<int, class, class> class Search,
-            Basis::Type basis>
+            basis::Type basis>
   void unitTest(double compute_initial_field(Wonton::Point<dim> const& coord),
                 double expected_answer) {
 
@@ -251,62 +251,62 @@ double compute_quadratic_field(Wonton::Point<dim> const& coord) {
 // fails.
 
 TEST_F(DriverTest2D, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_ConstantFieldUnitaryBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_LinearFieldLinearBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3D, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_ConstantFieldUnitaryBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, basis::Unitary>
       (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_LinearFieldLinearBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 }  // end namespace

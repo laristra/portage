@@ -27,7 +27,7 @@
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/support/Point.h"
 
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 
 class SwarmTest : public testing::Test {
 protected:

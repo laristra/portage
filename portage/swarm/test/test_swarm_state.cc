@@ -26,8 +26,8 @@
 
 TEST(SwarmState, basic) {
 //  using std::make_shared;
-  using Portage::Meshfree::SwarmState;
-  using namespace Portage::Meshfree;
+  using Portage::swarm::SwarmState;
+  using namespace Portage::swarm;
 
   // set up a random swarm
   std::random_device device;
@@ -124,7 +124,7 @@ TEST(SwarmState, basic) {
 */
 TEST(SwarmState, Simple_State_Wrapper) {
 
-  using namespace Portage::Meshfree;
+  using namespace Portage::swarm;
   using Mesh = Wonton::Simple_Mesh;
   using Wrapper = Wonton::Simple_Mesh_Wrapper;
   using State = Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>;

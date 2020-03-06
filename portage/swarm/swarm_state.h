@@ -14,7 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/swarm/swarm.h"
 #include "portage/support/portage.h"
 
-namespace Portage { namespace Meshfree {
+namespace Portage { namespace swarm {
 
 /**
  * @class SwarmState

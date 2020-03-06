@@ -60,9 +60,9 @@ struct Controls {
   std::string source_file="none", target_file="none";
   std::string oper8tor="none";
   bool domeshmesh=true;
-  Portage::Meshfree::Weight::Kernel kernel = Portage::Meshfree::Weight::B4;
-  Portage::Meshfree::Weight::Geometry geometry = Portage::Meshfree::Weight::TENSOR;
-  Portage::Meshfree::WeightCenter center = Portage::Meshfree::Gather;
+  Portage::swarm::Weight::Kernel kernel = Portage::swarm::Weight::B4;
+  Portage::swarm::Weight::Geometry geometry = Portage::swarm::Weight::TENSOR;
+  Portage::swarm::WeightCenter center = Portage::swarm::Gather;
 };
 
 Controls<2> truncateControl(Controls<3> ctl) {
@@ -95,14 +95,14 @@ template<template<int, Portage::Entity_kind, class, class, class, class, class,
                   class, class, class> class T>
 class consistent_order{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type) {return false;}
+  static bool check(Portage::swarm::basis::Type type) {return false;}
 };
 
 template<>
 class consistent_order<Portage::Interpolate_1stOrder>{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type){
-    if (type == Portage::Meshfree::Basis::Linear) return true;
+  static bool check(Portage::swarm::basis::Type type){
+    if (type == Portage::swarm::basis::Linear) return true;
     else return false;
   }
 };
@@ -110,8 +110,8 @@ public:
 template<>
 class consistent_order<Portage::Interpolate_2ndOrder>{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type){
-    if (type == Portage::Meshfree::Basis::Quadratic) return true;
+  static bool check(Portage::swarm::basis::Type type){
+    if (type == Portage::swarm::basis::Quadratic) return true;
     else return false;
   }
 };
@@ -204,16 +204,16 @@ public:
   {
     // process controls
     double smoothing_factor = controls_.smoothing_factor;
-    Portage::Meshfree::Basis::Type basis;
-    if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
-    if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
-    if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
+    Portage::swarm::basis::Type basis;
+    if (controls_.order == 0) basis = Portage::swarm::basis::Unitary;
+    if (controls_.order == 1) basis = Portage::swarm::basis::Linear;
+    if (controls_.order == 2) basis = Portage::swarm::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::Operator::Type oper8tor;
+    Portage::swarm::oper::Type oper8tor;
     if (controls_.oper8tor == "VolumeIntegral") {
-      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+      oper8tor = Portage::swarm::oper::VolumeIntegral;
     } else if (controls_.oper8tor == "none") {
-      oper8tor = Portage::Meshfree::Operator::LastOperator;
+      oper8tor = Portage::swarm::oper::LastOperator;
     } else {
       throw std::runtime_error("illegal operator specified");
     }
@@ -268,7 +268,7 @@ public:
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    Portage::vector<Portage::swarm::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL,
                                               Portage::Entity_type::ALL);
@@ -280,7 +280,7 @@ public:
         std::vector<Portage::Point<Dimension>> cellverts;
         targetMesh->cell_get_coordinates(c, &cellverts);
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+        domains[c] = Portage::swarm::oper::domain_from_points<Dimension>(cellverts);
       }
     }
 
@@ -301,8 +301,8 @@ public:
     // Build and run the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
       SwarmSearch,
-      Portage::Meshfree::Accumulate,
-      Portage::Meshfree::Estimate,
+      Portage::swarm::Accumulate,
+      Portage::swarm::Estimate,
       Dimension,
       Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
       Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
@@ -312,9 +312,9 @@ public:
                 controls_.smoothing_factor, controls_.boundary_factor, 
                 controls_.geometry, controls_.kernel, controls_.center, 
                 controls_.pbp_field, controls_.pbp_tolerance);
-    Portage::Meshfree::EstimateType estimate=Portage::Meshfree::LocalRegression;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
-      estimate=Portage::Meshfree::OperatorRegression;
+    Portage::swarm::EstimateType estimate=Portage::swarm::LocalRegression;
+    if (oper8tor == Portage::swarm::oper::VolumeIntegral)
+      estimate=Portage::swarm::OperatorRegression;
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
                                   estimate, basis, oper8tor, domains, data);
     msmdriver.run();
@@ -418,7 +418,7 @@ public:
         } else {
           std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
         }
-        if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+        if (oper8tor != Portage::swarm::oper::VolumeIntegral) {
           std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
         } else {
           std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
@@ -428,13 +428,13 @@ public:
     }
     // accumulate integral
     totint = 0.;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+    if (oper8tor == Portage::swarm::oper::VolumeIntegral) {
       for (int c = 0; c < ntarcells; ++c) {
         totint += cellvecout2[c];
       }
     }
 
-    if (controls_.center == Portage::Meshfree::Scatter) {
+    if (controls_.center == Portage::swarm::Scatter) {
       for (int i=0; i<nsrccells; i++) {
         Portage::Point<Dimension> ccen;
         sourceMeshWrapper.cell_centroid(i, &ccen);
@@ -447,7 +447,7 @@ public:
     }        
 
     std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+    if (oper8tor == Portage::swarm::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
     if (controls_.print_detail == 1) {
@@ -528,14 +528,14 @@ protected:
   void runit()
   {
     // process controls
-    Portage::Meshfree::Basis::Type basis;
-    if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
-    if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
-    if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
+    Portage::swarm::basis::Type basis;
+    if (controls_.order == 0) basis = Portage::swarm::basis::Unitary;
+    if (controls_.order == 1) basis = Portage::swarm::basis::Linear;
+    if (controls_.order == 2) basis = Portage::swarm::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::Operator::Type oper8tor;
+    Portage::swarm::oper::Type oper8tor;
     if (controls_.oper8tor == "VolumeIntegral") {
-      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+      oper8tor = Portage::swarm::oper::VolumeIntegral;
     } else if (controls_.oper8tor != "none") {
       throw std::runtime_error("illegal operator specified");
     }
@@ -580,7 +580,7 @@ protected:
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    Portage::vector<Portage::swarm::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMeshWrapper.num_owned_cells();
       domains.resize(numcells);
@@ -595,7 +595,7 @@ protected:
           targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
         }
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+        domains[c] = Portage::swarm::oper::domain_from_points<Dimension>(cellverts);
       }
     }
 
@@ -616,8 +616,8 @@ protected:
     // Build and run the mesh-swarm-mesh driver data for this mesh type
     Portage::MSM_Driver<
       SwarmSearch,
-      Portage::Meshfree::Accumulate,
-      Portage::Meshfree::Estimate,
+      Portage::swarm::Accumulate,
+      Portage::swarm::Estimate,
       Dimension,
       Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper,
       Portage::Jali_Mesh_Wrapper, Portage::Jali_State_Wrapper
@@ -628,7 +628,7 @@ protected:
                 controls_.geometry, controls_.kernel, controls_.center, 
                 controls_.pbp_field, controls_.pbp_tolerance);
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
-                                  Portage::Meshfree::LocalRegression, basis,
+                                  Portage::swarm::LocalRegression, basis,
                                   oper8tor, domains, data);
     // run on one processor
     msmdriver.run();
@@ -737,7 +737,7 @@ protected:
         } else {
           std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
         }
-        if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+        if (oper8tor != Portage::swarm::oper::VolumeIntegral) {
           std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
         } else {
           std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
@@ -747,14 +747,14 @@ protected:
     }
     // accumulate integral
     totint = 0.;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+    if (oper8tor == Portage::swarm::oper::VolumeIntegral) {
       for (int c = 0; c < ntarcells; ++c) {
         totint += cellvecout2[c];
       }
     }
 
     std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+    if (oper8tor == Portage::swarm::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
     if (controls_.print_detail == 1) {
@@ -986,27 +986,27 @@ int main(int argc, char** argv) {
   {
     std::string value;
     file >> value;
-    if      (value == "tensor")   ctl.geometry = Portage::Meshfree::Weight::TENSOR;
-    else if (value == "elliptic") ctl.geometry = Portage::Meshfree::Weight::ELLIPTIC;
-    else if (value == "faceted")  ctl.geometry = Portage::Meshfree::Weight::FACETED;
+    if      (value == "tensor")   ctl.geometry = Portage::swarm::Weight::TENSOR;
+    else if (value == "elliptic") ctl.geometry = Portage::swarm::Weight::ELLIPTIC;
+    else if (value == "faceted")  ctl.geometry = Portage::swarm::Weight::FACETED;
     else throw std::runtime_error("invalid value for geometry");
   }
   {
     std::string value;
     file >> value;
-    if      (value == "b4")            ctl.kernel = Portage::Meshfree::Weight::B4;
-    else if (value == "square")        ctl.kernel = Portage::Meshfree::Weight::SQUARE;
-    else if (value == "epanechnikov")  ctl.kernel = Portage::Meshfree::Weight::EPANECHNIKOV;
-    else if (value == "polyramp")      ctl.kernel = Portage::Meshfree::Weight::POLYRAMP;
-    else if (value == "invsqrt")       ctl.kernel = Portage::Meshfree::Weight::INVSQRT;
-    else if (value == "coulomb")       ctl.kernel = Portage::Meshfree::Weight::COULOMB;
+    if      (value == "b4")            ctl.kernel = Portage::swarm::Weight::B4;
+    else if (value == "square")        ctl.kernel = Portage::swarm::Weight::SQUARE;
+    else if (value == "epanechnikov")  ctl.kernel = Portage::swarm::Weight::EPANECHNIKOV;
+    else if (value == "polyramp")      ctl.kernel = Portage::swarm::Weight::POLYRAMP;
+    else if (value == "invsqrt")       ctl.kernel = Portage::swarm::Weight::INVSQRT;
+    else if (value == "coulomb")       ctl.kernel = Portage::swarm::Weight::COULOMB;
     else throw std::runtime_error("invalid value for kernel");
   }
   {
     std::string value;
     file >> value;
-    if      (value == "scatter") ctl.center = Portage::Meshfree::Scatter;
-    else if (value == "gather")  ctl.center = Portage::Meshfree::Gather;
+    if      (value == "scatter") ctl.center = Portage::swarm::Scatter;
+    else if (value == "gather")  ctl.center = Portage::swarm::Gather;
     else throw std::runtime_error("invalid value for center");
   }
   try {

@@ -32,7 +32,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 // avoid long namespaces
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 // default numerical tolerance
 double const epsilon = 1e-6;
 
@@ -67,7 +67,7 @@ public:
            double x_min = 0.0, double x_max = 0.0,
            double y_min = 0.0, double y_max = 0.0,
            double z_min = 0.0, double z_max = 0.0,
-           Operator::Type op = Operator::LastOperator)
+           oper::Type op = oper::LastOperator)
     : source_swarm(nb_source, distrib, 0, x_min, x_max, y_min, y_max, z_min, z_max),
       target_swarm(nb_target, distrib, 0, x_min, x_max, y_min, y_max, z_min, z_max),
       source_state(source_swarm),
@@ -76,12 +76,12 @@ public:
       operator_(op)
   {
 
-    if (op != Operator::LastOperator) {
+    if (op != oper::LastOperator) {
 
       int const num_owned_target = target_swarm.num_owned_particles();
       int const npoints[] = { 2, 4, 8 };
 
-      domains_ = Portage::vector<Operator::Domain>(num_owned_target);
+      domains_ = Portage::vector<oper::Domain>(num_owned_target);
       operator_data_.resize(num_owned_target, std::vector<Wonton::Point<dim>>(npoints[dim-1]));
 
       int npdim = static_cast<int>(std::pow(1.001 * num_owned_target, 1./dim));
@@ -138,7 +138,7 @@ public:
                                    : target_swarm.get_particle_coordinates(ij[m]));
         }
         operator_data_[n] = points;
-        domains_[n] = Operator::domain_from_points<dim>(points);
+        domains_[n] = oper::domain_from_points<dim>(points);
       }
     }
   }
@@ -166,7 +166,7 @@ public:
    * @param expected_answer: the expected value to compare against.
    */
   template <template<int, class, class> class Search,
-            Basis::Type basis>
+            basis::Type basis>
   void unitTest(double compute_initial_field(Wonton::Point<dim> const& coord),
                 double expected_answer) {
 
@@ -196,7 +196,7 @@ public:
                       smoothing_lengths_,Weight::B4, Weight::ELLIPTIC, center_);
 
     EstimateType estimator = LocalRegression;
-    if (operator_ != Operator::LastOperator)
+    if (operator_ != oper::LastOperator)
       estimator = OperatorRegression;
 
     // Register the variable name with the driver
@@ -212,7 +212,7 @@ public:
     double total_error = 0.;
     auto& remapped_field = target_state.get_field("particledata");
 
-    if (operator_ == Operator::LastOperator) {
+    if (operator_ == oper::LastOperator) {
       for (int i = 0; i < nb_target; ++i) {
         auto p = target_swarm.get_particle_coordinates(i);
         double error = compute_initial_field(p) - remapped_field[i];
@@ -232,7 +232,7 @@ public:
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", total_error);
       ASSERT_NEAR(expected_answer, total_error, epsilon);
 
-    } else if (operator_ == Operator::VolumeIntegral) {
+    } else if (operator_ == oper::VolumeIntegral) {
       double total = 0.;
       for (int i = 0; i < nb_target; ++i) {
         total += remapped_field[i];
@@ -250,7 +250,7 @@ public:
    * @param expected_answer: the expected value to compare against.
    */
   template <template<int, class, class> class Search,
-            Basis::Type basis>
+            basis::Type basis>
   void unitTestAlt(double compute_initial_field(Wonton::Point<dim> const& coord),
                    double expected_answer) {
 
@@ -288,7 +288,7 @@ public:
                       smoothing_lengths_, kernels_, geometries_, center_);
 
     EstimateType estimator = LocalRegression;
-    if (operator_ != Operator::LastOperator) 
+    if (operator_ != oper::LastOperator)
       estimator = OperatorRegression;
 
     // Register the variable name and interpolation order with the driver
@@ -304,7 +304,7 @@ public:
     double total_error = 0.;
     auto const& target_data = target_state.get_field("particledata");
 
-    if (operator_ == Operator::LastOperator) {
+    if (operator_ == oper::LastOperator) {
       for (int i = 0; i < nb_target; ++i) {
         auto p = target_swarm.get_particle_coordinates(i);
         auto error = compute_initial_field(p) - target_data[i];
@@ -324,7 +324,7 @@ public:
       std::printf("\n\nL2 NORM OF ERROR = %lf\n\n", std::sqrt(total_error));
       ASSERT_NEAR(expected_answer, std::sqrt(total_error/nb_target), epsilon);
 
-    } else if (operator_ == Operator::VolumeIntegral) {
+    } else if (operator_ == oper::VolumeIntegral) {
       double total = 0.;
       for (int p = 0; p < nb_target; ++p) {
         total += target_data[p];
@@ -349,8 +349,8 @@ protected:
 
   // operator info
   WeightCenter center_;
-  Operator::Type operator_;
-  Portage::vector<Operator::Domain> domains_;
+  oper::Type operator_;
+  Portage::vector<oper::Domain> domains_;
   Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
@@ -433,7 +433,7 @@ public:
 class IntegrateDriverTest1D : public BaseTest<1> {
 public:
   IntegrateDriverTest1D() : BaseTest<1>(7, 5, 1, 0.0, 1.0,
-                                        0.0, 1.0, 0.0, 1.0, Operator::VolumeIntegral) {
+                                        0.0, 1.0, 0.0, 1.0, oper::VolumeIntegral) {
     int const dim[] = { 5, 1, 1 };
     BaseTest<1>::set_smoothing_lengths(dim, 0.5);
   }
@@ -446,7 +446,7 @@ public:
 class IntegrateDriverTest2D : public BaseTest<2> {
 public:
   IntegrateDriverTest2D() : BaseTest<2>(7*7, 5*5, 1, 0.0, 1.0,
-                                        0.0, 1.0, 0.0, 1.0,Operator::VolumeIntegral) {
+                                        0.0, 1.0, 0.0, 1.0, oper::VolumeIntegral) {
     int const dim[] = { 5*5, 1, 2 };
     BaseTest<2>::set_smoothing_lengths(dim, 0.5);
   }
@@ -459,7 +459,7 @@ public:
 class IntegrateDriverTest3D : public BaseTest<3> {
 public:
   IntegrateDriverTest3D() : BaseTest<3>(7*7*7, 5*5*5, 1, 0.0, 1.0,
-                                        0.0, 1.0, 0.0, 1.0,Operator::VolumeIntegral) {
+                                        0.0, 1.0, 0.0, 1.0, oper::VolumeIntegral) {
     int const dim[] = { 5*5*5, 1, 3 };
     BaseTest<3>::set_smoothing_lengths(dim, 0.5);
   }
@@ -513,107 +513,107 @@ bool not_zero(Wonton::Point<dim> const& p) {
 // fails.
 //
 TEST_F(DriverTest1DGather, 1D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, basis::Unitary>
        (compute_constant_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DGather, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DGather, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest1DScatter, 1D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<1>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_ConstantFieldUnitaryBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+  unitTest<Portage::SearchPointsByCells, basis::Unitary>
       (compute_constant_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_LinearFieldLinearBasisAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Basis::Linear>
+  unitTestAlt<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DGather, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest2DScatter, 2D_QuadraticFieldQuadraticBasisScatterAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTestAlt<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<2>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_ConstantFieldUnitaryBasis) {
-   unitTest<Portage::SearchPointsByCells, Basis::Unitary>
+   unitTest<Portage::SearchPointsByCells, basis::Unitary>
        (compute_constant_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_LinearFieldLinearBasisAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Basis::Linear>
+  unitTestAlt<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DGather, 3D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatter) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(DriverTest3DScatter, 3D_QuadraticFieldQuadraticBasisScatterAlt) {
-  unitTestAlt<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTestAlt<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<3>, 0.0);
 }
 
 TEST_F(IntegrateDriverTest1D, 1D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<1>, 1./2.);
 }
 
 TEST_F(IntegrateDriverTest1D, 1D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
       (compute_quadratic_field<1>, 1./3.);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
       (compute_linear_field<2>, 1.0);
 }
 
 TEST_F(IntegrateDriverTest2D, 2D_QuadraticFieldQuadraticBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Quadratic>
+  unitTest<Portage::SearchPointsByCells, basis::Quadratic>
     (compute_quadratic_field<2>, 2./3. + 1./4.); // 0.9166666666666666
 }
 
 TEST_F(IntegrateDriverTest3D, 3D_LinearFieldLinearBasis) {
-  unitTest<Portage::SearchPointsByCells, Basis::Linear>
+  unitTest<Portage::SearchPointsByCells, basis::Linear>
     (compute_linear_field<3>, 3./2.);
 }
 
@@ -674,9 +674,9 @@ TEST(Part, 2D) {
 
   remapper.set_remap_var_names(fields_names, fields_names,
                                LocalRegression,
-                               Basis::Unitary,
-                               Operator::LastOperator,
-                               Portage::vector<Operator::Domain>(0),
+                               basis::Unitary,
+                               oper::LastOperator,
+                               Portage::vector<oper::Domain>(0),
                                Portage::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
                                "indicate", 0.25, psmoothing);
 
@@ -749,9 +749,9 @@ TEST(Part, 3D) {
 
   remapper.set_remap_var_names(fields_names, fields_names,
                                LocalRegression,
-                               Basis::Unitary,
-                               Operator::LastOperator,
-                               Portage::vector<Operator::Domain>(0),
+                               basis::Unitary,
+                               oper::LastOperator,
+                               Portage::vector<oper::Domain>(0),
                                Portage::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
                                "indicate", 0.25, psmoothing);
 

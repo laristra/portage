@@ -16,10 +16,10 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 
 using Wonton::Point;
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 
 template<int dim>
-void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
+void test_estimate(EstimateType etype, basis::Type btype, WeightCenter center) {
 
   // useful aliases
   using Accumulator = Accumulate<dim, Swarm<dim>, Swarm<dim>>;
@@ -112,8 +112,8 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
                          geometries, smoothing_lengths, btype);
 
   // check sizes and allocate test array
-  auto bsize = Basis::function_size<dim>(btype);
-  auto jsize = Basis::jet_size<dim>(btype);
+  auto bsize = basis::function_size<dim>(btype);
+  auto jsize = basis::jet_size<dim>(btype);
   ASSERT_EQ(jsize[0], bsize);
   ASSERT_EQ(jsize[1], bsize);
 
@@ -139,7 +139,7 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
     // fill source field
     for (int k = 0; k < nb_source; k++) {
       auto y = source_swarm.get_particle_coordinates(k);
-      auto basis_y = Basis::function<dim>(btype, y);
+      auto basis_y = basis::function<dim>(btype, y);
       source_field[k] = basis_y[i];
     }
 
@@ -154,7 +154,7 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
   // Loop through target particles
   for (int i = 0; i < nb_target; i++) {
     auto x = target_swarm.get_particle_coordinates(i);
-    auto jetx = Basis::jet<dim>(btype,x);
+    auto jetx = basis::jet<dim>(btype, x);
     auto sources_and_mults = accumulate(i, source_particles);
 
     // count actual neighbors
@@ -191,109 +191,109 @@ void test_estimate(EstimateType etype, Basis::Type btype, WeightCenter center) {
 
 TEST(estimate, 1d_RUG) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 2d_RUG) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 3d_RUG) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 1d_RUS) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 2d_RUS) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 3d_RUS) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Unitary,
+                   basis::Type::Unitary,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 1d_RLG) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 2d_RLG) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 3d_RLG) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 1d_RLS) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 2d_RLS) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 3d_RLS) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Linear,
+                   basis::Type::Linear,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 1d_RQG) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
+                   basis::Type::Quadratic,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 2d_RQG) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
-                    WeightCenter::Gather);
+                   basis::Type::Quadratic,
+                   WeightCenter::Gather);
 }
 
 TEST(estimate, 3d_RQG) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
+                   basis::Type::Quadratic,
                    WeightCenter::Gather);
 }
 
 TEST(estimate, 1d_RQS) {
   test_estimate<1>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
+                   basis::Type::Quadratic,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 2d_RQS) {
   test_estimate<2>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
+                   basis::Type::Quadratic,
                    WeightCenter::Scatter);
 }
 
 TEST(estimate, 3d_RQS) {
   test_estimate<3>(EstimateType::LocalRegression,
-                   Basis::Type::Quadratic,
+                   basis::Type::Quadratic,
                    WeightCenter::Scatter);
 }
 

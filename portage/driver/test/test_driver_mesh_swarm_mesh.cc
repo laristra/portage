@@ -41,7 +41,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 // avoid long namespaces
-using namespace Portage::Meshfree;
+using namespace Portage::swarm;
 // default numerical tolerance
 double const epsilon = 1e-6;
 
@@ -96,9 +96,9 @@ public:
   >
   void unitTest(double compute_initial_field(Wonton::Point<dim> const& centroid),
                 double smoothing_factor,
-                Basis::Type basis,
+                basis::Type basis,
                 WeightCenter center = Gather,
-                Operator::Type op = Operator::LastOperator,
+                oper::Type op = oper::LastOperator,
                 bool faceted = false) {
     // check dimension - no 1D
     assert(dim > 1);
@@ -168,11 +168,11 @@ public:
     // Set up the operator information if needed
     Portage::vector<std::vector<Wonton::Point<dim>>> data;
     std::vector<double> exact;
-    Operator::Domain domain_types[3] = { Operator::Interval,
-                                         Operator::Quadrilateral,
-                                         Operator::Hexahedron };
+    oper::Domain domain_types[3] = {oper::Interval,
+                                    oper::Quadrilateral,
+                                    oper::Hexahedron };
 
-    if (op == Operator::VolumeIntegral) {
+    if (op == oper::VolumeIntegral) {
       int ncells = target_mesh->num_entities(Wonton::CELL,Wonton::ALL);
       domains_.resize(ncells);
       data.resize(ncells);
@@ -189,22 +189,22 @@ public:
         data[i] = vertices;
 
         // get exact value of integral
-        Operator::apply<dim>(Operator::VolumeIntegral, basis,
-                             domain_types[dim-1], data[i], result);
+        oper::apply<dim>(oper::VolumeIntegral, basis,
+                         domain_types[dim-1], data[i], result);
         if (dim == 2) {
           switch (basis) {
-            case Basis::Linear:
+            case basis::Linear:
               exact[i] = result[1][0] + result[2][0]; break;
-            case Basis::Quadratic:
+            case basis::Quadratic:
               exact[i] = 2. * result[3][0] + result[4][0] + 2. * result[5][0]; break;
             default:
               break;
           }
         } else if (dim == 3) {
           switch (basis) {
-            case Basis::Linear:
+            case basis::Linear:
               exact[i] = result[1][0] + result[2][0] + result[3][0]; break;
-            case Basis::Quadratic:
+            case basis::Quadratic:
               exact[i] = 2. * result[4][0] + result[5][0] + result[6][0]
                        + 2. * result[7][0] + result[8][0] + 2. * result[9][0]; break;
             default:
@@ -221,8 +221,8 @@ public:
                            faceted ? Weight::FACETED : Weight::TENSOR,
                            faceted ? Weight::POLYRAMP : Weight::B4, center);
 
-    auto estimator = (op == Operator::VolumeIntegral ? OperatorRegression
-                                                     : LocalRegression);
+    auto estimator = (op == oper::VolumeIntegral ? OperatorRegression
+                                                 : LocalRegression);
 
     swarm_remap.set_remap_var_names(remap_fields, remap_fields, estimator,
                                     basis, op, domains_, data);
@@ -240,7 +240,7 @@ public:
     Wonton::Flat_Mesh_Wrapper<double> target_flat_mesh;
     target_flat_mesh.initialize(target_mesh_wrapper);
 
-    if (op != Operator::VolumeIntegral) {
+    if (op != oper::VolumeIntegral) {
       for (int i = 0; i < nb_target_cells; ++i) {
         Wonton::Point<dim> c;
         target_flat_mesh.cell_centroid(i, &c);
@@ -336,7 +336,7 @@ protected:
   Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
 
   // Operator domains and data
-  Portage::vector<Operator::Domain> domains_;
+  Portage::vector<oper::Domain> domains_;
 };
 
 // Class which constructs a pair of simple 2-D meshes, target
@@ -389,21 +389,21 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinear) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Basis::Linear);
+    (&compute_linear_field_2d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadratic) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Basis::Quadratic);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Basis::Linear, 
+    (&compute_linear_field_2d, .75, basis::Linear,
      Scatter);
 }
 
@@ -411,7 +411,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Basis::Quadratic, 
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
      Scatter);
 }
 
@@ -419,24 +419,24 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Basis::Quadratic, 
-     Gather, Operator::LastOperator, true);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Gather, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Basis::Quadratic, 
-     Scatter, Operator::LastOperator, true);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Scatter, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Basis::Linear, 
-     Gather, Operator::VolumeIntegral);
+    (&compute_linear_field_2d, .75, basis::Linear,
+     Gather, oper::VolumeIntegral);
 }
 
 
@@ -444,8 +444,8 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Basis::Quadratic, 
-     Gather, Operator::VolumeIntegral);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Gather, oper::VolumeIntegral);
 }
 
 
@@ -453,21 +453,21 @@ TEST_F(MSMDriverTest3D, 3D1stOrderLinear) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Basis::Linear);
+    (&compute_linear_field_3d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadratic) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Basis::Quadratic);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Basis::Linear, 
+    (&compute_linear_field_3d, .75, basis::Linear,
      Scatter);
 }
 
@@ -475,7 +475,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Basis::Quadratic, 
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
      Scatter);
 }
 
@@ -483,24 +483,24 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Basis::Quadratic, 
-     Gather, Operator::LastOperator, true);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
+     Gather, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Basis::Quadratic, 
-     Scatter, Operator::LastOperator, true);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
+     Scatter, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Basis::Linear, 
-     Gather, Operator::VolumeIntegral);
+    (&compute_linear_field_3d, .75, basis::Linear,
+     Gather, oper::VolumeIntegral);
 }
 
 

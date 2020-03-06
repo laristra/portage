@@ -13,41 +13,26 @@
 
 using Wonton::Point;
 
-namespace Portage { namespace Meshfree { namespace reference {
+namespace Portage { namespace swarm { namespace reference {
 
 // avoid compiler confusion on 'Operator'
-template<Operator::Type type,
-         Basis::Type basis_type,
-         Operator::Domain domain_type>
-using OP = Operator::Operator<type, basis_type, domain_type>;
-
-// avoid very long namespaces
-using Basis::Unitary;
-using Basis::Linear;
-using Basis::Quadratic;
-using Operator::VolumeIntegral;
-using Operator::Interval;
-using Operator::Quadrilateral;
-using Operator::Triangle;
-using Operator::Hexahedron;
-using Operator::Tetrahedron;
-using Operator::Wedge;
-using Operator::dimension;
-using Operator::get_result;
-using Operator::apply;
+template<oper::Type type,
+         basis::Type basis_type,
+         oper::Domain domain_type>
+using OP = oper::Operator<type, basis_type, domain_type>;
 
 // reference points for different domains
-template<Operator::Domain domain>
-constexpr std::vector<Point<dimension(domain)>> points() {
+template<oper::Domain domain>
+constexpr std::vector<Point<oper::dimension(domain)>> points() {
   switch (domain) {
-    case Interval:      return {{0}, {1}};
-    case Quadrilateral: return {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-    case Triangle:      return {{0, 0}, {1, 0}, {0, 1}};
-    case Wedge:         return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1},
-                                {1, 0, 1}, {0, 1, 1}};
-    case Tetrahedron:   return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-    case Hexahedron:    return {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
-                                {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
+    case oper::Interval:      return {{0}, {1}};
+    case oper::Quadrilateral: return {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+    case oper::Triangle:      return {{0, 0}, {1, 0}, {0, 1}};
+    case oper::Tetrahedron:   return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+    case oper::Wedge:         return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+                                      {0, 0, 1}, {1, 0, 1}, {0, 1, 1}};
+    case oper::Hexahedron:    return {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
+                                      {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
     default:
       throw std::runtime_error("invalid domain");
   }
@@ -101,9 +86,9 @@ std::vector<Point<dim>> deform_points(const std::vector<Point<dim>>& points,
 }
 
 // exact results for integrations of bases over different domains
-template<int dim> using B0 = typename Basis::Traits<Unitary, dim>::array_t;
-template<int dim> using B1 = typename Basis::Traits<Linear, dim>::array_t;
-template<int dim> using B2 = typename Basis::Traits<Quadratic, dim>::array_t;
+template<int dim> using B0 = typename basis::Traits<basis::Unitary, dim>::array_t;
+template<int dim> using B1 = typename basis::Traits<basis::Linear, dim>::array_t;
+template<int dim> using B2 = typename basis::Traits<basis::Quadratic, dim>::array_t;
 
 B0<1> const unitary_interval        = {1.0};
 B0<2> const unitary_quadrilateral   = {1.0};
@@ -124,12 +109,12 @@ B2<3> const quadratic_tetrahedron   = {1./6., 1./24., 1./24., 1./24., 1./120.,
                                        1./120., 1./120., 1./120, 1./120., 1./120.};
 
 // apply translation operator to exact results
-template<Basis::Type type, size_t dim>
-typename Basis::Traits<type, dim>::array_t
-make_translated_exact(typename Basis::Traits<type, dim>::array_t const& values,
+template<basis::Type type, size_t dim>
+typename basis::Traits<type, dim>::array_t
+make_translated_exact(typename basis::Traits<type, dim>::array_t const& values,
                       Point<dim> const& point) {
-  typename Basis::Traits<type, dim>::array_t tex;
-  auto tf = Basis::transfactor<dim>(type, point);
+  typename basis::Traits<type, dim>::array_t tex;
+  auto tf = basis::transfactor<dim>(type, point);
   for (int i = 0; i < tf.size(); i++) {
     tex[i] = 0.;
     for (int j = 0; j < tf.size(); j++) {
