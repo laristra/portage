@@ -33,6 +33,7 @@ using Operator::Tetrahedron;
 using Operator::Wedge;
 using Operator::dimension;
 using Operator::get_result;
+using Operator::apply;
 
 /**
  * @brief Fixture class for operator tests.
@@ -523,7 +524,7 @@ TEST_F(OperatorTest, UnitaryTetrahedronDeform) {
 TEST_F(OperatorTest, QuadraticIntervalTFDynamic) {
   std::vector<std::vector<double>> result;
   auto points = shift_points<1>(interval_points_, shift1d);
-  Portage::Meshfree::Operator::apply<1>(VolumeIntegral, Quadratic, Interval, points, result);
+  apply<1>(VolumeIntegral, Quadratic, Interval, points, result);
   auto tex = makeTranslatedExact<Quadratic, 1>(exactQuadraticInterval, shift1d);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
@@ -534,7 +535,7 @@ TEST_F(OperatorTest, QuadraticIntervalTFDynamic) {
 TEST_F(OperatorTest, UnitaryQuadrilateralDeformDynamic) {
   std::vector<std::vector<double>> result;
   auto points = deform_points<2>(quadrilateral_points_, matrix2);
-  Portage::Meshfree::Operator::apply<2>(VolumeIntegral, Unitary, Quadrilateral, points, result);
+  apply<2>(VolumeIntegral, Unitary, Quadrilateral, points, result);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
   ASSERT_NEAR(result[0][0], exactUnitaryQuadrilateral[0] * determinant2, 1.e-12);
@@ -543,7 +544,7 @@ TEST_F(OperatorTest, UnitaryQuadrilateralDeformDynamic) {
 TEST_F(OperatorTest, UnitaryHexahedronDeformDynamic) {
   std::vector<std::vector<double>> result;
   auto points = deform_points<3>(hexahedron_points_, matrix3);
-  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Unitary, Hexahedron, points, result);
+  apply<3>(VolumeIntegral, Unitary, Hexahedron, points, result);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
   ASSERT_NEAR(result[0][0], exactUnitaryHexahedron[0] * determinant3, 1.e-12);
@@ -552,7 +553,7 @@ TEST_F(OperatorTest, UnitaryHexahedronDeformDynamic) {
 TEST_F(OperatorTest, QuadraticTetrahedronTFDynamic) {
   std::vector<std::vector<double>> result;
   auto points = shift_points<3>(tetrahedron_points_, shift3d);
-  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Quadratic, Tetrahedron, points, result);
+  apply<3>(VolumeIntegral, Quadratic, Tetrahedron, points, result);
   auto tex = makeTranslatedExact<Quadratic, 3>(exactQuadraticTetrahedron, shift3d);
   ASSERT_EQ(result.size(), 10);
   ASSERT_EQ(result[0].size(), 1);
