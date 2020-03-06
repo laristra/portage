@@ -50,8 +50,7 @@ namespace Portage {
 #ifdef HAVE_TANGRAM
     using InterfaceReconstructorDriver = Tangram::Driver<
       InterfaceReconstructor, dim, SourceMesh,
-      Matpoly_Splitter, Matpoly_Clipper
-    >;
+      Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
   public:
@@ -129,6 +128,76 @@ namespace Portage {
      *
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+#ifdef HAVE_TANGRAM
+    /**
+     * @brief For a given cell and its face finds the moments associated with the
+     * intersection of the swept region and MatPoly's with material_id_ that belong
+     * to the corresponding face group
+     *
+     * @param cell_id: index of the cell.
+     * @param face_group_id: index of the cell's face group.
+     * @param swept_volume: volume to clip off the associated triangle 
+     * in the cell's decomposition.
+     * @return Intersection moments for the material_id_ 
+     */
+    std::vector<double> compute_face_group_moments(
+      int const cell_id,
+      int const face_group_id,
+      double const swept_volume) const {
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+      int nfaces = cfaces.size();
+      int cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+      //Face group should be associated with one of the cell's faces
+      assert(cface_id != nfaces);
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      //Create a MatPoly for the cell
+      Tangram::MatPoly<dim> cell_mp;
+      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      //Get the face normal and MatPoly's in the face's group
+      std::vector<Tangram::MatPoly<2>> face_group_polys;
+      Tangram::Plane_t<dim> cutting_plane;
+      cutting_plane.normal = 
+        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+
+      //Find the cutting distance for the given swept volume
+      Tangram::CuttingDistanceSolver<dim, Matpoly_Clipper> cds(face_group_polys,
+        cutting_plane.normal, ims_tols[0], true);
+
+      cds.set_target_volume(swept_volume);
+      std::vector<double> cds_res = cds();
+
+      //Check if we had enough volume in the face group
+      if (cds_res[1] < swept_volume - vol_tol) {
+        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
+      }
+
+      cutting_plane.dist2origin = cds_res[0];
+
+      //Get the face group MatPoly's with material_id_ from the reconstructor
+      Tangram::CellMatPoly<dim> const& cellmatpoly =
+        interface_reconstructor->cell_matpoly_data(cell_id);
+      std::vector<Tangram::MatPoly<dim>> group_mat_polys = 
+        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
+
+      //Clip the MatPoly's with the plane to get moments
+      Matpoly_Clipper clip_matpolys(vol_tol);
+      clip_matpolys.set_matpolys(group_mat_polys, true);
+      clip_matpolys.set_plane(cutting_plane);
+      std::vector<double> moments = clip_matpolys();
+
+      return moments;
+    }
+#endif
 
     /**
      * @brief Perform the actual swept faces volumes computation.
@@ -353,77 +422,6 @@ namespace Portage {
       }
       return true;
     }
-
-#ifdef HAVE_TANGRAM
-    /**
-     * @brief For a given cell and its face finds the moments associated with the
-     * intersection of the swept region and MatPoly's with material_id_ that belong
-     * to the corresponding face group
-     *
-     * @param cell_id: index of the cell.
-     * @param face_group_id: index of the cell's face group.
-     * @param swept_volume: volume to clip off the associated triangle 
-     * in the cell's decomposition.
-     * @return Intersection moments for the material_id_ 
-     */
-    std::vector<double> compute_face_group_moments(
-      int const cell_id,
-      int const face_group_id,
-      double const swept_volume) const {
-      
-      std::vector<int> cfaces, cfdirs;
-      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
-      int cface_id = std::distance(
-        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-      //Face group should be associated with one of the cell's faces
-      assert(cface_id != nfaces);
-
-      //Retrieve tolerance used by the interface reconstructor
-      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
-        interface_reconstructor->iterative_methods_tolerances();
-      double dst_tol = ims_tols[0].arg_eps;
-      double vol_tol = ims_tols[0].fun_eps;
-
-      //Create a MatPoly for the cell
-      Tangram::MatPoly<2> cell_mp;
-      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
-      //Get the face normal and MatPoly's in the face's group
-      std::vector<Tangram::MatPoly<2>> face_group_polys;
-      Tangram::Plane_t<2> cutting_plane;
-      cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
-
-      //Find the cutting distance for the given swept volume
-      Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
-        cutting_plane.normal, ims_tols[0], true);
-
-      cds.set_target_volume(swept_volume);
-      std::vector<double> cds_res = cds();
-
-      //Check if we had enough volume in the face group
-      if (cds_res[1] < swept_volume - vol_tol) {
-        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
-      }
-
-      cutting_plane.dist2origin = cds_res[0];
-
-      //Get the face group MatPoly's with material_id_ from the reconstructor
-      Tangram::CellMatPoly<2> const& cellmatpoly =
-        interface_reconstructor->cell_matpoly_data(cell_id);
-      std::vector<Tangram::MatPoly<2>> group_mat_polys = 
-        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
-
-      //Clip the MatPoly's with the plane to get moments
-      Matpoly_Clipper clip_matpolys(vol_tol);
-      clip_matpolys.set_matpolys(group_mat_polys, true);
-      clip_matpolys.set_plane(cutting_plane);
-      std::vector<double> moments = clip_matpolys();
-
-      return moments;
-    }
-#endif
-
   public:
 
     /**
@@ -883,184 +881,233 @@ namespace Portage {
 
 #ifdef HAVE_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
-      bool const single_mat = not nb_mats or nb_mats == 1 or material_id_ == -1;
+      std::vector<int> cellmats;
+      source_state_.cell_get_mats(source_id, &cellmats);
+      // nb_mats == 0 -- no materials ==> single material
+      // material_id_ == -1 -- intersect with mesh not a particular material
+      // nb_mats == 1 && cellmats[0] == material_id_ -- intersection with pure cell
+      //                                                containing material_id_      
+      bool const source_cell_mat = 
+        (std::find(cellmats.begin(), cellmats.end(), material_id_) != cellmats.end());
+      bool const single_mat_src_cell = !nb_mats || (material_id_ == -1) || 
+                                       (nb_mats == 1 && source_cell_mat);
 
-      if (single_mat) {
+      if (single_mat_src_cell) {
 #endif
-        std::vector<int> faces, dirs, nodes;
-
-        // retrieve current source cell faces/edges and related directions
-        source_mesh_.cell_get_faces_and_dirs(source_id, &faces, &dirs);
-        int const nb_faces = faces.size();
-
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-        #if DEBUG
-          // ensure that we have the same face index for source and target.
-          std::vector<int> target_faces, target_dirs, target_nodes;
-          target_mesh_.cell_get_faces_and_dirs(target_id, &target_faces, &target_dirs);
-          int const nb_target_faces = target_faces.size();
-
-          assert(nb_faces == nb_target_faces);
-          for (int j = 0; j < nb_faces; ++j) {
-            assert(faces[j] == target_faces[j]);
-          }
-        #endif
-
-        for (int i = 0; i < nb_faces; ++i) {
-          // step 0: retrieve nodes and reorder them according to face orientation
-          nodes.clear();
-          source_mesh_.face_get_nodes(faces[i], &nodes);
-
-          int const nb_face_nodes = nodes.size();
-          int const nb_poly_nodes = 2 * nb_face_nodes;
-          int const nb_poly_faces = nb_poly_nodes + 2;
-
-          #if DEBUG
-            // ensure that we have the same nodal indices for source and target.
-            target_mesh_.face_get_nodes(target_faces[i], &target_nodes);
-            int const nb_source_nodes = nodes.size();
-            int const nb_target_nodes = target_nodes.size();
-
-            assert(nb_source_nodes == nb_target_nodes);
-            for (int j = 0; j < nb_target_nodes; ++j) {
-              assert(nodes[j] == target_nodes[j]);
-            }
-          #endif
-
-          /* step 1: construct the swept volume polyhedron which can be:
-           * - a prism for a triangular face,
-           * - a hexahedron for a quadrilateral face,
-           * - a (n+2)-face polyhedron for an arbitrary n-polygon.
-           */
-          std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
-          std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
-
-          /* the swept polyhedron must be formed in a way that the vertices of
-           * each of its faces are ordered such that their normals outside that
-           * swept volume - this is necessarily true except for the original face
-           * inherited from the cell itself.
-           * for this face, if the ordering of its vertices is such that the normal
-           * points out of the cell, then the normal points into the swept volume.
-           * in such a case, the vertex ordering must be reversed.
-           *
-           *   source hex        target hex       face swept polyhedron:
-           *                     7'......6'
-           *                      .:    .:             4'......5'
-           *    7______6         . :   . :             /:    /:
-           *    /|    /|      4'...:..5' :            / :   / :
-           *   / |   / |       :   :..:..2'          /  :  /  :  
-           * 4 __|__5  |       :  .   :  .         4____:_5...:
-           * |   3__|__2       : .    : .          |   /0'|  /1'
-           * |  /   |  /       :......:            |  /   | /
-           * | /    | /        0'     1'           | /    |/
-           * |/_____|/                             |/_____/
-           * 0      1                              0      1
-           *                                 ∙dirs[f] > 0: [4,5,1,0,4',5',1',0']
-           *                                 ∙dirs[f] < 0: [0,1,5,4,0',1',5',4']
-           */
-          bool const outward_normal = dirs[i] > 0;
-
-          for (int current = 0; current < nb_face_nodes; ++current) {
-            int const reverse = (nb_face_nodes - 1) - current;
-            int const index   = (outward_normal ? reverse : current);
-            int const offset  = current + nb_face_nodes;
-            source_mesh_.node_get_coordinates(nodes[index], swept_poly_coords.data() + current);
-            target_mesh_.node_get_coordinates(nodes[index], swept_poly_coords.data() + offset);
-          }
-
-          /* now build the swept polyhedron faces, which vertices are indexed
-           * RELATIVELY to the polyhedron vertices list.
-           * - first allocate memory for vertices list of each face.
-           * - then add the original face and its twin induced by sweeping.
-           * - eventually construct the other faces induced by edge sweeping.
-           */
-          for (int current = 0; current < nb_poly_faces; ++current) {
-            // for each twin face induced by sweeping, its number of vertices is
-            // exactly that of the current cell face, whereas the number of
-            // vertices of the other faces is exactly 4.
-            int const size = (current < 2 ? nb_face_nodes : 4);
-            swept_poly_faces[current].resize(size);
-          }
-
-
-          /* swept polyhedron face construction rules:
-           *
-           *       3'_____2'     n_poly_faces: 2 + n_face_edges = 2 + 4 = 6.
-           *       /|    /|      n_poly_nodes: 2 * n_face_edges = 2 * 4 = 8 = n.
-           *      / |   / |      ordered vertex list: [3,2,1,0,3',2',1',0']
-           *     /  |__/__|
-           *    /  /  /  / 1'             absolute         relative
-           *  3___/_2/  /        ∙f[0]: (3 |2 |1 |0 )      (0,1,2,3)
-           *  |  /  |  /         ∙f[1]: (3'|2'|1'|0')      (4,5,6,7)
-           *  | /   | /          ∙f[2]: (3 |3'|2'|2 )  =>  (0,4,5,1)
-           *  |/____|/           ∙f[3]: (2 |2'|1'|1 )      (1,5,6,2)
-           *  0     1            ∙f[4]: (1 |1'|0'|0 )      (2,6,7,3)
-           *                     ∙f[5]: (0 |0'|3'|3 )      (3,7,4,0)
-           *
-           *  let m = n/2 with n the number of polyhedron vertices.
-           *  - twin faces: [0, m-1] and [m-1, n].
-           *  - side faces: [i, i+m, ((i+1) % m)+m, (i+1) % m]
-           */
-          for (int current = 0; current < nb_face_nodes; ++current) {
-            // a) set twin faces vertices
-            swept_poly_faces[0][current] = current;
-            swept_poly_faces[1][current] = nb_poly_nodes - current - 1;
-
-            // b) set side faces vertices while keeping them counterclockwise.
-            int const index = current + 2;
-            swept_poly_faces[index][0] = current;
-            swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
-            swept_poly_faces[index][1] = swept_poly_faces[index][0] + nb_face_nodes;
-            swept_poly_faces[index][2] = swept_poly_faces[index][3] + nb_face_nodes;
-          }
-
-          /* step 2: compute swept polygon moments using divergence theorem */
-          auto moments = compute_moments(swept_poly_coords, swept_poly_faces);
-
-          /* step 3: assign the computed moments to the source cell or one
-           * of its neighbors according to the sign of the swept region volume.
-           */
-          if (std::abs(moments[0]) < num_tols_.min_absolute_volume) {
-            // just skip if the swept region is almost flat.
-            // it may occur when the cell is shifted only in one direction.
-            continue;
-          } else if (moments[0] < 0.) {
-            // if the computed swept region volume is negative then assign its
-            // moments to the source cell: it will be substracted
-            // from the source cell area when performing the interpolation.
-            swept_moments.emplace_back(source_id, moments);
-          } else {
-            // retrieve the cell incident to the current edge.
-            int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, faces[i]);
-
-            // just skip in case of a boundary edge
-            if (neigh < 0) {
-              continue;
-            }
-              // sanity check: ensure that incident cell belongs to the stencil.
-            else if (not in_stencil(neigh)) {
-              auto id = std::to_string(source_id);
-              throw std::runtime_error("invalid stencil for source cell" + id);
-            }
-              // append to list as current neighbor moment.
-            else {
-              swept_moments.emplace_back(neigh, moments);
-            }
-          }
-        } // end of for each face of current cell
-
-        if (not displacement_check or valid_displacement(source_id, swept_moments)) {
-          return swept_moments;
-        } else
-          throw std::runtime_error("invalid displacement");
-
 #ifdef HAVE_TANGRAM
-      } else /* multi-material case */ {
-        throw std::runtime_error("multi-material case not yet supported");
+      } else if (source_cell_mat) {
+        // mixed cell should contain this material
+        assert(interface_reconstructor != nullptr);
+
+        // add source cell moments in the first place: 
+        // obtain the aggregated moments of all MatPoly's with material_id_
+        Tangram::CellMatPoly<3> const& cellmatpoly =
+          interface_reconstructor->cell_matpoly_data(source_id);
+
+        swept_moments.emplace_back(source_id, cellmatpoly.material_moments(material_id_));
       }
+#endif        
+      std::vector<int> faces, dirs, nodes;
+
+      // retrieve current source cell faces/edges and related directions
+      source_mesh_.cell_get_faces_and_dirs(source_id, &faces, &dirs);
+      int const nb_faces = faces.size();
+
+#if DEBUG
+        // ensure that we have the same face index for source and target.
+        std::vector<int> target_faces, target_dirs, target_nodes;
+        target_mesh_.cell_get_faces_and_dirs(target_id, &target_faces, &target_dirs);
+        int const nb_target_faces = target_faces.size();
+
+        assert(nb_faces == nb_target_faces);
+        for (int j = 0; j < nb_faces; ++j) {
+          assert(faces[j] == target_faces[j]);
+        }
 #endif
+
+      for (int i = 0; i < nb_faces; ++i) {
+        // step 0: retrieve nodes and reorder them according to face orientation
+        nodes.clear();
+        source_mesh_.face_get_nodes(faces[i], &nodes);
+
+        int const nb_face_nodes = nodes.size();
+        int const nb_poly_nodes = 2 * nb_face_nodes;
+        int const nb_poly_faces = nb_poly_nodes + 2;
+
+#if DEBUG
+          // ensure that we have the same nodal indices for source and target.
+          target_mesh_.face_get_nodes(target_faces[i], &target_nodes);
+          int const nb_source_nodes = nodes.size();
+          int const nb_target_nodes = target_nodes.size();
+
+          assert(nb_source_nodes == nb_target_nodes);
+          for (int j = 0; j < nb_target_nodes; ++j) {
+            assert(nodes[j] == target_nodes[j]);
+          }
+#endif
+
+        /* step 1: construct the swept volume polyhedron which can be:
+          * - a prism for a triangular face,
+          * - a hexahedron for a quadrilateral face,
+          * - a (n+2)-face polyhedron for an arbitrary n-polygon.
+          */
+        std::vector<Wonton::Point<3>> swept_poly_coords(nb_poly_nodes);
+        std::vector<std::vector<int>> swept_poly_faces(nb_poly_faces);
+
+        /* the swept polyhedron must be formed in a way that the vertices of
+          * each of its faces are ordered such that their normals outside that
+          * swept volume - this is necessarily true except for the original face
+          * inherited from the cell itself.
+          * for this face, if the ordering of its vertices is such that the normal
+          * points out of the cell, then the normal points into the swept volume.
+          * in such a case, the vertex ordering must be reversed.
+          *
+          *   source hex        target hex       face swept polyhedron:
+          *                     7'......6'
+          *                      .:    .:             4'......5'
+          *    7______6         . :   . :             /:    /:
+          *    /|    /|      4'...:..5' :            / :   / :
+          *   / |   / |       :   :..:..2'          /  :  /  :  
+          * 4 __|__5  |       :  .   :  .         4____:_5...:
+          * |   3__|__2       : .    : .          |   /0'|  /1'
+          * |  /   |  /       :......:            |  /   | /
+          * | /    | /        0'     1'           | /    |/
+          * |/_____|/                             |/_____/
+          * 0      1                              0      1
+          *                                 ∙dirs[f] > 0: [4,5,1,0,4',5',1',0']
+          *                                 ∙dirs[f] < 0: [0,1,5,4,0',1',5',4']
+          */
+        bool const outward_normal = dirs[i] > 0;
+
+        for (int current = 0; current < nb_face_nodes; ++current) {
+          int const reverse = (nb_face_nodes - 1) - current;
+          int const index   = (outward_normal ? reverse : current);
+          int const offset  = current + nb_face_nodes;
+          source_mesh_.node_get_coordinates(nodes[index], swept_poly_coords.data() + current);
+          target_mesh_.node_get_coordinates(nodes[index], swept_poly_coords.data() + offset);
+        }
+
+        /* now build the swept polyhedron faces, which vertices are indexed
+          * RELATIVELY to the polyhedron vertices list.
+          * - first allocate memory for vertices list of each face.
+          * - then add the original face and its twin induced by sweeping.
+          * - eventually construct the other faces induced by edge sweeping.
+          */
+        for (int current = 0; current < nb_poly_faces; ++current) {
+          // for each twin face induced by sweeping, its number of vertices is
+          // exactly that of the current cell face, whereas the number of
+          // vertices of the other faces is exactly 4.
+          int const size = (current < 2 ? nb_face_nodes : 4);
+          swept_poly_faces[current].resize(size);
+        }
+
+
+        /* swept polyhedron face construction rules:
+          *
+          *       3'_____2'     n_poly_faces: 2 + n_face_edges = 2 + 4 = 6.
+          *       /|    /|      n_poly_nodes: 2 * n_face_edges = 2 * 4 = 8 = n.
+          *      / |   / |      ordered vertex list: [3,2,1,0,3',2',1',0']
+          *     /  |__/__|
+          *    /  /  /  / 1'             absolute         relative
+          *  3___/_2/  /        ∙f[0]: (3 |2 |1 |0 )      (0,1,2,3)
+          *  |  /  |  /         ∙f[1]: (3'|2'|1'|0')      (4,5,6,7)
+          *  | /   | /          ∙f[2]: (3 |3'|2'|2 )  =>  (0,4,5,1)
+          *  |/____|/           ∙f[3]: (2 |2'|1'|1 )      (1,5,6,2)
+          *  0     1            ∙f[4]: (1 |1'|0'|0 )      (2,6,7,3)
+          *                     ∙f[5]: (0 |0'|3'|3 )      (3,7,4,0)
+          *
+          *  let m = n/2 with n the number of polyhedron vertices.
+          *  - twin faces: [0, m-1] and [m-1, n].
+          *  - side faces: [i, i+m, ((i+1) % m)+m, (i+1) % m]
+          */
+        for (int current = 0; current < nb_face_nodes; ++current) {
+          // a) set twin faces vertices
+          swept_poly_faces[0][current] = current;
+          swept_poly_faces[1][current] = nb_poly_nodes - current - 1;
+
+          // b) set side faces vertices while keeping them counterclockwise.
+          int const index = current + 2;
+          swept_poly_faces[index][0] = current;
+          swept_poly_faces[index][3] = (current + 1) % nb_face_nodes;
+          swept_poly_faces[index][1] = swept_poly_faces[index][0] + nb_face_nodes;
+          swept_poly_faces[index][2] = swept_poly_faces[index][3] + nb_face_nodes;
+        }
+
+        /* step 2: compute swept polygon moments using divergence theorem */
+        auto moments = compute_moments(swept_poly_coords, swept_poly_faces);
+
+        /* step 3: assign the computed moments to the source cell or one
+          * of its neighbors according to the sign of the swept region volume.
+          */
+        if (std::abs(moments[0]) < num_tols_.min_absolute_volume) {
+          // just skip if the swept region is almost flat.
+          // it may occur when the cell is shifted only in one direction.
+          continue;
+        } else if (moments[0] < 0.) {
+          // if the computed swept region volume is negative then assign its
+          // moments to the source cell: it will be substracted
+          // from the source cell area when performing the interpolation.
+#ifdef HAVE_TANGRAM
+          if (single_mat_src_cell) {
+#endif              
+            swept_moments.emplace_back(source_id, moments);
+#ifdef HAVE_TANGRAM
+          } else if (source_cell_mat) {
+            swept_moments.emplace_back(source_id, 
+              compute_face_group_moments(source_id, faces[i], std::fabs(moments[0])));
+          }
+#endif              
+        } else {
+          // retrieve the cell incident to the current edge.
+          int const neigh = source_mesh_.cell_get_face_adj_cell(source_id, faces[i]);
+
+          // just skip in case of a boundary edge
+          if (neigh < 0) {
+            continue;
+          }
+          // sanity check: ensure that incident cell belongs to the stencil.
+          if (!in_stencil(neigh)) {
+            auto id = std::to_string(source_id);
+            throw std::runtime_error("invalid stencil for source cell" + id);
+          }
+          // append to list as current neighbor moment.
+#ifdef HAVE_TANGRAM
+          int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
+          std::vector<int> adj_cellmats;
+          source_state_.cell_get_mats(neigh, &adj_cellmats);
+          // adj_cell_nb_mats == 0 -- no materials ==> single material
+          // material_id_ == -1 -- intersect with mesh not a particular material
+          // adj_cell_nb_mats == 1 && adj_cellmats[0] == material_id_ -- intersection with pure cell
+          //                                                             containing material_id_      
+          bool const adj_cell_mat = 
+            (std::find(adj_cellmats.begin(), adj_cellmats.end(), material_id_) != adj_cellmats.end());
+          bool const single_mat_adj_cell = !adj_cell_nb_mats || (material_id_ == -1) || 
+                                            (adj_cell_nb_mats == 1 && adj_cell_mat);
+
+          if (single_mat_adj_cell) {
+#endif
+            swept_moments.emplace_back(neigh, moments);
+#ifdef HAVE_TANGRAM
+          } else {
+            //Skip if the neighboring cell doesn't contain material_id_
+            if (!adj_cell_mat)
+              continue;
+            
+            //Compute and append moments for the neighbor
+            swept_moments.emplace_back(neigh, 
+              compute_face_group_moments(neigh, faces[i], std::fabs(moments[0])));
+          }
+#endif            
+        }
+      } // end of for each face of current cell
+
+      if (!displacement_check || valid_displacement(source_id, swept_moments)) {
+        return swept_moments;
+      } else
+        throw std::runtime_error("invalid displacement");
     }
 
   private:
