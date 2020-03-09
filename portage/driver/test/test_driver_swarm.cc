@@ -179,7 +179,7 @@ public:
     const int nb_target = target_swarm.num_owned_particles();
 
     Portage::vector<double> source_data(nb_source);
-    Portage::vector<double> target_data(nb_source, 0.0);
+    Portage::vector<double> target_data(nb_target, 0.0);
 
     // Create the source data for given function
     for (int i = 0; i < nb_source; ++i) {
