@@ -403,9 +403,9 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
     } break;
     case Wonton::CELL: {
       for (auto&& mesh : meshes) {
-        int const num_nodes = mesh->num_owned_nodes();
+        int const num_cells = mesh->num_owned_cells();
         Wonton::Point<dim> centroid;
-        for (int i = 0; i < num_nodes; i++) {
+        for (int i = 0; i < num_cells; i++) {
           mesh->cell_centroid(i, &centroid);
           points_[n++] = centroid;
         }
