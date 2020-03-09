@@ -41,41 +41,6 @@ RUN make && make test
 RUN make install
 RUN echo $TANGRAM_DIR
 
-# Build MSTK and Jali 
-WORKDIR ../..
-RUN wget https://github.com/MeshToolkit/mstk/archive/3.3.2.tar.gz &&
-     tar xvzf 3.3.2.tar.gz 
-WORKDIR MSTK-3.3.2 
-RUN mkdir build
-WORKDIR build
-ENV MSTK_DIR /home/portage/MSTK-3.3.2/install
-RUN  cmake -D CMAKE_BUILD_TYPE=Release \
-     -D CMAKE_INSTALL_PREFIX=$MSTK_DIR \
-     -D ENABLE_PARALLE=$PARALLEL \
-     -D ENABLE_METIS=yes \
-     -D ENABLE_ExodusII=yes \
-     -D ENABLE_Zoltan=yes \
-     -D ENABLE_Tests=yes .. 
-RUN make && make test 
-RUN make install 
-RUN echo $MSTK_DIR
-
-WORKDIR ../..
-RUN git clone https://github.com/lanl/jali.git
-WORKDIR jali
-RUN git checkout 1.0.5 
-RUN mkdir build
-WORKDIR build
-ENV JALI_DIR /home/portage/jali/install
-RUN cmake -D CMAKE_PREFIX_PATH=$MSTK_DIR \
-     -D CMAKE_INSTALL_PREFIX=$JALI_DIR \
-     -D CMAKE_BUILD_TYPE=Release \
-     -D ENABLE_MSTK=yes \
-     -D ENABLE_Tests=yes .. \
-RUN make && make test 
-RUN make install 
-RUN echo $JALI_DIR 
-
 # Build Portage
 WORKDIR ../../portage
 RUN mkdir build
