@@ -348,11 +348,9 @@ public:
 
     std::vector<std::string> list;
     if (std::is_integral<T>::value) {
-      assert(fields_int_.count(name));
       for (auto&& field : fields_int_)
         list.emplace_back(field.first);
     } else {
-      assert(fields_dbl_.count(name));
       for (auto&& field : fields_dbl_)
         list.emplace_back(field.first);
     }
