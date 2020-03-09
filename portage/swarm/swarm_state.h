@@ -102,27 +102,30 @@ public:
   template<typename State>
   SwarmState(std::vector<State*> const& states, Wonton::Entity_kind kind) {
 
-    auto const names = states[0]->names();
+    auto const& names = states[0]->names();
     int const num_fields = names.size();
     int const num_states = states.size();
 
     // check all fields in all states
     for (auto&& state : states) {
       auto current = state->names();
-      if (names != current)
+      if (current.size() == num_fields) {
+        for (int i = 0; i < num_fields; ++i)
+          if (names[i] != current[i])
+            throw std::runtime_error("field names do not match");
+      } else
         throw std::runtime_error("field names do not match");
     }
 
     // get sizes of data fields that match entity on each wrapper
-    std::vector<std::vector<int>> sizes(num_fields);
+    std::vector<int> sizes[num_fields];
 
     for (int i = 0; i < num_fields; ++i) {
-      sizes[i].resize(num_states);
+      auto const& name = names[i];
       for (int j = 0; j < num_states; ++j) {
         auto const& state = *(states[j]);
-        auto const& name = state.names()[i];
         if (state.get_entity(name) == kind) {
-          sizes[i][j] = state.get_data_size(kind, name);
+          sizes[i].emplace_back(state.get_data_size(kind, name));
         }
       }
     }
@@ -138,8 +141,7 @@ public:
 
     // compute particle offsets per state
     int num_entities = 0;
-    std::vector<int> offset(num_states);
-
+    int offset[num_states];
     for (int i = 0; i < num_states; i++) {
       offset[i] = num_entities;
       num_entities += sizes[0][i];
@@ -155,7 +157,7 @@ public:
 
       for (int i = 0; i < num_states; ++i) {
         // retrieve field from mesh state
-        const double* values;
+        double* values = nullptr;
         states[i]->mesh_get_data(kind, name, &values);
         assert(values != nullptr);
         // perform a deep copy then
