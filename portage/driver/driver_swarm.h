@@ -28,7 +28,7 @@
   #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
-namespace Portage { namespace swarm {
+namespace Portage { namespace Meshfree {
   // avoid very long type names.
   using SmoothingLengths = Portage::vector<std::vector<std::vector<double>>>;
 

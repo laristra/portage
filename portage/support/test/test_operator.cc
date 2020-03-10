@@ -6,9 +6,9 @@
 
 #include "portage/support/operator_references.h"
 
-using namespace Portage::swarm::oper;
-using namespace Portage::swarm::basis;
-using namespace Portage::swarm::reference;
+using namespace Portage::Meshfree::oper;
+using namespace Portage::Meshfree::basis;
+using namespace Portage::Meshfree::reference;
 
 class OperatorTest : public testing::Test {
 protected:

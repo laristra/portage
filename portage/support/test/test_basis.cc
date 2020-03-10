@@ -12,18 +12,18 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/basis.h"
 #include "wonton/support/Point.h"
 
-using Portage::swarm::basis::Type;
-using Portage::swarm::basis::Unitary;
-using Portage::swarm::basis::Linear;
-using Portage::swarm::basis::Quadratic;
-using Portage::swarm::basis::Traits;
-using Portage::swarm::basis::function;
-using Portage::swarm::basis::function_size;
-using Portage::swarm::basis::jet_size;
-using Portage::swarm::basis::shift;
-using Portage::swarm::basis::jet;
-using Portage::swarm::basis::inverse_jet;
-using Portage::swarm::basis::transfactor;
+using Portage::Meshfree::basis::Type;
+using Portage::Meshfree::basis::Unitary;
+using Portage::Meshfree::basis::Linear;
+using Portage::Meshfree::basis::Quadratic;
+using Portage::Meshfree::basis::Traits;
+using Portage::Meshfree::basis::function;
+using Portage::Meshfree::basis::function_size;
+using Portage::Meshfree::basis::jet_size;
+using Portage::Meshfree::basis::shift;
+using Portage::Meshfree::basis::jet;
+using Portage::Meshfree::basis::inverse_jet;
+using Portage::Meshfree::basis::transfactor;
 using Wonton::Point;
 
 // Templated test class that takes type of basis (Unitary, Linear,
@@ -167,7 +167,7 @@ public:
 
     // Check that vector<vector>-valued inverse_jet is correct
     {
-      auto result(Portage::swarm::basis::inverse_jet<dim>(type, x));
+      auto result(Portage::Meshfree::basis::inverse_jet<dim>(type, x));
       auto jsize = jet_size<dim>(type);
       for (int i = 0; i < jsize[0]; i++)
         for (int j = 0; j < jsize[1]; j++)

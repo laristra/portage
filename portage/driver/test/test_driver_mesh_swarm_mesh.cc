@@ -41,7 +41,7 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 // avoid long namespaces
-using namespace Portage::swarm;
+using namespace Portage::Meshfree;
 // default numerical tolerance
 double const epsilon = 1e-6;
 

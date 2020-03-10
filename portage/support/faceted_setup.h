@@ -16,7 +16,7 @@
 #include "portage/support/weight.h"
 #include "portage/support/portage.h"
 
-namespace Portage { namespace swarm { namespace Weight {
+namespace Portage { namespace Meshfree { namespace Weight {
 
 /** @brief Function to setup faceted weight data given a mesh wrapper.
  *

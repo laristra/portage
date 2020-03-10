@@ -52,14 +52,14 @@ public:
                       TargetSwarm const& target_swarm,
                       Portage::vector<Point<dim>> const& source_extents,
                       Portage::vector<Point<dim>> const& target_extents,
-                      swarm::WeightCenter center = swarm::Scatter)
+                      Meshfree::WeightCenter center = Meshfree::Scatter)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
       source_extents_(source_extents),
       target_extents_(target_extents),
       center_(center) {
 
-    using namespace swarm;
+    using namespace Meshfree;
 
     int const nb_source = source_swarm_.num_particles();
     int const nb_target = target_swarm_.num_particles();
@@ -142,8 +142,8 @@ private:
   TargetSwarm const& target_swarm_;
   Portage::vector<Point<dim>> source_extents_;
   Portage::vector<Point<dim>> target_extents_;
-  std::shared_ptr<swarm::Pairs::CellPairFinder> pair_finder_;  // unavoidable
-  swarm::WeightCenter center_ = swarm::Scatter;
+  std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;  // unavoidable
+  Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
 }; // class SearchPointsByCells
 

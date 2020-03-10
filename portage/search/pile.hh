@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 
 namespace Portage {
-namespace swarm {
+namespace Meshfree {
 namespace Pairs {
   using std::vector;
   using std::valarray;

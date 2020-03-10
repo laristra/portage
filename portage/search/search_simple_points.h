@@ -49,7 +49,7 @@ public:
     TargetSwarm const& target_swarm,
     Portage::vector<Point<dim>> const& source_extents,
     Portage::vector<Point<dim>> const& target_extents,
-    swarm::WeightCenter center = swarm::Scatter)
+    Meshfree::WeightCenter center = Meshfree::Scatter)
       : source_swarm_(source_swarm),
         target_swarm_(target_swarm),
         source_extents_(source_extents),
@@ -94,9 +94,9 @@ public:
 
       for (int d = 0; d < dim; ++d) {
         double maxdist = 0.;
-        if (center_ == swarm::Scatter) {
+        if (center_ == Meshfree::Scatter) {
           maxdist = 2. * source_point_extent[d];
-        } else if (center_ == swarm::Gather) {
+        } else if (center_ == Meshfree::Gather) {
           maxdist = 2. * target_point_extent[d];
         }
         contained &= (std::abs(target_coord[d] - source_coord[d]) < maxdist);
@@ -116,7 +116,7 @@ private:
   TargetSwarm const& target_swarm_;
   Portage::vector<Point<dim>> const& source_extents_;
   Portage::vector<Point<dim>> const& target_extents_;
-  swarm::WeightCenter center_ = swarm::Scatter;
+  Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
 }; // class SearchSimplePoints
 

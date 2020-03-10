@@ -14,7 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 
 namespace Portage {
-namespace swarm {
+namespace Meshfree {
 
 using std::string;
 

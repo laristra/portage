@@ -95,9 +95,9 @@ public:
              TargetState_Wrapper& target_state,
              double smoothing_factor = 1.25,
              double boundary_factor  = 0.5,
-             swarm::Weight::Geometry geometry = swarm::Weight::TENSOR,
-             swarm::Weight::Kernel   kernel   = swarm::Weight::B4,
-             swarm::WeightCenter     center   = swarm::Gather,
+             Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
+             Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
+             Meshfree::WeightCenter     center   = Meshfree::Gather,
              std::string part_field = "NONE",
              double part_tolerance = std::numeric_limits<double>::infinity())
 
@@ -116,8 +116,8 @@ public:
 
     assert(source_mesh.space_dimension() == target_mesh.space_dimension());
     assert(source_mesh.space_dimension() == dim);
-    if (geometry == swarm::Weight::FACETED) {
-      assert(kernel == swarm::Weight::POLYRAMP);
+    if (geometry == Meshfree::Weight::FACETED) {
+      assert(kernel == Meshfree::Weight::POLYRAMP);
     }
   }
 
@@ -156,10 +156,10 @@ public:
 
   void set_remap_var_names(std::vector<std::string> const& source_vars,
                            std::vector<std::string> const& target_vars,
-                           swarm::EstimateType const& estimator_type = swarm::LocalRegression,
-                           swarm::basis::Type const& basis_type = swarm::basis::Unitary,
-                           swarm::oper::Type operator_spec = swarm::oper::LastOperator,
-                           Portage::vector<swarm::oper::Domain> const& operator_domains = {},
+                           Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
+                           Meshfree::basis::Type const& basis_type = Meshfree::basis::Unitary,
+                           Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
+                           Portage::vector<Meshfree::oper::Domain> const& operator_domains = {},
                            Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
 
     assert(source_vars.size() == target_vars.size());
@@ -205,7 +205,7 @@ public:
   */
   void run(Wonton::Executor_type const *executor = nullptr) {
 
-    using namespace swarm;
+    using namespace Meshfree;
     // useful aliases
     using SwarmRemap = SwarmDriver<Search, Accumulate, Estimate, dim,
                                    Swarm<dim>, SwarmState<dim>>;
@@ -459,15 +459,15 @@ private:
   std::vector<std::string> target_vars_;
   double smoothing_factor_ = 0.0;
   double boundary_factor_ = 0.0;
-  swarm::Weight::Kernel kernel_ {};
-  swarm::Weight::Geometry geometry_ {};
-  swarm::WeightCenter center_ {};
+  Meshfree::Weight::Kernel kernel_ {};
+  Meshfree::Weight::Geometry geometry_ {};
+  Meshfree::WeightCenter center_ {};
   std::string part_field_;
   double part_tolerance_ = 0.0;
-  swarm::EstimateType estimate_ {};
-  swarm::basis::Type basis_ {};
-  swarm::oper::Type operator_spec_ {};
-  Portage::vector<swarm::oper::Domain> operator_domains_ {};
+  Meshfree::EstimateType estimate_ {};
+  Meshfree::basis::Type basis_ {};
+  Meshfree::oper::Type operator_spec_ {};
+  Portage::vector<Meshfree::oper::Domain> operator_domains_ {};
   Portage::vector<std::vector<Point<dim>>> operator_data_ {};
   int dim_ = 2;
 };  // class MSM_Driver

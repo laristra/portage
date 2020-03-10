@@ -25,7 +25,7 @@
 
 TEST(SwarmState, Multiple2D) {
 
-  using namespace Portage::swarm;
+  using namespace Portage::Meshfree;
 
   Wonton::Simple_Mesh mesh0(0.0, 0.0, 1.0, 1.0, 4, 4);
   Wonton::Simple_Mesh mesh1(1.0, 0.0, 2.0, 1.0, 4, 5);

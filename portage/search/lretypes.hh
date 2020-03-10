@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include <valarray>
 
 namespace Portage {
-namespace swarm {
+namespace Meshfree {
 namespace Pairs {
   using std::valarray;
 

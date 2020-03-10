@@ -16,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Point.h"
 
 using Wonton::Point;
-using namespace Portage::swarm;
+using namespace Portage::Meshfree;
 
 template<int dim>
 void test_estimate(EstimateType etype, basis::Type btype, WeightCenter center) {

@@ -13,7 +13,7 @@ Please see the license file at the root of this repository, or at:
 #include "pile.hh"
 #include "lretypes.hh"
 
-namespace Portage { namespace swarm { namespace Pairs {
+namespace Portage { namespace Meshfree { namespace Pairs {
 
 //\///////////////////////////////////////////////////////////////////////////
 // pair finding functions

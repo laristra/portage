@@ -14,10 +14,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/operator_references.h"
 #include "wonton/support/Point.h"
 
-using namespace Portage::swarm;
+using namespace Portage::Meshfree;
 using Wonton::Point;
 
-using namespace Portage::swarm::reference;
+using namespace Portage::Meshfree::reference;
 
 template<int dim>
 void test_accumulate(EstimateType etype, basis::Type btype, WeightCenter center) {

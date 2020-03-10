@@ -13,7 +13,7 @@
 
 using Wonton::Point;
 
-namespace Portage { namespace swarm { namespace reference {
+namespace Portage { namespace Meshfree { namespace reference {
 
 // avoid compiler confusion on 'Operator'
 template<oper::Type type,

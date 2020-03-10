@@ -28,7 +28,7 @@ Please see the license file at the root of this repository, or at:
   #include "portage/search/search_kdtree_nanoflann.h"
 #endif
 
-using namespace Portage::swarm;
+using namespace Portage::Meshfree;
 
 //////////////////////////////////////////////////////////////////////
 // Helper routines and data structures

@@ -57,7 +57,7 @@ double exact_value(Wonton::Point<dim> const& p) {
 
 TEST(PartByParticle, 2D) {
 
-  using namespace Portage::swarm;
+  using namespace Portage::Meshfree;
 
   int const ncells = 4;
 
@@ -114,7 +114,7 @@ TEST(PartByParticle, 2D) {
 
 TEST(PartByParticle, 3D) {
 
-  using namespace Portage::swarm;
+  using namespace Portage::Meshfree;
 
   int const ncells = 4;
 

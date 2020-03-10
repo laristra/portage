@@ -20,7 +20,7 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/support/Matrix.h"
 
-namespace Portage { namespace swarm {
+namespace Portage { namespace Meshfree {
 
 /**
  * @brief Different kinds of estimates to do

@@ -15,7 +15,7 @@
 #include "portage/support/basis.h"
 #include "wonton/support/Point.h"
 
-namespace Portage { namespace swarm { namespace oper {
+namespace Portage { namespace Meshfree { namespace oper {
 
 using basis::Traits;
 using basis::transfactor;
