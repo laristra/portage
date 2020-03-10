@@ -409,7 +409,7 @@ public:
 class DriverTest2DScatter : public BaseTest<2> {
 public:
   DriverTest2DScatter() : BaseTest<2>(7*7, 5*5, 2, 0.0, 1.0, 0.0, 1.0) {
-    int const dim[] = { 7*7*7, 1, 2 };
+    int const dim[] = { 7*7, 1, 2 };
     BaseTest<2>::set_smoothing_lengths(dim, 0.5, Scatter);
   }
 };
