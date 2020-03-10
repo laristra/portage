@@ -16,10 +16,10 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
-
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/reconstruct/MOF.h"
-
+#ifdef HAVE_TANGRAM
+  #include "tangram/intersect/split_r2d.h"
+  #include "tangram/reconstruct/MOF.h"
+#endif
 
 /**
  * @brief Fixture class for swept face moments computation tests.
@@ -33,6 +33,7 @@
 class IntersectSweptBase2D : public testing::Test {
 
 protected:
+#ifdef HAVE_TANGRAM
   using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,
@@ -40,6 +41,12 @@ protected:
                                                     Tangram::MOF,
                                                     Tangram::SplitR2D,
                                                     Tangram::ClipR2D>;
+#else
+  using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
+                                                    Wonton::Jali_Mesh_Wrapper,
+                                                    Wonton::Jali_State_Wrapper,
+                                                    Wonton::Jali_Mesh_Wrapper>;
+#endif
 public:
   /**
    * @brief Disabled default constructor
