@@ -144,58 +144,10 @@ namespace Portage {
     std::vector<double> compute_face_group_moments(
       int const cell_id,
       int const face_group_id,
-      double const swept_volume) const {
-      
-      std::vector<int> cfaces, cfdirs;
-      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
-      int cface_id = std::distance(
-        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-      //Face group should be associated with one of the cell's faces
-      assert(cface_id != nfaces);
-
-      //Retrieve tolerance used by the interface reconstructor
-      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
-        interface_reconstructor->iterative_methods_tolerances();
-      double dst_tol = ims_tols[0].arg_eps;
-      double vol_tol = ims_tols[0].fun_eps;
-
-      //Create a MatPoly for the cell
-      Tangram::MatPoly<dim> cell_mp;
-      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
-      //Get the face normal and MatPoly's in the face's group
-      std::vector<Tangram::MatPoly<2>> face_group_polys;
-      Tangram::Plane_t<dim> cutting_plane;
-      cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
-
-      //Find the cutting distance for the given swept volume
-      Tangram::CuttingDistanceSolver<dim, Matpoly_Clipper> cds(face_group_polys,
-        cutting_plane.normal, ims_tols[0], true);
-
-      cds.set_target_volume(swept_volume);
-      std::vector<double> cds_res = cds();
-
-      //Check if we had enough volume in the face group
-      if (cds_res[1] < swept_volume - vol_tol) {
-        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
-      }
-
-      cutting_plane.dist2origin = cds_res[0];
-
-      //Get the face group MatPoly's with material_id_ from the reconstructor
-      Tangram::CellMatPoly<dim> const& cellmatpoly =
-        interface_reconstructor->cell_matpoly_data(cell_id);
-      std::vector<Tangram::MatPoly<dim>> group_mat_polys = 
-        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
-
-      //Clip the MatPoly's with the plane to get moments
-      Matpoly_Clipper clip_matpolys(vol_tol);
-      clip_matpolys.set_matpolys(group_mat_polys, true);
-      clip_matpolys.set_plane(cutting_plane);
-      std::vector<double> moments = clip_matpolys();
-
-      return moments;
+      double const swept_volume) const {      
+      // see specialization for cells
+      std::cerr << "Sorry: current entity type not supported." << std::endl;
+      return std::vector<double>();    
     }
 #endif
 
@@ -429,6 +381,76 @@ namespace Portage {
      *
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+#ifdef HAVE_TANGRAM
+    /**
+     * @brief For a given cell and its face finds the moments associated with the
+     * intersection of the swept region and MatPoly's with material_id_ that belong
+     * to the corresponding face group
+     *
+     * @param cell_id: index of the cell.
+     * @param face_group_id: index of the cell's face group.
+     * @param swept_volume: volume to clip off the associated triangle 
+     * in the cell's decomposition.
+     * @return Intersection moments for the material_id_ 
+     */
+    std::vector<double> compute_face_group_moments(
+      int const cell_id,
+      int const face_group_id,
+      double const swept_volume) const {
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+      int nfaces = cfaces.size();
+      int cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+      //Face group should be associated with one of the cell's faces
+      assert(cface_id != nfaces);
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      //Create a MatPoly for the cell
+      Tangram::MatPoly<2> cell_mp;
+      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      //Get the face normal and MatPoly's in the face's group
+      std::vector<Tangram::MatPoly<2>> face_group_polys;
+      Tangram::Plane_t<2> cutting_plane;
+      cutting_plane.normal = 
+        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+
+      //Find the cutting distance for the given swept volume
+      Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
+        cutting_plane.normal, ims_tols[0], true);
+
+      cds.set_target_volume(swept_volume);
+      std::vector<double> cds_res = cds();
+
+      //Check if we had enough volume in the face group
+      if (cds_res[1] < swept_volume - vol_tol) {
+        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
+      }
+
+      cutting_plane.dist2origin = cds_res[0];
+
+      //Get the face group MatPoly's with material_id_ from the reconstructor
+      Tangram::CellMatPoly<2> const& cellmatpoly =
+        interface_reconstructor->cell_matpoly_data(cell_id);
+      std::vector<Tangram::MatPoly<2>> group_mat_polys = 
+        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
+
+      //Clip the MatPoly's with the plane to get moments
+      Matpoly_Clipper clip_matpolys(vol_tol);
+      clip_matpolys.set_matpolys(group_mat_polys, true);
+      clip_matpolys.set_plane(cutting_plane);
+      std::vector<double> moments = clip_matpolys();
+
+      return moments;
+    }
+#endif
 
     /**
      * @brief Perform the actual swept faces computation.
@@ -845,6 +867,76 @@ namespace Portage {
      *
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
+
+#ifdef HAVE_TANGRAM
+    /**
+     * @brief For a given cell and its face finds the moments associated with the
+     * intersection of the swept region and MatPoly's with material_id_ that belong
+     * to the corresponding face group
+     *
+     * @param cell_id: index of the cell.
+     * @param face_group_id: index of the cell's face group.
+     * @param swept_volume: volume to clip off the associated triangle 
+     * in the cell's decomposition.
+     * @return Intersection moments for the material_id_ 
+     */
+    std::vector<double> compute_face_group_moments(
+      int const cell_id,
+      int const face_group_id,
+      double const swept_volume) const {
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+      int nfaces = cfaces.size();
+      int cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+      //Face group should be associated with one of the cell's faces
+      assert(cface_id != nfaces);
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      //Create a MatPoly for the cell
+      Tangram::MatPoly<3> cell_mp;
+      Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      //Get the face normal and MatPoly's in the face's group
+      std::vector<Tangram::MatPoly<3>> face_group_polys;
+      Tangram::Plane_t<3> cutting_plane;
+      cutting_plane.normal = 
+        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+
+      //Find the cutting distance for the given swept volume
+      Tangram::CuttingDistanceSolver<3, Matpoly_Clipper> cds(face_group_polys,
+        cutting_plane.normal, ims_tols[0], true);
+
+      cds.set_target_volume(swept_volume);
+      std::vector<double> cds_res = cds();
+
+      //Check if we had enough volume in the face group
+      if (cds_res[1] < swept_volume - vol_tol) {
+        throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
+      }
+
+      cutting_plane.dist2origin = cds_res[0];
+
+      //Get the face group MatPoly's with material_id_ from the reconstructor
+      Tangram::CellMatPoly<3> const& cellmatpoly =
+        interface_reconstructor->cell_matpoly_data(cell_id);
+      std::vector<Tangram::MatPoly<3>> group_mat_polys = 
+        cellmatpoly.get_face_group_matpolys(face_group_id, material_id_);
+
+      //Clip the MatPoly's with the plane to get moments
+      Matpoly_Clipper clip_matpolys(vol_tol);
+      clip_matpolys.set_matpolys(group_mat_polys, true);
+      clip_matpolys.set_plane(cutting_plane);
+      std::vector<double> moments = clip_matpolys();
+
+      return moments;
+    }
+#endif
 
     /**
      * @brief Perform the actual swept moments computation for the given cell.
