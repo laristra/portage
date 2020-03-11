@@ -168,7 +168,7 @@ std::vector<int>
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::move(std::vector<int>());
+      return std::vector<int>();
   }
 
   // find which source cells overlap target cell, in each dimension
@@ -200,7 +200,7 @@ std::vector<int>
   }  // for d
 
   // Generate list of cells from lower and upper bounds, return list
-  return(std::move(list_cells(ilo, ihi)));
+  return list_cells(ilo, ihi);
 
 }  // operator()
 
@@ -252,7 +252,7 @@ std::vector<int>
   std::array<int,D> indices;
   fill_list_by_dim(list, D-1, 0, stepsize, ilo, ihi, indices);
 
-  return(std::move(list));
+  return list;
 
 } // list_cells
 
