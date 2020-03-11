@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "wonton/wonton/support/Point.h"
+#include "wonton/support/Point.h"
 #include "portage/support/portage.h"
 
 /*!
