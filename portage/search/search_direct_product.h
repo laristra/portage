@@ -213,7 +213,7 @@ template<
     typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
 void SearchDirectProductBase<ID_t,D,SourceMeshType,TargetMeshType>::
     fill_list_by_dim(
-    std::vector<int> &list,
+    std::vector<ID_t> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const {
