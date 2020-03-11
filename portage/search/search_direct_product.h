@@ -77,7 +77,7 @@ class SearchDirectProductBase {
     cells on the source mesh.  Returns the list of overlapping source mesh
     cells.
   */
-  std::vector<int> operator() (const int tgt_cell) const;
+  std::vector<ID_t> operator() (const int tgt_cell) const;
 
  private:
 
@@ -86,13 +86,13 @@ class SearchDirectProductBase {
 
   //! Loop over each dimension recursively and fill the list
   void fill_list_by_dim(
-    std::vector<int> &list,
+    std::vector<ID_t> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const;
 
   //! List cells given index bounds in each dimension
-  std::vector<int> list_cells(
+  std::vector<ID_t> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
   // ==========================================================================
@@ -142,7 +142,7 @@ SearchDirectProductBase<ID_t,D,SourceMeshType,TargetMeshType>::
 // Search for source cells that intersect a given target cell.
 template <
     typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int> 
+std::vector<ID_t> 
     SearchDirectProductBase<ID_t,D, SourceMeshType, TargetMeshType>::
     operator() ( const int tgt_cell) const {
 
@@ -168,7 +168,7 @@ std::vector<int>
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::vector<int>();
+      return std::vector<ID_t>();
   }
 
   // find which source cells overlap target cell, in each dimension
@@ -232,7 +232,7 @@ void SearchDirectProductBase<ID_t,D,SourceMeshType,TargetMeshType>::
 // List cells given index bounds in each dimension
 template <
     typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int>
+std::vector<ID_t>
     SearchDirectProductBase<ID_t,D, SourceMeshType, TargetMeshType>::
     list_cells(
     const std::array<int,D>& ilo, const std::array<int,D>& ihi) const {
@@ -246,7 +246,7 @@ std::vector<int>
 
   // Declare the list of cells to be returned
   int list_size = stepsize[D-1] * (ihi[D-1] - ilo[D-1]);
-  std::vector<int> list(list_size);
+  std::vector<ID_t> list(list_size);
 
   // Recurse across dimensions
   std::array<int,D> indices;
