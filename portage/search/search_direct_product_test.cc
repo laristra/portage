@@ -35,6 +35,59 @@ namespace search_direct_product_test {
 
 // ============================================================================
 
+TEST(search_direct_product, DPtoDP1D_64) {
+  /*
+   * Verify that search works with non-int ID_t
+   * Overlaps: -------------------------------
+   *      tgt(0):                 src(0):
+   *        src(0)                  tgt(0)
+   *        src(1)                src(1):
+   *      tgt(1):                   tgt(0)
+   *        src(1)                  tgt(1)
+   *        src(2)                src(2):
+   *                                tgt(1)
+  */
+
+  // dimensionality
+  const int D = 1;
+
+  // Create meshes
+  const std::vector<double> x_tgt = {0.0, 0.5, 1.0};
+  const std::array<std::vector<double>,D> edges_tgt = {x_tgt};
+  Wonton::Direct_Product_Mesh<D> tgt(edges_tgt);
+  const std::vector<double> x_src = {0.00, 0.25, 0.75, 1.00};
+  const std::array<std::vector<double>,D> edges_src = {x_src};
+  Wonton::Direct_Product_Mesh<D> src(edges_src);
+
+  // Create wrappers
+  const Wonton::Direct_Product_Mesh_Wrapper<D> tgt_wrapper(tgt);
+  const Wonton::Direct_Product_Mesh_Wrapper<D> src_wrapper(src);
+
+  // Declare search
+  Portage::SearchDirectProductBase<
+      int64_t,D, Wonton::Direct_Product_Mesh_Wrapper<D>,
+    Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
+
+  // Verify overlaps
+  for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+    std::array<int,D> indices = {i};
+    int id = tgt_wrapper.indices_to_cellid(indices);
+    const std::vector<int64_t> candidates = search(id);
+    ASSERT_EQ(candidates.size(), 2);
+    int n = 0;
+    for (int i2 = i; i2 < i+2; ++i2) {
+      ASSERT_TRUE(n < candidates.size());
+      std::array<int,D> candidate = {i2};
+      int64_t c_id = src_wrapper.indices_to_cellid(candidate);
+      ASSERT_EQ(candidates[n], c_id);
+      n++;
+    }
+  }
+
+}  // TEST(search_direct_product, DPtoDP1D)
+
+// ============================================================================
+
 TEST(search_direct_product, DPtoDP1D) {
   /*
    * Overlaps: -------------------------------
