@@ -56,6 +56,8 @@ RUN make && make install
 RUN ls -l $XMOF2D_INSTALL_DIR 
 
 # Build Portage
+RUN echo $JALI_DIR
+RUN ls -l $JALI_DIR/lib
 WORKDIR ../../portage
 RUN mkdir build
 WORKDIR build
