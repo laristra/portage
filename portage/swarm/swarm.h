@@ -3,7 +3,8 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#pragma once
+#ifndef PORTAGE_SWARM_SWARM_H_
+#define PORTAGE_SWARM_SWARM_H_
 
 #include <vector>
 #include <memory>
@@ -163,8 +164,8 @@ public:
    * @brief Extend the particle field.
    *
    */
-  void extend_particle_list(std::vector<Wonton::Point<dim>> const& list) {
-    points_.insert(points_.end(), list.begin(), list.end());
+  void extend_particle_list(std::vector<Wonton::Point<dim>> const& new_pts) {
+    points_.insert(points_.end(), new_pts.begin(), new_pts.end());
   }
 
 private:
@@ -418,3 +419,4 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
 /* -------------------------------------------------------------------------- */
 }}  // namespace Portage::Meshfree
 
+#endif  // PORTAGE_SWARM_SWARM_H_
