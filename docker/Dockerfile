@@ -57,7 +57,7 @@ RUN ls -l $XMOF2D_INSTALL_DIR
 
 # Build Portage
 RUN echo $JALI_DIR
-RUN ls -l $JALI_DIR/lib
+RUN ls -l $JALI_DIR/lib/cmake
 WORKDIR ../../portage
 RUN mkdir build
 WORKDIR build
