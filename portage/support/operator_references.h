@@ -4,6 +4,9 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#ifndef PORTAGE_SUPPORT_OPERATOR_REFERENCES_H_
+#define PORTAGE_SUPPORT_OPERATOR_REFERENCES_H_
+
 #include <vector>
 #include <cmath>
 #include "gtest/gtest.h"
@@ -124,4 +127,6 @@ make_translated_exact(typename basis::Traits<type, dim>::array_t const& values,
   return tex;
 }
 
-}}}
+}}} // namespace Portage::Meshfree::reference
+
+#endif
