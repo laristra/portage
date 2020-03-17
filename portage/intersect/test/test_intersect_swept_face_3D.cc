@@ -16,8 +16,10 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
-
-
+#ifdef HAVE_TANGRAM
+  #include "tangram/intersect/split_r3d.h"
+  #include "tangram/reconstruct/MOF.h"
+#endif
 /**
  * @brief Fixture class for swept volume moments computation tests.
  *
@@ -30,10 +32,20 @@
 class IntersectSweptBase3D : public testing::Test {
 
 protected:
+#ifdef HAVE_TANGRAM
+  using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
+                                                    Wonton::Jali_Mesh_Wrapper,
+                                                    Wonton::Jali_State_Wrapper,
+                                                    Wonton::Jali_Mesh_Wrapper,
+                                                    Tangram::MOF,
+                                                    Tangram::SplitR3D,
+                                                    Tangram::ClipR3D>;
+#else
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,
                                                     Wonton::Jali_Mesh_Wrapper>;
+#endif
 public:
   /**
    * @brief Disabled default constructor

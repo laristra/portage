@@ -35,6 +35,13 @@
 #include "portage/support/timer.h"
 #include "user_field.h" // parsing and evaluating user defined expressions
 
+#ifdef HAVE_TANGRAM
+  #include "tangram/intersect/split_r2d.h"
+  #include "tangram/intersect/split_r3d.h"
+  #include "tangram/reconstruct/MOF.h"
+  #include "tangram/reconstruct/VOF.h"
+#endif
+
 #include <cctype>
 #include <string>
 
@@ -504,11 +511,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   if (rank == 0)
     std::cout << "Remap field ... " << std::flush;
 
-  // the remapper to use
-  using Remapper = Portage::CoreDriver<dim,
-                                       Wonton::Entity_kind::CELL,
-                                       Wonton::Jali_Mesh_Wrapper,
-                                       Wonton::Jali_State_Wrapper>;
   // parallel executor
   Wonton::MPIExecutor_type mpi_executor(comm);
   Wonton::Executor_type* executor = (nb_ranks > 1 ? &mpi_executor : nullptr);
@@ -548,30 +550,90 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   target_state_wrapper.mesh_add_data(Portage::CELL, "density", 0.0);
   MPI_Barrier(comm);
 
-  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
-                    target_mesh_wrapper, target_state_wrapper, executor);
+  // the remapper to use
+  if (dim == 2) { //2D
+#ifndef HAVE_TANGRAM
+    Portage::CoreDriver<2,
+                        Wonton::Entity_kind::CELL,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper>
+      remapper(source_mesh_wrapper, source_state_wrapper,
+               target_mesh_wrapper, target_state_wrapper, executor);
+#else
+    Portage::CoreDriver<2,
+                        Wonton::Entity_kind::CELL,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper,
+                        Tangram::MOF,
+                        Tangram::SplitR2D,
+                        Tangram::ClipR2D>
+      remapper(source_mesh_wrapper, source_state_wrapper,
+               target_mesh_wrapper, target_state_wrapper, executor);
+#endif
 
-  // search for neighboring cells candidates
-  auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
-                                     : remapper.template search<Portage::SearchSweptFace>());
+    // search for neighboring cells candidates
+    auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
+                                       : remapper.template search<Portage::SearchSweptFace>());
 
-  // compute interpolation weights using intersection or swept regions moments.
-  auto weights = (intersect_based
-    ? (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
-                : remapper.template intersect_meshes<Portage::IntersectR3D>(candidates))
-    : (dim == 2 ? remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates)
-                : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates)));
+    // compute interpolation weights using intersection or swept regions moments.
+    auto weights = (intersect_based
+      ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
+      : remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates));
 
-  // interpolate the field eventually
-  if (interp_order == 1) {
-    remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
-                                                                                  "density",
-                                                                                  weights);
-  } else if (interp_order == 2) {
-    auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-    remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
-                                                                                  "density",
-                                                                                  weights, &gradients);
+    // interpolate the field eventually
+    if (interp_order == 1) {
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
+                                                                                    "density",
+                                                                                    weights);
+    } else if (interp_order == 2) {
+      auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
+                                                                                    "density",
+                                                                                    weights, &gradients);
+    }
+  } else { //3D
+#ifndef HAVE_TANGRAM
+    Portage::CoreDriver<3,
+                        Wonton::Entity_kind::CELL,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper>
+      remapper(source_mesh_wrapper, source_state_wrapper,
+               target_mesh_wrapper, target_state_wrapper, executor);
+#else
+    Portage::CoreDriver<3,
+                        Wonton::Entity_kind::CELL,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper,
+                        Wonton::Jali_Mesh_Wrapper,
+                        Wonton::Jali_State_Wrapper,
+                        Tangram::MOF,
+                        Tangram::SplitR3D,
+                        Tangram::ClipR3D>
+      remapper(source_mesh_wrapper, source_state_wrapper,
+               target_mesh_wrapper, target_state_wrapper, executor);
+#endif
+    // search for neighboring cells candidates
+    auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
+                                       : remapper.template search<Portage::SearchSweptFace>());
+
+    // compute interpolation weights using intersection or swept regions moments.
+    auto weights = (intersect_based
+      ? remapper.template intersect_meshes<Portage::IntersectR3D>(candidates)
+      : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
+
+    // interpolate the field eventually
+    if (interp_order == 1) {
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
+                                                                                    "density",
+                                                                                    weights);
+    } else if (interp_order == 2) {
+      auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
+                                                                                    "density",
+                                                                                    weights, &gradients);
+    }
   }
 
 #if ENABLE_TIMINGS

@@ -10,14 +10,16 @@
   #include "mpi.h"
 #endif
 
-#include <numeric>
-
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/intersect_swept_face.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
+#ifdef HAVE_TANGRAM
+  #include "tangram/intersect/split_r2d.h"
+  #include "tangram/reconstruct/MOF.h"
+#endif
 
 /**
  * @brief Fixture class for swept face moments computation tests.
@@ -31,10 +33,20 @@
 class IntersectSweptBase2D : public testing::Test {
 
 protected:
+#ifdef HAVE_TANGRAM
+  using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
+                                                    Wonton::Jali_Mesh_Wrapper,
+                                                    Wonton::Jali_State_Wrapper,
+                                                    Wonton::Jali_Mesh_Wrapper,
+                                                    Tangram::MOF,
+                                                    Tangram::SplitR2D,
+                                                    Tangram::ClipR2D>;
+#else
   using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,
                                                     Wonton::Jali_Mesh_Wrapper>;
+#endif
 public:
   /**
    * @brief Disabled default constructor
@@ -58,6 +70,18 @@ public:
       target_state_wrapper(*target_state)
   {
     num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
+
+#ifdef HAVE_TANGRAM
+    // Volume and angle tolerances
+    double dst_tol = num_tols.min_absolute_distance;
+    double vol_tol = num_tols.min_absolute_volume;
+    std::vector< Tangram::IterativeMethodTolerances_t> ir_tols(2);
+    ir_tols[0] = {1000, dst_tol, vol_tol};
+    ir_tols[1] = {100, 1.0e-15, 1.0e-15};  
+
+    ir = std::make_shared<Tangram::Driver<Tangram::MOF, 2, Wonton::Jali_Mesh_Wrapper, 
+         Tangram::SplitR2D, Tangram::ClipR2D>>(source_mesh_wrapper, ir_tols, false); 
+#endif
   }
 
   /**
@@ -147,6 +171,14 @@ protected:
 
   // enable or disable debug prints
   bool verbose = false;
+
+#ifdef HAVE_TANGRAM
+  //interface reconstructor
+  //std::vector<Tangram::IterativeMethodTolerances_t> ir_tols(2, {1000, 1e-12, 1e-12});
+  std::shared_ptr<Tangram::Driver<Tangram::MOF, 2, Wonton::Jali_Mesh_Wrapper, 
+                  Tangram::SplitR2D, Tangram::ClipR2D>> ir; 
+
+#endif
 };
 
 /**
@@ -210,7 +242,7 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
-                          num_tols);
+                          num_tols, ir);
 
   /* pick internal, boundary and corner source cells.
    *    .............
@@ -384,7 +416,7 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
-                          num_tols);
+                          num_tols, ir);
 
   /* pick internal, boundary and corner source cells.
    *
@@ -570,7 +602,7 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
-                          num_tols);
+                          num_tols, ir);
 
   /* pick internal, boundary and corner source cells.
    *
