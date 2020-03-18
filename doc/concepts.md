@@ -587,7 +587,7 @@ system.
 Not all components of Portage are available with non-Cartesian
 coordinate systems.
 
-More details are given in the @ref coordinate_systems section.
+More details are given in the coordinate_systems.pdf file.
 
 <br>
 
