@@ -571,23 +571,47 @@ These difficulties will be addressed in future code releases.
 
 ## Coordinate Systems
 
-Portage provides the tools to remap in different coordinate systems.
+Portage provides the tools to remap in different coordinate systems.  Details
+are given in the coordinate_systems.pdf document.
+
+The coordinates used by Portage are based on ISO 80000-2:2009, and are shown
+here:
+
+<img src="coordinates.png" alt="coordinates diagram" width=50%>
+
 The available coordinate systems are
+* ```CartesianCoordinates<3>```: 3D Cartesian coordinates, the "basic"
+  right-handed 3D coordinates, (x,y,z);
+* ```CartesianCoordinates<2>```: 2D Cartesian coordinates, the "basic" 2D
+  coordinates, (x,y);
+* ```CartesianCoordinates<1>```: 1D Cartesian coordinates, the "basic" 1D
+  coordinates, (x);
+* ```Cylindrical3DCoordinates```: 3D cylindrical coordinates, (&rho;, &phi;,
+  z);
+* ```CylindricalPolarCoordinates```: 2D cylindrical polar coordinates, the
+  "usual" polar coordinates, (&rho;, &phi;);
+* ```CylindricalAxisymmetricCoordinates```: 2D cylindrical axisymmetric
+  coordinates, (&rho;,z), implicitly a 3D coordinate system, where the plane of
+  the grid is rotated around the z axis (i.e., no variation with the azimuthal
+  angle);
+* ```CylindricalRadialCoordinates```: 1D cylindrical radial coordinates,
+  (&rho;), implicitly a 2D coordinate system, where quantities depend only on
+  their 2D distance from the origin, not on the azimuthal angle;
+* ```Spherical3DCoordinates```: 3D spherical coordinates, (r,&theta;,&phi;);
+* ```SphericalRadialCoordinates```: 1D spherical radial coordinates, (r),
+  implicitly a 3D coordinate system, where there is no variation with either
+  the aximuthal or declination angle, but only the 3D distance from the origin.
 
-- Cartesian coordinates: 1D, 2D, 3D,
-- cylindrical coordinates: 1D radial, 2D polar, 2D axisymmetric, 3D
-- spherical coordinates: 1D radial, 3D
+Additional coordinate systems can be implemented, following the model of the
+existing coordinate systems.
 
-Additional coordinate systems can be implemented, following the model
-of the existing coordinate systems (see, for example,
-Wonton::CylindricalAxisymmetricCoordinates).  It is currently assumed
-that both the target and source meshes are using the same coordinate
-system.
+It is currently assumed that both the target and source meshes are using the
+same coordinate system.
 
-Not all components of Portage are available with non-Cartesian
-coordinate systems.
-
-More details are given in the coordinate_systems.pdf file.
+Not all components of Portage are available with non-Cartesian coordinate
+systems.  Look for a template for the coordinate system to be certain that a
+given component of Portage is designed to work with non-Cartesian coordinate
+systems.
 
 <br>
 
