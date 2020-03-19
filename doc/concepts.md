@@ -576,8 +576,10 @@ are given in the coordinate_systems.pdf document.
 
 The coordinates used by Portage are based on ISO 80000-2:2009, and are shown
 here:
-
 <img src="coordinates.png" alt="coordinates diagram" width=50%>
+This is a public domain image from Wikimedia Commons and can be found at
+[https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.](
+https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png)
 
 The available coordinate systems are
 * ```CartesianCoordinates<3>```: 3D Cartesian coordinates, the "basic"
