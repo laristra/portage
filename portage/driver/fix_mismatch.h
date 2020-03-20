@@ -125,9 +125,11 @@ class MismatchFixer {
                 SourceState_Wrapper const& source_state,
                 TargetMesh_Wrapper const& target_mesh,
                 TargetState_Wrapper & target_state,
-                Wonton::Executor_type const *executor) :
+                Wonton::Executor_type const *executor,
+		bool global_check=true) :
       source_mesh_(source_mesh), source_state_(source_state),
-      target_mesh_(target_mesh), target_state_(target_state) {
+      target_mesh_(target_mesh), target_state_(target_state),
+      global_check_(global_check) {
 
 #ifdef PORTAGE_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -164,7 +166,7 @@ class MismatchFixer {
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_)
+    if (distributed_ && global_check_)
       get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
                                                           &source_ent_masks,
                                                           mycomm_);
@@ -184,7 +186,7 @@ class MismatchFixer {
 
     global_source_volume_ = source_volume_;
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_)
+    if (distributed_ && global_check_)
       MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
 #endif
@@ -204,7 +206,7 @@ class MismatchFixer {
 
     global_target_volume_ = target_volume_;
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_)
+    if (distributed_ && global_check_)
       MPI_Allreduce(&target_volume_, &global_target_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
 #endif
@@ -229,7 +231,7 @@ class MismatchFixer {
 
     global_xsect_volume_ = xsect_volume;
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_)
+    if (distributed_ && global_check_)
       MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
                     MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
@@ -348,7 +350,7 @@ class MismatchFixer {
 
     int global_nempty = nempty;
 #ifdef PORTAGE_ENABLE_MPI
-    if (distributed_) {
+    if (distributed_ && global_check_) {
       int *nempty_all = new int[nprocs_];
       MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);
       global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
@@ -473,6 +475,11 @@ class MismatchFixer {
                     Empty_fixup_type::EXTRAPOLATE) {
 
 
+    // make sure the user isn't trying to do a global fixup without a global check
+    assert(!(distributed_ && !global_check_ && 
+      partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) && 
+      "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+    
     // make sure we have already computed the mismatch
     assert(computed_mismatch_ && "check_mismatch must be called first!");
       
@@ -594,7 +601,7 @@ class MismatchFixer {
 
       double global_source_sum = source_sum;
 #ifdef PORTAGE_ENABLE_MPI
-      if (distributed_)
+      if (distributed_ && global_check_)
         MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
 #endif
@@ -605,7 +612,7 @@ class MismatchFixer {
 
       double global_target_sum = target_sum;
 #ifdef PORTAGE_ENABLE_MPI
-      if (distributed_)
+      if (distributed_ && global_check_)
         MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
 #endif
@@ -637,7 +644,7 @@ class MismatchFixer {
         }
         global_covered_target_volume = covered_target_volume;
 #ifdef PORTAGE_ENABLE_MPI
-        if (distributed_)
+        if (distributed_ && global_check_)
           MPI_Allreduce(&covered_target_volume, &global_covered_target_volume,
                         1, MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
@@ -714,7 +721,7 @@ class MismatchFixer {
 
         global_target_sum = target_sum;
 #ifdef PORTAGE_ENABLE_MPI
-        if (distributed_)
+        if (distributed_ && global_check_)
           MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                         mycomm_);
 #endif
@@ -730,7 +737,7 @@ class MismatchFixer {
 
         global_adj_target_volume = adj_target_volume;
 #ifdef PORTAGE_ENABLE_MPI
-        if (distributed_)
+        if (distributed_ && global_check_)
           MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
                         MPI_DOUBLE, MPI_SUM, mycomm_);
 #endif
@@ -785,6 +792,7 @@ class MismatchFixer {
   double voldifftol_ = 1e2*std::numeric_limits<double>::epsilon();
   bool distributed_ = false;
   bool computed_mismatch_ = false;
+  bool global_check_=true;
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
