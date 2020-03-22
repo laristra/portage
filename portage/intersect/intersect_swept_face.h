@@ -448,6 +448,7 @@ namespace Portage {
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
 
+      //Weights need to be subtracted from a cell for negative swept regions
       if(swept_volume < 0.0)
          for(double& moment : moments)
             moment *= -1;
