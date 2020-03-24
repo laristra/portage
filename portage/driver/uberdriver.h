@@ -21,6 +21,8 @@
 
 #ifdef HAVE_TANGRAM
 #include "tangram/driver/driver.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
@@ -34,7 +36,6 @@
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
-#include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
 
@@ -105,6 +106,7 @@ class UberDriver {
                      InterfaceReconstructorType,
                      Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
   
+  // NOTE: Unused
   using ParallelDriverType =
       CoreDriverBase<D, Flat_Mesh_Wrapper<>,
                      Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
@@ -294,8 +296,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<CELL, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<CELL>(source_weights_[onwhat]);
-
           if (have_multi_material_fields_) {
             mat_intersection_completed_ = true;
             
@@ -312,7 +312,6 @@ class UberDriver {
           source_weights_[onwhat] =
               intersect_meshes<NODE, Intersect>(intersection_candidates);
 
-          has_mismatch_ |= check_mesh_mismatch<NODE>(source_weights_[onwhat]);
           break;
         }
         default:
@@ -330,9 +329,7 @@ class UberDriver {
 
      @tparam num_tols     struct of selected numerical tolerances
   */
-  template<Entity_kind ONWHAT>
-    void set_num_tols(NumericTolerances_t num_tols) {
-
+  void set_num_tols(NumericTolerances_t num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -341,11 +338,11 @@ class UberDriver {
           core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
         default:
           std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-
+          
       }
     }
   }
-
+  
 
   /*!
     @brief search for candidate source entities whose control volumes
@@ -393,11 +390,35 @@ class UberDriver {
   Portage::vector<std::vector<Portage::Weights_t>>         // return type
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
+
+    const auto& weights = core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
+    
+    // Check the mesh mismatch once, to make sure the mismatch is cached
+    // prior to interpolation with fixup. This is the correct place to automatically do the
+    // check because it reqires the intersection weights which were just computed.
+    core_driver_serial_[ONWHAT]->template check_mismatch<ONWHAT>(weights);
+    
     mesh_intersection_completed_[ONWHAT] = true;
-
-    return core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
-
+    
+    return weights;
   }
+
+#ifdef HAVE_TANGRAM
+  /*!
+    @brief set tolerances and options for interface reconstructor driver  
+    @param tols The vector of tolerances for each moment during reconstruction
+    @param all_convex Should be set to false if the source mesh contains 
+    non-convex cells.  
+  */
+  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
+                                 bool all_convex) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(tols,
+                                                                   all_convex);
+  }
+
+#endif
+
+  
 
   /* @brief intersect target cells with source material polygons
 
@@ -425,24 +446,6 @@ class UberDriver {
     return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
 
   }
-
-
-  /*!
-    @brief Check if meshes are mismatched 
-
-    @tparam ONWHAT on what kind of entity are we checking mismatch
-
-    @param[in] source_weights Intersection moments/weights 
-
-    @returns whether the mesh has mismatch
-  */
-  template<Entity_kind ONWHAT>
-  bool check_mesh_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-
-    return core_driver_serial_[ONWHAT]->template check_mesh_mismatch<ONWHAT>(source_weights);
-
-  }
-  
   
  
   /*!
@@ -481,7 +484,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -535,7 +538,7 @@ class UberDriver {
 
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template<class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -625,7 +628,7 @@ class UberDriver {
   
   template<typename T = double,
            Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class,
+           template<int, Entity_kind, class, class, class, class, class,
                     template <class, int, class, class> class,
                     class, class, class> class Interpolate
            >
@@ -648,16 +651,35 @@ class UberDriver {
       return;
     }
 
-
     auto & driver = core_driver_serial_[ONWHAT];
+
+    using Interpolator = Interpolate<D, ONWHAT,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
+
+    if (Interpolator::order == 2) {
+      auto gradients = driver->template compute_source_gradient<ONWHAT>(srcvarname,
+                                                                        limiter,
+                                                                        bnd_limiter);
+
+      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_in, &gradients
+      );
+    } else {
+      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_in
+      );
+    }
     
-    driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>
-        (srcvarname, trgvarname, sources_and_weights_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+    if (driver->template has_mismatch<ONWHAT>())
+      driver->template fix_mismatch<ONWHAT>(srcvarname, trgvarname, lower_bound, upper_bound, conservation_tol, 
+        max_fixup_iter, partial_fixup_type, empty_fixup_type);
+
   }
-
-
 
   /*!
     Interpolate a (multi-)material variable of type T residing on CELLs
@@ -693,7 +715,7 @@ class UberDriver {
   */
   
   template <typename T = double,
-            template<int, Entity_kind, class, class, class,
+            template<int, Entity_kind, class, class, class, class, class,
                      template <class, int, class, class> class,
                      class, class, class> class Interpolate
             >
@@ -716,14 +738,36 @@ class UberDriver {
       return;
     }
 
-
+#if HAVE_TANGRAM
     auto & driver = core_driver_serial_[CELL];
-      
-#ifdef HAVE_TANGRAM
-    driver->template interpolate_mat_var<T, Interpolate>
-        (srcvarname, trgvarname, sources_and_weights_by_mat_in,
-         lower_bound, upper_bound, limiter, bnd_limiter, partial_fixup_type,
-         empty_fixup_type, conservation_tol, max_fixup_iter);
+
+    using Interpolator = Interpolate<D, CELL,
+                                     SourceMesh, TargetMesh,
+                                     SourceState, TargetState,
+                                     T,
+                                     InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper,
+                                     CoordSys>;
+
+    int const nb_mats = source_state_.num_materials();
+    assert(nb_mats > 0);
+
+    if (Interpolator::order == 2) {
+      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
+      for (int i = 0; i < nb_mats; ++i) {
+        gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
+                                                                      limiter,
+                                                                      bnd_limiter, i);
+      }
+      driver->template interpolate_mat_var<T, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_by_mat_in,
+        &gradients
+      );
+    } else {
+      driver->template interpolate_mat_var<T, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_by_mat_in
+      );
+    }
 #endif
   }
   
@@ -750,9 +794,6 @@ class UberDriver {
   std::vector<std::string> source_vars_to_remap_;
   std::vector<Entity_kind> entity_kinds_;
   std::vector<Field_type> field_types_;
-
-  // Whether meshes are mismatched
-  bool has_mismatch_ = false;
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;
@@ -806,7 +847,7 @@ class UberDriver {
     executor  An executor encoding parallel run parameters (if its parallel executor)
   */
 
-  int instantiate_core_drivers(Wonton::Executor_type const *executor =
+  void instantiate_core_drivers(Wonton::Executor_type const *executor =
                                nullptr) {
     std::string message;
 

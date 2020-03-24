@@ -6,6 +6,9 @@ Please see the license file at the root of this repository, or at:
 
 
 #include <iostream>
+#include <portage/search/search_kdtree.h>
+#include <portage/intersect/intersect_r2d.h>
+#include <portage/driver/mmdriver.h>
 
 #include "gtest/gtest.h"
 
@@ -13,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
+#include "portage/driver/coredriver.h"
 
 // wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
@@ -50,6 +54,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -59,6 +64,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -117,16 +123,28 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   Portage::NumericTolerances_t num_tols;
   num_tols.use_default();
 
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
+
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars");
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars");
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
@@ -168,6 +186,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
 // Define a state vector with linear value and add it to the source state
 
@@ -182,6 +201,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -240,17 +260,28 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   Portage::NumericTolerances_t num_tols;
   num_tols.use_default();
 
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
+
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars");
+
   // Create Interpolation object
 
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars");
-
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
@@ -301,6 +332,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with linear value and add it to the source state
 
@@ -322,6 +354,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -386,20 +419,30 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>                                
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars", Portage::NOLIMITER);
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
-
+  gradients = driver.compute_source_gradient("cellvars", Portage::BARTH_JESPERSEN);
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
@@ -473,6 +516,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with nonlinear (exponential) values 
   // and add it to the source state
@@ -493,6 +537,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -557,12 +602,24 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN,
-                                          Portage::BND_NOLIMITER);
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
+
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars",
+                                                  Portage::BARTH_JESPERSEN,
+                                                  Portage::BND_NOLIMITER);
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
@@ -570,8 +627,11 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN,
-                                          Portage::BND_ZERO_GRADIENT);
+  // recompute gradient field using correct limiters
+  gradients = driver.compute_source_gradient("cellvars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::BND_ZERO_GRADIENT);
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
@@ -631,6 +691,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -640,6 +701,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -703,12 +765,23 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("nodevars");
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::NODE,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("nodevars");
+
+  interpolator.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
@@ -769,6 +842,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -783,6 +857,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -846,12 +921,23 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
   Portage::Interpolate_2ndOrder<2, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("nodevars");
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::NODE,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("nodevars");
+
+  interpolator.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
@@ -907,6 +993,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -916,6 +1003,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -979,12 +1067,23 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars");
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars");
+
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
@@ -1024,6 +1123,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
 // Define a state vector with linear value and add it to the source state
 
@@ -1038,6 +1138,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -1101,12 +1202,23 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars");
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars");
+
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
@@ -1156,6 +1268,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with linear value and add it to the source state
 
@@ -1177,6 +1290,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -1241,20 +1355,37 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::CELL,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::NOLIMITER);
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("cellvars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
+
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
 
-  interpolator.set_interpolation_variable("cellvars", Portage::BARTH_JESPERSEN);
+  // recompute gradient field using correct limiters
+  gradients = driver.compute_source_gradient("cellvars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::DEFAULT_BND_LIMITER);
 
+  interpolator.set_interpolation_variable("cellvars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
@@ -1319,6 +1450,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -1328,6 +1460,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -1392,12 +1525,25 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
-  interpolator.set_interpolation_variable("nodevars");
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::NODE,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
+
+  interpolator.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
@@ -1450,6 +1596,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -1464,6 +1611,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -1528,12 +1676,27 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
       interpolator(sourceMeshWrapper, targetMeshWrapper, sourceStateWrapper,
                    num_tols);
 
   interpolator.set_interpolation_variable("nodevars");
 
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::NODE,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
+
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::DEFAULT_LIMITER,
+                                                  Portage::BND_NOLIMITER);
+
+  interpolator.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
@@ -1590,6 +1753,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   // Create a state object
 
   Wonton::Simple_State source_state(source_mesh);
+  Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
 
@@ -1610,6 +1774,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   // Create state wrapper
 
   Wonton::Simple_State_Wrapper sourceStateWrapper(source_state);
+  Wonton::Simple_State_Wrapper targetStateWrapper(target_state);
 
   // Gather the cell coordinates as Portage Points for source and target meshes
   // for intersection. The outer vector is the cells, the inner vector is the
@@ -1662,20 +1827,35 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
                          interpolator1(sourceMeshWrapper, targetMeshWrapper,
                                        sourceStateWrapper, num_tols);
 
   Portage::Interpolate_2ndOrder<3, Wonton::Entity_kind::NODE,
                                 Wonton::Simple_Mesh_Wrapper,
                                 Wonton::Simple_Mesh_Wrapper,
-                                Wonton::Simple_State_Wrapper>
+                                Wonton::Simple_State_Wrapper,
+                                Wonton::Simple_State_Wrapper,
+                                double>
                          interpolator2(sourceMeshWrapper, targetMeshWrapper,
                                        sourceStateWrapper, num_tols);
 
-  // Compute the target mesh vals
+  // compute gradient field to pass to the interpolator
+  using Driver = Portage::CoreDriver<3, Wonton::Entity_kind::NODE,
+                                     Wonton::Simple_Mesh_Wrapper,
+                                     Wonton::Simple_State_Wrapper>;
 
-  interpolator1.set_interpolation_variable("nodevars", Portage::NOLIMITER);
+  Driver driver(sourceMeshWrapper, sourceStateWrapper,
+                targetMeshWrapper, targetStateWrapper);
+
+  // Compute the target mesh vals
+  auto gradients = driver.compute_source_gradient("nodevars",
+                                                  Portage::NOLIMITER,
+                                                  Portage::DEFAULT_BND_LIMITER);
+
+  interpolator1.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
@@ -1683,8 +1863,11 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                      outvals1.begin(), interpolator1);
 
   // Compute the target mesh vals
+  gradients = driver.compute_source_gradient("nodevars",
+                                             Portage::BARTH_JESPERSEN,
+                                             Portage::DEFAULT_BND_LIMITER);
 
-  interpolator2.set_interpolation_variable("nodevars", Portage::BARTH_JESPERSEN);
+  interpolator2.set_interpolation_variable("nodevars", &gradients);
 
   Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),

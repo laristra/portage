@@ -90,7 +90,7 @@ Controls<2> truncateControl(Controls<3> ctl) {
   return result;
 }
 
-template<template<int, Portage::Entity_kind, class, class, class,
+template<template<int, Portage::Entity_kind, class, class, class, class, class,
                   template<class, int, class, class> class,
                   class, class, class> class T>
 class consistent_order{
@@ -195,7 +195,7 @@ public:
   template<Portage::Entity_kind, class, class, class,
   template <class, int, class, class> class,
   class, class> class Intersect,
-  template<int, Portage::Entity_kind, class, class, class,
+  template<int, Portage::Entity_kind, class, class, class, class, class,
   template<class, int, class, class> class,
   class, class, class> class Interpolate,
   template <int, class, class> class SwarmSearch
@@ -520,7 +520,7 @@ protected:
     template<Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
     class, class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class,
+    template<int, Portage::Entity_kind, class, class, class, class, class,
     template<class, int, class, class> class,
     class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch

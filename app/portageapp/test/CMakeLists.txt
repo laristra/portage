@@ -142,3 +142,61 @@ if (Jali_DIR AND TANGRAM_FOUND)
 
 endif (Jali_DIR AND TANGRAM_FOUND)
 
+####################################################################
+
+message(STATUS "Adding portageapp_rgmd_jali tests")
+
+# create a macro to run a distributed compare test
+macro(ADD_DISTRIBUTED_APPTEST NP PROBLEM DIM NSOURCECELLS NTARGETCELLS FIELDS REMAP_ORDER )
+
+  # copy the shell script
+  file(
+    COPY portageapp_rgmd_jali.sh 
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
+  
+  # add the test
+  add_test(
+    NAME portageapp_rgmd_jali_${NP}_${PROBLEM}_${DIM}_${NSOURCECELLS}_${NTARGETCELLS}_${FIELDS}_${REMAP_ORDER}
+    COMMAND ./portageapp_rgmd_jali.sh ${NP} ${PROBLEM} ${DIM} ${NSOURCECELLS} ${NTARGETCELLS} ${FIELDS} ${REMAP_ORDER} 
+  )
+    
+  # set environment variables for the script
+  set_property(
+    TEST portageapp_rgmd_jali_${NP}_${PROBLEM}_${DIM}_${NSOURCECELLS}_${NTARGETCELLS}_${FIELDS}_${REMAP_ORDER}
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/distributed_cmp
+  )
+
+endmacro(ADD_DISTRIBUTED_APPTEST)
+
+# add the tests
+# These tests don't test whether the remap is correct or reproduces a certain
+# function. They only test whether serial and parallel match. Hence higher 
+# order fields or remap order changes don't really test anything new.
+if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+
+  # 2D, t-junction, constant fields, vary number of processors with triple point
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 1)
+  ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 2)
+  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 2)
+  
+  # 2D, t-junction, linear fields, larger meshes 
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 2 51 71 x,y,x+.3*y 2)
+
+  # 2D, pure source cells, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 2 4 8 1,2,3 1)
+    
+  # 3D, t-junction, linear fields, vary number of processors  
+  ADD_DISTRIBUTED_APPTEST(4 tjunction 3 5 7 x,y,x+.3*y 1)
+
+  # 3D, pure source cells, constant fields, vary number of processors
+  ADD_DISTRIBUTED_APPTEST(4 srcpurecells 3 4 8 1,2,3 1)
+
+endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+
+

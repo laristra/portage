@@ -89,7 +89,7 @@ class IntersectR3D {
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 
@@ -171,7 +171,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 
@@ -325,7 +325,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
   /// \brief Set the source mesh material that we have to intersect against
 
-  int set_material(int m) {
+  void set_material(int m) {
     matid_ = m;
   }
 

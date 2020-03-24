@@ -25,7 +25,8 @@ namespace Portage {
 // with the keyword 'template', like so
 // Portage::Interpolate_NthOrder<D>::template Interpolate
 
-template <int order> struct Interpolate_NthOrder;
+template <int order>
+struct Interpolate_NthOrder;
 
 template <> struct Interpolate_NthOrder<1> {
   template<int D,
@@ -33,8 +34,10 @@ template <> struct Interpolate_NthOrder<1> {
            class SourceMeshType,
            class TargetMeshType,
            class SourceStateType,
-           template<class, int, class, class> class InterfaceReconstructorType =
-           DummyInterfaceReconstructor,
+           class TargetStateType = SourceStateType,
+           typename T = double,
+           template<class, int, class, class>
+             class InterfaceReconstructorType = DummyInterfaceReconstructor,
            class MatPoly_Splitter = void,
            class MatPoly_Clipper = void,
            class CoordSys = Wonton::DefaultCoordSys>
@@ -42,6 +45,8 @@ template <> struct Interpolate_NthOrder<1> {
                                                     SourceMeshType,
                                                     TargetMeshType,
                                                     SourceStateType,
+                                                    TargetStateType,
+                                                    T,
                                                     InterfaceReconstructorType,
                                                     MatPoly_Splitter,
                                                     MatPoly_Clipper,
@@ -54,8 +59,10 @@ template <> struct Interpolate_NthOrder<2> {
            class SourceMeshType,
            class TargetMeshType,
            class SourceStateType,
-           template<class, int, class, class> class InterfaceReconstructorType =
-           DummyInterfaceReconstructor,
+           class TargetStateType = SourceStateType,
+           typename T = double,
+           template<class, int, class, class>
+             class InterfaceReconstructorType = DummyInterfaceReconstructor,
            class MatPoly_Splitter = void,
            class MatPoly_Clipper = void,
            class CoordSys = Wonton::DefaultCoordSys>
@@ -63,6 +70,8 @@ template <> struct Interpolate_NthOrder<2> {
                                                     SourceMeshType,
                                                     TargetMeshType,
                                                     SourceStateType,
+                                                    TargetStateType,
+                                                    T,
                                                     InterfaceReconstructorType,
                                                     MatPoly_Splitter,
                                                     MatPoly_Clipper,
