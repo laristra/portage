@@ -67,10 +67,11 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
 
-  // move a single node of the target mesh in x direction
+  // move a single node of the target mesh in x direction by DX
   std::array<double, 2> pnt;
   targetMesh->node_get_coordinates(5, &pnt);
-  pnt[0] += 0.01;
+  double DX = 0.01;
+  pnt[0] += DX;
   targetMesh->node_set_coordinates(5, pnt.data());
 
   sourceState = Jali::State::create(sourceMesh);
@@ -296,7 +297,16 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   // |   / : |   |
   // |0__|3:_|6__|
 
-  double vf_diff = 1./2.-(1./18.-0.01/3./2.)/(1./9.-0.01/3./2.);
+  // Difference between the source volume fraction of 1/2 and a target volume
+  // fraction in a multi-material cell for this particular case. For target,
+  // we subtract the area of the triangle with base=DX and height DY (cell
+  // height) from the volume of one material in the numerator and from
+  // the cell volume in the denominator. 
+  double DY = 1./3.;
+  double CELL_VOL = DY*DY;
+  double TRIANGLE_VOL = DX*DY/2.;
+  double vf_diff = 1./2.-(CELL_VOL/2.-TRIANGLE_VOL)/(CELL_VOL-TRIANGLE_VOL);
+
   matvf_trg[0].push_back(1.0);             // cell 0
   matvf_trg[0].push_back(1.0);             // cell 1
   matvf_trg[0].push_back(1.0);             // cell 2
