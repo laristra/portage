@@ -575,34 +575,35 @@ Portage provides the tools to remap in different coordinate systems.  Details
 are given in the coordinate_systems.pdf document.
 
 The coordinates used by Portage are based on ISO 80000-2:2009, and are shown
-here:
-<img src="coordinates.png" alt="coordinates diagram" width=50%>
-This is a public domain image from Wikimedia Commons and can be found at
-[https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.](
-https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png)
+here:<br>
+![physics coordinates](doxygen/images/coordinates.png)
+<br>This is a public domain image from Wikimedia Commons and can be found at
+[https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.](https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png)
 
 The available coordinate systems are
-* ```CartesianCoordinates<3>```: 3D Cartesian coordinates, the "basic"
-  right-handed 3D coordinates, (x,y,z);
-* ```CartesianCoordinates<2>```: 2D Cartesian coordinates, the "basic" 2D
-  coordinates, (x,y);
-* ```CartesianCoordinates<1>```: 1D Cartesian coordinates, the "basic" 1D
-  coordinates, (x);
+
+* ```CartesianCoordinates<3>```: 3D Cartesian coordinates, (x,y,z); the "basic"
+  right-handed 3D coordinates;
+* ```CartesianCoordinates<2>```: 2D Cartesian coordinates, (x,y); the "basic"
+  2D coordinates;
+* ```CartesianCoordinates<1>```: 1D Cartesian coordinates, (x); the "basic" 1D
+  coordinates;
 * ```Cylindrical3DCoordinates```: 3D cylindrical coordinates, (&rho;, &phi;,
   z);
-* ```CylindricalPolarCoordinates```: 2D cylindrical polar coordinates, the
-  "usual" polar coordinates, (&rho;, &phi;);
+* ```CylindricalPolarCoordinates```: 2D cylindrical polar coordinates, (&rho;,
+  &phi;); the "usual" polar coordinates;
 * ```CylindricalAxisymmetricCoordinates```: 2D cylindrical axisymmetric
-  coordinates, (&rho;,z), implicitly a 3D coordinate system, where the plane of
+  coordinates, (&rho;,z); implicitly a 3D coordinate system, where the plane of
   the grid is rotated around the z axis (i.e., no variation with the azimuthal
-  angle);
+  angle &phi;);
 * ```CylindricalRadialCoordinates```: 1D cylindrical radial coordinates,
-  (&rho;), implicitly a 2D coordinate system, where quantities depend only on
-  their 2D distance from the origin, not on the azimuthal angle;
+  (&rho;); implicitly a 2D coordinate system, where quantities depend only on
+  their 2D distance from the origin &rho;, not on the azimuthal angle &phi;;
 * ```Spherical3DCoordinates```: 3D spherical coordinates, (r,&theta;,&phi;);
-* ```SphericalRadialCoordinates```: 1D spherical radial coordinates, (r),
+* ```SphericalRadialCoordinates```: 1D spherical radial coordinates, (r);
   implicitly a 3D coordinate system, where there is no variation with either
-  the aximuthal or declination angle, but only the 3D distance from the origin.
+  the azimuthal angle &phi; or declination angle &theta;, but only the 3D
+  distance from the origin r.
 
 Additional coordinate systems can be implemented, following the model of the
 existing coordinate systems.
