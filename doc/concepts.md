@@ -580,6 +580,16 @@ here:<br>
 <br>This is a public domain image from Wikimedia Commons and can be found at
 [https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.](https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png)
 
+variable | meaning
+-------- | :------
+x        | the first Cartesian coordinate
+y        | the second Cartesian coordinate
+z        | the third Cartesian coordinate
+r        | the distance from the origin (spherical radius)
+&rho;    | the distance from the z axis (cylindrical radius)
+&phi;    | the azimuthal angle (around the z axis, starting at the positive x axis)
+&theta;  | the angle of declination (descending from the positive z axis)
+
 The available coordinate systems are
 
 * ```CartesianCoordinates<3>```: 3D Cartesian coordinates, (x,y,z); the "basic"
