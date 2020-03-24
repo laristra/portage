@@ -292,6 +292,7 @@ if (TANGRAM_DIR)
 
   message(STATUS "TANGRAM FOUND? ${TANGRAM_FOUND}")
   add_definitions("-DHAVE_TANGRAM")
+  set(HAVE_TANGRAM True CACHE BOOL "Have Tangram")
   include_directories(${TANGRAM_INCLUDE_DIR})
 else (TANGRAM_DIR)
   message(STATUS "TANGRAM_DIR not specified. Restricted to single material remap")
