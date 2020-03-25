@@ -322,8 +322,10 @@ class MismatchFixer {
     // set whether we have computed the mismatch (before any return)
     computed_mismatch_ = true;
     
-    if (!mismatch_) return mismatch_;
-
+    // If there is no mismatch or a distributed run but no global check, return
+    // the mismatch on this partition only and skip the layer computation.
+    // Will compute layers if serial with mismatch.
+    if (!mismatch_ || (distributed_ && !global_check_)) return mismatch_;
 
     // Discrepancy between intersection volume and source mesh volume PLUS
     // Discrepancy between intersection volume and target mesh volume
@@ -475,7 +477,8 @@ class MismatchFixer {
                     Empty_fixup_type::EXTRAPOLATE) {
 
 
-    // make sure the user isn't trying to do a global fixup without a global check
+    // Make sure the user isn't trying to do a global fixup without a global check.
+    // A serial run will always proceed.
     assert(!(distributed_ && !global_check_ && 
       partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) && 
       "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
