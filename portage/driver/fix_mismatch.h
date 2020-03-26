@@ -323,12 +323,15 @@ class MismatchFixer {
     computed_mismatch_ = true;
     
     // If there is no mismatch or a distributed run with no global check 
-    // but SHIFTED_CONSERVATIVE fixup, return
-    // the mismatch on this partition only and skip the layer computation.
-    // All other cases compute layers
-    if (!mismatch_ || (distributed_ && !global_check_&& 
-      partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE)) return mismatch_;
+    // return the mismatch on this partition only and skip the layer computation.
+    // This is a reasonable thing to do because without a global check, the same cell
+    // might be in a different layer on different partitions or give different values.
+    // All other cases compute layers.
+    if (!mismatch_ || (distributed_ && !global_check_)) return mismatch_;
 
+    // set the flag that we have computed the layers
+    computed_layers_=true;
+    
     // Discrepancy between intersection volume and source mesh volume PLUS
     // Discrepancy between intersection volume and target mesh volume
     relvoldiff_ = relvoldiff_source_ + relvoldiff_target_;
@@ -484,6 +487,11 @@ class MismatchFixer {
     assert(!(distributed_ && !global_check_ && 
       partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) && 
       "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+
+    // Make sure the user isn't trying to extrapolate into empty cels without having
+    // computed layers first
+    assert(!(empty_fixup_type==Empty_fixup_type::EXTRAPOLATE && !computed_layers_) &&
+      "Cannot extrapolate into empty cells with computing layers first!");
     
     // make sure we have already computed the mismatch
     assert(computed_mismatch_ && "check_mismatch must be called first!");
@@ -798,6 +806,7 @@ class MismatchFixer {
   bool distributed_ = false;
   bool computed_mismatch_ = false;
   bool global_check_=true;
+  bool computed_layers_=false;
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
