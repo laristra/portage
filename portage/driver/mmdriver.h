@@ -102,7 +102,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
   // alias for interface reconstructor parameterized on the mesh type.
   // it will be used for gradient field computation.
   template<typename SourceMesh>

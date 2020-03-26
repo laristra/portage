@@ -773,7 +773,7 @@ class UberDriver {
       return;
     }
 
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     auto & driver = core_driver_serial_[CELL];
 
     using Interpolator = Interpolate<D, CELL,
