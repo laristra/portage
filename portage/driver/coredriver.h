@@ -915,7 +915,7 @@ class CoreDriver : public CoreDriverBase<D,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
     int size = 0;
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
@@ -936,13 +936,13 @@ class CoreDriver : public CoreDriverBase<D,
     } else /* single material */ {
 #endif
       size = source_mesh_.num_entities(ONWHAT);
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     }
 #endif
 
     // instantiate the right kernel according to entity kind (cell/node),
     // as well as source and target meshes and states types.
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     Gradient kernel(source_mesh_, source_state_, field_name,
                     limiter_type, boundary_limiter_type,
                     interface_reconstructor_, source_part);
@@ -955,7 +955,7 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::vector<Vector<D>> gradient_field(size);
 
     // populate it by invoking the kernel on each source entity.
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     if (multimat) {
       kernel.set_material(material_id);
       Portage::transform(mat_cells.begin(),
@@ -966,7 +966,7 @@ class CoreDriver : public CoreDriverBase<D,
       Portage::transform(source_mesh_.begin(ONWHAT),
                          source_mesh_.end(ONWHAT),
                          gradient_field.begin(), kernel);
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     }
 #endif
     return gradient_field;
