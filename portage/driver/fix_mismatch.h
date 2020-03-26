@@ -325,9 +325,9 @@ class MismatchFixer {
     // If there is no mismatch or a distributed run with no global check 
     // but SHIFTED_CONSERVATIVE fixup, return
     // the mismatch on this partition only and skip the layer computation.
-    // All other cases compute layers.
+    // All other cases compute layers
     if (!mismatch_ || (distributed_ && !global_check_&& 
-      partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE))) return mismatch_;
+      partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE)) return mismatch_;
 
     // Discrepancy between intersection volume and source mesh volume PLUS
     // Discrepancy between intersection volume and target mesh volume
