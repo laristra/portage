@@ -19,6 +19,7 @@ Please see the license file at the root of this repository, or at:
 #include <type_traits>
 #include <limits>
 #include <numeric>
+#include <stdexcept>
 
 #include "portage/support/portage.h"
 
@@ -319,109 +320,12 @@ class MismatchFixer {
 
     }
 
+    // compute layers
+    compute_layers();
+
     // set whether we have computed the mismatch (before any return)
     computed_mismatch_ = true;
-    
-    // If there is no mismatch or a distributed run with no global check 
-    // return the mismatch on this partition only and skip the layer computation.
-    // This is a reasonable thing to do because without a global check, the same cell
-    // might be in a different layer on different partitions or give different values.
-    // All other cases compute layers.
-    if (!mismatch_ || (distributed_ && !global_check_)) return mismatch_;
-
-    // set the flag that we have computed the layers
-    computed_layers_=true;
-    
-    // Discrepancy between intersection volume and source mesh volume PLUS
-    // Discrepancy between intersection volume and target mesh volume
-    relvoldiff_ = relvoldiff_source_ + relvoldiff_target_;
-
-
-    // Collect the empty target cells in layers starting from the ones
-    // next to partially or fully covered cells. At the end of this
-    // section, partially or fully covered cells will all have a layer
-    // number of 0 and empty cell layers will have positive layer
-    // numbers starting from 1
-
-    is_cell_empty_.resize(ntargetents_, false);
-    std::vector<int> emptyents;
-    for (int t = 0; t < ntargetents_; t++) {
-      if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
-        emptyents.push_back(t);
-        is_cell_empty_[t] = true;
-      }
-    }
-    int nempty = emptyents.size();
-
-#ifdef ENABLE_DEBUG
-
-    int global_nempty = nempty;
-#ifdef PORTAGE_ENABLE_MPI
-    if (distributed_ && global_check_) {
-      int *nempty_all = new int[nprocs_];
-      MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);
-      global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
-      delete [] nempty_all;
-    }
-#endif
-    
-    if (rank_ == 0 && global_nempty) {
-      if (onwhat == Entity_kind::CELL)
-        std::cerr << "One or more target cells are not covered by " <<
-            "ANY source cells.\n" <<
-            " Will assign values based on their neighborhood\n";
-      else
-        std::cerr << "One or more target dual cells are not covered by " <<
-            "ANY source dual cells.\n" <<
-            " Will assign values based on their neighborhood\n";
-    }
-#endif
-    
-    if (nempty) {
-      layernum_.resize(ntargetents_, 0);
-
-      int nlayers = 0;
-      int ntagged = 0, old_ntagged = -1;
-      while (ntagged < nempty && ntagged > old_ntagged) {
-        old_ntagged = ntagged;
-
-        std::vector<int> curlayerents;
-
-        for (int ent : emptyents) {
-          if (layernum_[ent] != 0) continue;
-
-          std::vector<int> nbrs;
-          if (onwhat == Entity_kind::CELL)
-            target_mesh_.cell_get_node_adj_cells(ent, Entity_type::ALL, &nbrs);
-          else
-            target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
-          for (int nbr : nbrs) {
-            if ((onwhat == Entity_kind::CELL &&
-                 target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED) ||
-                (onwhat == Entity_kind::NODE &&
-                 target_mesh_.node_get_type(nbr) != Entity_type::PARALLEL_OWNED))
-              continue;
-            if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
-              // At least one neighbor has some material or will
-              // receive some material (indicated by having a +ve
-              // layer number)
-
-              curlayerents.push_back(ent);
-              break;
-            }
-          }
-        }  // for (ent in emptyents)
-
-        // Tag the current layer cells with the next layer number
-        for (int ent : curlayerents)
-          layernum_[ent] = nlayers+1;
-        ntagged += curlayerents.size();
-
-        emptylayers_.push_back(curlayerents);
-        nlayers++;
-      }
-    }  // if nempty
-    
+   
     return mismatch_;  
   }
   
@@ -484,18 +388,24 @@ class MismatchFixer {
 
     // Make sure the user isn't trying to do a global fixup without a global check.
     // A serial run will always proceed.
-    assert(!(distributed_ && !global_check_ && 
-      partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) && 
-      "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+    if (distributed_ && !global_check_ && 
+                        partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+     throw std::runtime_error( 
+       "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+    }
 
     // Make sure the user isn't trying to extrapolate into empty cels without having
     // computed layers first
-    assert(!(empty_fixup_type==Empty_fixup_type::EXTRAPOLATE && !computed_layers_) &&
-      "Cannot extrapolate into empty cells with computing layers first!");
-    
+    if (empty_fixup_type==Empty_fixup_type::EXTRAPOLATE && !computed_layers_) {
+      throw std::runtime_error(
+        "Cannot extrapolate into empty cells without computing layers first!");
+    }
+
     // make sure we have already computed the mismatch
-    assert(computed_mismatch_ && "check_mismatch must be called first!");
-      
+    if (!computed_mismatch_) {
+      throw std::runtime_error("check_mismatch must be called first!");
+    }
+
     if (source_state_.field_type(onwhat, src_var_name) ==
         Field_type::MESH_FIELD)
       return fix_mismatch_meshvar(src_var_name, trg_var_name,
@@ -810,6 +720,112 @@ class MismatchFixer {
 #ifdef PORTAGE_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
+
+  // private function to compute empty cell layers
+  bool compute_layers(){
+
+    if (computed_layers_) return true;
+
+    // If there is no mismatch or a distributed run with no global check 
+    // return the mismatch on this partition only and skip the layer computation.
+    // This is a reasonable thing to do because without a global check, the same cell
+    // might be in a different layer on different partitions or give different values.
+    // All other cases compute layers.
+    if (!mismatch_ || (distributed_ && !global_check_)) return mismatch_;
+
+    // Discrepancy between intersection volume and source mesh volume PLUS
+    // Discrepancy between intersection volume and target mesh volume
+    relvoldiff_ = relvoldiff_source_ + relvoldiff_target_;
+
+
+    // Collect the empty target cells in layers starting from the ones
+    // next to partially or fully covered cells. At the end of this
+    // section, partially or fully covered cells will all have a layer
+    // number of 0 and empty cell layers will have positive layer
+    // numbers starting from 1
+
+    is_cell_empty_.resize(ntargetents_, false);
+    std::vector<int> emptyents;
+    for (int t = 0; t < ntargetents_; t++) {
+      if (fabs(xsect_volumes_[t]) < std::numeric_limits<double>::epsilon()) {
+        emptyents.push_back(t);
+        is_cell_empty_[t] = true;
+      }
+    }
+    int nempty = emptyents.size();
+
+#ifdef ENABLE_DEBUG
+
+    int global_nempty = nempty;
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed_ && global_check_) {
+      int *nempty_all = new int[nprocs_];
+      MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);
+      global_nempty = std::accumulate(nempty_all, nempty_all+nprocs_, 0.0);
+      delete [] nempty_all;
+    }
+#endif
+    
+    if (rank_ == 0 && global_nempty) {
+      if (onwhat == Entity_kind::CELL)
+        std::cerr << "One or more target cells are not covered by " <<
+            "ANY source cells.\n" <<
+            " Will assign values based on their neighborhood\n";
+      else
+        std::cerr << "One or more target dual cells are not covered by " <<
+            "ANY source dual cells.\n" <<
+            " Will assign values based on their neighborhood\n";
+    }
+#endif
+    
+    if (nempty) {
+      layernum_.resize(ntargetents_, 0);
+
+      int nlayers = 0;
+      int ntagged = 0, old_ntagged = -1;
+      while (ntagged < nempty && ntagged > old_ntagged) {
+        old_ntagged = ntagged;
+
+        std::vector<int> curlayerents;
+
+        for (int ent : emptyents) {
+          if (layernum_[ent] != 0) continue;
+
+          std::vector<int> nbrs;
+          if (onwhat == Entity_kind::CELL)
+            target_mesh_.cell_get_node_adj_cells(ent, Entity_type::ALL, &nbrs);
+          else
+            target_mesh_.node_get_cell_adj_nodes(ent, Entity_type::ALL, &nbrs);
+          for (int nbr : nbrs) {
+            if ((onwhat == Entity_kind::CELL &&
+                 target_mesh_.cell_get_type(nbr) != Entity_type::PARALLEL_OWNED) ||
+                (onwhat == Entity_kind::NODE &&
+                 target_mesh_.node_get_type(nbr) != Entity_type::PARALLEL_OWNED))
+              continue;
+            if (!is_cell_empty_[nbr] || layernum_[nbr] != 0) {
+              // At least one neighbor has some material or will
+              // receive some material (indicated by having a +ve
+              // layer number)
+
+              curlayerents.push_back(ent);
+              break;
+            }
+          }
+        }  // for (ent in emptyents)
+
+        // Tag the current layer cells with the next layer number
+        for (int ent : curlayerents)
+          layernum_[ent] = nlayers+1;
+        ntagged += curlayerents.size();
+
+        emptylayers_.push_back(curlayerents);
+        nlayers++;
+      }
+    }  // if nempty
+
+    return computed_layers_=true;
+
+  } // compute_layers
 };  // MismatchFixer
 
 }  // namespace Portage
