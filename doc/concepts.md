@@ -569,6 +569,63 @@ violation. Furthermore, particle remap is not currently sensitive to
 multi-material data fields. 
 These difficulties will be addressed in future code releases. 
 
+## Coordinate Systems
+
+Portage provides the tools to remap in different coordinate systems.  Details
+are given in the coordinate_systems.pdf document.
+
+The coordinates used by Portage are based on ISO 80000-2:2009, and are shown
+here:<br>
+![physics coordinates](doxygen/images/coordinates.png)
+<br>This is a public domain image from Wikimedia Commons and can be found at
+[https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.](https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png)
+
+variable | meaning
+-------- | :------
+x        | the first Cartesian coordinate
+y        | the second Cartesian coordinate
+z        | the third Cartesian coordinate
+r        | the distance from the origin (spherical radius)
+&rho;    | the distance from the z axis (cylindrical radius)
+&phi;    | the azimuthal angle (around the z axis, starting at the positive x axis)
+&theta;  | the angle of declination (descending from the positive z axis)
+
+The available coordinate systems are
+
+* ```CartesianCoordinates<3>```: 3D Cartesian coordinates, (x,y,z); the "basic"
+  right-handed 3D coordinates;
+* ```CartesianCoordinates<2>```: 2D Cartesian coordinates, (x,y); the "basic"
+  2D coordinates;
+* ```CartesianCoordinates<1>```: 1D Cartesian coordinates, (x); the "basic" 1D
+  coordinates;
+* ```Cylindrical3DCoordinates```: 3D cylindrical coordinates, (&rho;, &phi;,
+  z);
+* ```CylindricalPolarCoordinates```: 2D cylindrical polar coordinates, (&rho;,
+  &phi;); the "usual" polar coordinates;
+* ```CylindricalAxisymmetricCoordinates```: 2D cylindrical axisymmetric
+  coordinates, (&rho;,z); implicitly a 3D coordinate system, where the plane of
+  the grid is rotated around the z axis (i.e., no variation with the azimuthal
+  angle &phi;);
+* ```CylindricalRadialCoordinates```: 1D cylindrical radial coordinates,
+  (&rho;); implicitly a 2D coordinate system, where quantities depend only on
+  their 2D distance from the origin &rho;, not on the azimuthal angle &phi;;
+* ```Spherical3DCoordinates```: 3D spherical coordinates, (r,&theta;,&phi;);
+* ```SphericalRadialCoordinates```: 1D spherical radial coordinates, (r);
+  implicitly a 3D coordinate system, where there is no variation with either
+  the azimuthal angle &phi; or declination angle &theta;, but only the 3D
+  distance from the origin r.
+
+Additional coordinate systems can be implemented, following the model of the
+existing coordinate systems.
+
+It is currently assumed that both the target and source meshes are using the
+same coordinate system.
+
+Not all components of Portage are available with non-Cartesian coordinate
+systems.  Look for a template for the coordinate system to be certain that a
+given component of Portage is designed to work with non-Cartesian coordinate
+systems.
+
 <br>
 
 [1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving
