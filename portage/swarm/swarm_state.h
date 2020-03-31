@@ -34,7 +34,7 @@ public:
    * @param swarm: the swarm with which the field data are associated.
    */
   explicit SwarmState(Swarm<dim> const& swarm)
-    : num_owned_points_(swarm.num_owned_particles())
+    : num_local_points_(swarm.num_owned_particles())
   {}
 
   /**
@@ -42,7 +42,7 @@ public:
    *
    * @param size: size of each field.
    */
-  explicit SwarmState(int size) : num_owned_points_(size) {}
+  explicit SwarmState(int size) : num_local_points_(size) {}
 
   /**
    * @brief Create the swarm state from a given mesh state wrapper.
@@ -68,7 +68,7 @@ public:
       }
     }
     // set number of particles
-    num_owned_points_ = num_entities;
+    num_local_points_ = num_entities;
 
     // copy data
     for (auto&& name : field_names) {
@@ -148,7 +148,7 @@ public:
       num_entities += sizes[0][i];
     }
 
-    num_owned_points_ = num_entities;
+    num_local_points_ = num_entities;
 
     // copy data
     for (auto&& name : names) {
@@ -179,7 +179,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_owned_points_);
+    assert(value.size() == num_local_points_);
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
@@ -205,7 +205,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_owned_points_);
+    assert(value.size() == num_local_points_);
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
@@ -235,12 +235,12 @@ public:
     // do a deep copy on related array
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
-      field.resize(num_owned_points_);
-      std::copy(value, value + num_owned_points_, field.begin());
+      field.resize(num_local_points_);
+      std::copy(value, value + num_local_points_, field.begin());
     } else {
       auto& field = fields_dbl_[name];
-      field.resize(num_owned_points_);
-      std::copy(value, value + num_owned_points_, field.begin());
+      field.resize(num_local_points_);
+      std::copy(value, value + num_local_points_, field.begin());
     }
   }
 
@@ -258,10 +258,10 @@ public:
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
-      field.resize(num_owned_points_, value);
+      field.resize(num_local_points_, value);
     } else {
       auto& field = fields_dbl_[name];
-      field.resize(num_owned_points_, value);
+      field.resize(num_local_points_, value);
     }
   }
 
@@ -334,7 +334,7 @@ public:
    *
    * @return the number of particles of the swarm.
    */
-  int get_size() { return num_owned_points_; }
+  int get_size() { return num_local_points_; }
 
   /**
    * @brief Retrieve the list of field names.
@@ -384,7 +384,7 @@ public:
 
  private:
   /** owned particles count */
-  int num_owned_points_ = 0;
+  int num_local_points_ = 0;
 
   /** data fields */
   std::map<std::string, Portage::vector<int>>    fields_int_ {};

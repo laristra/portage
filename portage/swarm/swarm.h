@@ -42,7 +42,7 @@ public:
    */
   explicit Swarm(Portage::vector<Wonton::Point<dim>> const& points)
     : points_(points),
-      num_owned_points_(points_.size())
+      num_local_points_(points_.size())
   {}
 
 #ifdef PORTAGE_ENABLE_THRUST
@@ -53,7 +53,7 @@ public:
    */
   explicit Swarm(std::vector<Wonton::Point<dim>> const& points)
     : points_(points),
-      num_owned_points_(points_.size())
+      num_local_points_(points_.size())
   {}
 #endif
 
@@ -104,14 +104,14 @@ public:
    *
    * @return number of owned particles.
    */
-  int num_owned_particles() const { return num_owned_points_; }
+  int num_owned_particles() const { return num_local_points_; }
 
   /**
    * @brief Get ghost particles count.
    *
    * @return number of ghost particles.
    */
-  int num_ghost_particles() const { return points_.size() - num_owned_points_; }
+  int num_ghost_particles() const { return points_.size() - num_local_points_; }
 
   /**
    * @brief Get particles count
@@ -179,7 +179,7 @@ private:
   Portage::vector<Wonton::Point<dim>> points_;
 
   /** the number of owned particles in the swarm */
-  size_t num_owned_points_;
+  int num_local_points_ = 0;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -194,7 +194,7 @@ inline Swarm<1>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
   // resize field
   points_.resize(num_particles);
-  num_owned_points_ = num_particles;
+  num_local_points_ = num_particles;
 
   // set the random engine and generator
   std::random_device device;
@@ -238,8 +238,8 @@ inline Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
   if (distribution == 0) {
     // resize field and update coordinates
-    num_owned_points_ = num_particles;
-    points_.resize(num_owned_points_);
+    num_local_points_ = num_particles;
+    points_.resize(num_local_points_);
 
     for (auto&& current : points_) {
       // point coordinates are not always initialized in order
@@ -253,8 +253,8 @@ inline Swarm<2>::Swarm(int num_particles, int distribution, unsigned user_seed,
   } else {
     // resize field
     int const num_per_dim = std::floor(std::sqrt(num_particles));
-    num_owned_points_ = num_per_dim * num_per_dim;
-    points_.resize(num_owned_points_);
+    num_local_points_ = num_per_dim * num_per_dim;
+    points_.resize(num_local_points_);
     double const hx = (x_max - x_min) / (num_per_dim - 1);
     double const hy = (y_max - y_min) / (num_per_dim - 1);
 
@@ -298,8 +298,8 @@ inline Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
 
   if (distribution == 0) {
     // resize field and update coordinates
-    num_owned_points_ = num_particles;
-    points_.resize(num_owned_points_);
+    num_local_points_ = num_particles;
+    points_.resize(num_local_points_);
 
     for (int i = 0; i < num_particles; i++) {
       // point coordinates are not always initialized in order
@@ -321,8 +321,8 @@ inline Swarm<3>::Swarm(int num_particles, int distribution, unsigned user_seed,
     auto const hz = (z_max - z_min) / (cubic_root - 1);
 
     // resize field
-    num_owned_points_ = num_per_dim * num_per_dim * num_per_dim;
-    points_.resize(num_owned_points_);
+    num_local_points_ = num_per_dim * num_per_dim * num_per_dim;
+    points_.resize(num_local_points_);
 
     // update coordinates
     int n = 0;
@@ -359,19 +359,19 @@ template<typename Mesh>
 Swarm<dim>::Swarm(Mesh const& mesh, Wonton::Entity_kind entity) {
   switch (entity) {
     case Wonton::NODE: {
-      num_owned_points_ = mesh.num_owned_nodes();
-      points_.resize(num_owned_points_);
+      num_local_points_ = mesh.num_owned_nodes();
+      points_.resize(num_local_points_);
       Wonton::Point<dim> coord;
-      for (int i = 0; i < num_owned_points_; ++i) {
+      for (int i = 0; i < num_local_points_; ++i) {
         mesh.node_get_coordinates(i, &coord);
         points_[i] = coord;
       }
     } break;
     case Wonton::CELL: {
-      num_owned_points_ = mesh.num_owned_cells();
-      points_.resize(num_owned_points_);
+      num_local_points_ = mesh.num_owned_cells();
+      points_.resize(num_local_points_);
       Wonton::Point<dim> centroid;
-      for (int i = 0; i < num_owned_points_; ++i) {
+      for (int i = 0; i < num_local_points_; ++i) {
         mesh.cell_centroid(i, &centroid);
         points_[i] = centroid;
       }
@@ -393,8 +393,8 @@ Swarm<dim>::Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity) 
     default: throw std::runtime_error("unsupported entity");
   }
 
-  num_owned_points_ = n;
-  points_.resize(num_owned_points_);
+  num_local_points_ = n;
+  points_.resize(num_local_points_);
 
   n = 0;
   switch (entity) {
