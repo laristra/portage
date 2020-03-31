@@ -27,7 +27,7 @@ namespace Portage { namespace Meshfree {
 /**
  * @class Swarm
  *
- * @brief Particle field class.
+ * @brief An effective "mesh" class for a collection disconnected points (particles).
  *
  * @tparam dim: the dimension of the problem.
  */
@@ -36,15 +36,9 @@ class Swarm {
 public:
 
   /**
-   * @brief A particle has a center point and smoothing lengths in each dimension.
-   * @param points center points of the particles
-   * @param extents the widths of the particle bounding boxes in each dimension
-   */
-
-  /**
    * @brief Create a particle field from a given list.
    *
-   * @param points
+   * @param points: the given list of points.
    */
   explicit Swarm(Portage::vector<Wonton::Point<dim>> const& points)
     : points_(points),
@@ -55,7 +49,7 @@ public:
   /**
    * @brief Create a particle field from a given list.
    *
-   * @param points
+   * @param points: the given list of points.
    */
   explicit Swarm(std::vector<Wonton::Point<dim>> const& points)
     : points_(points),
