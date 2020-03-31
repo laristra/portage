@@ -51,6 +51,18 @@ public:
       num_owned_points_(points_.size())
   {}
 
+#ifdef PORTAGE_ENABLE_THRUST
+  /**
+   * @brief Create a particle field from a given list.
+   *
+   * @param points
+   */
+  explicit Swarm(std::vector<Wonton::Point<dim>> const& points)
+    : points_(points),
+      num_owned_points_(points_.size())
+  {}
+#endif
+
   /**
    * @brief Generate a random or uniform particle field.
    *
