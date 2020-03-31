@@ -61,7 +61,7 @@ class Estimate {
     if (nsrc > 0) assert(derivative_ < sources_and_mults[0].weights.size());
 
     double result = 0.;
-    for (size_t i=0; i<nsrc; i++) {
+    for (int i = 0; i < nsrc; i++) {
       Weights_t const& wt = sources_and_mults[i];
       int p = wt.entityID;
       std::vector<double> const& shape_vec = wt.weights;
