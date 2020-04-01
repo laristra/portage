@@ -239,10 +239,17 @@ protected:
 
 TEST_F(IntersectSweptForward2D, MomentsCheck) {
 
+#ifdef HAVE_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
                           num_tols, ir);
+#else
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+#endif
 
   /* pick internal, boundary and corner source cells.
    *    .............
@@ -413,10 +420,17 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
 
 TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
+#ifdef HAVE_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
                           num_tols, ir);
+#else
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+#endif
 
   /* pick internal, boundary and corner source cells.
    *
@@ -599,10 +613,17 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
 TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
 
+#ifdef HAVE_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
                           num_tols, ir);
+#else
+  Intersector intersector(source_mesh_wrapper,
+                          source_state_wrapper,
+                          target_mesh_wrapper,
+                          num_tols);
+#endif
 
   /* pick internal, boundary and corner source cells.
    *
