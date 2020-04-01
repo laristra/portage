@@ -95,14 +95,14 @@ template<template<int, Portage::Entity_kind, class, class, class, class, class,
                   class, class, class> class T>
 class consistent_order{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type) {return false;}
+  static bool check(Portage::Meshfree::basis::Type type) {return false;}
 };
 
 template<>
 class consistent_order<Portage::Interpolate_1stOrder>{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type){
-    if (type == Portage::Meshfree::Basis::Linear) return true;
+  static bool check(Portage::Meshfree::basis::Type type){
+    if (type == Portage::Meshfree::basis::Linear) return true;
     else return false;
   }
 };
@@ -110,8 +110,8 @@ public:
 template<>
 class consistent_order<Portage::Interpolate_2ndOrder>{
 public:
-  static bool check(Portage::Meshfree::Basis::Type type){
-    if (type == Portage::Meshfree::Basis::Quadratic) return true;
+  static bool check(Portage::Meshfree::basis::Type type){
+    if (type == Portage::Meshfree::basis::Quadratic) return true;
     else return false;
   }
 };
@@ -204,16 +204,16 @@ public:
   {
     // process controls
     double smoothing_factor = controls_.smoothing_factor;
-    Portage::Meshfree::Basis::Type basis;
-    if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
-    if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
-    if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
+    Portage::Meshfree::basis::Type basis;
+    if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
+    if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
+    if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::Operator::Type oper8tor;
+    Portage::Meshfree::oper::Type oper8tor;
     if (controls_.oper8tor == "VolumeIntegral") {
-      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+      oper8tor = Portage::Meshfree::oper::VolumeIntegral;
     } else if (controls_.oper8tor == "none") {
-      oper8tor = Portage::Meshfree::Operator::LastOperator;
+      oper8tor = Portage::Meshfree::oper::LastOperator;
     } else {
       throw std::runtime_error("illegal operator specified");
     }
@@ -268,7 +268,7 @@ public:
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    Portage::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL,
                                               Portage::Entity_type::ALL);
@@ -280,7 +280,7 @@ public:
         std::vector<Portage::Point<Dimension>> cellverts;
         targetMesh->cell_get_coordinates(c, &cellverts);
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+        domains[c] = Portage::Meshfree::oper::domain_from_points<Dimension>(cellverts);
       }
     }
 
@@ -313,7 +313,7 @@ public:
                 controls_.geometry, controls_.kernel, controls_.center, 
                 controls_.pbp_field, controls_.pbp_tolerance);
     Portage::Meshfree::EstimateType estimate=Portage::Meshfree::LocalRegression;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
       estimate=Portage::Meshfree::OperatorRegression;
     msmdriver.set_remap_var_names(remap_fields, remap_fields,
                                   estimate, basis, oper8tor, domains, data);
@@ -418,7 +418,7 @@ public:
         } else {
           std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
         }
-        if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+        if (oper8tor != Portage::Meshfree::oper::VolumeIntegral) {
           std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
         } else {
           std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
@@ -428,7 +428,7 @@ public:
     }
     // accumulate integral
     totint = 0.;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral) {
       for (int c = 0; c < ntarcells; ++c) {
         totint += cellvecout2[c];
       }
@@ -447,7 +447,7 @@ public:
     }        
 
     std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
     if (controls_.print_detail == 1) {
@@ -528,14 +528,14 @@ protected:
   void runit()
   {
     // process controls
-    Portage::Meshfree::Basis::Type basis;
-    if (controls_.order == 0) basis = Portage::Meshfree::Basis::Unitary;
-    if (controls_.order == 1) basis = Portage::Meshfree::Basis::Linear;
-    if (controls_.order == 2) basis = Portage::Meshfree::Basis::Quadratic;
+    Portage::Meshfree::basis::Type basis;
+    if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
+    if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
+    if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::Operator::Type oper8tor;
+    Portage::Meshfree::oper::Type oper8tor;
     if (controls_.oper8tor == "VolumeIntegral") {
-      oper8tor = Portage::Meshfree::Operator::VolumeIntegral;
+      oper8tor = Portage::Meshfree::oper::VolumeIntegral;
     } else if (controls_.oper8tor != "none") {
       throw std::runtime_error("illegal operator specified");
     }
@@ -580,7 +580,7 @@ protected:
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::Operator::Domain> domains;
+    Portage::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMeshWrapper.num_owned_cells();
       domains.resize(numcells);
@@ -595,7 +595,7 @@ protected:
           targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
         }
         data[c] = cellverts;
-        domains[c] = Portage::Meshfree::Operator::domain_from_points<Dimension>(cellverts);
+        domains[c] = Portage::Meshfree::oper::domain_from_points<Dimension>(cellverts);
       }
     }
 
@@ -737,7 +737,7 @@ protected:
         } else {
           std::printf("cell-data %8d %19.13le %19.13le %19.13le ", c, ccen[0], ccen[1], ccen[2]);
         }
-        if (oper8tor != Portage::Meshfree::Operator::VolumeIntegral) {
+        if (oper8tor != Portage::Meshfree::oper::VolumeIntegral) {
           std::printf("%19.13le %19.13le %19.13le\n", value, cellvecout2[c], serror);
         } else {
           std::printf("%19.13le %19.13le\n", value, cellvecout2[c]);
@@ -747,14 +747,14 @@ protected:
     }
     // accumulate integral
     totint = 0.;
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral) {
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral) {
       for (int c = 0; c < ntarcells; ++c) {
         totint += cellvecout2[c];
       }
     }
 
     std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
-    if (oper8tor == Portage::Meshfree::Operator::VolumeIntegral)
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
     if (controls_.print_detail == 1) {
@@ -800,7 +800,7 @@ protected:
   {}
 };
 
-void usage() {
+void print_usage() {
   std::cout << "Usage: msmapp file [-domm | -nomm]" << std::endl;
   std::cout << "\
     Uses specifications in \"file\" to perform a mesh-mesh and also a mesh-swarm-mesh remap and compare.\n\
@@ -947,7 +947,7 @@ void runjob3(Controls<3> ctl0, std::string filename)
 
 int main(int argc, char** argv) {
   if (argc < 2) {
-    usage();
+    print_usage();
     return 0;
   }
 

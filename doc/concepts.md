@@ -49,7 +49,7 @@ directly used to deploy a powerful remapping capability into an
 application. In particular, the following drivers are provided:
 
 - Portage::MMDriver - for single- and multi-material mesh-mesh remap.
-- Portage::Meshfree::SwarmDriver - for particle-particle remap.
+- Portage::swarm::SwarmDriver - for particle-particle remap.
 - Portage::MSM_Driver - for mesh-mesh remap with particles as an
   intermediary.
 
@@ -400,13 +400,13 @@ phase:
 <br>
 
 <a name="meshfree remap"></a>
-## Particle or Meshfree Remapping
+## Particle or swarm Remapping
 
 Portage can estimate functions and derivatives between particle swarms (groups of
 particles) employing  algorithmic devices similar to those of mesh-mesh remap. 
 We say "estimate" instead of "interpolate" because in general, meshfree 
 function estimates pass *near* the data, and not *through* it. 
-Meshfree remap is performed in the following steps that echo
+swarm remap is performed in the following steps that echo
 those of mesh-mesh remapping:
 
 * **search** - find candidate source particles that will contribute to
@@ -534,7 +534,7 @@ and are summed there.</td>
 
 The only available meshfree method for accumulate is:
 
-- Portage::Meshfree::Accumulate - any-d accumulator that works with
+- Portage::swarm::Accumulate - any-d accumulator that works with
   various weight function shapes, kernel functions, basis functions and estimator models.
 
 Developers may write their own Accumulate class.
@@ -552,7 +552,7 @@ derivative.
 
 The sole available Estimate method is:
 
-- Portage::Meshfree::Estimate - use the output of Portage::Accumulate
+- Portage::swarm::Estimate - use the output of Portage::Accumulate
   to estimate the target field data with varying degrees of accuracy.
 
 but developers are free to substitute a different one.

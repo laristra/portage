@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 
 #include "gtest/gtest.h"
+
 #ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
@@ -34,165 +35,137 @@ Please see the license file at the root of this repository, or at:
 
 namespace {
 
-  double TOL = 1e-12;
+double TOL = 1e-12;
 
-  TEST(PartByParticle, 2D) {
-    const size_t NCELLS = 4;
-    std::shared_ptr<Wonton::Simple_Mesh> smesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., NCELLS, NCELLS);
-    Wonton::Simple_Mesh &smesh = *smesh_ptr;
-    Wonton::Simple_Mesh_Wrapper smwrapper(smesh);
-    Portage::vector<std::vector<std::vector<double>>> smoothing;
-    Portage::vector<Wonton::Point<2>> extents;
+/**
+ * @brief Compute field value based on point coordinates.
+ *
+ * @tparam dim: spatial dimension.
+ * @param p: current point coordinates.
+ * @return related field value.
+ */
+template<int dim>
+double exact_value(Wonton::Point<dim> const& p) {
+  switch (dim) {
+    case 2: return (p[0] < 0. and p[1] < 0.) or (p[0] > 0. and p[1] > 0.) ? 2.0 : 1.0;
+    case 3: return (p[0] < 0. and p[1] < 0. and p[2] < 0.)
+                or (p[0] > 0. and p[1] > 0. and p[2] > 0.) ? 2.0 : 1.0;
+    default: return 0.0;
+  }
+}
 
-    size_t nsource = smesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    assert(nsource == NCELLS*NCELLS);
-    std::vector<double> values(nsource, 1.0);
-    for (int i=0; i<nsource; i++) {
-      Wonton::Point<2> pnt;
-      smwrapper.cell_centroid(i, &pnt);
-      if      (pnt[0]<0. and pnt[1]<0.) values[i] = 2.;
-      else if (pnt[0]>0. and pnt[1]>0.) values[i] = 2.;
-    }
-    Wonton::Simple_State sstate(smesh_ptr); 
-    double *valptr = values.data();
-    std::vector<double> &sadded = sstate.add("indicate", Wonton::CELL, valptr);
-    Wonton::Simple_State_Wrapper sswrapper(sstate);
 
-    std::shared_ptr<Wonton::Simple_Mesh> tmesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., 2*NCELLS+2, 2*NCELLS+2);
-    Wonton::Simple_Mesh &tmesh = *tmesh_ptr;
-    Wonton::Simple_Mesh_Wrapper tmwrapper(tmesh);
+TEST(PartByParticle, 2D) {
 
-    Wonton::Simple_State tstate(tmesh_ptr); 
-    Wonton::Simple_State_Wrapper tswrapper(tstate);
+  using namespace Portage::Meshfree;
 
-    size_t ntarget = tmesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    std::vector<double> tvalues(ntarget);
-    double *tvalues_ptr=tvalues.data();
-    const double** tvpp=const_cast<const double**>(&tvalues_ptr);
-    tswrapper.mesh_add_data(Wonton::CELL, "indicate", tvpp);
+  int const ncells = 4;
 
-    using MSM_Driver_Type =
-    Portage::MSM_Driver<
-      Portage::SearchPointsByCells,
-      Portage::Meshfree::Accumulate,
-      Portage::Meshfree::Estimate,
-      2,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper
-      >;
+  Wonton::Simple_Mesh source_mesh(-1., -1., 1., 1., ncells, ncells);
+  Wonton::Simple_Mesh target_mesh(-1., -1., 1., 1., 2 * ncells + 2, 2 * ncells + 2);
+  Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
+  Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
-    MSM_Driver_Type *msmdriver_ptr;
+  int const nb_source = source_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  int const nb_target = target_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  assert(nb_source == ncells * ncells);
 
-    msmdriver_ptr = new MSM_Driver_Type
-      (smwrapper, sswrapper,
-       tmwrapper, tswrapper,
-       1.0, 
-       1.0, 
-       Portage::Meshfree::Weight::FACETED, 
-       Portage::Meshfree::Weight::POLYRAMP, 
-       Portage::Meshfree::Scatter, 
-       std::string("indicate"), 
-       0.25);
+  double source_values[nb_source];
+  double target_values[nb_target];
 
-    MSM_Driver_Type &msmdriver(*msmdriver_ptr);
-
-    msmdriver.set_remap_var_names({"indicate"}, {"indicate"});
-
-    msmdriver.run();
-
-    double *trvalues;
-    tswrapper.mesh_get_data(Wonton::CELL, "indicate", &trvalues);
-
-    for (int i=0; i<ntarget; i++) {
-      Wonton::Point<2> pnt;
-      tmwrapper.cell_centroid(i, &pnt);
-      double value=1.0;
-      if      (pnt[0]<0. and pnt[1]<0.) value = 2.;
-      else if (pnt[0]>0. and pnt[1]>0.) value = 2.;
-      ASSERT_NEAR(value, trvalues[i], TOL);
-    }
+  // set source field values
+  for (int i = 0; i < nb_source; i++) {
+    Wonton::Point<2> p;
+    source_mesh_wrapper.cell_centroid(i, &p);
+    source_values[i] = exact_value<2>(p);
   }
 
-  TEST(PartByParticle, 3D) {
-    const size_t NCELLS = 4;
-    std::shared_ptr<Wonton::Simple_Mesh> smesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., -1., 1., 1., 1., NCELLS, NCELLS, NCELLS);
-    Wonton::Simple_Mesh &smesh = *smesh_ptr;
-    Wonton::Simple_Mesh_Wrapper smwrapper(smesh);
-    Portage::vector<std::vector<std::vector<double>>> smoothing;
-    Portage::vector<Wonton::Point<3>> extents;
+  Wonton::Simple_State source_state(std::make_shared<Wonton::Simple_Mesh>(source_mesh));
+  Wonton::Simple_State target_state(std::make_shared<Wonton::Simple_Mesh>(target_mesh));
+  Wonton::Simple_State_Wrapper source_state_wrapper(source_state);
+  Wonton::Simple_State_Wrapper target_state_wrapper(target_state);
+  source_state.add("indicate", Wonton::CELL, source_values);
+  target_state.add("indicate", Wonton::CELL, target_values);
 
-    size_t nsource = smesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    assert(nsource == NCELLS*NCELLS*NCELLS);
-    std::vector<double> values(nsource, 1.0);
-    for (int i=0; i<nsource; i++) {
-      Wonton::Point<3> pnt;
-      smwrapper.cell_centroid(i, &pnt);
-      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) values[i] = 2.;
-      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) values[i] = 2.;
-    }
-    Wonton::Simple_State sstate(smesh_ptr); 
-    double *valptr = values.data();
-    std::vector<double> &sadded = sstate.add("indicate", Wonton::CELL, valptr);
-    Wonton::Simple_State_Wrapper sswrapper(sstate);
+  using Remapper = Portage::MSM_Driver<Portage::SearchPointsByCells,
+                                       Accumulate, Estimate, 2,
+                                       Wonton::Simple_Mesh_Wrapper,
+                                       Wonton::Simple_State_Wrapper>;
 
-    std::shared_ptr<Wonton::Simple_Mesh> tmesh_ptr = 
-      std::make_shared<Wonton::Simple_Mesh>(-1., -1., -1., 1., 1., 1., 2*NCELLS+2, 2*NCELLS+2, 2*NCELLS+2);
-    Wonton::Simple_Mesh &tmesh = *tmesh_ptr;
-    Wonton::Simple_Mesh_Wrapper tmwrapper(tmesh);
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper,
+                    1.0, 1.0, Weight::FACETED, Weight::POLYRAMP,
+                    Scatter, "indicate", 0.25);
 
-    Wonton::Simple_State tstate(tmesh_ptr); 
-    Wonton::Simple_State_Wrapper tswrapper(tstate);
+  remapper.set_remap_var_names({"indicate"}, {"indicate"});
+  remapper.run();
 
-    size_t ntarget = tmesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-    std::vector<double> tvalues(ntarget);
-    double *tvalues_ptr=tvalues.data();
-    const double** tvpp=const_cast<const double**>(&tvalues_ptr);
-    tswrapper.mesh_add_data(Wonton::CELL, "indicate", tvpp);
+  double* remapped;
+  target_state_wrapper.mesh_get_data(Wonton::CELL, "indicate", &remapped);
 
-    using MSM_Driver_Type =
-    Portage::MSM_Driver<
-      Portage::SearchPointsByCells,
-      Portage::Meshfree::Accumulate,
-      Portage::Meshfree::Estimate,
-      3,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper
-      >;
+  for (int i = 0; i < nb_target; i++) {
+    Wonton::Point<2> p;
+    target_mesh_wrapper.cell_centroid(i, &p);
+    double expected = exact_value<2>(p);
+    ASSERT_NEAR(expected, remapped[i], TOL);
+  }
+}
 
-    MSM_Driver_Type *msmdriver_ptr;
 
-    msmdriver_ptr = new MSM_Driver_Type
-      (smwrapper, sswrapper,
-       tmwrapper, tswrapper,
-       1.0, 
-       1.0, 
-       Portage::Meshfree::Weight::FACETED, 
-       Portage::Meshfree::Weight::POLYRAMP, 
-       Portage::Meshfree::Scatter, 
-       std::string("indicate"), 
-       0.25);
+TEST(PartByParticle, 3D) {
 
-    MSM_Driver_Type &msmdriver(*msmdriver_ptr);
+  using namespace Portage::Meshfree;
 
-    msmdriver.set_remap_var_names({"indicate"}, {"indicate"});
+  int const ncells = 4;
 
-    msmdriver.run();
+  Wonton::Simple_Mesh source_mesh(-1., -1., -1., 1., 1., 1., ncells, ncells, ncells);
+  Wonton::Simple_Mesh target_mesh(-1., -1., -1., 1., 1., 1., 2 * ncells + 2, 2 * ncells + 2, 2 * ncells + 2);
+  Wonton::Simple_Mesh_Wrapper source_mesh_wrapper(source_mesh);
+  Wonton::Simple_Mesh_Wrapper target_mesh_wrapper(target_mesh);
 
-    double *trvalues;
-    tswrapper.mesh_get_data(Wonton::CELL, "indicate", &trvalues);
+  int const nb_source = source_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  int const nb_target = target_mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  assert(nb_source == ncells * ncells * ncells);
 
-    for (int i=0; i<ntarget; i++) {
-      Wonton::Point<3> pnt;
-      tmwrapper.cell_centroid(i, &pnt);
-      double value=1.0;
-      if      (pnt[0]<0. and pnt[1]<0. and pnt[2]<0.) value = 2.;
-      else if (pnt[0]>0. and pnt[1]>0. and pnt[2]>0.) value = 2.;
-      ASSERT_NEAR(value, trvalues[i], TOL);
-    }
+  double source_values[nb_source];
+  double target_values[nb_target];
+
+  // set source field values
+  for (int i = 0; i < nb_source; i++) {
+    Wonton::Point<3> p;
+    source_mesh_wrapper.cell_centroid(i, &p);
+    source_values[i] = exact_value<3>(p);
   }
 
+  Wonton::Simple_State source_state(std::make_shared<Wonton::Simple_Mesh>(source_mesh));
+  Wonton::Simple_State target_state(std::make_shared<Wonton::Simple_Mesh>(target_mesh));
+  Wonton::Simple_State_Wrapper source_state_wrapper(source_state);
+  Wonton::Simple_State_Wrapper target_state_wrapper(target_state);
+  source_state.add("indicate", Wonton::CELL, source_values);
+  target_state.add("indicate", Wonton::CELL, target_values);
+
+  using Remapper = Portage::MSM_Driver<Portage::SearchPointsByCells,
+                                       Accumulate, Estimate, 3,
+                                       Wonton::Simple_Mesh_Wrapper,
+                                       Wonton::Simple_State_Wrapper>;
+
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper,
+                    1.0, 1.0, Weight::FACETED, Weight::POLYRAMP,
+                    Scatter, "indicate", 0.25);
+
+  remapper.set_remap_var_names({"indicate"}, {"indicate"});
+  remapper.run();
+
+  double* remapped;
+  target_state_wrapper.mesh_get_data(Wonton::CELL, "indicate", &remapped);
+
+  for (int i = 0; i < nb_target; i++) {
+    Wonton::Point<3> p;
+    target_mesh_wrapper.cell_centroid(i, &p);
+    double expected = exact_value<3>(p);
+    ASSERT_NEAR(expected, remapped[i], TOL);
+  }
+}
 
 }  // namespace

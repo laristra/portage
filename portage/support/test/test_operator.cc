@@ -4,402 +4,395 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
-#include <vector>
-#include <cmath>
+#include "portage/support/operator_references.h"
 
-#include "gtest/gtest.h"
+using namespace Portage::Meshfree::oper;
+using namespace Portage::Meshfree::basis;
+using namespace Portage::Meshfree::reference;
 
-#include "portage/support/portage.h"
-#include "portage/support/operator.h"
-#include "portage/support/test_operator_data.h"
-#include "wonton/support/Point.h"
+class OperatorTest : public testing::Test {
+protected:
+  OperatorTest() {
+    interval_      = points<Interval>();
+    quadrilateral_ = points<Quadrilateral>();
+    triangle_      = points<Triangle>();
+    hexahedron_    = points<Hexahedron>();
+    wedge_         = points<Wedge>();
+    tetrahedron_   = points<Tetrahedron>();
+  }
 
-using Wonton::Point;
-
-using Portage::Meshfree::Basis::Unitary;
-using Portage::Meshfree::Basis::Linear;
-using Portage::Meshfree::Basis::Quadratic;
-
-using Portage::Meshfree::Operator::Operator;
-using Portage::Meshfree::Operator::VolumeIntegral;
-using Portage::Meshfree::Operator::Interval;
-using Portage::Meshfree::Operator::Quadrilateral;
-using Portage::Meshfree::Operator::Triangle;
-using Portage::Meshfree::Operator::Hexahedron;
-using Portage::Meshfree::Operator::Wedge;
-using Portage::Meshfree::Operator::Tetrahedron;
-
-using Portage::Meshfree::Operator::size_info;
-
-using std::vector;
+  std::vector<Point<1>> interval_;
+  std::vector<Point<2>> quadrilateral_;
+  std::vector<Point<2>> triangle_;
+  std::vector<Point<3>> hexahedron_;
+  std::vector<Point<3>> wedge_;
+  std::vector<Point<3>> tetrahedron_;
+};
 
 // Basic tests on unit interval, square, cube, wedge, tet
-
-TEST(VolumeIntegral, UnitaryIntervalBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Interval>>(interval_points_, result, false);
+TEST_F(OperatorTest, UnitaryIntervalBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Interval>>(interval_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryInterval[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_interval[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearIntervalBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Interval>>(interval_points_, result, false);
+TEST_F(OperatorTest, LinearIntervalBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Interval>>(interval_, false);
   ASSERT_EQ(result.size(), 2);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearInterval[i], 1.e-12);
-  ASSERT_NEAR(result[1][0], exactLinearInterval[1], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_interval[i], 1.e-12);
+  ASSERT_NEAR(result[1][0], linear_interval[1], 1.e-12);
 }
 
-TEST(VolumeIntegral, QuadraticIntervalBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Interval>>(interval_points_, result, false);
+TEST_F(OperatorTest, QuadraticIntervalBasic) {
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Interval>>(interval_, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticInterval[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], quadratic_interval[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryQuadrilateralBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Quadrilateral>>(quadrilateral_points_, result, false);
+TEST_F(OperatorTest, UnitaryQuadrilateralBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Quadrilateral>>(quadrilateral_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryQuadrilateral[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_quadrilateral[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearQuadrilateralBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Quadrilateral>>(quadrilateral_points_, result, false);
+TEST_F(OperatorTest, LinearQuadrilateralBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Quadrilateral>>(quadrilateral_, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearQuadrilateral[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_quadrilateral[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, QuadraticQuadrilateralBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Quadrilateral>>(quadrilateral_points_, result, false);
+TEST_F(OperatorTest, QuadraticQuadrilateralBasic) {
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Quadrilateral>>(quadrilateral_, false);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticQuadrilateral[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], quadratic_quadrilateral[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryTriangleBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Triangle>>(triangle_points_, result, false);
+TEST_F(OperatorTest, UnitaryTriangleBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Triangle>>(triangle_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryTriangle[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_triangle[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearTriangleBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Triangle>>(triangle_points_, result, false);
+TEST_F(OperatorTest, LinearTriangleBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Triangle>>(triangle_, false);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearTriangle[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_triangle[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, QuadraticTriangleBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Triangle>>(triangle_points_, result, false);
+TEST_F(OperatorTest, QuadraticTriangleBasic) {
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Triangle>>(triangle_, false);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticTriangle[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], quadratic_triangle[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryHexahedronBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Hexahedron>>(hexahedron_points_, result, false);
+TEST_F(OperatorTest, UnitaryHexahedronBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Hexahedron>>(hexahedron_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryHexahedron[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_hexahedron[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearHexahedronBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Hexahedron>>(hexahedron_points_, result, false);
+TEST_F(OperatorTest, LinearHexahedronBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Hexahedron>>(hexahedron_, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearHexahedron[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_hexahedron[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryWedgeBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Wedge>>(wedge_points_, result, false);
+TEST_F(OperatorTest, UnitaryWedgeBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Wedge>>(wedge_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryWedge[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_wedge[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearWedgeBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Wedge>>(wedge_points_, result, false);
+TEST_F(OperatorTest, LinearWedgeBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Wedge>>(wedge_, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearWedge[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_wedge[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryTetrahedronBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(tetrahedron_points_, result, false);
+TEST_F(OperatorTest, UnitaryTetrahedronBasic) {
+  auto result = get_result<OP<VolumeIntegral, Unitary, Tetrahedron>>(tetrahedron_, false);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactUnitaryTetrahedron[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], unitary_tetrahedron[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, LinearTetrahedronBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Tetrahedron>>(tetrahedron_points_, result, false);
+TEST_F(OperatorTest, LinearTetrahedronBasic) {
+  auto result = get_result<OP<VolumeIntegral, Linear, Tetrahedron>>(tetrahedron_, false);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactLinearTetrahedron[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], linear_tetrahedron[i], 1.e-12);
 }
 
-TEST(VolumeIntegral, QuadraticTetrahedronBasic) {
-  vector<vector<double>> result;
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Tetrahedron>>(tetrahedron_points_, result, false);
+TEST_F(OperatorTest, QuadraticTetrahedronBasic) {
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Tetrahedron>>(tetrahedron_, false);
   ASSERT_EQ(result.size(), 10);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<result.size(); i++) ASSERT_NEAR(result[i][0], exactQuadraticTetrahedron[i], 1.e-12);
+  for (int i = 0; i < result.size(); i++)
+    ASSERT_NEAR(result[i][0], quadratic_tetrahedron[i], 1.e-12);
 }
 
 // Test transfactor operation on unit interval, square, cube, wedge, tet
 
-TEST(VolumeIntegral, UnitaryIntervalTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<1>(interval_points_, shift1d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Interval>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,1>(exactUnitaryInterval, shift1d);
+TEST_F(OperatorTest, UnitaryIntervalTF) {
+  auto points = shift_points<1>(interval_, shift1d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Interval>>(points);
+  auto tex = make_translated_exact<Unitary, 1>(unitary_interval, shift1d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearIntervalTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<1>(interval_points_, shift1d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Interval>>(points, result);
-  auto tex = makeTranslatedExact<Linear,1>(exactLinearInterval, shift1d);
+TEST_F(OperatorTest, LinearIntervalTF) {
+  auto points = shift_points<1>(interval_, shift1d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Interval>>(points);
+  auto tex = make_translated_exact<Linear, 1>(linear_interval, shift1d);
   ASSERT_EQ(result.size(), 2);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, QuadraticIntervalTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<1>(interval_points_, shift1d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Interval>>(points, result);
-  auto tex = makeTranslatedExact<Quadratic,1>(exactQuadraticInterval, shift1d);
+TEST_F(OperatorTest, QuadraticIntervalTF) {
+  auto points = shift_points<1>(interval_, shift1d);
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Interval>>(points);
+  auto tex = make_translated_exact<Quadratic, 1>(quadratic_interval, shift1d);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryQuadrilateralTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(quadrilateral_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Quadrilateral>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,2>(exactUnitaryQuadrilateral, shift2d);
+TEST_F(OperatorTest, UnitaryQuadrilateralTF) {
+  auto points = shift_points<2>(quadrilateral_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Quadrilateral>>(points);
+  auto tex = make_translated_exact<Unitary, 2>(unitary_quadrilateral, shift2d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearQuadrilateralTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(quadrilateral_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Quadrilateral>>(points, result);
-  auto tex = makeTranslatedExact<Linear,2>(exactLinearQuadrilateral, shift2d);
+TEST_F(OperatorTest, LinearQuadrilateralTF) {
+  auto points = shift_points<2>(quadrilateral_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Quadrilateral>>(points);
+  auto tex = make_translated_exact<Linear, 2>(linear_quadrilateral, shift2d);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, QuadraticQuadrilateralTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(quadrilateral_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Quadrilateral>>(points, result);
-  auto tex = makeTranslatedExact<Quadratic,2>(exactQuadraticQuadrilateral, shift2d);
+TEST_F(OperatorTest, QuadraticQuadrilateralTF) {
+  auto points = shift_points<2>(quadrilateral_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Quadrilateral>>(points);
+  auto tex = make_translated_exact<Quadratic, 2>(quadratic_quadrilateral, shift2d);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryTriangleTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(triangle_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Triangle>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,2>(exactUnitaryTriangle, shift2d);
+TEST_F(OperatorTest, UnitaryTriangleTF) {
+  auto points = shift_points<2>(triangle_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Triangle>>(points);
+  auto tex = make_translated_exact<Unitary, 2>(unitary_triangle, shift2d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearTriangleTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(triangle_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Triangle>>(points, result);
-  auto tex = makeTranslatedExact<Linear,2>(exactLinearTriangle, shift2d);
+TEST_F(OperatorTest, LinearTriangleTF) {
+  auto points = shift_points<2>(triangle_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Triangle>>(points);
+  auto tex = make_translated_exact<Linear, 2>(linear_triangle, shift2d);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, QuadraticTriangleTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<2>(triangle_points_, shift2d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Triangle>>(points, result);
-  auto tex = makeTranslatedExact<Quadratic,2>(exactQuadraticTriangle, shift2d);
+TEST_F(OperatorTest, QuadraticTriangleTF) {
+  auto points = shift_points<2>(triangle_, shift2d);
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Triangle>>(points);
+  auto tex = make_translated_exact<Quadratic, 2>(quadratic_triangle, shift2d);
   ASSERT_EQ(result.size(), 6);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryHexahedronTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(hexahedron_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Hexahedron>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,3>(exactUnitaryHexahedron, shift3d);
+TEST_F(OperatorTest, UnitaryHexahedronTF) {
+  auto points = shift_points<3>(hexahedron_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Hexahedron>>(points);
+  auto tex = make_translated_exact<Unitary, 3>(unitary_hexahedron, shift3d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearHexahedronTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(hexahedron_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Hexahedron>>(points, result);
-  auto tex = makeTranslatedExact<Linear,3>(exactLinearHexahedron, shift3d);
+TEST_F(OperatorTest, LinearHexahedronTF) {
+  auto points = shift_points<3>(hexahedron_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Hexahedron>>(points);
+  auto tex = make_translated_exact<Linear, 3>(linear_hexahedron, shift3d);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryWedgeTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(wedge_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Wedge>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,3>(exactUnitaryWedge, shift3d);
+TEST_F(OperatorTest, UnitaryWedgeTF) {
+  auto points = shift_points<3>(wedge_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Wedge>>(points);
+  auto tex = make_translated_exact<Unitary, 3>(unitary_wedge, shift3d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearWedgeTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(wedge_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Wedge>>(points, result);
-  auto tex = makeTranslatedExact<Linear,3>(exactLinearWedge, shift3d);
+TEST_F(OperatorTest, LinearWedgeTF) {
+  auto points = shift_points<3>(wedge_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Wedge>>(points);
+  auto tex = make_translated_exact<Linear, 3>(linear_wedge, shift3d);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryTetrahedronTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(tetrahedron_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(points, result);
-  auto tex = makeTranslatedExact<Unitary,3>(exactUnitaryTetrahedron, shift3d);
+TEST_F(OperatorTest, UnitaryTetrahedronTF) {
+  auto points = shift_points<3>(tetrahedron_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Tetrahedron>>(points);
+  auto tex = make_translated_exact<Unitary, 3>(unitary_tetrahedron, shift3d);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, LinearTetrahedronTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(tetrahedron_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Linear, Tetrahedron>>(points, result);
-  auto tex = makeTranslatedExact<Linear,3>(exactLinearTetrahedron, shift3d);
+TEST_F(OperatorTest, LinearTetrahedronTF) {
+  auto points = shift_points<3>(tetrahedron_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Linear, Tetrahedron>>(points);
+  auto tex = make_translated_exact<Linear, 3>(linear_tetrahedron, shift3d);
   ASSERT_EQ(result.size(), 4);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, QuadraticTetrahedronTF) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(tetrahedron_points_, shift3d);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Quadratic, Tetrahedron>>(points, result);
-  auto tex = makeTranslatedExact<Quadratic,3>(exactQuadraticTetrahedron, shift3d);
+TEST_F(OperatorTest, QuadraticTetrahedronTF) {
+  auto points = shift_points<3>(tetrahedron_, shift3d);
+  auto result = get_result<OP<VolumeIntegral, Quadratic, Tetrahedron>>(points);
+  auto tex = make_translated_exact<Quadratic, 3>(quadratic_tetrahedron, shift3d);
   ASSERT_EQ(result.size(), 10);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
 // Test correctness of volume integrals under rotations and stretches
 
-TEST(VolumeIntegral, UnitaryQuadrilateralDeform) {
-  vector<vector<double>> result;
-  auto points = deform_points<2>(quadrilateral_points_, matrix2);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Quadrilateral>>(points, result);
-  ASSERT_NEAR(result[0][0], exactUnitaryQuadrilateral[0]*determinant2, 1.e-12);
+TEST_F(OperatorTest, UnitaryQuadrilateralDeform) {
+  auto points = deform_points<2>(quadrilateral_, matrix2);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Quadrilateral>>(points);
+  ASSERT_NEAR(result[0][0], unitary_quadrilateral[0] * determinant2, 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryTriangleDeform) {
-  vector<vector<double>> result;
-  auto points = deform_points<2>(triangle_points_, matrix2);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Triangle>>(points, result);
-  ASSERT_NEAR(result[0][0], exactUnitaryTriangle[0]*determinant2, 1.e-12);
+TEST_F(OperatorTest, UnitaryTriangleDeform) {
+  auto points = deform_points<2>(triangle_, matrix2);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Triangle>>(points);
+  ASSERT_NEAR(result[0][0], unitary_triangle[0] * determinant2, 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryHexahedronDeform) {
-  vector<vector<double>> result;
-  auto points = deform_points<3>(hexahedron_points_, matrix3);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Hexahedron>>(points, result);
-  ASSERT_NEAR(result[0][0], exactUnitaryHexahedron[0]*determinant3, 1.e-12);
+TEST_F(OperatorTest, UnitaryHexahedronDeform) {
+  auto points = deform_points<3>(hexahedron_, matrix3);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Hexahedron>>(points);
+  ASSERT_NEAR(result[0][0], unitary_hexahedron[0] * determinant3, 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryWedgeDeform) {
-  vector<vector<double>> result;
-  auto points = deform_points<3>(wedge_points_, matrix3);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Wedge>>(points, result);
-  ASSERT_NEAR(result[0][0], exactUnitaryWedge[0]*determinant3, 1.e-12);
+TEST_F(OperatorTest, UnitaryWedgeDeform) {
+  auto points = deform_points<3>(wedge_, matrix3);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Wedge>>(points);
+  ASSERT_NEAR(result[0][0], unitary_wedge[0] * determinant3, 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryTetrahedronDeform) {
-  vector<vector<double>> result;
-  auto points = deform_points<3>(tetrahedron_points_, matrix3);
-  Portage::Meshfree::Operator::get_result<Operator<VolumeIntegral, Unitary, Tetrahedron>>(points, result);
-  ASSERT_NEAR(result[0][0], exactUnitaryTetrahedron[0]*determinant3, 1.e-12);
+TEST_F(OperatorTest, UnitaryTetrahedronDeform) {
+  auto points = deform_points<3>(tetrahedron_, matrix3);
+  auto result = get_result<OP<VolumeIntegral, Unitary, Tetrahedron>>(points);
+  ASSERT_NEAR(result[0][0], unitary_tetrahedron[0] * determinant3, 1.e-12);
 }
 
 // Test dynamic interface.
 
-TEST(VolumeIntegral, QuadraticIntervalTFDynamic) {
-  vector<vector<double>> result;
-  auto points = shift_points<1>(interval_points_, shift1d);
-  Portage::Meshfree::Operator::apply<1>(VolumeIntegral, Quadratic, Interval, points, result);
-  auto tex = makeTranslatedExact<Quadratic,1>(exactQuadraticInterval, shift1d);
+TEST_F(OperatorTest, QuadraticIntervalTFDynamic) {
+  std::vector<std::vector<double>> result;
+  auto points = shift_points<1>(interval_, shift1d);
+  apply<1>(VolumeIntegral, Quadratic, Interval, points, result);
+  auto tex = make_translated_exact<Quadratic, 1>(quadratic_interval, shift1d);
   ASSERT_EQ(result.size(), 3);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }
 
-TEST(VolumeIntegral, UnitaryQuadrilateralDeformDynamic) {
-  vector<vector<double>> result;
-  auto points = deform_points<2>(quadrilateral_points_, matrix2);
-  Portage::Meshfree::Operator::apply<2>(VolumeIntegral, Unitary, Quadrilateral, points, result);
+TEST_F(OperatorTest, UnitaryQuadrilateralDeformDynamic) {
+  std::vector<std::vector<double>> result;
+  auto points = deform_points<2>(quadrilateral_, matrix2);
+  apply<2>(VolumeIntegral, Unitary, Quadrilateral, points, result);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryQuadrilateral[0]*determinant2, 1.e-12);
+  ASSERT_NEAR(result[0][0], unitary_quadrilateral[0] * determinant2, 1.e-12);
 }
 
-TEST(VolumeIntegral, UnitaryHexahedronDeformDynamic) {
-  vector<vector<double>> result;
-  auto points = deform_points<3>(hexahedron_points_, matrix3);
-  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Unitary, Hexahedron, points, result);
+TEST_F(OperatorTest, UnitaryHexahedronDeformDynamic) {
+  std::vector<std::vector<double>> result;
+  auto points = deform_points<3>(hexahedron_, matrix3);
+  apply<3>(VolumeIntegral, Unitary, Hexahedron, points, result);
   ASSERT_EQ(result.size(), 1);
   ASSERT_EQ(result[0].size(), 1);
-  ASSERT_NEAR(result[0][0], exactUnitaryHexahedron[0]*determinant3, 1.e-12);
+  ASSERT_NEAR(result[0][0], unitary_hexahedron[0] * determinant3, 1.e-12);
 }
 
-TEST(VolumeIntegral, QuadraticTetrahedronTFDynamic) {
-  vector<vector<double>> result;
-  auto points = shift_points<3>(tetrahedron_points_, shift3d);
-  Portage::Meshfree::Operator::apply<3>(VolumeIntegral, Quadratic, Tetrahedron, points, result);
-  auto tex = makeTranslatedExact<Quadratic,3>(exactQuadraticTetrahedron, shift3d);
+TEST_F(OperatorTest, QuadraticTetrahedronTFDynamic) {
+  std::vector<std::vector<double>> result;
+  auto points = shift_points<3>(tetrahedron_, shift3d);
+  apply<3>(VolumeIntegral, Quadratic, Tetrahedron, points, result);
+  auto tex = make_translated_exact<Quadratic, 3>(quadratic_tetrahedron, shift3d);
   ASSERT_EQ(result.size(), 10);
   ASSERT_EQ(result[0].size(), 1);
-  for (int i=0; i<tex.size(); i++) ASSERT_NEAR(result[i][0], tex[i], 1.e-7*fabs(tex[i]));
+  for (int i = 0; i < tex.size(); i++)
+    ASSERT_NEAR(result[i][0], tex[i], 1.e-7 * fabs(tex[i]));
 }

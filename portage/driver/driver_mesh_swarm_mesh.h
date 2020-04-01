@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef SRC_DRIVER_MESH_SWARM_MESH_H_
 #define SRC_DRIVER_MESH_SWARM_MESH_H_
 
-#include <sys/time.h>
+//#include <sys/time.h>
 
 #include <algorithm>
 #include <vector>
@@ -19,22 +19,21 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
+// portage includes
+#include "portage/support/timer.h"
 #include "portage/support/portage.h"
-
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
 #include "portage/support/faceted_setup.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-//#include "portage/search/search_simple_points.h"
-//#include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/driver/driver_swarm.h"
 
 #ifdef PORTAGE_ENABLE_MPI
-#include "portage/distributed/mpi_bounding_boxes.h"
+  #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
 /*!
@@ -65,23 +64,22 @@ namespace Portage {
   manager implementation that provides certain functionality.
 */
 template <template <int, class, class> class Search,
-          template <size_t, class, class> class Accumulate,
-          template<size_t, class> class Estimate,
-          int Dim,
+          template<int, class, class> class Accumulate,
+          template<int, class> class Estimate,
+          int dim,
           class SourceMesh_Wrapper,
           class SourceState_Wrapper,
           class TargetMesh_Wrapper = SourceMesh_Wrapper,
           class TargetState_Wrapper = SourceState_Wrapper>
 class MSM_Driver {
-
- public:
+public:
   /*!
     @brief Constructor for running the interpolation driver.
-    @param[in] sourceMesh A @c SourceMesh_Wrapper to the source mesh.
-    @param[in] sourceState A @c SourceState_Wrapperfor the data that lives on the
+    @param[in] source_mesh A @c SourceMesh_Wrapper to the source mesh.
+    @param[in] source_state A @c SourceState_Wrapperfor the data that lives on the
     source mesh.
-    @param[in] targetMesh A @c TargetMesh_Wrapper to the target mesh.
-    @param[in,out] targetState A @c TargetState_Wrapper for the data that will
+    @param[in] target_mesh A @c TargetMesh_Wrapper to the target mesh.
+    @param[in,out] target_state A @c TargetState_Wrapper for the data that will
     be mapped to the target mesh.
     @param[in] smoothing_factor multiplies cell sizes to get smoothing lengths
     @param[in] boundary_factor with faceted weights only, multiplies center-to-face distance on boundary to get smoothing length
@@ -91,31 +89,33 @@ class MSM_Driver {
     @param[in] part_field name of field to use for part assignments, with faceted weights only
     @param[in] part_tolerance tolerance for determining if part assignment matches a neighbor's assignment
   */
-  MSM_Driver
-        (SourceMesh_Wrapper const& sourceMesh,
-         SourceState_Wrapper const& sourceState,
-         TargetMesh_Wrapper const& targetMesh,
-	 TargetState_Wrapper& targetState, 
-	 double smoothing_factor             = 1.25,
-	 double boundary_factor              = 0.5,
-	 Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
-         Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
-         Meshfree::WeightCenter     center   = Meshfree::Gather, 
-         std::string part_field = "NONE", 
-         double part_tolerance = std::numeric_limits<double>::infinity())
-      : source_mesh_(sourceMesh), source_state_(sourceState),
-        target_mesh_(targetMesh), target_state_(targetState),
+  MSM_Driver(SourceMesh_Wrapper const& source_mesh,
+             SourceState_Wrapper const& source_state,
+             TargetMesh_Wrapper const& target_mesh,
+             TargetState_Wrapper& target_state,
+             double smoothing_factor = 1.25,
+             double boundary_factor  = 0.5,
+             Meshfree::Weight::Geometry geometry = Meshfree::Weight::TENSOR,
+             Meshfree::Weight::Kernel   kernel   = Meshfree::Weight::B4,
+             Meshfree::WeightCenter     center   = Meshfree::Gather,
+             std::string part_field = "NONE",
+             double part_tolerance = std::numeric_limits<double>::infinity())
+
+      : source_mesh_(source_mesh),
+        source_state_(source_state),
+        target_mesh_(target_mesh),
+        target_state_(target_state),
         smoothing_factor_(smoothing_factor),
         boundary_factor_(boundary_factor),
         geometry_(geometry),
         kernel_(kernel),
         center_(center),
-        dim_(sourceMesh.space_dimension()),
+        dim_(source_mesh.space_dimension()),
         part_field_(part_field), 
-        part_tolerance_(part_tolerance)
-  {
-    assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
-    assert(sourceMesh.space_dimension() == Dim);
+        part_tolerance_(part_tolerance) {
+
+    assert(source_mesh.space_dimension() == target_mesh.space_dimension());
+    assert(source_mesh.space_dimension() == dim);
     if (geometry == Meshfree::Weight::FACETED) {
       assert(kernel == Meshfree::Weight::POLYRAMP);
     }
@@ -125,10 +125,10 @@ class MSM_Driver {
   MSM_Driver(const MSM_Driver &) = delete;
 
   /// Assignment operator (disabled)
-  MSM_Driver & operator = (const MSM_Driver &) = delete;
+  MSM_Driver& operator = (const MSM_Driver &) = delete;
 
   /// Destructor
-  ~MSM_Driver() {}
+  ~MSM_Driver() = default;
 
   /*!
     @brief Specify the names of the variables to be interpolated
@@ -136,16 +136,16 @@ class MSM_Driver {
     interpolate from the source mesh to the target mesh.  This variable must
     exist in both meshes' state manager
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
+  void set_remap_var_names(std::vector<std::string> const& remap_var_names) {
     // remap variable names same in source and target mesh
     set_remap_var_names(remap_var_names, remap_var_names);
   }
 
   /*!
     @brief Specify the names of the variables to be interpolated
-    @param[in] source_remap_var_names A list of the variables names of the
+    @param[in] source_vars A list of the variables names of the
     variables to interpolate from the source mesh.
-    @param[in] target_remap_var_names  A list of the variables names of the
+    @param[in] target_vars  A list of the variables names of the
     variables to interpolate to the target mesh.
     @param[in] estimator_type What type of estimator to apply in particle stage
     @param[in] basis_type what regression basis to use
@@ -154,30 +154,30 @@ class MSM_Driver {
     @param[in] operator_data node data for integral domains, if needed
   */
 
-  void set_remap_var_names(
-      std::vector<std::string> const & source_remap_var_names,
-      std::vector<std::string> const & target_remap_var_names,
-      Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
-      Meshfree::Basis::Type const& basis_type = Meshfree::Basis::Unitary,
-      Meshfree::Operator::Type operator_spec = Meshfree::Operator::LastOperator,
-      Portage::vector<Meshfree::Operator::Domain> operator_domains = 
-        vector<Meshfree::Operator::Domain>(0),
-      Portage::vector<std::vector<Point<Dim>>> const& operator_data=
-        vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0))) {
-    assert(source_remap_var_names.size() == target_remap_var_names.size());
+  void set_remap_var_names(std::vector<std::string> const& source_vars,
+                           std::vector<std::string> const& target_vars,
+                           Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
+                           Meshfree::basis::Type const& basis_type = Meshfree::basis::Unitary,
+                           Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
+                           Portage::vector<Meshfree::oper::Domain> const& operator_domains = {},
+                           Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
 
-    int nvars = source_remap_var_names.size();
-    for (int i = 0; i < nvars; ++i)
-      assert(source_state_.get_entity(source_remap_var_names[i]) ==
-             target_state_.get_entity(target_remap_var_names[i]));
+    assert(source_vars.size() == target_vars.size());
 
-    source_remap_var_names_ = source_remap_var_names;
-    target_remap_var_names_ = target_remap_var_names;
-    estimate_ = estimator_type;
-    basis_ = basis_type;
-    operator_spec_ = operator_spec;
+    int nvars = source_vars.size();
+    for (int i = 0; i < nvars; ++i) {
+      auto const& source_entity = source_state_.get_entity(source_vars[i]);
+      auto const& target_entity = target_state_.get_entity(target_vars[i]);
+      assert(source_entity == target_entity);
+    }
+
+    source_vars_      = source_vars;
+    target_vars_      = target_vars;
+    estimate_         = estimator_type;
+    basis_            = basis_type;
+    operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
-    operator_data_ = operator_data;
+    operator_data_    = operator_data;
   }
 
   /*!
@@ -185,34 +185,33 @@ class MSM_Driver {
     source mesh.
     @return A vector of variable names to be remapped.
   */
-  std::vector<std::string> source_remap_var_names() const {
-    return source_remap_var_names_;
-  }
+  std::vector<std::string> source_vars() const { return source_vars_; }
 
   /*!
     @brief Get the names of the variables to be remapped to the
     target mesh.
     @return A vector of variable names to be remapped.
   */
-  std::vector<std::string> target_remap_var_names() const {
-    return target_remap_var_names_;
-  }
+  std::vector<std::string> target_vars() const { return target_vars_; }
 
   /*!
     @brief Get the dimensionality of the meshes.
     @return The dimensionality of the meshes.
   */
-  unsigned int dim() const {
-    return dim_;
-  }
+  int dimension() const { return dim_; }
 
   /*!
     @brief Execute the remapping process
   */
   void run(Wonton::Executor_type const *executor = nullptr) {
 
+    using namespace Meshfree;
+    // useful aliases
+    using SwarmRemap = SwarmDriver<Search, Accumulate, Estimate, dim,
+                                   Swarm<dim>, SwarmState<dim>>;
+
     bool distributed = false;
-    int comm_rank = 0;
+    int rank = 0;
     int nprocs = 1;
     
     // Will be null if it's a parallel executor
@@ -223,308 +222,255 @@ class MSM_Driver {
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
-      MPI_Comm_rank(mycomm, &comm_rank);
+      MPI_Comm_rank(mycomm, &rank);
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1) {
         distributed = true;
-        std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet\n";
+        std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet";
+        std::cerr << std::endl;
         return;
       }
     }
 #endif
 #ifdef ENABLE_DEBUG
-    if (comm_rank == 0) std::printf("in MSM_Driver::run()...\n");
+    if (rank == 0)
+      std::cout << "in MSM_Driver::run() ... " << std::endl;
 
-    int numTargetCells = target_mesh_.num_owned_cells();
-    std::cout << "Number of target cells in target mesh on rank "
-              << comm_rank << ": "
-              << numTargetCells << std::endl;
+    int ncells = target_mesh_.num_owned_cells();
+    std::cout << "Number of owned target cells on rank "<< rank <<": "<< ncells;
+    std::cout << std::endl;
 #endif
-    int nvars = source_remap_var_names_.size();
+    int nvars = source_vars_.size();
 
-    float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-        tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-    struct timeval begin_timeval, end_timeval, diff_timeval;
+    auto tic = timer::now();
 
-    gettimeofday(&begin_timeval, 0);
-
-    // CELL VARIABLE SECTION ---------------------------------------------------
+    // Wonton::CELL VARIABLE SECTION ---------------------------------------------------
 
     // get cell variable names
     std::vector<std::string> source_cellvar_names;
     std::vector<std::string> target_cellvar_names;
-    for (int i = 0; i < nvars; ++i) {
-      Entity_kind onwhat =
-          source_state_.get_entity(source_remap_var_names_[i]);
 
-      if (onwhat == Entity_kind::CELL) {
-        source_cellvar_names.emplace_back(source_remap_var_names_[i]);
-        target_cellvar_names.emplace_back(target_remap_var_names_[i]);
+    for (int i = 0; i < nvars; ++i) {
+      auto onwhat = source_state_.get_entity(source_vars_[i]);
+      if (onwhat == Wonton::CELL) {
+        source_cellvar_names.emplace_back(source_vars_[i]);
+        target_cellvar_names.emplace_back(target_vars_[i]);
       }
     }
 
     // Collect all cell based variables and remap them
-    if (source_cellvar_names.size() > 0)
-    {
-      // convert mesh wrappers to swarms
-      std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(source_mesh_, Entity_kind::CELL);
-      std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(target_mesh_, Entity_kind::CELL);
-      Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
-      Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
-
-      // convert state wrappers to swarm variety
-      std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(source_state_, Entity_kind::CELL);
-      std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(target_state_, Entity_kind::CELL);
-      Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
-      Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
+    if (not source_cellvar_names.empty()) {
+      // convert mesh and state wrappers to swarm ones
+      Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
+      Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
+      SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
+      SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
 
       // set up smoothing lengths and extents
       Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
-      Portage::vector<Wonton::Point<Dim>> weight_extents, other_extents;
+      std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
+      Portage::vector<Wonton::Point<dim>> weight_extents, other_extents;
       Portage::vector<std::vector<std::vector<double>>> part_smoothing; // only for faceted,scatter,parts
-      if (geometry_ == Meshfree::Weight::FACETED) {
+
+      if (geometry_ == Weight::FACETED) {
+        using Weight::faceted_setup_cell;
+
         if (part_field_ == "NONE") {
-          if (center_ == Meshfree::Scatter) {
-            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-              (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
-          } else if (center_ == Meshfree::Gather) {
-            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper>
-              (target_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          switch (center_) {
+            case Scatter: faceted_setup_cell<dim>(source_mesh_,
+                                                  smoothing_lengths,
+                                                  weight_extents,
+                                                  smoothing_factor_,
+                                                  boundary_factor_); break;
+            case Gather:  faceted_setup_cell<dim>(target_mesh_,
+                                                  smoothing_lengths,
+                                                  weight_extents,
+                                                  smoothing_factor_,
+                                                  boundary_factor_); break;
+            default: break;
           }
         } else {
-          if (center_ == Meshfree::Scatter) {
-            // Set smoothing_factor to 1/4 to make weight support exactly equal to cell volume.
-            // Store these smoothing lengths off on the side for later use in the swarm driver.
-            Portage::vector<Wonton::Point<Dim>> dummy_extents;
-            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-              (source_mesh_, part_smoothing, dummy_extents, 0.25, 0.25);
-
-            // Get usual smoothing lengths and extents 
-            Meshfree::Weight::faceted_setup_cell<Dim,SourceMesh_Wrapper>
-              (source_mesh_, smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
-          } else if (center_ == Meshfree::Gather) {
-            Meshfree::Weight::faceted_setup_cell<Dim,TargetMesh_Wrapper,TargetState_Wrapper>
-              (target_mesh_, target_state_, part_field_, part_tolerance_,
-               smoothing_lengths, weight_extents, smoothing_factor_, boundary_factor_);
+          Portage::vector<Wonton::Point<dim>> dummy_extents;
+          switch (center_) {
+            case Scatter:
+              // Set smoothing_factor to 1/4 to make weight support exactly equal to cell volume.
+              // Store these smoothing lengths off on the side for later use in the swarm driver.
+              faceted_setup_cell<dim>(source_mesh_, part_smoothing,
+                                      dummy_extents, 0.25, 0.25);
+              // Get usual smoothing lengths and extents
+              faceted_setup_cell<dim>(source_mesh_,
+                                      smoothing_lengths, weight_extents,
+                                      smoothing_factor_, boundary_factor_);
+              break;
+            case Gather: faceted_setup_cell<dim>(target_mesh_, target_state_,
+                                                 part_field_, part_tolerance_,
+                                                 smoothing_lengths, weight_extents,
+                                                 smoothing_factor_, boundary_factor_);
+            break;
+            default: break;
           }
         }
-      } else {
-        int ncells;
-        if      (center_ == Meshfree::Scatter) ncells = source_mesh_.num_owned_cells();
-        else if (center_ == Meshfree::Gather)  ncells = target_mesh_.num_owned_cells();
-        smoothing_lengths = vector<std::vector<std::vector<double>>> 
-          (ncells, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
-        for (int i=0; i<ncells; i++) {
-          double radius;
-          if      (center_ == Meshfree::Scatter) 
-            Wonton::cell_radius<Dim>(source_mesh_, i, &radius);
-          else if (center_ == Meshfree::Gather)  
-            Wonton::cell_radius<Dim>(target_mesh_, i, &radius);
-          std::vector<std::vector<double>> h=smoothing_lengths[i];
-          h[0] = std::vector<double>(Dim, 2.*radius*smoothing_factor_);
-          smoothing_lengths[i]=h;
+      } else /* part_field_ != NONE */ {
+        int ncells = (center_ == Scatter ? source_mesh_.num_owned_cells()
+                                         : target_mesh_.num_owned_cells());
+
+        smoothing_lengths.resize(ncells, default_lengths);
+
+        for (int i = 0; i < ncells; i++) {
+          double radius = 0.0;
+          switch (center_) {
+            case Scatter: Wonton::cell_radius<dim>(source_mesh_, i, &radius); break;
+            case Gather:  Wonton::cell_radius<dim>(target_mesh_, i, &radius); break;
+            default: break;
+          }
+
+          std::vector<std::vector<double>> h = smoothing_lengths[i];
+          h[0] = std::vector<double>(dim, 2. * radius * smoothing_factor_);
+          smoothing_lengths[i] = h;
         }
       }
 
       // create swarm remap driver
-      using SwarmDriverType=
-        Meshfree::SwarmDriver<
-        Search,
-	Accumulate,
-	Estimate,
-        Dim,
-        Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>,
-        Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>
-        >;
+      SwarmRemap* swarm_remap_ptr = nullptr;
 
-      SwarmDriverType *swarm_driver_ptr;
-
-      if (geometry_ == Meshfree::Weight::FACETED) {
-        if (center_ == Meshfree::Scatter) {
-          swarm_driver_ptr = new SwarmDriverType
-            ( source_swarm, source_swarm_state,
-              target_swarm, target_swarm_state,
-              smoothing_lengths, 
-              weight_extents, other_extents, 
-              center_);
-        } else if  (center_ == Meshfree::Gather) {
-          swarm_driver_ptr = new SwarmDriverType
-            ( source_swarm, source_swarm_state,
-              target_swarm, target_swarm_state,
-              smoothing_lengths, 
-              other_extents, weight_extents,  
-              center_);
+      if (geometry_ == Weight::FACETED) {
+        if (center_ == Scatter) {
+          swarm_remap_ptr = new SwarmRemap(source_swarm, source_swarm_state,
+                                           target_swarm, target_swarm_state,
+                                           smoothing_lengths,
+                                           weight_extents, other_extents,
+                                           center_);
+        } else if (center_ == Gather) {
+          swarm_remap_ptr = new SwarmRemap(source_swarm, source_swarm_state,
+                                           target_swarm, target_swarm_state,
+                                           smoothing_lengths,
+                                           other_extents, weight_extents,
+                                           center_);
         }
       } else {
-        swarm_driver_ptr = new SwarmDriverType
-          ( source_swarm, source_swarm_state,
-            target_swarm, target_swarm_state,
-            smoothing_lengths,
-            kernel_,
-            geometry_,
-            center_);
+        swarm_remap_ptr = new SwarmRemap(source_swarm, source_swarm_state,
+                                         target_swarm, target_swarm_state,
+                                         smoothing_lengths,
+                                         kernel_, geometry_, center_);
       }
-      SwarmDriverType &swarm_driver(*swarm_driver_ptr);
 
-      swarm_driver.set_remap_var_names(source_cellvar_names,
-                                       target_cellvar_names,
-                                       estimate_,
-                                       basis_,
-				       operator_spec_,
-				       operator_domains_,
-                                       operator_data_,
-                                       part_field_,
-                                       part_tolerance_, 
-                                       part_smoothing);
-
+      SwarmRemap& swarm_remap(*swarm_remap_ptr);
+      swarm_remap.set_remap_var_names(source_cellvar_names, target_cellvar_names,
+                                      estimate_, basis_, operator_spec_,
+                                      operator_domains_, operator_data_,
+                                      part_field_, part_tolerance_, part_smoothing);
       // do the remap
-      swarm_driver.run(executor, true);
+      swarm_remap.run(executor, true);
 
       // transfer data back to target mesh
-      for (auto name=target_cellvar_names.begin();
-                name!=target_cellvar_names.end(); name++)
-      {
-        typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
-        target_swarm_state.get_field(*name, sfield);
-        double *mfield;
-        target_state_.mesh_get_data(Entity_kind::CELL, *name, &mfield);
-        for (int i=0; i<target_swarm_state.get_size(); i++) {
-          mfield[i] = (*sfield)[i];
-        }
+      for (auto&& name : target_cellvar_names) {
+        auto& swarm_field = target_swarm_state.get_field(name);
+        double* mesh_field;
+        target_state_.mesh_get_data(Wonton::CELL, name, &mesh_field);
+        for (int i = 0; i < target_swarm_state.get_size(); i++)
+          mesh_field[i] = swarm_field[i];
       }
 
-      delete swarm_driver_ptr;
+      delete swarm_remap_ptr;
     }
 
-    // NODE VARIABLE SECTION ---------------------------------------------------
+    // Wonton::NODE VARIABLE SECTION ---------------------------------------------------
 
     // get node variable names
     std::vector<std::string> source_nodevar_names;
     std::vector<std::string> target_nodevar_names;
     for (int i = 0; i < nvars; ++i) {
-      Entity_kind onwhat =
-          source_state_.get_entity(source_remap_var_names_[i]);
-
-      if (onwhat == Entity_kind::NODE) {
-        source_nodevar_names.emplace_back(source_remap_var_names_[i]);
-        target_nodevar_names.emplace_back(target_remap_var_names_[i]);
+      auto onwhat = source_state_.get_entity(source_vars_[i]);
+      if (onwhat == Wonton::NODE) {
+        source_nodevar_names.emplace_back(source_vars_[i]);
+        target_nodevar_names.emplace_back(target_vars_[i]);
       }
     }
 
-    if (source_nodevar_names.size() > 0) {
-      // convert mesh wrappers to swarm variety
-      std::shared_ptr<Meshfree::Swarm<Dim>> source_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(source_mesh_, Entity_kind::NODE);
-      std::shared_ptr<Meshfree::Swarm<Dim>> target_swarm_ptr = 
-        Meshfree::SwarmFactory<Dim>(target_mesh_, Entity_kind::NODE);
-      Meshfree::Swarm<Dim> &source_swarm(*source_swarm_ptr);
-      Meshfree::Swarm<Dim> &target_swarm(*target_swarm_ptr);
-
-      // convert state wrappers to swarm variety
-      std::shared_ptr<Meshfree::SwarmState<Dim>> source_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(source_state_, Entity_kind::NODE);
-      std::shared_ptr<Meshfree::SwarmState<Dim>> target_swarm_state_ptr = 
-        Meshfree::SwarmStateFactory<Dim>(target_state_, Entity_kind::NODE);
-      Meshfree::SwarmState<Dim> &source_swarm_state(*source_swarm_state_ptr);
-      Meshfree::SwarmState<Dim> &target_swarm_state(*target_swarm_state_ptr);
+    if (not source_nodevar_names.empty()) {
+      // convert mesh and state wrappers to swarm ones
+      Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
+      Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
+      SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
+      SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
 
       // create smoothing lengths
-      if (geometry_ == Meshfree::Weight::FACETED) {
-        std::cerr << "Cannot do FACETED weights for nodal variables yet.\n";
+      Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
+      std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
+
+      if (geometry_ == Weight::FACETED) {
+        std::cerr << "Cannot do FACETED weights for nodal variables yet." << std::endl;
         return;
       }
-      int nnodes;
-      if      (center_ == Meshfree::Scatter) nnodes = source_mesh_.num_owned_nodes();
-      else if (center_ == Meshfree::Gather)  nnodes = target_mesh_.num_owned_nodes();
-      vector<std::vector<std::vector<double>>> smoothing_lengths
-        (nnodes, std::vector<std::vector<double>>(1, std::vector<double>(Dim)));
-      for (int i=0; i<nnodes; i++) {
-        double radius;
-        if      (center_ == Meshfree::Scatter) Wonton::node_radius<Dim>(source_mesh_, i, &radius);
-	else if (center_ == Meshfree::Gather)  Wonton::node_radius<Dim>(target_mesh_, i, &radius);
-	std::vector<std::vector<double>> h=smoothing_lengths[i];
-        h[0] = std::vector<double>(Dim, radius*smoothing_factor_);
-	smoothing_lengths[i]=h;
+
+      int nnodes = (center_ == Scatter ? source_mesh_.num_owned_nodes()
+                                       : target_mesh_.num_owned_nodes());
+
+      smoothing_lengths.resize(nnodes, default_lengths);
+
+      for (int i = 0; i < nnodes; i++) {
+        double radius = 0.0;
+        switch (center_) {
+          case Scatter: Wonton::node_radius<dim>(source_mesh_, i, &radius); break;
+          case Gather:  Wonton::node_radius<dim>(target_mesh_, i, &radius); break;
+          default: break;
+        }
+
+        std::vector<std::vector<double>> h = smoothing_lengths[i];
+        h[0] = std::vector<double>(dim, radius * smoothing_factor_);
+        smoothing_lengths[i] = h;
       }
 
       // create swarm remap driver
-      Meshfree::SwarmDriver<
-        Search,
-        Accumulate,
-        Estimate,
-        Dim,
-        Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>,
-        Meshfree::Swarm<Dim>,
-        Meshfree::SwarmState<Dim>
-      > swarm_driver(source_swarm, source_swarm_state,
-                     target_swarm, target_swarm_state,
-                     smoothing_lengths,
-                     kernel_,
-                     geometry_,
-                     center_);
+      SwarmRemap swarm_remap(source_swarm, source_swarm_state,
+                             target_swarm, target_swarm_state,
+                             smoothing_lengths, kernel_,
+                             geometry_, center_);
 
-      swarm_driver.set_remap_var_names(source_nodevar_names,
-                                       target_nodevar_names,
-                                       Meshfree::LocalRegression,
-                                       basis_);
+      swarm_remap.set_remap_var_names(source_nodevar_names, target_nodevar_names,
+                                      LocalRegression, basis_);
 
       // do the remap
-      swarm_driver.run(executor, true);
+      swarm_remap.run(executor, true);
 
       // transfer data back to target mesh
-      for (auto name=target_nodevar_names.begin();
-                name!=target_nodevar_names.end(); name++)
-      {
-        typename Meshfree::SwarmState<Dim>::DblVecPtr sfield;
-        target_swarm_state.get_field(*name, sfield);
-        double *mfield;
-        target_state_.mesh_get_data(Entity_kind::NODE, *name, &mfield);
-        for (int i=0; i<target_swarm_state.get_size(); i++) {
-          mfield[i] = (*sfield)[i];
-        }
+      for (auto&& name : target_nodevar_names) {
+        auto& swarm_field = target_swarm_state.get_field(name);
+        double* mesh_field;
+        target_state_.mesh_get_data(Wonton::NODE, name, &mesh_field);
+        for (int i = 0; i < target_swarm_state.get_size(); i++)
+          mesh_field[i] = swarm_field[i];
       }
     }
 
-    gettimeofday(&end_timeval, 0);
-    timersub(&end_timeval, &begin_timeval, &diff_timeval);
-    tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
+    float elapsed = timer::elapsed(tic);
+
 #if ENABLE_DEBUG
-    std::cout << "Mesh-Swarm-Mesh Time for Rank " << comm_rank << " (s): " <<
-        tot_seconds << std::endl;
+    std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif
   }
 
-
- private:
+private:
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
   SourceState_Wrapper const& source_state_;
   TargetState_Wrapper& target_state_;
-  std::vector<std::string> source_remap_var_names_;
-  std::vector<std::string> target_remap_var_names_;
-  double smoothing_factor_;
-  double boundary_factor_;
-  Meshfree::Weight::Kernel kernel_;
-  Meshfree::Weight::Geometry geometry_;
-  Meshfree::WeightCenter center_;
+  std::vector<std::string> source_vars_;
+  std::vector<std::string> target_vars_;
+  double smoothing_factor_ = 0.0;
+  double boundary_factor_ = 0.0;
+  Meshfree::Weight::Kernel kernel_ {};
+  Meshfree::Weight::Geometry geometry_ {};
+  Meshfree::WeightCenter center_ {};
   std::string part_field_;
-  double part_tolerance_;
-  Meshfree::EstimateType estimate_;
-  Meshfree::Basis::Type basis_;
-  Meshfree::Operator::Type operator_spec_;
-  Portage::vector<Meshfree::Operator::Domain> operator_domains_;
-  Portage::vector<std::vector<Point<Dim>>> operator_data_;
-  unsigned int dim_;
+  double part_tolerance_ = 0.0;
+  Meshfree::EstimateType estimate_ {};
+  Meshfree::basis::Type basis_ {};
+  Meshfree::oper::Type operator_spec_ {};
+  Portage::vector<Meshfree::oper::Domain> operator_domains_ {};
+  Portage::vector<std::vector<Point<dim>>> operator_data_ {};
+  int dim_ = 2;
 };  // class MSM_Driver
-
-
 
 }  // namespace Portage
 

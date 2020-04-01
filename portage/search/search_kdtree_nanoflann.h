@@ -18,9 +18,10 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 
-#include "portage/accumulate/accumulate.h"  // For Meshfree::WeightCenter
+#include "portage/accumulate/accumulate.h"  // For swarm::WeightCenter
 //                                          // Hope we can get rid of it
 
+using Wonton::Point;
 
 namespace Portage {
 template <size_t D, class SwarmType>
@@ -116,10 +117,10 @@ class Search_KDTree_Nanoflann {
                           TargetSwarmType const& target_swarm,
                           std::shared_ptr<std::vector<Point<D>>> source_extents,
                           std::shared_ptr<std::vector<Point<D>>> target_extents,
-                          Meshfree::WeightCenter center = Meshfree::Gather) :
+                          swarm::WeightCenter center = swarm::Gather) :
       sourceSwarm_(source_swarm), targetSwarm_(target_swarm) {
     
-    assert(center == Meshfree::Gather);  // Our KDTree is built on source points
+    assert(center == swarm::Gather);  // Our KDTree is built on source points
 
     int ntgt = target_swarm.num_owned_particles();
     search_radii_.resize(ntgt);

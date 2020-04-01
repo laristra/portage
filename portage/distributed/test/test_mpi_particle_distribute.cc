@@ -22,666 +22,564 @@
 #include "MeshFactory.hh"
 
 TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
+
   using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+  using namespace Portage::Meshfree;
 
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
 
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
 
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
 
   // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<2> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<2> &target_swarm(*target_swarm_ptr);
+  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<2> source_state(source_swarm);
+  SwarmState<2> target_state(target_swarm);
 
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(target_swarm);
+  int const nb_source = source_swarm.num_particles(Wonton::ALL);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
 
   // Create an integer source data for given function
-  const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*100);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1]) * 100;
   }
-  source_state->add_field("intdata", source_data_int);
-  
+
   // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  Portage::vector<int> target_data_int(nb_target, 0);
+  Portage::vector<double> target_data_dbl(nb_target, 0.0);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
 
-  //Set smoothing lengths 
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-    (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3.)));
+  //Set smoothing lengths
+  double const one_third = 1./3.;
+  Wonton::Point<2> const default_point(one_third, one_third);
+  std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, one_third));
 
-  auto extentss = std::make_shared<Portage::vector<Point<2>>>(1, Wonton::Point<2>(1.0/3,1.0/3));
-  auto extentst = std::make_shared<Portage::vector<Point<2>>>(ntarpts, Wonton::Point<2>(1.0/3,1.0/3));
-  
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (ntarpts, Portage::Meshfree::Weight::B4);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (ntarpts, Portage::Meshfree::Weight::ELLIPTIC);
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
+  Portage::vector<Wonton::Point<2>> source_extents(1, default_point);
+  Portage::vector<Wonton::Point<2>> target_extents(nb_target, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
+  Portage::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
 
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, 
-			 target_swarm, *target_state, 
-                         *smoothing_lengths, *extentss, *extentst, *kernel_types,
-			 *geom_types, Portage::Meshfree::WeightCenter::Gather);
+  distributor.distribute(source_swarm, source_state,
+                         target_swarm, target_state,
+                         smoothing_lengths, source_extents, target_extents,
+                         kernel_types, geom_types, WeightCenter::Gather);
 
+  MPI_Barrier(comm);
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 5);
 
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
+  // check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]));  
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    double const value = coords[0] * coords[1];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 100);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
-  using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
-  
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
-  
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
 
-  //Set smoothing lengths 
-  int nsrcpts = jali_smesh_wrapper.num_owned_cells(); 
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-    (nsrcpts, std::vector<std::vector<double>>(1, std::vector<double>(2, 1.0/3)));
+  using namespace Portage::Meshfree;
 
-  auto extentss = std::make_shared<Portage::vector<Point<2>>>(nsrcpts, Wonton::Point<2>(1.0/3,1.0/3));
-  auto extentst = std::make_shared<Portage::vector<Point<2>>>(1, Wonton::Point<2>(1.0/3,1.0/3));
-  
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (nsrcpts, Portage::Meshfree::Weight::B4);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (nsrcpts, Portage::Meshfree::Weight::ELLIPTIC);
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
 
-  // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<2> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<2> &target_swarm(*target_swarm_ptr);
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
 
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(target_swarm);
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
+
+  int const nb_source = source_mesh_wrapper.num_owned_cells();
+
+  //Set smoothing lengths
+  double const one_third = 1./3.;
+  Wonton::Point<2> const default_point(one_third, one_third);
+  std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, one_third));
+
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
+  Portage::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
+  Portage::vector<Wonton::Point<2>> target_extents(1, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
+  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
+
+  // Source and target swarms
+  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<2> source_state(source_swarm);
+  SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*100);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1]) * 100;
   }
-  source_state->add_field("intdata", source_data_int);
-  
-  // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts);
 
-  // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
+  Portage::vector<int> target_data_int(nb_target);
+  Portage::vector<double> target_data_dbl(nb_target);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
-    
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
+
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths, *extentss, *extentst, *kernel_types,
-                         *geom_types, Portage::Meshfree::WeightCenter::Scatter);
-   
+  distributor.distribute(source_swarm, source_state, target_swarm,
+                         target_state, smoothing_lengths,
+                         source_extents, target_extents, kernel_types,
+                         geom_types, WeightCenter::Scatter);
+
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int const nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 5);
 
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
+  // check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
-    for (size_t d = 0 ; d < 2; ++d)
-      ASSERT_EQ(smlen[0][d],1.0/3);
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]));  
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    double const value = coords[0] * coords[1];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 100);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
+
   using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
+  using namespace Portage::Meshfree;
 
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
 
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 
-                                               1.0, 1.0, 1.0, 
-                                               4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
 
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0,
-                                               1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
 
-  // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<3> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<3> &target_swarm(*target_swarm_ptr);
+  // Source and target swarms
+  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<3> source_state(source_swarm);
+  SwarmState<3> target_state(target_swarm);
 
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(target_swarm);
+  int const nb_source = source_swarm.num_particles(Wonton::ALL);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
 
   // Create an integer source data for given function
-  const int nsrcpts = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*coords[2]*1000);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1] * p[2]) * 1000;
   }
-  source_state->add_field("intdata", source_data_int);
-  
+
   // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1]*coords[2];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1] * p[2];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  Portage::vector<int> target_data_int(nb_target, 0);
+  Portage::vector<double> target_data_dbl(nb_target, 0.0);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
 
-  //Set smoothing lengths 
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-      (ntarpts, std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
+  //Set smoothing lengths
+  double const one_third = 1./3.;
+  Wonton::Point<3> const default_point(one_third, one_third, one_third);
+  std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, one_third));
 
-  auto extentss = std::make_shared<Portage::vector<Point<3>>>(1, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
-  auto extentst = std::make_shared<Portage::vector<Point<3>>>(ntarpts, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
+  Portage::vector<Wonton::Point<3>> source_extents(1, default_point);
+  Portage::vector<Wonton::Point<3>> target_extents(nb_target, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
+  Portage::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
 
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (ntarpts, Portage::Meshfree::Weight::B4);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (ntarpts, Portage::Meshfree::Weight::ELLIPTIC);
- 
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, 
-			 target_swarm, *target_state, *smoothing_lengths,
-                         *extentss, *extentst, *kernel_types, *geom_types, 
-                         Portage::Meshfree::WeightCenter::Gather);
+  distributor.distribute(source_swarm, source_state,
+                         target_swarm, target_state,
+                         smoothing_lengths, source_extents, target_extents,
+                         kernel_types, geom_types, WeightCenter::Gather);
 
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int const nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 20);
 
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
+  // check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*1000));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]*coords[2]));  
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    double const value = coords[0] * coords[1] * coords[2];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 1000);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
-  using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
 
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
+  using namespace Portage::Meshfree;
 
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 
-                                               1.0, 1.0, 1.0, 
-                                               4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
 
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0,
-                                               1.0, 1.0, 1.0,
-                                               4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
-  
-  //Set smoothing lengths 
-  int nsrcpts = jali_smesh_wrapper.num_owned_cells();
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-    (nsrcpts, std::vector<std::vector<double>>(1, std::vector<double>(3, 1.0/3)));
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
 
-  auto extentss = std::make_shared<Portage::vector<Point<3>>>(nsrcpts, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
-  auto extentst = std::make_shared<Portage::vector<Point<3>>>(1, Wonton::Point<3>(1.0/3,1.0/3,1.0/3));
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
 
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (nsrcpts, Portage::Meshfree::Weight::B4);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (nsrcpts, Portage::Meshfree::Weight::ELLIPTIC);
+  int const nb_source = source_mesh_wrapper.num_owned_cells();
 
-  // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<3> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<3> &target_swarm(*target_swarm_ptr);
+  //Set smoothing lengths
+  double const one_third = 1./3.;
+  Wonton::Point<3> const default_point(one_third, one_third, one_third);
+  std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, one_third));
 
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(target_swarm);
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
+  Portage::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
+  Portage::vector<Wonton::Point<3>> target_extents(1, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
+  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
+
+  // Source and target swarms
+  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<3> source_state(source_swarm);
+  SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*coords[2]*1000);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1] * p[2]) * 1000;
   }
-  source_state->add_field("intdata", source_data_int);
-  
-  // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts);
 
-  // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1]*coords[2];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1] * p[2];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
+  Portage::vector<int> target_data_int(nb_target);
+  Portage::vector<double> target_data_dbl(nb_target);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
 
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths, 
-                         *extentss, *extentst,
-                         *kernel_types, *geom_types, 
-                         Portage::Meshfree::WeightCenter::Scatter);
+  distributor.distribute(source_swarm, source_state, target_swarm,
+                         target_state, smoothing_lengths,
+                         source_extents, target_extents, kernel_types,
+                         geom_types, WeightCenter::Scatter);
 
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int const nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 20);
 
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
+  // check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
-    for (size_t d = 0 ; d < 3; ++d)
-      ASSERT_EQ(smlen[0][d],1.0/3);
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*1000));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]*coords[2]));  
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    double const value = coords[0] * coords[1] * coords[2];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 1000);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
-  using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
-  
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
-  
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
+
+  using namespace Portage::Meshfree;
+
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
+
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 1.0, 1.0, 4, 4);
+
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
+
+  int const nb_source = source_mesh_wrapper.num_owned_cells();
 
   //Set smoothing lengths, etc
-  const double thrd=1./3.;
-  int nsrcpts = jali_smesh_wrapper.num_owned_cells(); 
-  std::vector<std::vector<double>> facets
-    ({{0,-1,thrd}, {1,0,thrd}, {0,1,thrd}, {-1,0,thrd}});
-                              
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-    (nsrcpts, std::vector<std::vector<double>>());
-  for (size_t i=0; i<nsrcpts; i++) (*smoothing_lengths)[i] = facets;
+  double const one_third = 1./3.;
+  Wonton::Point<2> const default_point(one_third, one_third);
+  std::vector<std::vector<double>> facets {{ 0,-1, one_third}, { 1, 0, one_third},
+                                           { 0, 1, one_third}, {-1, 0, one_third}};
 
-  auto extentss = std::make_shared<Portage::vector<Point<2>>>(nsrcpts, Wonton::Point<2>(thrd,thrd));
-  auto extentst = std::make_shared<Portage::vector<Point<2>>>(1, Wonton::Point<2>(thrd,thrd));
-  
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (nsrcpts, Portage::Meshfree::Weight::POLYRAMP);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (nsrcpts, Portage::Meshfree::Weight::FACETED);
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
+  Portage::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
+  Portage::vector<Wonton::Point<2>> target_extents(1, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
+  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
-  // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<2>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<2>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<2> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<2> &target_swarm(*target_swarm_ptr);
-
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<2>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<2>>(target_swarm);
+  // Source and target swarms
+  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<2> source_state(source_swarm);
+  SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*100);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1]) * 100;
   }
-  source_state->add_field("intdata", source_data_int);
-  
-  // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts);
 
-  // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
+  Portage::vector<int> target_data_int(nb_target);
+  Portage::vector<double> target_data_dbl(nb_target);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
-    
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
+
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths, 
-                         *extentss, *extentst, *kernel_types, *geom_types, 
-                         Portage::Meshfree::WeightCenter::Scatter);
-   
+  distributor.distribute(source_swarm, source_state, target_swarm,
+                         target_state, smoothing_lengths,
+                         source_extents, target_extents, kernel_types,
+                         geom_types, WeightCenter::Scatter);
+
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<2>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int const nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 5);
 
-  typename Portage::Meshfree::SwarmState<2>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<2>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+5);  
+  // Check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<2> coords = source_swarm.get_particle_coordinates(p);
-    std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
-    for (size_t k = 0; k < 4; k++) 
-      for (size_t d = 0 ; d < 3; ++d) {
-        ASSERT_EQ(smlen[k][d],facets[k][d]);
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    std::vector<std::vector<double>> lengths = smoothing_lengths[i];
+
+    for (int k = 0; k < 4; k++) {
+      for (int d = 0 ; d < 3; ++d) {
+        ASSERT_EQ(lengths[k][d], facets[k][d]);
       }
-    Point<2> ext = (*extentss)[p];
-    ASSERT_EQ(ext[0], thrd);
-    ASSERT_EQ(ext[1], thrd);
-    ASSERT_EQ((*kernel_types)[p], Portage::Meshfree::Weight::POLYRAMP);
-    ASSERT_EQ((*geom_types)[p], Portage::Meshfree::Weight::FACETED);
-    
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*100));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]));  
+    }
+
+    Wonton::Point<2> ext = source_extents[i];
+    ASSERT_EQ(ext[0], one_third);
+    ASSERT_EQ(ext[1], one_third);
+    ASSERT_EQ(kernel_types[i], Weight::POLYRAMP);
+    ASSERT_EQ(geom_types[i], Weight::FACETED);
+
+    double const value = coords[0] * coords[1];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 100);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
 
 TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
-  using Wonton::Point;
-  int commRank;
-  MPI_Comm_rank(MPI_COMM_WORLD, &commRank);
-  
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  
-  // Create a distributed jali source/target mesh 
-  std::shared_ptr<Jali::Mesh> source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_smesh_wrapper(*source_mesh);
-  
-  std::shared_ptr<Jali::Mesh> target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
-  Wonton::Jali_Mesh_Wrapper jali_tmesh_wrapper(*target_mesh);
+
+  using namespace Portage::Meshfree;
+
+  // set MPI info
+  int rank = 0;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  Wonton::MPIExecutor_type executor(comm);
+
+  // Create a distributed jali source/target mesh
+  Jali::MeshFactory mf(comm);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  auto source_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+  auto target_mesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 4, 4, 4);
+
+  Wonton::Jali_Mesh_Wrapper source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
+
+  int const nb_source = source_mesh_wrapper.num_owned_cells();
 
   //Set smoothing lengths, etc
-  const double thrd=1./3.;
-  int nsrcpts = jali_smesh_wrapper.num_owned_cells(); 
-  std::vector<std::vector<double>> facets
-    ({{0,-1,0,thrd}, {1,0,0,thrd}, {0,1,0,thrd}, {-1,0,0,thrd}, {0,0,-1,thrd}, {0,0,1,thrd}});
-                              
-  auto smoothing_lengths = std::make_shared<Portage::vector<std::vector<std::vector<double>>>>
-    (nsrcpts, std::vector<std::vector<double>>());
-  for (size_t i=0; i<nsrcpts; i++) (*smoothing_lengths)[i] = facets;
+  double const one_third = 1./3.;
+  Wonton::Point<3> const default_point(one_third, one_third, one_third);
+  std::vector<std::vector<double>> facets {{ 0,-1, 0, one_third}, { 1, 0, 0, one_third},
+                                           { 0, 1, 0, one_third}, {-1, 0, 0, one_third},
+                                           { 0, 0,-1, one_third}, { 0, 0, 1, one_third}};
 
-  auto extentss = std::make_shared<Portage::vector<Point<3>>>(nsrcpts, Wonton::Point<3>(thrd,thrd,thrd));
-  auto extentst = std::make_shared<Portage::vector<Point<3>>>(1, Wonton::Point<3>(thrd,thrd,thrd));
-  
-  auto kernel_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Kernel>>
-      (nsrcpts, Portage::Meshfree::Weight::POLYRAMP);
-   
-  auto geom_types = std::make_shared<Portage::vector<Portage::Meshfree::Weight::Geometry>>
-      (nsrcpts, Portage::Meshfree::Weight::FACETED);
+  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
+  Portage::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
+  Portage::vector<Wonton::Point<3>> target_extents(1, default_point);
+  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
+  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
-  // Source and target swarms 
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> source_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_smesh_wrapper, Portage::Entity_kind::CELL);
-  std::shared_ptr<Portage::Meshfree::Swarm<3>> target_swarm_ptr =
-      Portage::Meshfree::SwarmFactory<3>(jali_tmesh_wrapper, Portage::Entity_kind::CELL);
-  Portage::Meshfree::Swarm<3> &source_swarm(*source_swarm_ptr);
-  Portage::Meshfree::Swarm<3> &target_swarm(*target_swarm_ptr);
-
-  // Source and target mesh state
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> source_state;
-  std::shared_ptr<Portage::Meshfree::SwarmState<3>> target_state;
-  source_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(source_swarm);
-  target_state = std::make_shared<Portage::Meshfree::SwarmState<3>>(target_swarm);
+  // Source and target swarms
+  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  SwarmState<3> source_state(source_swarm);
+  SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr source_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts);
+  Portage::vector<int> source_data_int(nb_source);
+  Portage::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_int)[p] = (int)(coords[0]*coords[1]*coords[2]*100);
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_int[i] = static_cast<int>(p[0] * p[1] * p[2]) * 100;
   }
-  source_state->add_field("intdata", source_data_int);
-  
-  // Create a double source data for given function
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr source_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts);
 
-  // Fill the source state data with the specified profile
-  for (size_t p = 0; p < nsrcpts; ++p) {
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    (*source_data_dbl)[p] = coords[0]*coords[1]*coords[2];
+  for (int i = 0; i < nb_source; ++i) {
+    auto p = source_swarm.get_particle_coordinates(i);
+    source_data_dbl[i] = p[0] * p[1] * p[2];
   }
-  source_state->add_field("dbldata", source_data_dbl);
+
+  source_state.add_field("intdata", source_data_int);
+  source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  const int ntarpts = target_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr target_data_int = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(ntarpts, 0);
-  target_state->add_field("intdata", target_data_int);
+  int const nb_target = target_swarm.num_particles(Wonton::ALL);
+  Portage::vector<int> target_data_int(nb_target);
+  Portage::vector<double> target_data_dbl(nb_target);
 
-  // Build the target state storage
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr target_data_dbl = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(ntarpts, 0.0);
-  target_state->add_field("dbldata", target_data_dbl);
-    
+  target_state.add_field("intdata", target_data_int);
+  target_state.add_field("dbldata", target_data_dbl);
+
   // Distribute
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
-  distributor.distribute(source_swarm, *source_state, target_swarm,
-                         *target_state, *smoothing_lengths, 
-                         *extentss, *extentst, *kernel_types, *geom_types, 
-                         Portage::Meshfree::WeightCenter::Scatter);
-   
+  distributor.distribute(source_swarm, source_state, target_swarm,
+                         target_state, smoothing_lengths,
+                         source_extents, target_extents, kernel_types,
+                         geom_types, WeightCenter::Scatter);
+
   // Check number of particles received
-  int nsrcpts_after = source_swarm.num_particles(Portage::Entity_type::ALL);
-  typename Portage::Meshfree::SwarmState<3>::IntVecPtr sd_int_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::IntVec>(nsrcpts_after);
-  source_state->get_field("intdata",sd_int_after);
+  int const nb_source_after = source_swarm.num_particles(Wonton::ALL);
+  ASSERT_EQ(nb_source_after, nb_source + 20);
 
-  typename Portage::Meshfree::SwarmState<3>::DblVecPtr sd_dbl_after = 
-      std::make_shared<typename Portage::Meshfree::SwarmState<3>::DblVec>(nsrcpts_after);
-  source_state->get_field("dbldata",sd_dbl_after);
-   
-  ASSERT_EQ(nsrcpts_after, nsrcpts+20);  
+  // Check coordinates
+  auto& source_data_after_int = source_state.get_field_int("intdata");
+  auto& source_data_after_dbl = source_state.get_field_dbl("dbldata");
 
-  for (size_t p = 0 ; p < nsrcpts_after; ++p)
-  { 
-    Point<3> coords = source_swarm.get_particle_coordinates(p);
-    std::vector<std::vector<double>> smlen = (*smoothing_lengths)[p];
-    for (size_t k = 0; k < 6; k++) 
-      for (size_t d = 0 ; d < 4; ++d) {
-        ASSERT_EQ(smlen[k][d],facets[k][d]);
+  for (int i = 0 ; i < nb_source_after; ++i) {
+    auto coords = source_swarm.get_particle_coordinates(i);
+    std::vector<std::vector<double>> lengths = smoothing_lengths[i];
+
+    for (int k = 0; k < 6; k++) {
+      for (int d = 0 ; d < 4; ++d) {
+        ASSERT_EQ(lengths[k][d], facets[k][d]);
       }
-    Point<3> ext = (*extentss)[p];
-    ASSERT_EQ(ext[0], thrd);
-    ASSERT_EQ(ext[1], thrd);
-    ASSERT_EQ(ext[2], thrd);
-    ASSERT_EQ((*kernel_types)[p], Portage::Meshfree::Weight::POLYRAMP);
-    ASSERT_EQ((*geom_types)[p], Portage::Meshfree::Weight::FACETED);
-    
-    ASSERT_EQ((*sd_int_after)[p],(int)(coords[0]*coords[1]*coords[2]*100));  
-    ASSERT_EQ((*sd_dbl_after)[p],(coords[0]*coords[1]*coords[2]));  
+    }
+
+    Wonton::Point<3> ext = source_extents[i];
+    ASSERT_EQ(ext[0], one_third);
+    ASSERT_EQ(ext[1], one_third);
+    ASSERT_EQ(ext[2], one_third);
+    ASSERT_EQ(kernel_types[i], Weight::POLYRAMP);
+    ASSERT_EQ(geom_types[i], Weight::FACETED);
+
+    double const value = coords[0] * coords[1] * coords[2];
+    ASSERT_EQ(source_data_after_int[i], static_cast<int>(value) * 100);
+    ASSERT_DOUBLE_EQ(source_data_after_dbl[i], value);
   }
 }
