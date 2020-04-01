@@ -195,7 +195,7 @@ std::vector<ID_t>
     auto itrhi = std::lower_bound(itrlo, saxis_end, thi[d],
                                   is_point_below);
     ihi[d] = itrhi - saxis_begin;
-    ihi[d] = std::min(ihi[d], sourceMesh_.axis_num_cells(d));
+    ihi[d] = std::min(ihi[d], sourceMesh_.num_axis_cells(d));
     assert(ihi[d] > ilo[d]);
   }  // for d
 

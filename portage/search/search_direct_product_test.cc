@@ -69,7 +69,7 @@ TEST(search_direct_product, DPtoDP1D_64) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
     std::array<int,D> indices = {i};
     int id = tgt_wrapper.indices_to_cellid(indices);
     const std::vector<int64_t> candidates = search(id);
@@ -120,7 +120,7 @@ TEST(search_direct_product, DPtoDP1D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
     std::array<int,D> indices = {i};
     int id = tgt_wrapper.indices_to_cellid(indices);
     const std::vector<int> candidates = search(id);
@@ -191,8 +191,8 @@ TEST(search_direct_product, DPtoDP2D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
-    for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int j = 0; j < tgt_wrapper.num_axis_cells(1); ++j) {
+    for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
       std::array<int,D> indices = {i,j};
       int id = tgt_wrapper.indices_to_cellid(indices);
       const std::vector<int> candidates = search(id);
@@ -334,9 +334,9 @@ TEST(search_direct_product, DPtoDP3D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int k = 0; k < tgt_wrapper.axis_num_cells(2); ++k) {
-    for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
-      for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int k = 0; k < tgt_wrapper.num_axis_cells(2); ++k) {
+    for (int j = 0; j < tgt_wrapper.num_axis_cells(1); ++j) {
+      for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
         std::array<int,D> indices = {i,j,k};
         int id = tgt_wrapper.indices_to_cellid(indices);
         const std::vector<int> candidates = search(id);
