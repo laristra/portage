@@ -245,7 +245,7 @@ inline double dinvsqrt(double x) {
  * @return its value at x.
  */
 inline double ddinvsqrt(double x) {
-  double const ax = abs(x);
+  double const ax = std::abs(x);
   return 0.125 * (1. + sign(2. - ax)) * ((3. * ax + 4.) * ax + 12.) *
          std::pow(ax + epsilon, -2.5);
 }
