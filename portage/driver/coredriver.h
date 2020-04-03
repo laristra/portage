@@ -689,7 +689,7 @@ class CoreDriver : public CoreDriverBase<D,
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
       
     int nmats = source_state_.num_materials();
-    assert(nmats > 1);
+
 
 #ifdef HAVE_TANGRAM
 
