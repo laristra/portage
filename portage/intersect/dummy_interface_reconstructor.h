@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef DUMMY_INTERFACE_RECONSTRUCTOR_H
 #define DUMMY_INTERFACE_RECONSTRUCTOR_H
 
+#include "portage-config.h"
 #include "wonton/support/Point.h"
 
 #ifdef HAVE_TANGRAM
@@ -28,7 +29,7 @@ template<class Mesh_Wrapper,
          class MatPoly_Clipper=void>
 class DummyInterfaceReconstructor {
  public:
-  DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
+  explicit DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
 
 #ifdef HAVE_TANGRAM
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh,

@@ -291,7 +291,6 @@ if (TANGRAM_DIR)
 	    HINTS ${TANGRAM_DIR}/share)
 
   message(STATUS "TANGRAM FOUND? ${TANGRAM_FOUND}")
-  add_definitions("-DHAVE_TANGRAM")
   set(HAVE_TANGRAM True CACHE BOOL "Have Tangram")
   include_directories(${TANGRAM_INCLUDE_DIR})
 else (TANGRAM_DIR)
