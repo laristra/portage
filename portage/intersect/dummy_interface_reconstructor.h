@@ -49,7 +49,9 @@ class DummyInterfaceReconstructor {
   void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
 
 #ifdef HAVE_TANGRAM
-  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
+  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {
+    throw std::runtime_error("not implemented");
+  }
 #endif
 
 };
