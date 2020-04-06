@@ -99,9 +99,8 @@ class IntersectR3D {
   /// \return vector of Weights_t structure containing moments of intersection
   ///
 
-  std::vector<Weights_t>
-  operator() (const int tgt_entity, const std::vector<int> src_entities) const {
-    std::cerr << "IntersectR3D not implemented for entity type" << std::endl;
+  std::vector<Weights_t> operator() (int tgt_entity, std::vector<int> const& src_entities) const {
+    throw std::runtime_error("not implemented for this entity type");
   }
 
 
