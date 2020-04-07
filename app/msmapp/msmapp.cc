@@ -102,8 +102,7 @@ template<>
 class consistent_order<Portage::Interpolate_1stOrder>{
 public:
   static bool check(Portage::Meshfree::basis::Type type){
-    if (type == Portage::Meshfree::basis::Linear) return true;
-    else return false;
+    return type == Portage::Meshfree::basis::Linear;
   }
 };
 
@@ -111,8 +110,7 @@ template<>
 class consistent_order<Portage::Interpolate_2ndOrder>{
 public:
   static bool check(Portage::Meshfree::basis::Type type){
-    if (type == Portage::Meshfree::basis::Quadratic) return true;
-    else return false;
+    return type == Portage::Meshfree::basis::Quadratic;
   }
 };
 
@@ -204,7 +202,7 @@ public:
   {
     // process controls
     double smoothing_factor = controls_.smoothing_factor;
-    Portage::Meshfree::basis::Type basis;
+    Portage::Meshfree::basis::Type basis {};
     if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
@@ -263,8 +261,8 @@ public:
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("celldata");
+    remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
@@ -528,12 +526,12 @@ protected:
   void runit()
   {
     // process controls
-    Portage::Meshfree::basis::Type basis;
+    Portage::Meshfree::basis::Type basis {};
     if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::oper::Type oper8tor;
+    Portage::Meshfree::oper::Type oper8tor {};
     if (controls_.oper8tor == "VolumeIntegral") {
       oper8tor = Portage::Meshfree::oper::VolumeIntegral;
     } else if (controls_.oper8tor != "none") {
@@ -591,7 +589,7 @@ protected:
         std::vector<int> cellnodes;
         targetMeshWrapper.cell_get_nodes(c, &cellnodes);
         std::vector<Portage::Point<Dimension>> cellverts(cellnodes.size());
-        for (int i=0; i<cellnodes.size(); i) {
+        for (int i=0; i<cellnodes.size(); ++i) {
           targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
         }
         data[c] = cellverts;
