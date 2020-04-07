@@ -928,14 +928,24 @@ class CoreDriver : public CoreDriverBase<D,
 
     if (multimat) {
       if (interface_reconstructor_) {
-        source_state_.mat_get_cells(material_id, &mat_cells);
+        std::vector<int> mat_cells_all;
+        source_state_.mat_get_cells(material_id, &mat_cells_all);
+
+        // Filter out GHOST cells
+        // SHOULD BE IN HANDLED IN THE STATE MANAGER (See ticket LNK-1589)
+        int nownedcells = source_mesh_.num_owned_cells();
+        mat_cells.reserve(mat_cells_all.size());
+        for (auto const& c : mat_cells_all)
+          if (source_mesh_.cell_get_type(c) == PARALLEL_OWNED)
+            mat_cells.push_back(c);
+
         size = mat_cells.size();
       }
       else
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
 #endif
-      size = source_mesh_.num_entities(ONWHAT);
+      size = source_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
 #ifdef HAVE_TANGRAM
     }
 #endif
@@ -963,8 +973,8 @@ class CoreDriver : public CoreDriverBase<D,
                          gradient_field.begin(), kernel);
     } else {
 #endif
-      Portage::transform(source_mesh_.begin(ONWHAT),
-                         source_mesh_.end(ONWHAT),
+      Portage::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                         source_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          gradient_field.begin(), kernel);
 #ifdef HAVE_TANGRAM
     }
