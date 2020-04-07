@@ -173,19 +173,28 @@ namespace Portage {
         boundary_limiter_type_(boundary_limiter_type),
         part_(part) {
 
-      // Collect and keep the list of neighbors for each CELL as it may
-      // be expensive to go to the mesh layer and collect this data for
-      // each cell during the actual gradient calculation
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
+      // Collect and keep the list of neighbors for each OWNED CELL as
+      // it is common to gradient computation of any field variable.
+      // We don't collect neighbors of GHOST CELLs because the outer
+      // ghost layer (even if it is a single layer) will not have
+      // neighbors on the outer side and therefore, will not yield the
+      // right gradient anyway
+
+      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
+                                              Entity_type::PARALLEL_OWNED);
       cell_neighbors_.resize(nb_cells);
 
       if (part_ == nullptr) /* entire mesh */ {
         auto collect_neighbors = [this](int c) {
-          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
+          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL,
+                                        &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL),
-                          mesh_.end(Entity_kind::CELL), collect_neighbors);
+        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+                                      Entity_type::PARALLEL_OWNED),
+                          mesh_.end(Entity_kind::CELL,
+                                    Entity_type::PARALLEL_OWNED),
+                          collect_neighbors);
       } else /* only on source part */ {
         auto filter_neighbors = [this](int c) {
           cell_neighbors_[c] = part_->get_neighbors(c);
@@ -216,10 +225,15 @@ namespace Portage {
         interface_reconstructor_(ir),
         part_(part) {
 
-      // Collect and keep the list of neighbors for each CELL as it may
-      // be expensive to go to the mesh layer and collect this data for
-      // each cell during the actual gradient calculation
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL);
+      // Collect and keep the list of neighbors for each OWNED CELL as
+      // it is common to gradient computation of any field variable.
+      // We don't collect neighbors of GHOST CELLs because the outer
+      // ghost layer (even if it is a single layer) will not have
+      // neighbors on the outer side and therefore, will not yield the
+      // right gradient anyway
+
+      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
+                                              Entity_type::PARALLEL_OWNED);
       cell_neighbors_.resize(nb_cells);
 
       if (part_ == nullptr) /* entire mesh */ {
@@ -227,8 +241,11 @@ namespace Portage {
           mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL),
-                          mesh_.end(Entity_kind::CELL), collect_neighbors);
+        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+                                      Entity_type::PARALLEL_OWNED),
+                          mesh_.end(Entity_kind::CELL,
+                                    Entity_type::PARALLEL_OWNED),
+                          collect_neighbors);
 
       } else /* only on source part */ {
         auto filter_neighbors = [this](int c) {
@@ -278,6 +295,7 @@ namespace Portage {
     Vector<D> operator()(int cellid) {
 
       assert(values_);
+      assert(mesh_.cell_get_type(cellid) == Entity_type::PARALLEL_OWNED);
 
       double phi = 1.0;
       Vector<D> grad;
@@ -522,10 +540,50 @@ namespace Portage {
         );
       };
 
-      int const nnodes = mesh_.num_entities(Entity_kind::NODE);
+      // Collect and keep the list of neighbors for each OWNED or
+      // GHOST as it is common to gradient computation of any field
+      // variable.
+      // NOTE:*******************************************************
+      // The iteration for node (or dual cell) gradients is
+      // purposefully different from that of cells. For cells, we
+      // collect neighbors of only OWNED source cells because we will
+      // compute gradients only over OWNED source cells because our
+      // parallel scheme mandates that any target cell overlap only
+      // OWNED source cells (even if we have to duplicate those source
+      // cells on multiple partitions as we do when we
+      // redistribute). With nodes, we have to compute the gradient
+      // over ALL (OWNED+GHOST) nodes. This is because, even with the
+      // above requirement on overlap of OWNED target and source
+      // cells, the dual cells of a target node can overlap the dual
+      // cell of GHOST source node on a partition boundary and we want
+      // the gradient at that ghost node.
+      //
+      // Anyway, this is a bit moot, because we cannot guarantee
+      // second-order accuracy for remap of node-centered variables in
+      // anything other than uniform regular meshes since the linear
+      // reconstruction is supposed to be over the centroid while our
+      // field variables are at nodes which may not be coincident with
+      // the centroid. [PERHAPS THIS WILL GET FIXED IF WE ARE ABLE TO
+      // DO A CONSERVATIVE RECONSTRUCTION AROUND ANY POINT NOT JUST
+      // THE CENTROID]
+      //
+      // Also, the only node centered variables in the codes we are
+      // dealing with are likely to be velocity and one never remaps
+      // velocity directly anyway - we remap momentum in a
+      // conservative and consistent way by transferring momentum to
+      // cell centers, remapping cell centered momentum and
+      // transferring it back to nodes and backing out velocity.
+      //
+      // Iterating over ALL nodes (or dual control volumes) just keeps
+      // us from making a grosser error at partition boundaries
+
+      int const nnodes = mesh_.num_entities(Entity_kind::NODE,
+                                            Entity_type::ALL);
       node_neighbors_.resize(nnodes);
-      Portage::for_each(mesh_.begin(Entity_kind::NODE),
-                        mesh_.end(Entity_kind::NODE),
+      Portage::for_each(mesh_.begin(Entity_kind::NODE,
+                                    Entity_type::ALL),
+                        mesh_.end(Entity_kind::NODE,
+                                  Entity_type::ALL),
                         collect_node_neighbors);
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
