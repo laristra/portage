@@ -191,7 +191,7 @@ if (Jali_DIR)
    endforeach()
    set(Jali_LIBRARIES ${_LIBS})
 
-   include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
+   include_directories(SYSTEM ${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
 
    list(APPEND PORTAGE_EXTRA_LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
 endif (Jali_DIR)
