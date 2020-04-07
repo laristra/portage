@@ -416,6 +416,7 @@ namespace Portage {
       //Create a MatPoly for the cell
       Tangram::MatPoly<2> cell_mp;
       Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      cell_mp.set_mat_id(0);
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<2>> face_group_polys;
       Tangram::Plane_t<2> cutting_plane;
@@ -907,6 +908,7 @@ namespace Portage {
       //Create a MatPoly for the cell
       Tangram::MatPoly<3> cell_mp;
       Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
+      cell_mp.set_mat_id(0);
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<3>> face_group_polys;
       Tangram::Plane_t<3> cutting_plane;
@@ -917,11 +919,11 @@ namespace Portage {
       Tangram::CuttingDistanceSolver<3, Matpoly_Clipper> cds(face_group_polys,
         cutting_plane.normal, ims_tols[0], true);
 
-      cds.set_target_volume(swept_volume);
+      cds.set_target_volume(std::fabs(swept_volume));
       std::vector<double> cds_res = cds();
 
       //Check if we had enough volume in the face group
-      if (cds_res[1] < swept_volume - vol_tol) {
+      if (cds_res[1] < std::fabs(swept_volume) - vol_tol) {
         throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
       }
 
@@ -938,6 +940,10 @@ namespace Portage {
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
+
+      if(swept_volume < 0.0)
+         for(double& moment : moments)
+            moment *= -1;
 
       return moments;
     }
