@@ -56,7 +56,7 @@ class MPI_Bounding_Boxes {
   /*!
     @brief Destructor of MPI_Bounding_Boxes
    */
-  ~MPI_Bounding_Boxes() {}
+  ~MPI_Bounding_Boxes() = default;
 
 
   /*!
@@ -1017,14 +1017,16 @@ class MPI_Bounding_Boxes {
     // a map for keeping track of what we have already seen
     std::map<GID_t,int> uniqueGid;
 
+    int const num_distributed_global_ids = distributedGlobalIds.size();
+
     // loop over owned cells in the distributed global id's
-    for (int i=0 ; i<distributedGlobalIds.size() ; ++i){
+    for (int i = 0 ; i < num_distributed_global_ids; ++i){
 
       // get the current gid
       GID_t gid = distributedGlobalIds[i];
 
       // is this gid new
-      if (uniqueGid.find(gid)==uniqueGid.end()){
+      if (uniqueGid.find(gid) == uniqueGid.end()){
 
         // make the gid seen
         uniqueGid[gid]=i;
@@ -1136,8 +1138,10 @@ class MPI_Bounding_Boxes {
 
     }
 
+    int const num_distributed_global_ids = distributedGlobalIds.size();
+
     // loop over ghost entitites in the distributed global id's
-    for (int i=distributedNumOwned ; i<distributedGlobalIds.size() ; ++i){
+    for (int i = distributedNumOwned ; i < num_distributed_global_ids; ++i){
 
       // get the current gid
       GID_t gid = distributedGlobalIds[i];
@@ -1184,7 +1188,8 @@ class MPI_Bounding_Boxes {
   void create_gid_to_flat_map(std::vector<GID_t> const& flatGlobalIds,
     std::map<GID_t,int>& gidToFlat){
 
-    for (int i = 0; i < flatGlobalIds.size(); ++i)
+    int const num_flat_global_ids = flatGlobalIds.size();
+    for (int i = 0; i < num_flat_global_ids; ++i)
       gidToFlat[flatGlobalIds[i]]=i;
 
   }
@@ -1205,7 +1210,7 @@ class MPI_Bounding_Boxes {
    */
   template<class T>
   void merge_duplicate_data(std::vector<T>const& in, std::vector<int>const& distributedIds,
-    std::vector<T>& result, int const stride=1){
+    std::vector<T>& result, int stride = 1){
 
     // clear result and reserve to stride * the number kept
     result.clear();
@@ -1250,13 +1255,13 @@ class MPI_Bounding_Boxes {
     result.reserve(distributedIds.size()*(dim_+1)); // estimate, lower bound
 
     // loop over the compressed distributed entities
-    for (int i=0; i<distributedIds.size(); ++i){
+    for (int distributedId : distributedIds){
 
       // temp for the offset of this id
-      int const thisOffset = offsets[distributedIds[i]];
+      int const thisOffset = offsets[distributedId];
 
       // loop over the references and map them
-      for (int j=0; j<counts[distributedIds[i]]; ++j)
+      for (int j=0; j<counts[distributedId]; ++j)
 
         // push the mapped reference
         result.push_back(gidToFlatId.at(in[thisOffset+j]));
@@ -1297,13 +1302,13 @@ class MPI_Bounding_Boxes {
     result.reserve(distributedIds.size()*(dim_+1)); // estimate, lower bound
 
     // loop over the compressed distributed entities
-    for (int i=0; i<distributedIds.size(); ++i){
+    for (int distributedId : distributedIds){
 
       // temp for the offset of this id
-      int const thisOffset = offsets[distributedIds[i]];
+      int const thisOffset = offsets[distributedId];
 
       // loop over the references and map them
-      for (int j=0; j<counts[distributedIds[i]]; ++j)
+      for (int j=0; j<counts[distributedId]; ++j)
 
         // push the mapped reference
         result.push_back(in[thisOffset+j]);
