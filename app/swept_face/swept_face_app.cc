@@ -930,9 +930,9 @@ template<>
 void rotate_vortex<2>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
-  double const deltaT = periodT/ntimesteps;
+  double const deltaT = (periodT/ntimesteps)/scale;
   double const tcur = iter * deltaT;
-  double const step = (deltaT / scale);
+  double const step = deltaT;
 
   double& x = coords[0];
   double& y = coords[1];
@@ -964,9 +964,9 @@ template<>
 void rotate_vortex<3>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
-  double const deltaT = periodT/ntimesteps;
+  double const deltaT = (periodT/ntimesteps)/scale;
   double const tcur = iter * deltaT;
-  double const step = (deltaT / scale);
+  double const step = deltaT;
 
   double& x = coords[0];
   double& y = coords[1];
