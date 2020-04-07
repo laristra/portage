@@ -64,61 +64,61 @@ static int const Skip = -2;        //edge that would otherwise close a path
 #define NEAR_ZERO(val) (((val) > -TOLERANCE) && ((val) < TOLERANCE))
 
 struct TEdge {
-  IntPoint Bot;
-  IntPoint Curr;
-  IntPoint Top;
-  IntPoint Delta;
-  double Dx;
-  PolyType PolyTyp;
-  EdgeSide Side;
-  int WindDelta; //1 or -1 depending on winding direction
-  int WindCnt;
-  int WindCnt2; //winding count of the opposite polytype
-  int OutIdx;
-  TEdge *Next;
-  TEdge *Prev;
-  TEdge *NextInLML;
-  TEdge *NextInAEL;
-  TEdge *PrevInAEL;
-  TEdge *NextInSEL;
-  TEdge *PrevInSEL;
+  IntPoint Bot     {};
+  IntPoint Curr    {};
+  IntPoint Top     {};
+  IntPoint Delta   {};
+  double Dx        = 0.;
+  PolyType PolyTyp {};
+  EdgeSide Side    {};
+  int WindDelta    = 0; //1 or -1 depending on winding direction
+  int WindCnt      = 0;
+  int WindCnt2     = 0; //winding count of the opposite polytype
+  int OutIdx       = 0;
+  TEdge *Next      = nullptr;
+  TEdge *Prev      = nullptr;
+  TEdge *NextInLML = nullptr;
+  TEdge *NextInAEL = nullptr;
+  TEdge *PrevInAEL = nullptr;
+  TEdge *NextInSEL = nullptr;
+  TEdge *PrevInSEL = nullptr;
 };
 
 struct IntersectNode {
-  TEdge          *Edge1;
-  TEdge          *Edge2;
-  IntPoint        Pt;
+  TEdge          *Edge1 = nullptr;
+  TEdge          *Edge2 = nullptr;
+  IntPoint        Pt {};
 };
 
 struct LocalMinimum {
-  cInt          Y;
-  TEdge        *LeftBound;
-  TEdge        *RightBound;
+  cInt  Y = 0;
+  TEdge *LeftBound  = nullptr;
+  TEdge *RightBound = nullptr;
 };
 
 struct OutPt;
 
 struct OutRec {
-  int       Idx;
-  bool      IsHole;
-  bool      IsOpen;
-  OutRec   *FirstLeft;  //see comments in clipper.pas
-  PolyNode *PolyNd;
-  OutPt    *Pts;
-  OutPt    *BottomPt;
+  int       Idx       = -1;
+  bool      IsHole    = false;
+  bool      IsOpen    = false;
+  OutRec   *FirstLeft = nullptr;  //see comments in clipper.pas
+  PolyNode *PolyNd    = nullptr;
+  OutPt    *Pts       = nullptr;
+  OutPt    *BottomPt  = nullptr;
 };
 
 struct OutPt {
-  int       Idx;
-  IntPoint  Pt;
-  OutPt    *Next;
-  OutPt    *Prev;
+  int       Idx  = -1;
+  IntPoint  Pt   {};
+  OutPt    *Next = nullptr;
+  OutPt    *Prev = nullptr;
 };
 
 struct Join {
-  OutPt    *OutPt1;
-  OutPt    *OutPt2;
-  IntPoint  OffPt;
+  OutPt    *OutPt1 = nullptr;
+  OutPt    *OutPt2 = nullptr;
+  IntPoint  OffPt {};
 };
 
 struct LocMinSorter
@@ -134,8 +134,10 @@ struct LocMinSorter
 
 inline cInt Round(double val)
 {
-  if ((val < 0)) return static_cast<cInt>(val - 0.5); 
-  else return static_cast<cInt>(val + 0.5);
+  if (val < 0.)
+    return static_cast<cInt>(val - 0.5);
+  else
+    return static_cast<cInt>(val + 0.5);
 }
 //------------------------------------------------------------------------------
 
@@ -150,8 +152,8 @@ inline cInt Abs(cInt val)
 
 void PolyTree::Clear()
 {
-    for (PolyNodes::size_type i = 0; i < AllNodes.size(); ++i)
-      delete AllNodes[i];
+    for (auto & AllNode : AllNodes)
+      delete AllNode;
     AllNodes.resize(0); 
     Childs.resize(0);
 }
@@ -162,13 +164,13 @@ PolyNode* PolyTree::GetFirst() const
   if (!Childs.empty())
       return Childs[0];
   else
-      return 0;
+      return nullptr;
 }
 //------------------------------------------------------------------------------
 
 int PolyTree::Total() const
 {
-  int result = (int)AllNodes.size();
+  int result = AllNodes.size();
   //with negative offsets, ignore the hidden outer polygon ...
   if (result > 0 && Childs[0] != AllNodes[0]) result--;
   return result;
@@ -178,20 +180,21 @@ int PolyTree::Total() const
 // PolyNode methods ...
 //------------------------------------------------------------------------------
 
-PolyNode::PolyNode(): Childs(), Parent(0), Index(0), m_IsOpen(false)
-{
-}
+PolyNode::PolyNode()
+  : Childs(), Parent(nullptr),
+    Index(0), m_IsOpen(false)
+{}
 //------------------------------------------------------------------------------
 
 int PolyNode::ChildCount() const
 {
-  return (int)Childs.size();
+  return Childs.size();
 }
 //------------------------------------------------------------------------------
 
 void PolyNode::AddChild(PolyNode& child)
 {
-  unsigned cnt = (unsigned)Childs.size();
+  unsigned cnt = Childs.size();
   Childs.push_back(&child);
   child.Parent = this;
   child.Index = cnt;
@@ -250,22 +253,20 @@ bool PolyNode::IsOpen() const
 class Int128
 {
   public:
-    ulong64 lo;
-    long64 hi;
+    ulong64 lo = 0;
+    long64  hi = 0;
 
-    Int128(long64 _lo = 0)
-    {
+    explicit Int128(long64 _lo = 0) {
       lo = (ulong64)_lo;   
       if (_lo < 0)  hi = -1; else hi = 0; 
     }
 
 
-    Int128(const Int128 &val): lo(val.lo), hi(val.hi){}
+    Int128(const Int128 &val) = default;
 
     Int128(const long64& _hi, const ulong64& _lo): lo(_lo), hi(_hi){}
     
-    Int128& operator = (const long64 &val)
-    {
+    Int128& operator = (const long64 &val) {
       lo = (ulong64)val;
       if (val < 0) hi = -1; else hi = 0;
       return *this;
@@ -335,7 +336,7 @@ class Int128
         return Int128(~hi, ~lo + 1);
     }
 
-    operator double() const
+    explicit operator double() const
     {
       const double shift64 = 18446744073709551616.0; //2^64
       if (hi < 0)
@@ -459,8 +460,8 @@ int PointInPolygon (const IntPoint &pt, const Path &path)
         if (ipNext.X > pt.X) result = 1 - result;
         else
         {
-          double d = (double)(ip.X - pt.X) * (ipNext.Y - pt.Y) - 
-            (double)(ipNext.X - pt.X) * (ip.Y - pt.Y);
+          double d = static_cast<double>((ip.X - pt.X) * (ipNext.Y - pt.Y)) -
+                     static_cast<double>((ipNext.X - pt.X) * (ip.Y - pt.Y));
           if (!d) return -1;
           if ((d > 0) == (ipNext.Y > ip.Y)) result = 1 - result;
         }
@@ -468,8 +469,8 @@ int PointInPolygon (const IntPoint &pt, const Path &path)
       {
         if (ipNext.X > pt.X)
         {
-          double d = (double)(ip.X - pt.X) * (ipNext.Y - pt.Y) - 
-            (double)(ipNext.X - pt.X) * (ip.Y - pt.Y);
+          double d = static_cast<double>((ip.X - pt.X) * (ipNext.Y - pt.Y)) -
+                     static_cast<double>((ipNext.X - pt.X) * (ip.Y - pt.Y));
           if (!d) return -1;
           if ((d > 0) == (ipNext.Y > ip.Y)) result = 1 - result;
         }
@@ -500,8 +501,8 @@ int PointInPolygon (const IntPoint &pt, OutPt *op)
         if (op->Next->Pt.X > pt.X) result = 1 - result;
         else
         {
-          double d = (double)(op->Pt.X - pt.X) * (op->Next->Pt.Y - pt.Y) - 
-            (double)(op->Next->Pt.X - pt.X) * (op->Pt.Y - pt.Y);
+          double d = static_cast<double>((op->Pt.X - pt.X) * (op->Next->Pt.Y - pt.Y)) -
+                     static_cast<double>((op->Next->Pt.X - pt.X) * (op->Pt.Y - pt.Y));
           if (!d) return -1;
           if ((d > 0) == (op->Next->Pt.Y > op->Pt.Y)) result = 1 - result;
         }
@@ -509,8 +510,8 @@ int PointInPolygon (const IntPoint &pt, OutPt *op)
       {
         if (op->Next->Pt.X > pt.X)
         {
-          double d = (double)(op->Pt.X - pt.X) * (op->Next->Pt.Y - pt.Y) - 
-            (double)(op->Next->Pt.X - pt.X) * (op->Pt.Y - pt.Y);
+          double d = static_cast<double>((op->Pt.X - pt.X) * (op->Next->Pt.Y - pt.Y)) -
+                     static_cast<double>((op->Next->Pt.X - pt.X) * (op->Pt.Y - pt.Y));
           if (!d) return -1;
           if ((d > 0) == (op->Next->Pt.Y > op->Pt.Y)) result = 1 - result;
         }
@@ -582,7 +583,7 @@ inline bool IsHorizontal(TEdge &e)
 inline double GetDx(const IntPoint pt1, const IntPoint pt2)
 {
   return (pt1.Y == pt2.Y) ?
-    HORIZONTAL : (double)(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
+    HORIZONTAL : static_cast<double>(pt2.X - pt1.X) / (pt2.Y - pt1.Y);
 }
 //---------------------------------------------------------------------------
 
@@ -592,7 +593,7 @@ inline void SetDx(TEdge &e)
   e.Delta.Y = (e.Top.Y - e.Bot.Y);
 
   if (e.Delta.Y == 0) e.Dx = HORIZONTAL;
-  else e.Dx = (double)(e.Delta.X) / e.Delta.Y;
+  else e.Dx = static_cast<double>((e.Delta.X)) / e.Delta.Y;
 }
 //---------------------------------------------------------------------------
 
@@ -615,7 +616,7 @@ inline void SwapPolyIndexes(TEdge &Edge1, TEdge &Edge2)
 inline cInt TopX(TEdge &edge, const cInt currentY)
 {
   return ( currentY == edge.Top.Y ) ?
-    edge.Top.X : edge.Bot.X + Round(edge.Dx *(currentY - edge.Bot.Y));
+    edge.Top.X : edge.Bot.X + Round(edge.Dx * static_cast<double>(currentY - edge.Bot.Y));
 }
 //------------------------------------------------------------------------------
 
@@ -718,7 +719,8 @@ void DisposeOutPts(OutPt*& pp)
 
 inline void InitEdge(TEdge* e, TEdge* eNext, TEdge* ePrev, const IntPoint& Pt)
 {
-  std::memset(e, 0, sizeof(TEdge));
+  //std::memset(e, 0, sizeof(TEdge));
+  *e = TEdge();
   e->Next = eNext;
   e->Prev = ePrev;
   e->Curr = Pt;
@@ -748,7 +750,7 @@ TEdge* RemoveEdge(TEdge* e)
   e->Prev->Next = e->Next;
   e->Next->Prev = e->Prev;
   TEdge* result = e->Next;
-  e->Prev = 0; //flag as removed (see ClipperBase.Clear)
+  e->Prev = nullptr; //flag as removed (see ClipperBase.Clear)
   return result;
 }
 //------------------------------------------------------------------------------
@@ -816,20 +818,20 @@ bool FirstIsBottomPt(const OutPt* btmPt1, const OutPt* btmPt2)
 
 OutPt* GetBottomPt(OutPt *pp)
 {
-  OutPt* dups = 0;
+  OutPt* dups = nullptr;
   OutPt* p = pp->Next;
   while (p != pp)
   {
     if (p->Pt.Y > pp->Pt.Y)
     {
       pp = p;
-      dups = 0;
+      dups = nullptr;
     }
     else if (p->Pt.Y == pp->Pt.Y && p->Pt.X <= pp->Pt.X)
     {
       if (p->Pt.X < pp->Pt.X)
       {
-        dups = 0;
+        dups = nullptr;
         pp = p;
       } else
       {
@@ -893,7 +895,7 @@ void RangeTest(const IntPoint& Pt, bool& useFullRange)
   if (useFullRange)
   {
     if (Pt.X > hiRange || Pt.Y > hiRange || -Pt.X > hiRange || -Pt.Y > hiRange) 
-      throw "Coordinate outside allowed range";
+      throw std::runtime_error("Coordinate outside allowed range");
   }
   else if (Pt.X > loRange|| Pt.Y > loRange || -Pt.X > loRange || -Pt.Y > loRange) 
   {
@@ -923,7 +925,7 @@ TEdge* FindNextLocMin(TEdge* E)
 TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
 {
   TEdge *Result = E;
-  TEdge *Horz = 0;
+  TEdge *Horz = nullptr;
 
   if (E->OutIdx == Skip)
   {
@@ -956,7 +958,7 @@ TEdge* ClipperBase::ProcessBound(TEdge* E, bool NextIsForward)
         E = Result->Prev;
       MinimaList::value_type locMin;
       locMin.Y = E->Bot.Y;
-      locMin.LeftBound = 0;
+      locMin.LeftBound = nullptr;
       locMin.RightBound = E;
       E->WindDelta = 0;
       Result = ProcessBound(E, NextIsForward);
@@ -1063,7 +1065,7 @@ bool ClipperBase::AddPath(const Path &pg, PolyType PolyTyp, bool Closed)
   if ((Closed && highI < 2) || (!Closed && highI < 1)) return false;
 
   //create a new edge array ...
-  TEdge *edges = new TEdge [highI +1];
+  auto *edges = new TEdge [highI +1];
 
   bool IsFlat = true;
   //1. Basic (first) edge initialization ...
@@ -1231,8 +1233,8 @@ bool ClipperBase::AddPath(const Path &pg, PolyType PolyTyp, bool Closed)
 bool ClipperBase::AddPaths(const Paths &ppg, PolyType PolyTyp, bool Closed)
 {
   bool result = false;
-  for (Paths::size_type i = 0; i < ppg.size(); ++i)
-    if (AddPath(ppg[i], PolyTyp, Closed)) result = true;
+  for (const auto & i : ppg)
+    if (AddPath(i, PolyTyp, Closed)) result = true;
   return result;
 }
 //------------------------------------------------------------------------------
@@ -1240,11 +1242,10 @@ bool ClipperBase::AddPaths(const Paths &ppg, PolyType PolyTyp, bool Closed)
 void ClipperBase::Clear()
 {
   DisposeLocalMinimaList();
-  for (EdgeList::size_type i = 0; i < m_edges.size(); ++i)
+  for (auto&& edges : m_edges)
   {
     //for each edge array in turn, find the first used edge and 
     //check for and remove any hiddenPts in each edge in the array.
-    TEdge* edges = m_edges[i];
     delete [] edges;
   }
   m_edges.clear();
@@ -1260,9 +1261,9 @@ void ClipperBase::Reset()
   std::sort(m_MinimaList.begin(), m_MinimaList.end(), LocMinSorter());
 
   //reset all edges ...
-  for (MinimaList::iterator lm = m_MinimaList.begin(); lm != m_MinimaList.end(); ++lm)
+  for (auto & lm : m_MinimaList)
   {
-    TEdge* e = lm->LeftBound;
+    TEdge* e = lm.LeftBound;
     if (e)
     {
       e->Curr = e->Bot;
@@ -1270,7 +1271,7 @@ void ClipperBase::Reset()
       e->OutIdx = Unassigned;
     }
 
-    e = lm->RightBound;
+    e = lm.RightBound;
     if (e)
     {
       e->Curr = e->Bot;
@@ -1297,8 +1298,8 @@ void ClipperBase::PopLocalMinima()
 
 IntRect ClipperBase::GetBounds()
 {
-  IntRect result;
-  MinimaList::iterator lm = m_MinimaList.begin();
+  IntRect result {};
+  auto lm = m_MinimaList.begin();
   if (lm == m_MinimaList.end())
   {
     result.left = result.top = result.right = result.bottom = 0;
@@ -1339,12 +1340,12 @@ IntRect ClipperBase::GetBounds()
 
 Clipper::Clipper(int initOptions) : ClipperBase() //constructor
 {
-  m_ActiveEdges = 0;
-  m_SortedEdges = 0;
+  m_ActiveEdges   = nullptr;
+  m_SortedEdges   = nullptr;
   m_ExecuteLocked = false;
-  m_UseFullRange = false;
+  m_UseFullRange  = false;
   m_ReverseOutput = ((initOptions & ioReverseSolution) != 0);
-  m_StrictSimple = ((initOptions & ioStrictlySimple) != 0);
+  m_StrictSimple  = ((initOptions & ioStrictlySimple) != 0);
   m_PreserveCollinear = ((initOptions & ioPreserveCollinear) != 0);
   m_HasOpenPaths = false;
 #ifdef use_xyz  
@@ -1457,9 +1458,8 @@ bool Clipper::ExecuteInternal()
   if (succeeded)
   {
     //fix orientations ...
-    for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
+    for (auto&& outRec : m_PolyOuts)
     {
-      OutRec *outRec = m_PolyOuts[i];
       if (!outRec->Pts || outRec->IsOpen) continue;
       if ((outRec->IsHole ^ m_ReverseOutput) == (Area(*outRec) > 0))
         ReversePolyPtLinks(outRec->Pts);
@@ -1468,9 +1468,8 @@ bool Clipper::ExecuteInternal()
     if (!m_Joins.empty()) JoinCommonEdges();
 
     //unfortunately FixupOutPolygon() must be done after JoinCommonEdges()
-    for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
+    for (auto&& outRec : m_PolyOuts)
     {
-      OutRec *outRec = m_PolyOuts[i];
       if (outRec->Pts && !outRec->IsOpen)
         FixupOutPolygon(*outRec);
     }
@@ -1512,7 +1511,7 @@ void Clipper::DisposeOutRec(PolyOutList::size_type index)
   OutRec *outRec = m_PolyOuts[index];
   if (outRec->Pts) DisposeOutPts(outRec->Pts);
   delete outRec;
-  m_PolyOuts[index] = 0;
+  m_PolyOuts[index] = nullptr;
 }
 //------------------------------------------------------------------------------
 
@@ -1790,13 +1789,13 @@ void Clipper::AddEdgeToSEL(TEdge *edge)
   if( !m_SortedEdges )
   {
     m_SortedEdges = edge;
-    edge->PrevInSEL = 0;
-    edge->NextInSEL = 0;
+    edge->PrevInSEL = nullptr;
+    edge->NextInSEL = nullptr;
   }
   else
   {
     edge->NextInSEL = m_SortedEdges;
-    edge->PrevInSEL = 0;
+    edge->PrevInSEL = nullptr;
     m_SortedEdges->PrevInSEL = edge;
     m_SortedEdges = edge;
   }
@@ -1836,8 +1835,8 @@ void Clipper::ClearJoins()
 
 void Clipper::ClearGhostJoins()
 {
-  for (JoinList::size_type i = 0; i < m_GhostJoins.size(); i++)
-    delete m_GhostJoins[i];
+  for (auto & m_GhostJoin : m_GhostJoins)
+    delete m_GhostJoin;
   m_GhostJoins.resize(0);
 }
 //------------------------------------------------------------------------------
@@ -1846,7 +1845,7 @@ void Clipper::AddGhostJoin(OutPt *op, const IntPoint OffPt)
 {
   Join* j = new Join;
   j->OutPt1 = op;
-  j->OutPt2 = 0;
+  j->OutPt2 = nullptr;
   j->OffPt = OffPt;
   m_GhostJoins.push_back(j);
 }
@@ -1859,18 +1858,18 @@ void Clipper::InsertLocalMinimaIntoAEL(const cInt botY)
     TEdge* lb = m_CurrentLM->LeftBound;
     TEdge* rb = m_CurrentLM->RightBound;
     PopLocalMinima();
-    OutPt *Op1 = 0;
+    OutPt *Op1 = nullptr;
     if (!lb)
     {
       //nb: don't insert LB into either AEL or SEL
-      InsertEdgeIntoAEL(rb, 0);
+      InsertEdgeIntoAEL(rb, nullptr);
       SetWindingCount(*rb);
       if (IsContributing(*rb))
         Op1 = AddOutPt(rb, rb->Bot); 
     } 
     else if (!rb)
     {
-      InsertEdgeIntoAEL(lb, 0);
+      InsertEdgeIntoAEL(lb, nullptr);
       SetWindingCount(*lb);
       if (IsContributing(*lb))
         Op1 = AddOutPt(lb, lb->Bot);
@@ -1898,11 +1897,10 @@ void Clipper::InsertLocalMinimaIntoAEL(const cInt botY)
 
     //if any output polygons share an edge, they'll need joining later ...
     if (Op1 && IsHorizontal(*rb) && 
-      m_GhostJoins.size() > 0 && (rb->WindDelta != 0))
+      !m_GhostJoins.empty() && (rb->WindDelta != 0))
     {
-      for (JoinList::size_type i = 0; i < m_GhostJoins.size(); ++i)
+      for (auto&& jr : m_GhostJoins)
       {
-        Join* jr = m_GhostJoins[i];
         //if the horizontal Rb and a 'ghost' horizontal overlap, then convert
         //the 'ghost' join to a real join ready for later ...
         if (HorzSegmentsOverlap(jr->OutPt1->Pt.X, jr->OffPt.X, rb->Bot.X, rb->Top.X))
@@ -2306,15 +2304,15 @@ void Clipper::AppendPolygon(TEdge *e1, TEdge *e2)
     Side = esRight;
   }
 
-  outRec1->BottomPt = 0;
+  outRec1->BottomPt = nullptr;
   if (holeStateRec == outRec2)
   {
     if (outRec2->FirstLeft != outRec1)
       outRec1->FirstLeft = outRec2->FirstLeft;
     outRec1->IsHole = outRec2->IsHole;
   }
-  outRec2->Pts = 0;
-  outRec2->BottomPt = 0;
+  outRec2->Pts = nullptr;
+  outRec2->BottomPt = nullptr;
   outRec2->FirstLeft = outRec1;
 
   int OKIdx = e1->OutIdx;
@@ -2341,7 +2339,7 @@ void Clipper::AppendPolygon(TEdge *e1, TEdge *e2)
 
 OutRec* Clipper::CreateOutRec()
 {
-  OutRec* result = new OutRec;
+  auto* result = new OutRec;
   result->IsHole = false;
   result->IsOpen = false;
   result->FirstLeft = 0;
@@ -2361,7 +2359,7 @@ OutPt* Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
   {
     OutRec *outRec = CreateOutRec();
     outRec->IsOpen = (e->WindDelta == 0);
-    OutPt* newOp = new OutPt;
+    auto* newOp = new OutPt;
     outRec->Pts = newOp;
     newOp->Idx = outRec->Idx;
     newOp->Pt = pt;
@@ -2380,7 +2378,7 @@ OutPt* Clipper::AddOutPt(TEdge *e, const IntPoint &pt)
     if (ToFront && (pt == op->Pt)) return op;
     else if (!ToFront && (pt == op->Prev->Pt)) return op->Prev;
 
-    OutPt* newOp = new OutPt;
+    auto* newOp = new OutPt;
     newOp->Idx = outRec->Idx;
     newOp->Pt = pt;
     newOp->Next = op;
@@ -2425,7 +2423,7 @@ inline bool IsIntermediate(TEdge *e, const cInt Y)
 
 TEdge *GetMaximaPair(TEdge *e)
 {
-  TEdge* result = 0;
+  TEdge* result = nullptr;
   if ((e->Next->Top == e->Top) && !e->Next->NextInLML)
     result = e->Next;
   else if ((e->Prev->Top == e->Top) && !e->Prev->NextInLML)
@@ -2434,7 +2432,7 @@ TEdge *GetMaximaPair(TEdge *e)
   if (result && (result->OutIdx == Skip ||
     //result is false if both NextInAEL & PrevInAEL are nil & not horizontal ...
     (result->NextInAEL == result->PrevInAEL && !IsHorizontal(*result))))
-      return 0;
+      return nullptr;
   return result;
 }
 //------------------------------------------------------------------------------
@@ -2688,7 +2686,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge, bool isTopOfScanbeam)
 void Clipper::UpdateEdgeIntoAEL(TEdge *&e)
 {
   if( !e->NextInLML ) throw
-    clipperException("UpdateEdgeIntoAEL: invalid call");
+    std::runtime_error("UpdateEdgeIntoAEL: invalid call");
 
   e->NextInLML->OutIdx = e->OutIdx;
   TEdge* AelPrev = e->PrevInAEL;
@@ -2722,7 +2720,7 @@ bool Clipper::ProcessIntersections(const cInt topY)
   {
     m_SortedEdges = 0;
     DisposeIntersectNodes();
-    throw clipperException("ProcessIntersections error");
+    throw std::runtime_error("ProcessIntersections error");
   }
   m_SortedEdges = 0;
   return true;
@@ -2731,8 +2729,8 @@ bool Clipper::ProcessIntersections(const cInt topY)
 
 void Clipper::DisposeIntersectNodes()
 {
-  for (size_t i = 0; i < m_IntersectList.size(); ++i )
-    delete m_IntersectList[i];
+  for (auto & i : m_IntersectList)
+    delete i;
   m_IntersectList.clear();
 }
 //------------------------------------------------------------------------------
@@ -2765,7 +2763,7 @@ void Clipper::BuildIntersectList(const cInt topY)
       if(e->Curr.X > eNext->Curr.X)
       {
         IntersectPoint(*e, *eNext, Pt);
-        IntersectNode * newNode = new IntersectNode;
+        auto* newNode = new IntersectNode;
         newNode->Edge1 = e;
         newNode->Edge2 = eNext;
         newNode->Pt = Pt;
@@ -2885,7 +2883,7 @@ void Clipper::DoMaxima(TEdge *e)
     DeleteFromAEL(eMaxPair);
   } 
 #endif
-  else throw clipperException("DoMaxima error");
+  else throw std::runtime_error("DoMaxima error");
 }
 //------------------------------------------------------------------------------
 
@@ -2992,8 +2990,8 @@ void Clipper::FixupOutPolygon(OutRec &outrec)
 {
   //FixupOutPolygon() - removes duplicate points and simplifies consecutive
   //parallel edges by removing the middle vertex.
-  OutPt *lastOK = 0;
-  outrec.BottomPt = 0;
+  OutPt *lastOK = nullptr;
+  outrec.BottomPt = nullptr;
   OutPt *pp = outrec.Pts;
 
   for (;;)
@@ -3011,7 +3009,7 @@ void Clipper::FixupOutPolygon(OutRec &outrec)
       (!m_PreserveCollinear || 
       !Pt2IsBetweenPt1AndPt3(pp->Prev->Pt, pp->Pt, pp->Next->Pt))))
     {
-      lastOK = 0;
+      lastOK = nullptr;
       OutPt *tmp = pp;
       pp->Prev->Next = pp->Next;
       pp->Next->Prev = pp->Prev;
@@ -3047,11 +3045,11 @@ int PointCount(OutPt *Pts)
 void Clipper::BuildResult(Paths &polys)
 {
   polys.reserve(m_PolyOuts.size());
-  for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
+  for (auto & m_PolyOut : m_PolyOuts)
   {
-    if (!m_PolyOuts[i]->Pts) continue;
+    if (!m_PolyOut->Pts) continue;
     Path pg;
-    OutPt* p = m_PolyOuts[i]->Pts->Prev;
+    OutPt* p = m_PolyOut->Pts->Prev;
     int cnt = PointCount(p);
     if (cnt < 2) continue;
     pg.reserve(cnt);
@@ -3070,13 +3068,12 @@ void Clipper::BuildResult2(PolyTree& polytree)
     polytree.Clear();
     polytree.AllNodes.reserve(m_PolyOuts.size());
     //add each output polygon/contour to polytree ...
-    for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); i++)
+    for (auto&& outRec : m_PolyOuts)
     {
-        OutRec* outRec = m_PolyOuts[i];
         int cnt = PointCount(outRec->Pts);
         if ((outRec->IsOpen && cnt < 2) || (!outRec->IsOpen && cnt < 3)) continue;
         FixHoleLinkage(*outRec);
-        PolyNode* pn = new PolyNode();
+        auto* pn = new PolyNode();
         //nb: polytree takes ownership of all the PolyNodes
         polytree.AllNodes.push_back(pn);
         outRec->PolyNd = pn;
@@ -3093,9 +3090,8 @@ void Clipper::BuildResult2(PolyTree& polytree)
 
     //fixup PolyNode links etc ...
     polytree.Childs.reserve(m_PolyOuts.size());
-    for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); i++)
+    for (auto&& outRec : m_PolyOuts)
     {
-        OutRec* outRec = m_PolyOuts[i];
         if (!outRec->PolyNd) continue;
         if (outRec->IsOpen) 
         {
@@ -3129,7 +3125,8 @@ inline bool E2InsertsBeforeE1(TEdge &e1, TEdge &e2)
   {
     if (e2.Top.Y > e1.Top.Y)
       return e2.Top.X < TopX(e1, e2.Top.Y); 
-      else return e1.Top.X > TopX(e2, e1.Top.Y);
+    else
+      return e1.Top.X > TopX(e2, e1.Top.Y);
   } 
   else return e2.Curr.X < e1.Curr.X;
 }
@@ -3195,7 +3192,7 @@ void Clipper::InsertEdgeIntoAEL(TEdge *edge, TEdge* startEdge)
 
 OutPt* DupOutPt(OutPt* outPt, bool InsertAfter)
 {
-  OutPt* result = new OutPt;
+  auto* result = new OutPt;
   result->Pt = outPt->Pt;
   result->Idx = outPt->Idx;
   if (InsertAfter)
@@ -3473,9 +3470,8 @@ static OutRec* ParseFirstLeft(OutRec* FirstLeft)
 void Clipper::FixupFirstLefts1(OutRec* OldOutRec, OutRec* NewOutRec)
 { 
   //tests if NewOutRec contains the polygon before reassigning FirstLeft
-  for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
+  for (auto&& outRec : m_PolyOuts)
   {
-    OutRec* outRec = m_PolyOuts[i];
     if (!outRec->Pts || !outRec->FirstLeft) continue;
     OutRec* firstLeft = ParseFirstLeft(outRec->FirstLeft);
     if (firstLeft == OldOutRec)
@@ -3490,9 +3486,8 @@ void Clipper::FixupFirstLefts1(OutRec* OldOutRec, OutRec* NewOutRec)
 void Clipper::FixupFirstLefts2(OutRec* OldOutRec, OutRec* NewOutRec)
 { 
   //reassigns FirstLeft WITHOUT testing if NewOutRec contains the polygon
-  for (PolyOutList::size_type i = 0; i < m_PolyOuts.size(); ++i)
+  for (auto&& outRec : m_PolyOuts)
   {
-    OutRec* outRec = m_PolyOuts[i];
     if (outRec->FirstLeft == OldOutRec) outRec->FirstLeft = NewOutRec;
   }
 }
@@ -3500,10 +3495,8 @@ void Clipper::FixupFirstLefts2(OutRec* OldOutRec, OutRec* NewOutRec)
 
 void Clipper::JoinCommonEdges()
 {
-  for (JoinList::size_type i = 0; i < m_Joins.size(); i++)
+  for (auto&& join : m_Joins)
   {
-    Join* join = m_Joins[i];
-
     OutRec *outRec1 = GetOutRec(join->OutPt1->Idx);
     OutRec *outRec2 = GetOutRec(join->OutPt2->Idx);
 
@@ -3583,8 +3576,8 @@ void Clipper::JoinCommonEdges()
     {
       //joined 2 polygons together ...
 
-      outRec2->Pts = 0;
-      outRec2->BottomPt = 0;
+      outRec2->Pts = nullptr;
+      outRec2->BottomPt = nullptr;
       outRec2->Idx = outRec1->Idx;
 
       outRec1->IsHole = holeStateRec->IsHole;
@@ -3607,8 +3600,8 @@ DoublePoint GetUnitNormal(const IntPoint &pt1, const IntPoint &pt2)
   if(pt2.X == pt1.X && pt2.Y == pt1.Y) 
     return DoublePoint(0, 0);
 
-  double Dx = (double)(pt2.X - pt1.X);
-  double dy = (double)(pt2.Y - pt1.Y);
+  double Dx = static_cast<double>(pt2.X - pt1.X);
+  double dy = static_cast<double>(pt2.Y - pt1.Y);
   double f = 1 *1.0/ std::sqrt( Dx*Dx + dy*dy );
   Dx *= f;
   dy *= f;
@@ -3646,7 +3639,7 @@ void ClipperOffset::AddPath(const Path& path, JoinType joinType, EndType endType
 {
   int highI = (int)path.size() - 1;
   if (highI < 0) return;
-  PolyNode* newNode = new PolyNode();
+  auto* newNode = new PolyNode();
   newNode->m_jointype = joinType;
   newNode->m_endtype = endType;
 
@@ -3689,8 +3682,8 @@ void ClipperOffset::AddPath(const Path& path, JoinType joinType, EndType endType
 
 void ClipperOffset::AddPaths(const Paths& paths, JoinType joinType, EndType endType)
 {
-  for (Paths::size_type i = 0; i < paths.size(); ++i)
-    AddPath(paths[i], joinType, endType);
+  for (const auto & path : paths)
+    AddPath(path, joinType, endType);
 }
 //------------------------------------------------------------------------------
 
@@ -3745,7 +3738,7 @@ void ClipperOffset::Execute(Paths& solution, double delta)
     clpr.AddPath(outer, ptSubject, true);
     clpr.ReverseSolution(true);
     clpr.Execute(ctUnion, solution, pftNegative, pftNegative);
-    if (solution.size() > 0) solution.erase(solution.begin());
+    if (!solution.empty()) solution.erase(solution.begin());
   }
 }
 //------------------------------------------------------------------------------
@@ -3877,7 +3870,7 @@ void ClipperOffset::DoOffset(double delta)
     if (node.m_endtype == etClosedLine || node.m_endtype == etClosedPolygon)
       m_normals.push_back(GetUnitNormal(m_srcPoly[len - 1], m_srcPoly[0]));
     else
-      m_normals.push_back(DoublePoint(m_normals[len - 2]));
+      m_normals.emplace_back(m_normals[len - 2]);
 
     if (node.m_endtype == etClosedPolygon)
     {
@@ -4124,8 +4117,8 @@ void ReversePath(Path& p)
 
 void ReversePaths(Paths& p)
 {
-  for (Paths::size_type i = 0; i < p.size(); ++i)
-    ReversePath(p[i]);
+  for (auto & i : p)
+    ReversePath(i);
 }
 //------------------------------------------------------------------------------
 
@@ -4165,13 +4158,13 @@ double DistanceFromLineSqrd(
   const IntPoint& pt, const IntPoint& ln1, const IntPoint& ln2)
 {
   //The equation of a line in general form (Ax + By + C = 0)
-  //given 2 points (x¹,y¹) & (x²,y²) is ...
-  //(y¹ - y²)x + (x² - x¹)y + (y² - y¹)x¹ - (x² - x¹)y¹ = 0
-  //A = (y¹ - y²); B = (x² - x¹); C = (y² - y¹)x¹ - (x² - x¹)y¹
-  //perpendicular distance of point (x³,y³) = (Ax³ + By³ + C)/Sqrt(A² + B²)
+  //given 2 points (xï¿½,yï¿½) & (xï¿½,yï¿½) is ...
+  //(yï¿½ - yï¿½)x + (xï¿½ - xï¿½)y + (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½ = 0
+  //A = (yï¿½ - yï¿½); B = (xï¿½ - xï¿½); C = (yï¿½ - yï¿½)xï¿½ - (xï¿½ - xï¿½)yï¿½
+  //perpendicular distance of point (xï¿½,yï¿½) = (Axï¿½ + Byï¿½ + C)/Sqrt(Aï¿½ + Bï¿½)
   //see http://en.wikipedia.org/wiki/Perpendicular_distance
-  double A = double(ln1.Y - ln2.Y);
-  double B = double(ln2.X - ln1.X);
+  auto A = double(ln1.Y - ln2.Y);
+  auto B = double(ln2.X - ln1.X);
   double C = A * ln1.X  + B * ln1.Y;
   C = A * pt.X + B * pt.Y - C;
   return (C * C) / (A * A + B * B);
@@ -4190,7 +4183,7 @@ bool SlopesNearCollinear(const IntPoint& pt1,
       return DistanceFromLineSqrd(pt1, pt2, pt3) < distSqrd;
     else if ((pt2.X > pt1.X) == (pt2.X < pt3.X))
       return DistanceFromLineSqrd(pt2, pt1, pt3) < distSqrd;
-		else
+    else
 	    return DistanceFromLineSqrd(pt3, pt1, pt2) < distSqrd;
 	}
 	else
@@ -4199,7 +4192,7 @@ bool SlopesNearCollinear(const IntPoint& pt1,
       return DistanceFromLineSqrd(pt1, pt2, pt3) < distSqrd;
     else if ((pt2.Y > pt1.Y) == (pt2.Y < pt3.Y))
       return DistanceFromLineSqrd(pt2, pt1, pt3) < distSqrd;
-		else
+    else
       return DistanceFromLineSqrd(pt3, pt1, pt2) < distSqrd;
 	}
 }
@@ -4236,7 +4229,7 @@ void CleanPolygon(const Path& in_poly, Path& out_poly, double distance)
     return;
   }
 
-  OutPt* outPts = new OutPt[size];
+  auto* outPts = new OutPt[size];
   for (size_t i = 0; i < size; ++i)
   {
     outPts[i].Pt = in_poly[i];
@@ -4315,8 +4308,8 @@ void Minkowski(const Path& poly, const Path& path,
     {
       Path p;
       p.reserve(polyCnt);
-      for (size_t j = 0; j < poly.size(); ++j)
-        p.push_back(IntPoint(path[i].X + poly[j].X, path[i].Y + poly[j].Y));
+      for (auto&& j : poly)
+        p.push_back(IntPoint(path[i].X + j.X, path[i].Y + j.Y));
       pp.push_back(p);
     }
   else
@@ -4324,8 +4317,8 @@ void Minkowski(const Path& poly, const Path& path,
     {
       Path p;
       p.reserve(polyCnt);
-      for (size_t j = 0; j < poly.size(); ++j)
-        p.push_back(IntPoint(path[i].X - poly[j].X, path[i].Y - poly[j].Y));
+      for (auto&& j : poly)
+        p.push_back(IntPoint(path[i].X - j.X, path[i].Y - j.Y));
       pp.push_back(p);
     }
 
@@ -4367,15 +4360,15 @@ void TranslatePath(const Path& input, Path& output, IntPoint delta)
 void MinkowskiSum(const Path& pattern, const Paths& paths, Paths& solution, bool pathIsClosed)
 {
   Clipper c;
-  for (size_t i = 0; i < paths.size(); ++i)
+  for (const auto & path : paths)
   {
     Paths tmp;
-    Minkowski(pattern, paths[i], tmp, true, pathIsClosed);
+    Minkowski(pattern, path, tmp, true, pathIsClosed);
     c.AddPaths(tmp, ptSubject, true);
     if (pathIsClosed)
     {
       Path tmp2;
-      TranslatePath(paths[i], tmp2, pattern[0]);
+      TranslatePath(path, tmp2, pattern[0]);
       c.AddPath(tmp2, ptClip, true);
     }
   }
@@ -4454,8 +4447,8 @@ std::ostream& operator <<(std::ostream &s, const Path &p)
 
 std::ostream& operator <<(std::ostream &s, const Paths &p)
 {
-  for (Paths::size_type i = 0; i < p.size(); i++)
-    s << p[i];
+  for (const auto & i : p)
+    s << i;
   s << "\n";
   return s;
 }

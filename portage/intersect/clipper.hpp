@@ -82,13 +82,13 @@ enum PolyFillType { pftEvenOdd, pftNonZero, pftPositive, pftNegative };
 #endif
 
 struct IntPoint {
-  cInt X;
-  cInt Y;
+  cInt X = 0;
+  cInt Y = 0;
 #ifdef use_xyz
-  cInt Z;
+  cInt Z = 0;
   IntPoint(cInt x = 0, cInt y = 0, cInt z = 0): X(x), Y(y), Z(z) {};
 #else
-  IntPoint(cInt x = 0, cInt y = 0): X(x), Y(y) {};
+  explicit IntPoint(cInt x = 0, cInt y = 0): X(x), Y(y) {};
 #endif
 
   friend inline bool operator== (const IntPoint& a, const IntPoint& b)
@@ -114,10 +114,10 @@ std::ostream& operator <<(std::ostream &s, const Paths &p);
 
 struct DoublePoint
 {
-  double X;
-  double Y;
-  DoublePoint(double x = 0, double y = 0) : X(x), Y(y) {}
-  DoublePoint(IntPoint ip) : X((double)ip.X), Y((double)ip.Y) {}
+  double X = 0.;
+  double Y = 0.;
+  explicit DoublePoint(double x = 0, double y = 0) : X(x), Y(y) {}
+  explicit DoublePoint(IntPoint ip) : X((double)ip.X), Y((double)ip.Y) {}
 };
 //------------------------------------------------------------------------------
 
@@ -135,20 +135,24 @@ typedef std::vector< PolyNode* > PolyNodes;
 class PolyNode 
 { 
 public:
+    Path Contour {};
+    PolyNodes Childs {};
+    PolyNode* Parent = nullptr;
+
     PolyNode();
-    virtual ~PolyNode(){};
-    Path Contour;
-    PolyNodes Childs;
-    PolyNode* Parent;
+    virtual ~PolyNode() = default;
+
     PolyNode* GetNext() const;
     bool IsHole() const;
     bool IsOpen() const;
     int ChildCount() const;
+
 private:
-    unsigned Index; //node index in Parent.Childs
-    bool m_IsOpen;
-    JoinType m_jointype;
-    EndType m_endtype;
+    unsigned Index      = 0; //node index in Parent.Childs
+    bool m_IsOpen       = false;
+    JoinType m_jointype = jtSquare;
+    EndType m_endtype   = etClosedPolygon;
+
     PolyNode* GetNextSiblingUp() const;
     void AddChild(PolyNode& child);
     friend class Clipper; //to access Index
@@ -158,7 +162,7 @@ private:
 class PolyTree: public PolyNode
 { 
 public:
-    ~PolyTree(){Clear();};
+    ~PolyTree() override { Clear(); }
     PolyNode* GetFirst() const;
     void Clear();
     int Total() const;
@@ -224,8 +228,9 @@ public:
   bool AddPaths(const Paths &ppg, PolyType PolyTyp, bool Closed);
   virtual void Clear();
   IntRect GetBounds();
-  bool PreserveCollinear() {return m_PreserveCollinear;};
-  void PreserveCollinear(bool value) {m_PreserveCollinear = value;};
+  bool PreserveCollinear() { return m_PreserveCollinear; }
+  void PreserveCollinear(bool value) { m_PreserveCollinear = value; }
+
 protected:
   void DisposeLocalMinimaList();
   TEdge* AddBoundsToLML(TEdge *e, bool IsClosed);
@@ -237,21 +242,21 @@ protected:
   void AscendToMax(TEdge *&E, bool Appending, bool IsClosed);
 
   typedef std::vector<LocalMinimum> MinimaList;
-  MinimaList::iterator m_CurrentLM;
-  MinimaList           m_MinimaList;
 
-  bool              m_UseFullRange;
-  EdgeList          m_edges;
-  bool             m_PreserveCollinear;
-  bool             m_HasOpenPaths;
+  MinimaList::iterator m_CurrentLM {};
+  MinimaList           m_MinimaList {};
+  bool                 m_UseFullRange = false;
+  EdgeList             m_edges {};
+  bool                 m_PreserveCollinear = false;
+  bool                 m_HasOpenPaths = false;
 };
 //------------------------------------------------------------------------------
 
 class Clipper : public virtual ClipperBase
 {
 public:
-  Clipper(int initOptions = 0);
-  ~Clipper();
+  explicit Clipper(int initOptions = 0);
+  ~Clipper() override;
   bool Execute(ClipType clipType,
     Paths &solution,
     PolyFillType subjFillType = pftEvenOdd,
@@ -269,33 +274,34 @@ public:
   void ZFillFunction(ZFillCallback zFillFunc);
 #endif
 protected:
-  void Reset();
+  void Reset() override;
   virtual bool ExecuteInternal();
 private:
-  PolyOutList       m_PolyOuts;
-  JoinList          m_Joins;
-  JoinList          m_GhostJoins;
-  IntersectList     m_IntersectList;
-  ClipType          m_ClipType;
   typedef std::priority_queue<cInt> ScanbeamList;
-  ScanbeamList      m_Scanbeam;
-  TEdge           *m_ActiveEdges;
-  TEdge           *m_SortedEdges;
-  bool             m_ExecuteLocked;
-  PolyFillType     m_ClipFillType;
-  PolyFillType     m_SubjFillType;
-  bool             m_ReverseOutput;
-  bool             m_UsingPolyTree; 
-  bool             m_StrictSimple;
+
+  PolyOutList    m_PolyOuts      {};
+  JoinList       m_Joins         {};
+  JoinList       m_GhostJoins    {};
+  IntersectList  m_IntersectList {};
+  ClipType       m_ClipType      {};
+  ScanbeamList   m_Scanbeam      {};
+  TEdge         *m_ActiveEdges   = nullptr;
+  TEdge         *m_SortedEdges   = nullptr;
+  bool           m_ExecuteLocked = false;
+  PolyFillType   m_ClipFillType  {};
+  PolyFillType   m_SubjFillType  {};
+  bool           m_ReverseOutput = false;
+  bool           m_UsingPolyTree = false;
+  bool           m_StrictSimple  = false;
 #ifdef use_xyz
   ZFillCallback   m_ZFill; //custom callback 
 #endif
   void SetWindingCount(TEdge& edge);
   bool IsEvenOddFillType(const TEdge& edge) const;
   bool IsEvenOddAltFillType(const TEdge& edge) const;
-  void InsertScanbeam(const cInt Y);
+  void InsertScanbeam(cInt Y);
   cInt PopScanbeam();
-  void InsertLocalMinimaIntoAEL(const cInt botY);
+  void InsertLocalMinimaIntoAEL(cInt botY);
   void InsertEdgeIntoAEL(TEdge *edge, TEdge* startEdge);
   void AddEdgeToSEL(TEdge *edge);
   void CopyAELToSEL();
@@ -318,10 +324,10 @@ private:
   OutPt* AddOutPt(TEdge *e, const IntPoint &pt);
   void DisposeAllOutRecs();
   void DisposeOutRec(PolyOutList::size_type index);
-  bool ProcessIntersections(const cInt topY);
-  void BuildIntersectList(const cInt topY);
+  bool ProcessIntersections(cInt topY);
+  void BuildIntersectList(cInt topY);
   void ProcessIntersectList();
-  void ProcessEdgesAtTopOfScanbeam(const cInt topY);
+  void ProcessEdgesAtTopOfScanbeam(cInt topY);
   void BuildResult(Paths& polys);
   void BuildResult2(PolyTree& polytree);
   void SetHoleState(TEdge *e, OutRec *outrec);
@@ -331,10 +337,10 @@ private:
   bool IsHole(TEdge *e);
   bool FindOwnerFromSplitRecs(OutRec &outRec, OutRec *&currOrfl);
   void FixHoleLinkage(OutRec &outrec);
-  void AddJoin(OutPt *op1, OutPt *op2, const IntPoint offPt);
+  void AddJoin(OutPt *op1, OutPt *op2, IntPoint offPt);
   void ClearJoins();
   void ClearGhostJoins();
-  void AddGhostJoin(OutPt *op, const IntPoint offPt);
+  void AddGhostJoin(OutPt *op, IntPoint offPt);
   bool JoinPoints(Join *j, OutRec* outRec1, OutRec* outRec2);
   void JoinCommonEdges();
   void DoSimplePolygons();
@@ -349,24 +355,30 @@ private:
 class ClipperOffset 
 {
 public:
-  ClipperOffset(double miterLimit = 2.0, double roundPrecision = 0.25);
+  explicit ClipperOffset(double miterLimit = 2.0, double roundPrecision = 0.25);
   ~ClipperOffset();
   void AddPath(const Path& path, JoinType joinType, EndType endType);
   void AddPaths(const Paths& paths, JoinType joinType, EndType endType);
   void Execute(Paths& solution, double delta);
   void Execute(PolyTree& solution, double delta);
   void Clear();
-  double MiterLimit;
-  double ArcTolerance;
+
+  double MiterLimit = 0.;
+  double ArcTolerance = 0.;
+
 private:
-  Paths m_destPolys;
-  Path m_srcPoly;
-  Path m_destPoly;
-  std::vector<DoublePoint> m_normals;
-  double m_delta, m_sinA, m_sin, m_cos;
-  double m_miterLim, m_StepsPerRad;
-  IntPoint m_lowest;
-  PolyNode m_polyNodes;
+  Paths m_destPolys {};
+  Path m_srcPoly {};
+  Path m_destPoly {};
+  std::vector<DoublePoint> m_normals {};
+  double m_delta = 0.;
+  double m_sinA = 0.;
+  double m_sin = 0.;
+  double m_cos = 0.;
+  double m_miterLim = 0.;
+  double m_StepsPerRad = 0.;
+  IntPoint m_lowest {};
+  PolyNode m_polyNodes {};
 
   void FixOrientations();
   void DoOffset(double delta);
@@ -380,11 +392,11 @@ private:
 class clipperException : public std::exception
 {
   public:
-    clipperException(const char* description): m_descr(description) {}
-    virtual ~clipperException() throw() {}
-    virtual const char* what() const throw() {return m_descr.c_str();}
+    explicit clipperException(const char* description): m_descr(description) {}
+    ~clipperException() noexcept override = default;
+    const char* what() const noexcept override { return m_descr.c_str(); }
   private:
-    std::string m_descr;
+    std::string m_descr {};
 };
 //------------------------------------------------------------------------------
 
