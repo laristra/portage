@@ -46,7 +46,8 @@ template<int dim>
 std::vector<Point<dim>> shift_points(const std::vector<Point<dim>>& points,
                                      const Point<dim>& shift) {
   auto result(points);
-  for (int i = 0; i < points.size(); i++) {
+  int const num_points = points.size();
+  for (int i = 0; i < num_points; i++) {
     for (int j = 0; j < dim; j++) {
       result[i][j] = points[i][j] + shift[j];
     }
@@ -77,7 +78,8 @@ template<int dim>
 std::vector<Point<dim>> deform_points(const std::vector<Point<dim>>& points,
                                       const std::vector<std::vector<double>>& matrix) {
   auto result(points);
-  for (int i = 0; i < points.size(); i++) {
+  int const num_points = points.size();
+  for (int i = 0; i < num_points; i++) {
     for (int j = 0; j < dim; j++) {
       result[i][j] = 0.;
       for (int k = 0; k < dim; k++) {
@@ -118,9 +120,11 @@ make_translated_exact(typename basis::Traits<type, dim>::array_t const& values,
                       Point<dim> const& point) {
   typename basis::Traits<type, dim>::array_t tex;
   auto tf = basis::transfactor<dim>(type, point);
-  for (int i = 0; i < tf.size(); i++) {
+  int const num_tf = tf.size();
+
+  for (int i = 0; i < num_tf; i++) {
     tex[i] = 0.;
-    for (int j = 0; j < tf.size(); j++) {
+    for (int j = 0; j < num_tf; j++) {
       tex[i] += tf[i][j] * values[j];
     }
   }
