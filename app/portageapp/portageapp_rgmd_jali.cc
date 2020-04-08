@@ -227,9 +227,9 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
     vol_tol, dst_tol, decompose_cells);
 
   int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
-  assert(ncells == cell_num_mats.size());
-  if (ncells != cell_mat_ids.size()) {
-    int nextras = cell_mat_ids.size() - ncells;
+  assert(unsigned(ncells) == cell_num_mats.size());
+  if (unsigned(ncells) != cell_mat_ids.size()) {
+    int nextras = static_cast<int>(cell_mat_ids.size() - ncells);
     for (int icell = 0; icell < ncells; icell++)
       if (cell_num_mats[icell] > 1) {
         int ncellmats = cell_num_mats[icell];
@@ -354,9 +354,9 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
     vol_tol, dst_tol, decompose_cells);
 
   int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
-  assert(ncells == cell_num_mats.size());
-  if (ncells != cell_mat_ids.size()) {
-    int nextras = cell_mat_ids.size() - ncells;
+  assert(unsigned(ncells) == cell_num_mats.size());
+  if (unsigned(ncells) != cell_mat_ids.size()) {
+    int nextras = static_cast<int>(cell_mat_ids.size() - ncells);
     for (int icell = 0; icell < ncells; icell++)
       if (cell_num_mats[icell] > 1) {
         int ncellmats = cell_num_mats[icell];
@@ -462,7 +462,7 @@ template<class MeshWrapper>
 class interface_reconstructor_factory<2, MeshWrapper>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  std::vector<Tangram::IterativeMethodTolerances_t> tols,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> const& tols,
                                   bool all_convex) :
       mesh_(mesh), tols_(tols), all_convex_(all_convex) {};
 
@@ -482,7 +482,7 @@ template<class MeshWrapper>
 class interface_reconstructor_factory<3, MeshWrapper>{
  public:
   interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  std::vector<Tangram::IterativeMethodTolerances_t> tols,
+                                  std::vector<Tangram::IterativeMethodTolerances_t> const& tols,
                                   bool all_convex) :
       mesh_(mesh), tols_(tols), all_convex_(all_convex) {};
 
@@ -547,7 +547,7 @@ int main(int argc, char** argv) {
   bool source_convex_cells = true, target_convex_cells = true;
   std::vector<std::string> material_field_expressions;
   std::string srcfile, trgfile;  // No default
-  std::string field_filename="";  // No default;
+  std::string field_filename;  // No default;
 
   int interp_order = 1;
   // since write_to_gmv segfaults in parallel, default to false and force the
@@ -569,7 +569,7 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
+    std::size_t keyword_end = arg.find_first_of('=');
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
@@ -606,13 +606,13 @@ int main(int argc, char** argv) {
       assert(interp_order > 0 && interp_order < 3);
     } else if (keyword == "material_fields") {
       // Expecting comma-separated quoted expressions
-      std::string exprlist = valueword;
+      std::string const& exprlist = valueword;
       std::size_t expr_beg = 0;
       std::size_t expr_end = 0;
       bool exprdone = false;
       std::string expr;
       while (!exprdone) {
-        expr_end = exprlist.find_first_of(",", expr_beg);
+        expr_end = exprlist.find_first_of(',', expr_beg);
         if (expr_end == std::string::npos) {
           exprdone = true;
           expr = exprlist.substr(expr_beg);
@@ -698,7 +698,7 @@ int main(int argc, char** argv) {
     n_converge = 1;
   }
   if (nsourcecells > 0)
-    if (material_field_expressions.size() == 0) {
+    if (material_field_expressions.empty()) {
       std::cerr << "No field imposed on internally generated source mesh\n";
       std::cerr << "Nothing to remap. Exiting...";
       print_usage();
@@ -735,7 +735,7 @@ int main(int argc, char** argv) {
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh;
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
 
   double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
 
@@ -790,8 +790,6 @@ int main(int argc, char** argv) {
     // meshes are read in)
     assert(source_mesh->space_dimension() == target_mesh->space_dimension());
     dim = source_mesh->space_dimension();
-
-    double error_L1 = 0.0, error_L2 = 0.0;
 
     // Now run the remap on the meshes and get back the L2 error
     switch (dim) {
@@ -869,7 +867,8 @@ void write_field(std::string filename,
     stateWrapper.mat_get_celldata(field_name, m, &data);
     
     // write a line for each cell (using global id) for each material
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       f << meshWrapper.get_global_id(matcells[ic], Wonton::Entity_kind::CELL)
       << " " << m << " " 
       << std::fixed
@@ -887,18 +886,18 @@ void write_field(std::string filename,
 // remap only volume fractions (and if specified, centroids)
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           bool source_convex_cells,
-                           bool target_convex_cells,
-                           Portage::Limiter_type limiter,
-                           Portage::Boundary_Limiter_type bnd_limiter,
-                           int interp_order,
-                           RGMDApp::Problem_type problem,
-                           std::vector<std::string> material_field_expressions,
-                           std::string field_filename, bool mesh_output,
-                           int rank, int numpe, Jali::Entity_kind entityKind,
-                           double& L1_error, double& L2_error,
-                           std::shared_ptr<Profiler> profiler) {
+                   std::shared_ptr<Jali::Mesh> targetMesh,
+                   bool source_convex_cells,
+                   bool target_convex_cells,
+                   Portage::Limiter_type limiter,
+                   Portage::Boundary_Limiter_type bnd_limiter,
+                   int interp_order,
+                   RGMDApp::Problem_type problem,
+                   std::vector<std::string> material_field_expressions,
+                   std::string field_filename, bool mesh_output,
+                   int rank, int numpe, Jali::Entity_kind entityKind,
+                   double& L1_error, double& L2_error,
+                   std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
     std::cout << "starting portageapp_rgmd_jali...\n";
 
@@ -982,22 +981,27 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
   int nglobal_mats = static_cast<int>(global_material_IDs.size());
-  if (std::set<int>(global_material_IDs.begin(), global_material_IDs.end()).size() !=
-      nglobal_mats) {
+  int const num_unique_ids = std::set<int>(global_material_IDs.begin(), global_material_IDs.end()).size();
+  if (num_unique_ids != nglobal_mats) {
     std::cerr << "Generated materials had repeated indices, " << 
                  "check the implementation of the problem!\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
-  if ( (*std::min_element(global_material_IDs.begin(), 
-                          global_material_IDs.end()) != 0) ||
-       (*std::max_element(global_material_IDs.begin(), 
-                          global_material_IDs.end()) != nglobal_mats - 1) ) {
+
+  int const min_id = *std::min_element(global_material_IDs.begin(),
+                                       global_material_IDs.end());
+  int const max_id = *std::max_element(global_material_IDs.begin(),
+                                       global_material_IDs.end());
+
+  if ((min_id != 0) || (max_id != nglobal_mats - 1) ) {
     std::cerr << "Generated materials didn't have contiguous indices, " << 
                  "check if there are material subdomains not covered by the mesh!\n";
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-  if (material_field_expressions.size() != nglobal_mats) {
+  int const num_field_expressions = material_field_expressions.size();
+
+  if (num_field_expressions != nglobal_mats) {
     std::cerr << "Number of imposed fields (" << material_field_expressions.size() <<
                  ") is not equal to the number of materials in the problem (" <<
                  nglobal_mats << ")!\n";
@@ -1150,7 +1154,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 #endif
   std::vector<std::string> fieldnames;
-  fieldnames.push_back("cellmatdata");
+  fieldnames.emplace_back("cellmatdata");
   
   // Add the materials into the target mesh but with empty cell lists
   // The remap algorithm will figure out which cells contain which materials
@@ -1167,9 +1171,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // If the user specified some material fields, then add a placeholder for
   // them on the target side
-  if (material_field_expressions.size()) {
+  if (!material_field_expressions.empty()) {
     targetStateWrapper.mat_add_celldata<double>("cellmatdata");
-    remap_fields.push_back("cellmatdata");
+    remap_fields.emplace_back("cellmatdata");
   }
 
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
@@ -1294,8 +1298,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // We only set the material data for owned cells
   for (int m = 0; m < nglobal_mats; m++) {
-    std::vector<int> matcells;
-    targetStateWrapper.mat_get_cells(m, &matcells);
+    std::vector<int> current_matcells;
+    targetStateWrapper.mat_get_cells(m, &current_matcells);
 
     double const *matvf;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf);
@@ -1303,11 +1307,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     Wonton::Point<dim> const *matcen;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen);
 
-    int nmatcells = matcells.size();
+    int nmatcells = current_matcells.size();
     for (int ic = 0; ic < nmatcells; ic++) {
-      int state_cell_id = matcells[ic];
+      int state_cell_id = current_matcells[ic];
       int mesh_cell_id = owned2all[state_cell_id];
-      int offset = offsets[mesh_cell_id];
       int& ncmats = target_cell_num_mats[mesh_cell_id];
       target_cell_mat_ids[offsets[mesh_cell_id] + ncmats] = m;
       target_cell_mat_volfracs[offsets[mesh_cell_id] + ncmats] = matvf[ic];
@@ -1366,7 +1369,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     if (rank == 0)
       std::cout << "Dumping data to Exodus files..." << std::endl;
 
-    if (material_field_expressions.size() > 0) {
+    if (!material_field_expressions.empty()) {
       // For now convert each material field into a mesh field with
       // zero values for cells that don't have the material
 
@@ -1378,9 +1381,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         std::vector<double> cellvec(nsrccells, 0.0);
         std::vector<double> cellvec_wtd(nsrccells, 0.0);
 
-        std::vector<int> matcells;
-        sourceStateWrapper.mat_get_cells(mat_id, &matcells);
-        int nmatcells = matcells.size();
+        std::vector<int> current_matcells;
+        sourceStateWrapper.mat_get_cells(mat_id, &current_matcells);
+        int nmatcells = current_matcells.size();
 
         double *matvec;
         sourceStateWrapper.mat_get_celldata("cellmatdata", mat_id, &matvec);
@@ -1389,7 +1392,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         sourceStateWrapper.mat_get_celldata("mat_volfracs", mat_id, &matvolfracs);
 
         for (int ic = 0; ic < nmatcells; ic++) {
-          int c = matcells[ic];
+          int c = current_matcells[ic];
           cellvec[c] = matvec[ic];
           cellvec_wtd[c] = matvec[ic]*matvolfracs[ic];
         }
@@ -1408,9 +1411,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         std::vector<double> cellvec(ntarcells, 0.0);
         std::vector<double> cellvec_wtd(ntarcells, 0.0);
 
-        std::vector<int> matcells;
-        targetStateWrapper.mat_get_cells(mat_id, &matcells);
-        int nmatcells = matcells.size();
+        std::vector<int> current_matcells;
+        targetStateWrapper.mat_get_cells(mat_id, &current_matcells);
+        int nmatcells = current_matcells.size();
 
         double *matvec;
         targetStateWrapper.mat_get_celldata("cellmatdata", mat_id, &matvec);
@@ -1419,7 +1422,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         targetStateWrapper.mat_get_celldata("mat_volfracs", mat_id, &matvolfracs);
 
         for (int ic = 0; ic < nmatcells; ic++) {
-          int state_cell_id = matcells[ic];
+          int state_cell_id = current_matcells[ic];
           int mesh_cell_id = owned2all[state_cell_id];
           cellvec[mesh_cell_id] = matvec[ic];
           cellvec_wtd[mesh_cell_id] = matvec[ic]*matvolfracs[ic];
@@ -1461,8 +1464,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Compute error
   L1_error = 0.0; L2_error = 0.0;
-  if (material_field_expressions.size()) {
-    double error, toterr = 0.0;
+  if (!material_field_expressions.empty()) {
+    double error;
     double const * cellmatvals;
     double totvolume = 0.;
     for (int m = 0; m < nlocal_mats; m++) {
@@ -1470,13 +1473,13 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
       targetStateWrapper.mat_get_celldata<double>("cellmatdata", mat_id, &cellmatvals);
 
-      std::vector<int> matcells;
-      targetStateWrapper.mat_get_cells(mat_id, &matcells);
+      std::vector<int> current_matcells;
+      targetStateWrapper.mat_get_cells(mat_id, &current_matcells);
 
       // Cell error computation
-      int nmatcells = matcells.size();
+      int nmatcells = current_matcells.size();
       for (int ic = 0; ic < nmatcells; ++ic) {
-        int state_cell_id = matcells[ic];
+        int state_cell_id = current_matcells[ic];
         int mesh_cell_id = owned2all[state_cell_id];
         if (target_cell_num_mats[mesh_cell_id] == 1) {
           if (target_cell_mat_ids[offsets[mesh_cell_id]] == mat_id) {
