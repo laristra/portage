@@ -40,7 +40,7 @@ class BasisTest : public ::testing::Test {
 public:
   template<size_t n, size_t m, size_t z>
   Matrix<n,z> multiply(Matrix<n,m> A, Matrix<m,z> B) {
-    Matrix<n,z> R{0.0};
+    Matrix<n,z> R {};
     for (size_t i = 0; i < n; i++)
       for (size_t k = 0; k < z; k++)
         for (size_t j = 0; j < m; j++)
@@ -50,7 +50,7 @@ public:
 
   template<size_t n, size_t m>
   Vector<n> multiply(Matrix<n,m> A, Vector<m> u) {
-    Vector<n> v{0.0};
+    Vector<n> v {};
     for (size_t i = 0; i < n; i++)
       for (size_t j = 0; j < m; j++)
         v[i] += A[i][j] * u[j];
@@ -59,7 +59,7 @@ public:
 
   template<size_t n, size_t m>
   bool is_identity(Matrix<n,m> mat) {
-    double const eps = 1.0e-12;
+    double const eps = 1.E-12;
     for (size_t i = 0; i < n; i++)
       for (size_t j = 0; j < m; j++)
         if ((i == j and std::fabs(mat[i][j] - 1) > eps) or
@@ -130,7 +130,7 @@ public:
 
     // check external-facing size functions are correct
     auto fs0 = function_size<dim>(type);
-    ASSERT_EQ(fs0, N);
+    ASSERT_EQ(fs0, unsigned(N));
 
     auto ks = Traits<type, dim>::jet_size;
     auto js0 = jet_size<dim>(type)[0];
@@ -158,8 +158,8 @@ public:
     {
       std::vector<std::vector<double>> result(jet<dim>(type, x));
       auto jsize = jet_size<dim>(type);
-      for (int i = 0; i < jsize[0]; i++) {
-        for (int j = 0; j < jsize[1]; j++) {
+      for (size_t i = 0; i < jsize[0]; i++) {
+        for (size_t j = 0; j < jsize[1]; j++) {
           ASSERT_EQ(bj_x[i][j], result[i][j]);
         }
       }
@@ -169,8 +169,8 @@ public:
     {
       auto result(Portage::Meshfree::basis::inverse_jet<dim>(type, x));
       auto jsize = jet_size<dim>(type);
-      for (int i = 0; i < jsize[0]; i++)
-        for (int j = 0; j < jsize[1]; j++)
+      for (size_t i = 0; i < jsize[0]; i++)
+        for (size_t j = 0; j < jsize[1]; j++)
           ASSERT_EQ(bjinv_x[i][j], result[i][j]);
     }
 
@@ -178,22 +178,22 @@ public:
     {
       auto tf = transfactor<type, dim>(c);
       ASSERT_EQ(tf.size(), fs0);
-      for (int i = 0; i < fs0; i++)
+      for (size_t i = 0; i < fs0; i++)
         ASSERT_EQ(tf[i].size(), fs0);
 
       std::vector<double> tbf_x(fs0, 0.);
-      for (int i = 0; i < fs0; i++)
-        for (int j = 0; j < fs0; j++)
+      for (size_t i = 0; i < fs0; i++)
+        for (size_t j = 0; j < fs0; j++)
           tbf_x[i] += tf[i][j] * bf_x[j];
 
-      for (int i = 0; i < fs0; i++) {
+      for (size_t i = 0; i < fs0; i++) {
         ASSERT_NEAR(tbf_x[i], bf_xc[i], 1.e-12);
       }
 
 
       auto tf2 = transfactor<dim>(type, c);
-      for (int i = 0; i < fs0; i++)
-        for (int j = 0; j < fs0; j++)
+      for (size_t i = 0; i < fs0; i++)
+        for (size_t j = 0; j < fs0; j++)
           ASSERT_EQ(tf[i][j], tf2[i][j]);
     }
   }
