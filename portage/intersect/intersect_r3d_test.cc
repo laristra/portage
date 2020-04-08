@@ -24,7 +24,7 @@ TEST(intersectR3D, simple1) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -32,19 +32,22 @@ TEST(intersectR3D, simple1) {
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
                               Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
+
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
-    }
+  }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 1.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
@@ -59,7 +62,7 @@ TEST(intersectR3D, simple2) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -67,22 +70,25 @@ TEST(intersectR3D, simple2) {
                               Wonton::Simple_Mesh_Wrapper,
                               Wonton::Simple_State_Wrapper,
                               Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
-  std::vector<int> srccells({0});
-  const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  std::vector<int> srccells({0});
+  auto const srcwts = isect(0, srccells);
+
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 8, eps);
-  ASSERT_NEAR(moments[1]/moments[0], 1, eps);
-  ASSERT_NEAR(moments[2]/moments[0], 1, eps);
-  ASSERT_NEAR(moments[3]/moments[0], 1, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 8.0, eps);
+  ASSERT_NEAR(moments[1]/moments[0], 1.0, eps);
+  ASSERT_NEAR(moments[2]/moments[0], 1.0, eps);
+  ASSERT_NEAR(moments[3]/moments[0], 1.0, eps);
 }
 
 TEST(intersectR3D, simple3) {
@@ -94,7 +100,7 @@ TEST(intersectR3D, simple3) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -105,16 +111,18 @@ TEST(intersectR3D, simple3) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 1.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
@@ -129,7 +137,7 @@ TEST(intersectR3D, simple4) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -140,16 +148,17 @@ TEST(intersectR3D, simple4) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
   int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 1.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], 1.5, eps);
@@ -164,7 +173,7 @@ TEST(intersectR3D, simple5) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -175,16 +184,18 @@ TEST(intersectR3D, simple5) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
   int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+  
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 125, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 125.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], 2.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], 2.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], 2.5, eps);
@@ -199,7 +210,7 @@ TEST(intersectR3D, simple6) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -210,14 +221,16 @@ TEST(intersectR3D, simple6) {
   std::vector<int> srccells({0});
   std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
   int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
+  auto moments = srcwts[0].weights;
+  int num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++)
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_TRUE(moments.size() == 4);
-
+  ASSERT_EQ(num_moments, 4);
   ASSERT_NEAR(moments[0], 8, eps);
   ASSERT_NEAR(moments[1]/moments[0], 1, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1, eps);
@@ -226,14 +239,15 @@ TEST(intersectR3D, simple6) {
   srccells[0] = 1;
   srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
   srcent = srcwts[0].entityID;
   moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
+  num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++)
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_TRUE(moments.size() == 4);
-
+  ASSERT_EQ(num_moments, 4);
   ASSERT_NEAR(moments[0], 8, eps);
   ASSERT_NEAR(moments[1]/moments[0], 3, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1, eps);
@@ -242,14 +256,15 @@ TEST(intersectR3D, simple6) {
   srccells[0] = 2;
   srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
   srcent = srcwts[0].entityID;
   moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
+  num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++)
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_TRUE(moments.size() == 4);
-
+  ASSERT_EQ(num_moments, 4);
   ASSERT_NEAR(moments[0], 4, eps);
   ASSERT_NEAR(moments[1]/moments[0], 4.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], 1, eps);
@@ -265,7 +280,7 @@ TEST(intersectR3D, simple7) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -275,16 +290,18 @@ TEST(intersectR3D, simple7) {
                               Wonton::Simple_Mesh_Wrapper> isect{sm, ss, tm, num_tols};
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++){
+  ASSERT_EQ(unsigned(1), srcwts.size());
+
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++) {
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
   }
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 1, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 1.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], -0.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], -0.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], -0.5, eps);
@@ -299,7 +316,7 @@ TEST(intersectR3D, simple8) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -310,15 +327,16 @@ TEST(intersectR3D, simple8) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
+  ASSERT_EQ(unsigned(1), srcwts.size());
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++)
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 27, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 27.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], -1.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], -1.5, eps);
   ASSERT_NEAR(moments[3]/moments[0], -1.5, eps);
@@ -333,7 +351,7 @@ TEST(intersectR3D, simple9) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -344,15 +362,16 @@ TEST(intersectR3D, simple9) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(1, srcwts.size());
-  int srcent = srcwts[0].entityID;
-  std::vector<double> moments = srcwts[0].weights;
-  for(int j=0;j<moments.size();j++)
+  ASSERT_EQ(unsigned(1), srcwts.size());
+  int const srcent = srcwts[0].entityID;
+  auto const moments = srcwts[0].weights;
+  int const num_moments = moments.size();
+
+  for (int j = 0; j < num_moments; j++)
     std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  ASSERT_TRUE(moments.size() == 4);
-
-  ASSERT_NEAR(moments[0], 27, eps);
+  ASSERT_EQ(num_moments, 4);
+  ASSERT_NEAR(moments[0], 27.0, eps);
   ASSERT_NEAR(moments[1]/moments[0], -1.5, eps);
   ASSERT_NEAR(moments[2]/moments[0], -0.5, eps);
   ASSERT_NEAR(moments[3]/moments[0],  0.5, eps);
@@ -369,8 +388,6 @@ TEST(intersectR3D, cube_no_intersect) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
-
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   const Portage::IntersectR3D<Portage::Entity_kind::CELL,
@@ -380,7 +397,7 @@ TEST(intersectR3D, cube_no_intersect) {
   std::vector<int> srccells({0});
   const std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
 
-  ASSERT_EQ(0, srcwts.size());
+  ASSERT_EQ(unsigned(0), srcwts.size());
 }
 
 // in this test, the cubes share a face but have zero intersection volume
@@ -394,7 +411,7 @@ TEST(intersectR3D, cube_0_1) {
   auto sourcestate = std::make_shared<Wonton::Simple_State>(sourcemesh);
   const Wonton::Simple_State_Wrapper ss(*sourcestate);
 
-  const double eps = 1e-12;
+  const double eps = 1.E-12;
 
   Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
@@ -407,18 +424,20 @@ TEST(intersectR3D, cube_0_1) {
 
   // We can't be sure that this will or will not give an intersection.
   // Check for 0 moments if we do get an intersection
-  if (srcwts.size()) {
-    ASSERT_EQ(1, srcwts.size());
-    int srcent = srcwts[0].entityID;
-    std::vector<double> moments = srcwts[0].weights;
-    for(int j=0;j<moments.size();j++)
+  if (!srcwts.empty()) {
+    ASSERT_EQ(unsigned(1), srcwts.size());
+
+    int const srcent = srcwts[0].entityID;
+    auto const moments = srcwts[0].weights;
+    int const num_moments = moments.size();
+
+    for (int j = 0; j < num_moments; j++)
       std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-    ASSERT_TRUE(moments.size() == 4);
-
-    ASSERT_NEAR(moments[0], 0, eps);
-    ASSERT_NEAR(moments[1], 0, eps);
-    ASSERT_NEAR(moments[2], 0, eps);
-    ASSERT_NEAR(moments[3], 0, eps);
+    ASSERT_EQ(num_moments, 4);
+    ASSERT_NEAR(moments[0], 0.0, eps);
+    ASSERT_NEAR(moments[1], 0.0, eps);
+    ASSERT_NEAR(moments[2], 0.0, eps);
+    ASSERT_NEAR(moments[3], 0.0, eps);
   }
 }

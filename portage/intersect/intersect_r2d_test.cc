@@ -43,15 +43,15 @@ TEST(intersectR2D, simple1) {
   std::vector<int> srccells({0});
 
   std::vector<Portage::Weights_t> srcwts = isect(0, srccells);
-  ASSERT_EQ(1, srcwts.size());
+  ASSERT_EQ(unsigned(1), srcwts.size());
   int srcent = srcwts[0].entityID;
   std::vector<double> moments = srcwts[0].weights;
-  for (int j = 0; j < moments.size(); j++)
-    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j]
-              << std::endl;
+  int const num_moments = moments.size();
+  for (int j = 0; j < num_moments; j++)
+    std::cout << "i, j, m " << srcent << ", " << j << ", " << moments[j] << std::endl;
 
-  double eps = 1.0e-12;
-  ASSERT_NEAR(moments[0], 1, eps);
+  double const eps = 1.E-12;
+  ASSERT_NEAR(moments[0], 1.0, eps);
   ASSERT_NEAR(moments[1], 1.5, eps);
   ASSERT_NEAR(moments[2], 1.5, eps);
 }
