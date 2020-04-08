@@ -370,17 +370,17 @@ int main(int argc, char** argv) {
     sourceData.resize(nsrccells);
 
     if (poly_order == 0) {
-      for (unsigned int c = 0; c < nsrccells; ++c)
+      for (int c = 0; c < nsrccells; ++c)
         sourceData[c] = const_val;
     } else if (poly_order == 1) {
-      for (unsigned int c = 0; c < nsrccells; ++c) {
+      for (int c = 0; c < nsrccells; ++c) {
         JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
         sourceData[c] = cen[0]+cen[1];
         if (dim == 3)
           sourceData[c] += cen[2];
       }
     } else {  // quadratic function
-      for (unsigned int c = 0; c < nsrccells; ++c) {
+      for (int c = 0; c < nsrccells; ++c) {
         JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (dim == 3)

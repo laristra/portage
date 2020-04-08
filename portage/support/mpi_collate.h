@@ -78,8 +78,9 @@ namespace Portage {
   // Reorders a vector x using x = x[idx], where idx is a vector of indices
   template <typename T>
   void reorder(std::vector<T> &x, const std::vector<int> &idx) {
-    std::vector<T> y(x.size());
-    for (int i=0; i < x.size(); i++) y[i] = x[idx[i]];
+    int const n = x.size();
+    std::vector<T> y(n);
+    for (int i=0; i < n; i++) y[i] = x[idx[i]];
     x = y;
   }
 
