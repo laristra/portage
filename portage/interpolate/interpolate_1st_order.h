@@ -118,10 +118,10 @@ class Interpolate_1stOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      interface_reconstructor_(ir) {}
 #endif
 
   /*!
@@ -269,10 +269,10 @@ class Interpolate_1stOrder<
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
       num_tols_(num_tols),
+      interface_reconstructor_(ir),
       parts_(parts) {}
 #endif
   /*!
@@ -467,10 +467,10 @@ class Interpolate_1stOrder<
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      interface_reconstructor_(ir) {}
 #endif
 
   /*!
