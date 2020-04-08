@@ -64,14 +64,15 @@ void faceted_setup_cell(Mesh const& mesh,
     std::vector<Wonton::Point<dim>> fncoord;
     for (int j = 0; j < nfaces; j++) {
       // get face data
+      int const num_face_nodes = fnodes.size();
       mesh.face_centroid(faces[j], &fcent);
       mesh.cell_centroid(i, &ccent);
       mesh.face_get_nodes(faces[j], &fnodes);
-      fncoord.resize(fnodes.size() + 1);
-      for (int k = 0; k < fnodes.size(); k++) {
+      fncoord.resize(num_face_nodes + 1);
+      for (int k = 0; k < num_face_nodes; k++) {
         mesh.node_get_coordinates(fnodes[k], &(fncoord[k]));
       }
-      fncoord[fnodes.size()] = fncoord[0];
+      fncoord[num_face_nodes] = fncoord[0];
 
       if (dim == 2) {
         // Get 2d face normal
@@ -93,7 +94,9 @@ void faceted_setup_cell(Mesh const& mesh,
           bivec[0][k] = fncoord[0][k] - fcent[k];
           normal[k] = 0.;
         }
-        for (int k = 1; k <= fnodes.size(); k++) {
+
+        int const num_face_nodes = fnodes.size();
+        for (int k = 1; k <= num_face_nodes; k++) {
           for (int m = 0; m < 3; m++) bivec[1][m] = fncoord[k][m] - fcent[m];
           std::vector<double> cross(3, 0.);
           cross[0] = bivec[1][2] * bivec[0][1] - bivec[1][1] * bivec[0][2];
@@ -144,7 +147,8 @@ void faceted_setup_cell(Mesh const& mesh,
       cmax[k] = first_coords[k];
     }
 
-    for (int j = 1; j < node_indices.size(); j++) {
+    int const num_node_indices = node_indices.size();
+    for (int j = 1; j < num_node_indices; j++) {
       Wonton::Point<dim> node_coords;
       mesh.node_get_coordinates(node_indices[j], &node_coords);
       for (int k = 0; k < dim; k++) {
@@ -261,7 +265,8 @@ void faceted_setup_cell(const Mesh& mesh, const State& state,
     std::vector<int> faces, dirs, fcells;
     mesh.cell_get_faces_and_dirs(i, &faces, &dirs);
     std::vector<std::vector<double>> h = smoothing_lengths[i];
-    for (int j = 0; j < faces.size(); j++) {
+    int const num_faces = faces.size();
+    for (int j = 0; j < num_faces; j++) {
       mesh.face_get_cells(faces[j], Wonton::PARALLEL_OWNED, &fcells);
       for (int k : fcells) {
         if (k == i) continue;
