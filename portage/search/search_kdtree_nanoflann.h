@@ -23,15 +23,17 @@ Please see the license file at the root of this repository, or at:
 
 using Wonton::Point;
 
-namespace Portage {
+namespace Portage { namespace Meshfree {
+
 template <size_t D, class SwarmType>
 class SwarmNanoflann {
  public:
-  SwarmNanoflann(SwarmType const& swarm) : swarm_(swarm) {}
+  explicit SwarmNanoflann(SwarmType const& swarm) : swarm_(swarm) {}
 
   // Nanoflann + C++ is requiring us to provide the assignment operator
   SwarmNanoflann & operator=(SwarmNanoflann const& inswarm) {
-    swarm_ = inswarm.swarm_;
+    if (this != &inswarm)
+      swarm_ = inswarm.swarm_;
     return *this;
   }
 
@@ -117,10 +119,10 @@ class Search_KDTree_Nanoflann {
                           TargetSwarmType const& target_swarm,
                           std::shared_ptr<std::vector<Point<D>>> source_extents,
                           std::shared_ptr<std::vector<Point<D>>> target_extents,
-                          swarm::WeightCenter center = swarm::Gather) :
+                          WeightCenter center = Gather) :
       sourceSwarm_(source_swarm), targetSwarm_(target_swarm) {
     
-    assert(center == swarm::Gather);  // Our KDTree is built on source points
+    assert(center == Gather);  // Our KDTree is built on source points
 
     int ntgt = target_swarm.num_owned_particles();
     search_radii_.resize(ntgt);
@@ -145,7 +147,7 @@ class Search_KDTree_Nanoflann {
     @param[in,out] candidates Pointer to a vector of potential candidate
     points in the source swarm.
   */
-  std::vector<unsigned int> operator() (const size_t pointId) const;
+  std::vector<unsigned int> operator() (size_t pointId) const;
 
  private:
   SwarmNanoflann<D, SourceSwarmType> const sourceSwarm_;
@@ -156,10 +158,9 @@ class Search_KDTree_Nanoflann {
 
 
 template<int D, class SourceSwarmType, class TargetSwarmType>
-std::vector<unsigned int>
-Search_KDTree_Nanoflann<D, SourceSwarmType, TargetSwarmType>::
-operator() (const size_t pointId) const {
-  std::vector<unsigned int> candidates;
+std::vector<int>
+Search_KDTree_Nanoflann<D, SourceSwarmType, TargetSwarmType>::operator() (size_t pointId) const {
+  std::vector<int> candidates;
 
   // find coordinates of target point
   Point<D> tpcoord = targetSwarm_.get_point(pointId);
@@ -170,7 +171,7 @@ operator() (const size_t pointId) const {
 
   std::vector<std::pair<size_t, double>> matches;
 
-  nanoflann::SearchParams params;
+  nanoflann::SearchParams params {};
   // params.sorted = false;        // one could make this true
 
   double radius = search_radii_[pointId];
@@ -182,7 +183,7 @@ operator() (const size_t pointId) const {
   return candidates;
 }  // Search_KDTree_Nanoflann::operator()
 
-}  // namespace Portage
+}}  // namespace Portage::Meshfree
 
 #endif  // HAVE_NANOFLANN
 
