@@ -23,9 +23,11 @@ TEST(intersectClipper, simple){
   Wonton::Jali_Mesh_Wrapper s(*sm);
   Wonton::Jali_Mesh_Wrapper t(*tm);
   Portage::IntersectClipper<Wonton::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0); 
-  for(int i=0;i<moments.size();i++){
-    for(int j=0;j<moments[i].size();j++){
+  auto const moments = isect(0, 0);
+  int const num_moments = moments.size();
+
+  for (int i = 0; i < num_moments; i++) {
+    for (int j = 0; j < num_moments; j++) {
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
     }   
   }
