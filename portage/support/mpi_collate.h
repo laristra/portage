@@ -26,17 +26,22 @@ namespace Portage {
   void collate_type(MPI_Comm comm, const int rank, const int numpe,
                const MPI_Datatype mpi_type,
                std::vector<T> &lvec, std::vector<T> &gvec) {
+
     std::vector<int> lvec_sizes(numpe);
-    int lvec_size = lvec.size();
-    MPI_Gather(&lvec_size, 1, MPI_INT, &lvec_sizes[0], 1, MPI_INT, 0, comm);
     std::vector<int> displs;
+    int lvec_size = lvec.size();
+
+    MPI_Gather(&lvec_size, 1, MPI_INT, &lvec_sizes[0], 1, MPI_INT, 0, comm);
+
     if (rank == 0) {
-      int gvec_size = std::accumulate(lvec_sizes.begin(), lvec_sizes.end(),
-                                      0);
+      int const gvec_size = std::accumulate(lvec_sizes.begin(), lvec_sizes.end(),0);
+      int const lvec_size_count = lvec_sizes.size();
+
       gvec.resize(gvec_size);
-      displs.resize(lvec_sizes.size());
+      displs.resize(lvec_size_count);
+
       int idx = 0;
-      for (int i=0; i < lvec_sizes.size(); i++) {
+      for (int i=0; i < lvec_size_count; i++) {
         displs[i] = idx;
         idx += lvec_sizes[i];
       }
