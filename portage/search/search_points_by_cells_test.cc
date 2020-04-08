@@ -616,8 +616,8 @@ TEST(search_by_cells, scatter_2d_random_disjoint) {
   }
 
   for (int j = 0; j < ntgt; ++j) {
-    double x = 1.0 * rand()/RAND_MAX;
-    double y = 1.0 * rand()/RAND_MAX;
+    double x = 1.0 * rand()/RAND_MAX + 10.;
+    double y = 1.0 * rand()/RAND_MAX + 10.;
     double ext = 1./sqrt(ntgt*1.0);
     target_points[j] = Wonton::Point<2>(x, y);
     target_extent[j] = Wonton::Point<2>(ext, ext);
