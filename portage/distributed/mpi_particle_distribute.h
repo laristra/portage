@@ -104,17 +104,19 @@ public:
     int nb_target_points = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
     int nb_source_points = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
 
+#ifdef DEBUG
     if (center == Meshfree::WeightCenter::Gather) {
-      assert(smoothing_lengths.size() == nb_target_points);
-      assert(target_extents.size() == nb_target_points);
-      assert(kernel_types.size() == nb_target_points);
-      assert(geom_types.size() == nb_target_points);
+      assert(smoothing_lengths.size() == unsigned(nb_target_points));
+      assert(target_extents.size()    == unsigned(nb_target_points));
+      assert(kernel_types.size()      == unsigned(nb_target_points));
+      assert(geom_types.size()        == unsigned(nb_target_points));
     } else if (center == Meshfree::WeightCenter::Scatter) {
-      assert(smoothing_lengths.size() == nb_source_points);
-      assert(source_extents.size() == nb_source_points);
-      assert(kernel_types.size() == nb_source_points);
-      assert(geom_types.size() == nb_source_points);
+      assert(smoothing_lengths.size() == unsigned(nb_source_points));
+      assert(source_extents.size()    == unsigned(nb_source_points));
+      assert(kernel_types.size()      == unsigned(nb_source_points));
+      assert(geom_types.size()        == unsigned(nb_source_points));
     }
+#endif
 
     /**************************************************************************
     * Step 1: Compute bounding box for target swarm based on weight center    *
@@ -317,7 +319,6 @@ public:
         }
       }
       //move this smoothing length data
-      int sl_unit_size = max_slsize * smlen_dim;
       std::vector<double> sourceRecvSmoothLengths(src_info.new_num * max_slsize * smlen_dim);
       moveField<double>(&src_info, rank, nb_ranks, MPI_DOUBLE, max_slsize * smlen_dim,
                         sourceSendSmoothLengths, &sourceRecvSmoothLengths);
@@ -412,8 +413,8 @@ public:
     *         to other ranks                                                  *
     **************************************************************************/
     auto int_field_names = source_state.template get_field_names<int>();
-
-    for (int nvars = 0; nvars < int_field_names.size(); ++nvars) {
+    int const num_int_fields = int_field_names.size();
+    for (int nvars = 0; nvars < num_int_fields; ++nvars) {
       // Get field data from source state
       auto& srcdata = source_state.get_field_int(int_field_names[nvars]);
 
@@ -446,8 +447,8 @@ public:
     *         to other ranks                                                  *
     **************************************************************************/
     auto dbl_field_names = source_state.template get_field_names<double>();
-
-    for (int nvars = 0; nvars < dbl_field_names.size(); ++nvars) {
+    int const num_dbl_fields = dbl_field_names.size();
+    for (int nvars = 0; nvars < num_dbl_fields; ++nvars) {
       // Get field data from source state
       auto& srcdata = source_state.get_field(dbl_field_names[nvars]);
 

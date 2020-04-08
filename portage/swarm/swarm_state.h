@@ -179,7 +179,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_local_points_);
+    assert(value.size() == unsigned(num_local_points_));
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
@@ -205,7 +205,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_local_points_);
+    assert(value.size() == unsigned(num_local_points_));
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];

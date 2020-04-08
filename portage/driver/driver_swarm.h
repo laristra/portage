@@ -83,8 +83,8 @@ public:
               Weight::Geometry const support_geom_type = Weight::ELLIPTIC,
               WeightCenter const center=Gather)
       : source_swarm_(source_swarm),
-        source_state_(source_state),
         target_swarm_(target_swarm),
+        source_state_(source_state),
         target_state_(target_state),
         smoothing_lengths_(smoothing_lengths) {
 
@@ -127,8 +127,8 @@ public:
               Portage::vector<Weight::Geometry> const& geom_types,
               WeightCenter const center = Gather)
       : source_swarm_(source_swarm),
-        source_state_(source_state),
         target_swarm_(target_swarm),
+        source_state_(source_state),
         target_state_(target_state),
         kernel_types_(kernel_types),
         geom_types_(geom_types),
@@ -173,8 +173,8 @@ public:
               Portage::vector<Point<dim>> const& target_extents,
               WeightCenter const center = Gather)
       : source_swarm_(source_swarm),
-        source_state_(source_state),
         target_swarm_(target_swarm),
+        source_state_(source_state),
         target_state_(target_state),
         smoothing_lengths_(smoothing_lengths) {
     
@@ -248,7 +248,7 @@ public:
                            Portage::vector<std::vector<Point<dim>>> const& operator_data = {},
                            std::string part_field = "NONE",
                            double part_tolerance = 0.0,
-                           SmoothingLengths part_smoothing = {}) {
+                           SmoothingLengths const& part_smoothing = {}) {
 
     assert(source_vars.size() == target_vars.size());
     // variables names
@@ -261,10 +261,13 @@ public:
     operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
     operator_data_    = operator_data;
+#ifdef DEBUG
     if (operator_spec_ != oper::LastOperator) {
-      assert(operator_domains_.size() == target_swarm_.num_owned_particles());
-      assert(operator_data_.size() == target_swarm_.num_owned_particles());
+      unsigned const num_target_particles = target_swarm_.num_owned_particles();
+      assert(operator_domains_.size() == num_target_particles);
+      assert(operator_data_.size() == num_target_particles);
     }
+#endif
     // part-by-particle
     part_field_     = part_field;
     part_tolerance_ = part_tolerance;
@@ -567,7 +570,7 @@ protected:
                                  Weight::Kernel const kernel_type,
                                  Weight::Geometry const support_geom_type) {
     int const swarm_size = get_swarm_size();
-    assert(smoothing_lengths_.size() == swarm_size);
+    assert(smoothing_lengths_.size() == unsigned(swarm_size));
     kernel_types_.resize(swarm_size, kernel_type);
     geom_types_.resize(swarm_size, support_geom_type);
   }
@@ -578,8 +581,8 @@ protected:
    */
   void set_extents_from_smoothing_lengths() {
     if (weight_center_ == Gather) {
-      int nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
-      assert(smoothing_lengths_.size() == nb_target);
+      int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+      assert(smoothing_lengths_.size() == unsigned(nb_target));
       target_extents_.resize(nb_target);
 
       for (int i = 0; i < nb_target; i++) {
@@ -590,8 +593,8 @@ protected:
         target_extents_[i] = Point<dim>(temp[0]);
       }
     } else if (weight_center_ == Scatter) {
-      int nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
-      assert(smoothing_lengths_.size() == nb_source);
+      int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+      assert(smoothing_lengths_.size() == unsigned(nb_source));
       source_extents_.resize(nb_source);
 
       for (int i = 0; i < nb_source; i++) {
