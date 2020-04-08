@@ -187,12 +187,12 @@ public:
    int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
 
    switch (weight_center_) {
-     case Gather:  assert(target_extents.size() == nb_target); break;
-     case Scatter: assert(source_extents.size() == nb_source); break;
+     case Gather:  assert(target_extents.size() == unsigned(nb_target)); break;
+     case Scatter: assert(source_extents.size() == unsigned(nb_source)); break;
      default: throw std::runtime_error("invalid weight center type");
    }
 
-    assert(smoothing_lengths.size() == swarm_size);
+    assert(smoothing_lengths.size() == unsigned(swarm_size));
     kernel_types_.resize(swarm_size, Weight::POLYRAMP);
     geom_types_.resize(swarm_size, Weight::FACETED);
     source_extents_ = source_extents;
