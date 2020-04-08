@@ -205,13 +205,14 @@ KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
         kdtree = new KDTree<D>;
 
         /* Obtain allocations for arrays */
-        kdtree->num_entities = sboxp.size();
-        ipoly = new int[sboxp.size()];
-        kdtree->sbox = new IsotheticBBox<D>[2*sboxp.size()];
-        kdtree->linkp = new int[2*sboxp.size()];
-        bbc.resize(sboxp.size());
+        int const sboxp_size = sboxp.size();
+        kdtree->num_entities = sboxp_size;
+        ipoly = new int[sboxp_size];
+        kdtree->sbox = new IsotheticBBox<D>[2*sboxp_size];
+        kdtree->linkp = new int[2*sboxp_size];
+        bbc.resize(sboxp_size);
 
-        for (i = 0; i < sboxp.size(); i++) {
+        for (i = 0; i < sboxp_size; i++) {
 
             /* Compute the centers of the bounding boxes */
             bbc[i] = sboxp[i].center();
@@ -225,7 +226,7 @@ KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
            equal to the negative of the unique item contained in
            that leaf.)  If the root is a leaf, our work is done. */
 
-        if ( sboxp.size() == 1 ) kdtree->linkp[0] = 0;
+        if (sboxp_size == 1 ) kdtree->linkp[0] = 0;
         else 
         {
             /* dimx, dimy, dimz are equal to the x, y, and z dimensions
@@ -241,7 +242,7 @@ KDTree<D> *KDTreeCreate(const std::vector<IsotheticBBox<D> >& sboxp)
                address of the next available node to be filled. */
 
             nextp = 1;
-            for (i = 0; i < sboxp.size(); i++) ipoly[i] = i;
+            for (i = 0; i < sboxp_size; i++) ipoly[i] = i;
 
             /* Use a stack to create the tree. Put the root node
                ``0'' on the top of the stack (icrstack). The array
