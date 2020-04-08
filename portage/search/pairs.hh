@@ -82,12 +82,12 @@ protected:
   std::list<ulong> find_scatter(ulong j) const;
   vpile PairsMinMax(const vpile &in_y, const vpile &in_h) const;
   vpile PairsMinMax(const vpile &in_c, const pile &in_h) const;
-  void PairsIntegize(const size_t &in_dim, const pile &in_value,
+  void PairsIntegize(int in_dim, const pile &in_value,
                      const vpile &in_minmax, const pile &in_delta,
                      const vulong &in_sizes, vulong &in_ivalue) const;
-  ulong cellindex(const size_t &in_dim, const vulong &in_strides,
+  ulong cellindex(int in_dim, const vulong &in_strides,
                   const vulong &in_indices) const;
-  void cellindices(const size_t &in_dim, const vulong &in_strides,
+  void cellindices(int in_dim, const vulong &in_strides,
                    const ulong &in_index, vulong &in_indices) const;
 
 
