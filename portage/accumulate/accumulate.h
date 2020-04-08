@@ -88,6 +88,7 @@ class Accumulate {
       operator_domain_(operator_domain),
       operator_data_(operator_data)
   {
+#ifdef DEBUG
     // check sizes of inputs are consistent
     size_t n_particles = (center == Gather ? target_.num_owned_particles()
                                            : source_.num_particles());
@@ -96,9 +97,11 @@ class Accumulate {
     assert(n_particles == geometries_.size());
     assert(n_particles == smoothing_.size());
     if (operator_spec_ != oper::LastOperator) {
-      assert(operator_data_.size() == target_.num_owned_particles());
-      assert(operator_domain_.size() == target_.num_owned_particles());
+      unsigned const num_target_particles = target_.num_owned_particles();
+      assert(operator_data_.size()   == num_target_particles);
+      assert(operator_domain_.size() == num_target_particles);
     }
+#endif
   }
 
   /** 
@@ -181,7 +184,7 @@ class Accumulate {
 
         // Calculate inverse(P*W*transpose(P))*P*W
         iB = 0;
-        int bad_count=0;
+
         for (auto const& particleB : source_particles) {
 	        std::vector<double> pair_result(nbasis);
           Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
@@ -217,17 +220,19 @@ class Accumulate {
             oper::apply<dim>(operator_spec_, basis_,
                              operator_domain_[particleA],
                              operator_data_[particleA], basisop);
-            size_t opsize = oper::size_info(operator_spec_, basis_,
+            int const num_basis = nbasis;
+            int const opsize = oper::size_info(operator_spec_, basis_,
                                             operator_domain_[particleA])[0];
             std::vector<double> operator_result(opsize, 0.);
-            for (int j=0; j<opsize; j++) {
-              for (int k=0; k<nbasis; k++) {
-                for (int m=0; m<nbasis; m++) {
+
+            for (int j = 0; j < opsize; j++) {
+              for (int k = 0; k < num_basis; k++) {
+                for (int m = 0; m < num_basis; m++) {
                   operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
                 }
               }
             }
-            for (int j=0; j<nbasis; j++)
+            for (int j = 0; j < num_basis; j++)
               pair_result[j] = operator_result[j];
           }
           result.emplace_back(particleB, pair_result);

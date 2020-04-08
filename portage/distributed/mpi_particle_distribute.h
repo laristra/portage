@@ -269,7 +269,7 @@ public:
         smoothing_length_sizes[i] = h.size();
         max_slsize = std::max<int>(smoothing_length_sizes[i], max_slsize);
         for (int j = 0; j < smoothing_length_sizes[i]; j++)
-          assert(h[j].size() == smlen_dim);
+          assert(h[j].size() == unsigned(smlen_dim));
       }
 
       //-----------------------------------------------
@@ -535,7 +535,7 @@ private:
     // which it will receive data values
     int writeOffset = 0;
     std::vector<MPI_Request> requests;
-    int rcount = 0;
+
     for (int i = 0; i < nb_ranks; i++) {
       if ((i != rank) && (info->recv_counts[i] > 0)) {
         MPI_Request request;
