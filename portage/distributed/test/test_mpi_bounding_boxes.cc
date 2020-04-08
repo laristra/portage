@@ -51,9 +51,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   // across ranks. the easiest way to generate fields like this is to make the
   // field a function of gid, that way we are guaranteed to be consistent
   double dtest1[8];
-  for (int i=0; i<8; ++i) dtest1[i]=gids[i]+10.;
   double dtest2[8];
-  for (int i=0; i<8; ++i) dtest2[i]=gids[i]*gids[i]+100.;
+  for (int i=0; i<8; ++i) dtest1[i] = double(gids[i]) + 10.;
+  for (int i=0; i<8; ++i) dtest2[i] = double(gids[i] * gids[i]) + 100.;
 
   std::shared_ptr<Jali::State> state(Jali::State::create(source_mesh));
   Wonton::Jali_State_Wrapper wrapper(*state);
@@ -126,7 +126,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   std::vector<Wonton::GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
   std::vector<Wonton::GID_t> cell_gids_sorted = cell_gids;
   std::sort(cell_gids_sorted.begin(), cell_gids_sorted.end());
-  ASSERT_EQ(num_cells, cell_gids_sorted.size());
+  ASSERT_EQ(unsigned(num_cells), cell_gids_sorted.size());
   for (int c=0; c<num_cells; ++c)
     ASSERT_EQ(expOwnedGids[c], cell_gids_sorted[c]);
 
@@ -135,7 +135,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
   for (int c=0; c<num_cells; ++c) {
     std::vector<Wonton::Point<3>> myCoords;
     source_mesh_flat.cell_get_coordinates(c, &myCoords);
-    ASSERT_EQ(8, myCoords.size());
+    ASSERT_EQ(unsigned(8), myCoords.size());
     std::sort(myCoords.begin(), myCoords.end());
     Wonton::GID_t gid = cell_gids[c];
     double dx = (gid & 4 ? 0.5 : 0.0);
@@ -154,7 +154,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
     // Get my 7 neighbors
     std::vector<int> myNeighbors;
     source_mesh_flat.cell_get_node_adj_cells(c, Portage::Entity_type::ALL, &myNeighbors);
-    ASSERT_EQ(7, myNeighbors.size());
+    ASSERT_EQ(unsigned(7), myNeighbors.size());
     
     std::vector<Wonton::GID_t> myNeighborsGID(7);
     // Convert to global IDs
@@ -169,15 +169,15 @@ TEST(MPI_Bounding_Boxes, SimpleTest3D) {
 
   // Check field values
   double* ddata1 = nullptr;
-  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d1", &ddata1);
   double* ddata2 = nullptr;
+  source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d1", &ddata1);
   source_state_flat.mesh_get_data(Portage::Entity_kind::CELL, "d2", &ddata2);
 
   for (int c=0; c<num_cells; ++c) {
     Wonton::GID_t gid = cell_gids[c];
-    int expValue1 = 10. + gid;
+    auto expValue1 = double(10 + gid);
     ASSERT_EQ(expValue1, ddata1[c]);
-    int expValue2 = 100. + gid*gid;
+    auto expValue2 = double(100 + gid * gid);
     ASSERT_EQ(expValue2, ddata2[c]);
   }
 
@@ -206,9 +206,10 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   // field a function of gid, that way we are guaranteed to be consistent
 
   double dtest1[16];
-  for (int i=0; i<gids.size(); ++i) dtest1[i]=gids[i]+10.;
   double dtest2[16];
-  for (int i=0; i<gids.size(); ++i) dtest2[i]=gids[i]*gids[i]+100.;
+  int const num_gids = gids.size();
+  for (int i = 0; i < num_gids; ++i) dtest1[i] = double(gids[i]) + 10.;
+  for (int i = 0; i < num_gids; ++i) dtest2[i] = double(gids[i] * gids[i]) + 100.;
 
   std::shared_ptr<Jali::State> state(Jali::State::create(source_mesh));
   state->add("d1", source_mesh, Jali::Entity_kind::CELL,
@@ -282,7 +283,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
   std::vector<Wonton::GID_t>& cell_gids = source_mesh_flat.get_global_cell_ids();
   std::vector<Wonton::GID_t> cell_gids_sorted = cell_gids;
   std::sort(cell_gids_sorted.begin(), cell_gids_sorted.end());
-  ASSERT_EQ(num_cells, cell_gids.size());
+  ASSERT_EQ(unsigned(num_cells), cell_gids.size());
   for (int c=0; c<num_cells; ++c)
     ASSERT_EQ(expOwnedCellGids[commRank][c], cell_gids_sorted[c]);
 
@@ -306,7 +307,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
       std::vector<Wonton::Point<2>> mycoords;
       source_mesh_flat.cell_get_coordinates(c, &mycoords);
 
-      ASSERT_EQ(4, mycoords.size());
+      ASSERT_EQ(unsigned(4), mycoords.size());
       int gid = cell_gids[c];
 
       for (int n=0; n<4; ++n) {
@@ -386,7 +387,7 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
 
     // Now make sure all expected neighbors are present, in any order
-    ASSERT_EQ(expNeighbors.size(), count);
+    ASSERT_EQ(expNeighbors.size(), unsigned(count));
     std::sort(myNeighborsGID.begin(), myNeighborsGID.end());
     for (int n=0; n<count; ++n)
       ASSERT_EQ(expNeighbors[n], myNeighborsGID[n]);
@@ -400,9 +401,9 @@ TEST(MPI_Bounding_Boxes, SimpleTest2D) {
 
   for (int c=0; c<num_owned_cells; ++c) {
     int gid = cell_gids[c];
-    int expValue1 = 10. + gid;
+    auto expValue1 = double(10 + gid);
     ASSERT_EQ(expValue1, ddata1[c]);
-    int expValue2 = 100. + gid*gid;
+    auto expValue2 = double(100 + gid * gid);
     ASSERT_EQ(expValue2, ddata2[c]);
   }
 
