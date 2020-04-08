@@ -125,8 +125,10 @@ class MMDriver {
            SourceState_Wrapper const& sourceState,
            TargetMesh_Wrapper const& targetMesh,
            TargetState_Wrapper& targetState)
-      : source_mesh_(sourceMesh), source_state_(sourceState),
-        target_mesh_(targetMesh), target_state_(targetState),
+      : source_mesh_(sourceMesh),
+        target_mesh_(targetMesh),
+        source_state_(sourceState),
+        target_state_(targetState),
         dim_(sourceMesh.space_dimension()) {
     assert(sourceMesh.space_dimension() == targetMesh.space_dimension());
   }
@@ -533,10 +535,6 @@ class MMDriver {
     int comm_rank = 0;
     int nprocs = 1;
 
-
-    // Will be null if it's a parallel executor
-    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-
 #ifdef PORTAGE_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
@@ -557,9 +555,6 @@ class MMDriver {
               << comm_rank << ": "
               << numTargetCells << std::endl;
 #endif
-
-    int nvars = source_target_varname_map_.size();
-
 
     std::vector<std::string> src_meshvar_names, src_matvar_names;
     std::vector<std::string> trg_meshvar_names, trg_matvar_names;
@@ -785,10 +780,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-
+#ifdef ENABLE_DEBUG
+  float tot_seconds = 0.0;
+  float tot_seconds_srch = 0.0;
+  float tot_seconds_xsect = 0.0;
+  float tot_seconds_interp = 0.0;
   auto tic = timer::now();
+#endif
 
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
@@ -804,7 +802,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
-    else if (num_tols_.user_tolerances == false) {
+    else if (!num_tols_.user_tolerances) {
       num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
       num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
@@ -827,9 +825,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // SEARCH
   auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
-
+#ifdef ENABLE_DEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
-
+#endif
   int nmats = source_state2.num_materials();
 
   //--------------------------------------------------------------------
@@ -839,9 +837,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_cell.template intersect_meshes<Intersect>(candidates);
-
+#ifdef ENABLE_DEBUG
   tot_seconds_xsect += timer::elapsed(tic);
-
+#endif
   // check for mesh mismatch
   coredriver_cell.check_mismatch(source_ents_and_weights);
 
@@ -851,9 +849,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
   
   // INTERPOLATE (one variable at a time)
-  tic = timer::now();
   int nvars = src_meshvar_names.size();
 #ifdef ENABLE_DEBUG
+  tic = timer::now();
+
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on cells to remap is " <<
         nvars << std::endl;
@@ -901,7 +900,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
+#ifdef ENABLE_DEBUG
   tot_seconds_interp += timer::elapsed(tic, true);
+#endif
 
   if (nmats > 1) {
     //--------------------------------------------------------------------
@@ -939,9 +940,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }  // nmatvars
   }
 
+
+#ifdef ENABLE_DEBUG
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-#ifdef ENABLE_DEBUG
+
   std::cout << "Transform Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
@@ -1000,12 +1003,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-
-  
-  float tot_seconds = 0.0, tot_seconds_srch = 0.0,
-      tot_seconds_xsect = 0.0, tot_seconds_interp = 0.0;
-
+#ifdef ENABLE_DEBUG
+  float tot_seconds = 0.0;
+  float tot_seconds_srch = 0.0;
+  float tot_seconds_xsect = 0.0;
+  float tot_seconds_interp = 0.0;
   auto tic = timer::now();
+#endif
 
   std::vector<std::string> source_remap_var_names;
   for (auto & stpair : source_target_varname_map_)
@@ -1015,8 +1019,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef HAVE_TANGRAM
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
-    if ( (num_tols_.user_tolerances == false) &&
-         (!reconstructor_tols_.empty()) ) {
+    if (!num_tols_.user_tolerances && (!reconstructor_tols_.empty()) ) {
       num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
       num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
@@ -1044,11 +1047,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // SEARCH
 
   auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
-
+#ifdef ENABLE_DEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
-
-  int nmats = source_state2.num_materials();
-
+#endif
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
   //--------------------------------------------------------------------
@@ -1056,9 +1057,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_node.template intersect_meshes<Intersect>(candidates);
-
+#ifdef ENABLE_DEBUG
   tot_seconds_xsect += timer::elapsed(tic);
-
+#endif
   // check for mesh mismatch
   coredriver_node.check_mismatch(source_ents_and_weights);
 
@@ -1068,9 +1069,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
   // INTERPOLATE (one variable at a time)
-  tic = timer::now();
   int nvars = src_meshvar_names.size();
 #ifdef ENABLE_DEBUG
+  tic = timer::now();
+
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on nodes to remap is " <<
         nvars << std::endl;
@@ -1117,9 +1119,10 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
+#ifdef ENABLE_DEBUG
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
-#ifdef ENABLE_DEBUG
+
   std::cout << "Transform Time for Node remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
