@@ -320,8 +320,9 @@ class MPI_Bounding_Boxes {
 
       // For this array only, pack up face IDs + dirs and send together
       std::vector<bool>& sourceCellToFaceDirs = source_mesh_flat.get_cell_to_face_dirs();
-      for (int j=0; j<sourceCellToFaceList.size(); ++j)
-      {
+      int const sourceCellToFaceListSize = sourceCellToFaceList.size();
+
+      for (int j = 0; j < sourceCellToFaceListSize; ++j) {
         int f = sourceCellToFaceList_[j];
         int dir = static_cast<int>(sourceCellToFaceDirs[j]);
         sourceCellToFaceList_[j] = (f << 1) | dir;
@@ -333,8 +334,9 @@ class MPI_Bounding_Boxes {
 
       // Unpack face IDs and dirs
       std::vector<bool> distributedCellToFaceDirs(cellToFaceInfo.newNum);
-      for (int j=0; j<distributedCellToFaceList.size(); ++j)
-      {
+      int const distributedCellToFaceListSize = distributedCellToFaceList.size();
+
+      for (int j = 0; j < distributedCellToFaceListSize; ++j) {
         int fd = distributedCellToFaceList[j];
         distributedCellToFaceList[j] = fd >> 1;
         distributedCellToFaceDirs[j] = fd & 1;
@@ -483,7 +485,9 @@ class MPI_Bounding_Boxes {
       int running_counter=0;
 
       // loop over material ids on different nodes
-      for (int i=0; i<distributedMaterialIds_.size(); ++i){
+      int const distributedMaterialIdsSize = distributedMaterialIds_.size();
+
+      for (int i = 0; i < distributedMaterialIdsSize; ++i) {
 
         // get the current working material
         int mat_id = distributedMaterialIds_[i];
@@ -498,7 +502,6 @@ class MPI_Bounding_Boxes {
         for (int j=0; j<nmat_cells; ++j){
             these_material_cells.push_back(distributedMaterialCells_[running_counter++]);
         }
-
       }
 
       // cell material indices are added not replaced by vector so we need to
