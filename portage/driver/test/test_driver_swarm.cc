@@ -644,7 +644,7 @@ TEST(Part, 2D) {
   double* source_data = values.data();
 
   Wonton::Simple_State state(std::make_shared<Wonton::Simple_Mesh>(mesh));
-  auto& added = state.add("indicate", Wonton::CELL, source_data);
+  state.add("indicate", Wonton::CELL, source_data);
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states
@@ -719,7 +719,7 @@ TEST(Part, 3D) {
   double* source_data = values.data();
 
   Wonton::Simple_State state(std::make_shared<Wonton::Simple_Mesh>(mesh));
-  auto& added = state.add("indicate", Wonton::CELL, source_data);
+  state.add("indicate", Wonton::CELL, source_data);
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states

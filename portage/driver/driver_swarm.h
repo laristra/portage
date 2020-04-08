@@ -130,9 +130,9 @@ public:
         target_swarm_(target_swarm),
         source_state_(source_state),
         target_state_(target_state),
+        smoothing_lengths_(smoothing_lengths),
         kernel_types_(kernel_types),
-        geom_types_(geom_types),
-        smoothing_lengths_(smoothing_lengths) {
+        geom_types_(geom_types) {
 
     assert(dim == source_swarm.space_dimension());
     assert(dim == target_swarm.space_dimension());
@@ -553,10 +553,12 @@ protected:
    * @param weight_center: weight center type.
    */
   void check_sizes(WeightCenter const weight_center) {
-    int const swarm_size = get_swarm_size();
+#ifdef DEBUG
+    unsigned const swarm_size = get_swarm_size();
     assert(smoothing_lengths_.size() == swarm_size);
     assert(kernel_types_.size() == swarm_size);
     assert(geom_types_.size() == swarm_size);
+#endif
   }
 
   /**
