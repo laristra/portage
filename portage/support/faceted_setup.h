@@ -64,10 +64,10 @@ void faceted_setup_cell(Mesh const& mesh,
     std::vector<Wonton::Point<dim>> fncoord;
     for (int j = 0; j < nfaces; j++) {
       // get face data
-      int const num_face_nodes = fnodes.size();
       mesh.face_centroid(faces[j], &fcent);
       mesh.cell_centroid(i, &ccent);
       mesh.face_get_nodes(faces[j], &fnodes);
+      int const num_face_nodes = fnodes.size();
       fncoord.resize(num_face_nodes + 1);
       for (int k = 0; k < num_face_nodes; k++) {
         mesh.node_get_coordinates(fnodes[k], &(fncoord[k]));
@@ -95,7 +95,7 @@ void faceted_setup_cell(Mesh const& mesh,
           normal[k] = 0.;
         }
 
-        int const num_face_nodes = fnodes.size();
+        //int const num_face_nodes = fnodes.size();
         for (int k = 1; k <= num_face_nodes; k++) {
           for (int m = 0; m < 3; m++) bivec[1][m] = fncoord[k][m] - fcent[m];
           std::vector<double> cross(3, 0.);
