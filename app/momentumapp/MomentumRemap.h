@@ -36,8 +36,8 @@ const int CCH = 2;
 template<int D, class Mesh_Wrapper>
 class MomentumRemap {
  public:
-  MomentumRemap(int method) : method_(method) {};
-  ~MomentumRemap() {};
+  explicit MomentumRemap(int method) : method_(method) {}
+  ~MomentumRemap() = default;
 
   // initialization using formula for density
   void InitMass(
@@ -388,16 +388,18 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   std::vector<std::string> field_names;
   std::vector<const double*> field_pointers;
 
-  field_names.push_back("density");
-  field_pointers.push_back(&(density[0]));
+  field_names.emplace_back("density");
+  field_pointers.emplace_back(&(density[0]));
 
   for (int i = 0; i < D; ++i) {
-    field_names.push_back(momentum[i]);
-    field_pointers.push_back(&(momentum_src[i][0]));
+    field_names.emplace_back(momentum[i]);
+    field_pointers.emplace_back(&(momentum_src[i][0]));
   }
 
+  int const num_fields = field_names.size();
   std::vector<double> tmp(ncells_trg);
-  for (int i = 0; i < field_names.size(); ++i) {
+
+  for (int i = 0; i < num_fields; ++i) {
     srcstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], field_pointers[i]);
     trgstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], &(tmp[0]));
 
@@ -415,7 +417,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       field_names.size(), Portage::vector<Wonton::Vector<D>>(ncells_all));
 
   if (method_ == SGH) {
-    for (int i = 0; i < field_names.size(); ++i) {
+    for (int i = 0; i < num_fields; ++i) {
       Portage::Limited_Gradient<D, Wonton::Entity_kind::CELL, 
                                 Mesh_Wrapper, State_Wrapper>
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
@@ -468,8 +470,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       trgmesh_wrapper.cell_centroid(c, &xc);
       trgmesh_wrapper.cell_get_corners(c, &corners);
 
-      for (auto cn : corners) {
-        double volume = trgmesh_wrapper.corner_volume(cn); 
+      for (auto&& cn : corners) {
         trgmesh_wrapper.corner_get_wedges(cn, &wedges);
 
         corner_get_centroid(cn, trgmesh_wrapper, xcn);
