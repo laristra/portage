@@ -171,7 +171,7 @@ namespace Portage {
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
@@ -232,8 +232,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor2D> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -252,8 +252,8 @@ namespace Portage {
                        TargetMesh const &target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
@@ -648,7 +648,7 @@ namespace Portage {
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -711,8 +711,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor3D> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -731,8 +731,8 @@ namespace Portage {
                        TargetMesh const& target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
@@ -1218,7 +1218,7 @@ namespace Portage {
     TargetMesh const& target_mesh_;
     SourceState const& source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
