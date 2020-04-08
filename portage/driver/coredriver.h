@@ -1115,6 +1115,7 @@ class CoreDriver : public CoreDriverBase<D,
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
 
+#ifdef DEBUG
     Portage::for_each(source_part.cells().begin(),
                       source_part.cells().end(),
                       [&](int current){ assert(current <= max_source_id); });
@@ -1122,8 +1123,8 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::for_each(target_part.cells().begin(),
                       target_part.cells().end(),
                       [&](int current){ assert(current <= max_target_id); });
+#endif
 
-    int const target_mesh_size = sources_and_weights.size();
     int const target_part_size = target_part.size();
 
     // 2. Filter intersection weights list.
