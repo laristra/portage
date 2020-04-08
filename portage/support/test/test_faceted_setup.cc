@@ -20,7 +20,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/weight.h"
 #include "portage/support/faceted_setup.h"
 
-const unsigned int NCELLS=5;
+int NCELLS = 5;
 
 // Checks the face normals and distances of a 2D axis-aligned brick mesh. 
 TEST(Faceted_Setup, Simple2D) {
@@ -35,11 +35,11 @@ TEST(Faceted_Setup, Simple2D) {
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
-  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
-  ASSERT_EQ(extents.size(), NCELLS*NCELLS);
+  ASSERT_EQ(smoothing.size(), unsigned(NCELLS * NCELLS));
+  ASSERT_EQ(extents.size(), unsigned(NCELLS * NCELLS));
   for (int i=0; i<NCELLS; i++) {
     std::vector<std::vector<double>> h = smoothing[i];
-    ASSERT_EQ(h.size(), 4);
+    ASSERT_EQ(h.size(), unsigned(4));
     ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
     ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
     ASSERT_NEAR(h[0][2],  dx1, 1.e-12);
@@ -72,11 +72,12 @@ TEST(Faceted_Setup, Simple3D) {
     <3,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS, dx2=.01*factor/NCELLS;
-  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS*NCELLS);
-  ASSERT_EQ(extents.size(), NCELLS*NCELLS*NCELLS);
+  ASSERT_EQ(smoothing.size(), unsigned(NCELLS*NCELLS*NCELLS));
+  ASSERT_EQ(extents.size(), unsigned(NCELLS*NCELLS*NCELLS));
+
   for (int i=0; i<NCELLS; i++) {
     std::vector<std::vector<double>> h = smoothing[i];
-    ASSERT_EQ(h.size(), 6);
+    ASSERT_EQ(h.size(), unsigned(6));
     ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
     ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
     ASSERT_NEAR(h[0][2],  0.0, 1.e-12);
@@ -137,11 +138,12 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
                                   *std::min_element(xpts[1].begin(),xpts[1].end())};
   const std::vector<double> xmax={*std::max_element(xpts[0].begin(),xpts[0].end()), 
                                   *std::max_element(xpts[1].begin(),xpts[1].end())};
-  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
-  ASSERT_EQ(extents.size(), NCELLS*NCELLS);
+  ASSERT_EQ(smoothing.size(), unsigned(NCELLS * NCELLS));
+  ASSERT_EQ(extents.size(), unsigned(NCELLS * NCELLS));
+
   for (int i=0; i<NCELLS; i++) {
     std::vector<std::vector<double>> h = smoothing[i];
-    ASSERT_EQ(h.size(), 4);
+    ASSERT_EQ(h.size(), unsigned(4));
     ASSERT_NEAR(h[0][0],  b,  1.e-12);
     ASSERT_NEAR(h[0][1],  -a,  1.e-12);
     ASSERT_NEAR(h[0][2],  dx1,   1.e-12);
@@ -197,11 +199,12 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
   const std::vector<double> xmax={*std::max_element(xpts[0].begin(),xpts[0].end()), 
                                   *std::max_element(xpts[1].begin(),xpts[1].end()), 
                                   *std::max_element(xpts[2].begin(),xpts[2].end())};
-  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS*NCELLS);
-  ASSERT_EQ(extents.size(), NCELLS*NCELLS*NCELLS);
+  ASSERT_EQ(smoothing.size(), unsigned(NCELLS*NCELLS*NCELLS));
+  ASSERT_EQ(extents.size(), unsigned(NCELLS*NCELLS*NCELLS));
+
   for (int i=0; i<NCELLS; i++) {
     std::vector<std::vector<double>> h = smoothing[i];
-    ASSERT_EQ(h.size(), 6);
+    ASSERT_EQ(h.size(), unsigned(6));
     ASSERT_NEAR(h[0][0],  a-b, 1.e-11);
     ASSERT_NEAR(h[0][1],  -b, 1.e-11);
     ASSERT_NEAR(h[0][2],  -a-b, 1.e-11);
@@ -249,11 +252,12 @@ TEST(Faceted_Setup, Simple2DFace) {
     <2,Wonton::Simple_Mesh_Wrapper>(wrapper, smoothing, extents, factor, bfactor);
 
   double dx0=1.*factor/NCELLS, dx1=.1*factor/NCELLS;
-  ASSERT_EQ(smoothing.size(), NCELLS*NCELLS);
-  ASSERT_EQ(extents.size(), NCELLS*NCELLS);
+  ASSERT_EQ(smoothing.size(),unsigned( NCELLS*NCELLS));
+  ASSERT_EQ(extents.size(), unsigned(NCELLS*NCELLS));
+
   for (int i=0; i<NCELLS; i++) {
     std::vector<std::vector<double>> h = smoothing[i];
-    ASSERT_EQ(h.size(), 4);
+    ASSERT_EQ(h.size(), unsigned(4));
     if (not wrapper.on_exterior_boundary(Wonton::CELL, i)) {
       ASSERT_NEAR(h[0][0],  0.0, 1.e-12);
       ASSERT_NEAR(h[0][1], -1.0, 1.e-12);
@@ -294,7 +298,7 @@ TEST(Faceted_Setup, Simple2DFace) {
 
 // Checks the face normals and distances of a 2D axis-aligned brick mesh with internal boundaries.
 TEST(Faceted_Setup, InternalBoundary) {
-  const size_t NCELLS = 4;
+  NCELLS = 4;
   std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr = 
     std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., NCELLS, NCELLS);
   Wonton::Simple_Mesh &mesh = *mesh_ptr;
@@ -303,19 +307,19 @@ TEST(Faceted_Setup, InternalBoundary) {
   Portage::vector<Wonton::Point<2>> extents;
   double factor = 1.25, bfactor=0.5, dx=0.5;
 
-  size_t ncells2d = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+  int const ncells2d = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
   assert(ncells2d == NCELLS*NCELLS);
   std::vector<double> values(ncells2d, 0.0);
   for (int i=0; i<ncells2d; i++) {
     Wonton::Point<2> pnt;
     mwrapper.cell_centroid(i, &pnt);
-    if      (pnt[0]<0. and pnt[1]<0.) values[i] = 1.;
-    else if (pnt[0]>0. and pnt[1]>0.) values[i] = 1.;
+    if ((pnt[0]<0. and pnt[1]<0.) or (pnt[0]>0. and pnt[1]>0.))
+      values[i] = 1.;
   }
   double *valptr = values.data();
 
   Wonton::Simple_State state(mesh_ptr); 
-  std::vector<double> &added = state.add("indicate", Wonton::CELL, valptr);
+  state.add("indicate", Wonton::CELL, valptr);
   Wonton::Simple_State_Wrapper swrapper(state);
 
   Portage::Meshfree::Weight::faceted_setup_cell
