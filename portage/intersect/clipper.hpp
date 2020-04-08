@@ -201,13 +201,79 @@ struct IntRect { cInt left; cInt top; cInt right; cInt bottom; };
 enum EdgeSide { esLeft = 1, esRight = 2};
 
 //forward declarations (for stuff used internally) ...
-struct TEdge;
-struct IntersectNode;
-struct LocalMinimum;
-struct Scanbeam;
-struct OutPt;
-struct OutRec;
-struct Join;
+
+enum Direction { dRightToLeft, dLeftToRight };
+
+static int const Unassigned = -1;  //edge not currently 'owning' a solution
+static int const Skip = -2;        //edge that would otherwise close a path
+
+#define HORIZONTAL (-1.0E+40)
+#define TOLERANCE (1.0e-20)
+#define NEAR_ZERO(val) (((val) > -TOLERANCE) && ((val) < TOLERANCE))
+
+struct TEdge {
+  IntPoint Bot     {};
+  IntPoint Curr    {};
+  IntPoint Top     {};
+  IntPoint Delta   {};
+  double Dx        = 0.;
+  PolyType PolyTyp {};
+  EdgeSide Side    {};
+  int WindDelta    = 0; //1 or -1 depending on winding direction
+  int WindCnt      = 0;
+  int WindCnt2     = 0; //winding count of the opposite polytype
+  int OutIdx       = 0;
+  TEdge *Next      = nullptr;
+  TEdge *Prev      = nullptr;
+  TEdge *NextInLML = nullptr;
+  TEdge *NextInAEL = nullptr;
+  TEdge *PrevInAEL = nullptr;
+  TEdge *NextInSEL = nullptr;
+  TEdge *PrevInSEL = nullptr;
+};
+
+struct IntersectNode {
+  TEdge          *Edge1 = nullptr;
+  TEdge          *Edge2 = nullptr;
+  IntPoint        Pt {};
+};
+
+struct LocalMinimum {
+  cInt  Y = 0;
+  TEdge *LeftBound  = nullptr;
+  TEdge *RightBound = nullptr;
+};
+
+struct OutPt {
+  int       Idx  = -1;
+  IntPoint  Pt   {};
+  OutPt    *Next = nullptr;
+  OutPt    *Prev = nullptr;
+};
+
+struct OutRec {
+  int       Idx       = -1;
+  bool      IsHole    = false;
+  bool      IsOpen    = false;
+  OutRec   *FirstLeft = nullptr;  //see comments in clipper.pas
+  PolyNode *PolyNd    = nullptr;
+  OutPt    *Pts       = nullptr;
+  OutPt    *BottomPt  = nullptr;
+};
+
+struct Join {
+  OutPt    *OutPt1 = nullptr;
+  OutPt    *OutPt2 = nullptr;
+  IntPoint  OffPt {};
+};
+
+struct LocMinSorter
+{
+  inline bool operator()(const LocalMinimum& locMin1, const LocalMinimum& locMin2)
+  {
+    return locMin2.Y < locMin1.Y;
+  }
+};
 
 typedef std::vector < OutRec* > PolyOutList;
 typedef std::vector < TEdge* > EdgeList;
