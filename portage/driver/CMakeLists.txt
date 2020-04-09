@@ -30,32 +30,32 @@ set(driver_SOURCES
 if (ENABLE_UNIT_TESTS)
 
    if (Jali_DIR)
+       cinch_add_unit(test_driver
+       SOURCES test/test_driver.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
        cinch_add_unit(test_driver_multivar
        SOURCES test/test_driver_multivar.cc 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_mismatch_fixup
+       cinch_add_unit(test_driver_mismatch_fixup
        SOURCES test/test_mismatch_fixup 
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_coredriver_mismatch_fixup
-       SOURCES test/test_coredriver_mismatch_fixup 
-       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-       POLICY MPI
-       THREADS 1)
-
-       cinch_add_unit(test_mismatch_disjoint
+       cinch_add_unit(test_driver_mismatch_disjoint
        SOURCES test/test_mismatch_disjoint
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_driver
-       SOURCES test/test_driver.cc 
+       cinch_add_unit(test_driver_core_mismatch_fixup
+       SOURCES test/test_coredriver_mismatch_fixup
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
        THREADS 1)
@@ -74,25 +74,25 @@ if (ENABLE_UNIT_TESTS)
 
      if (TANGRAM_FOUND AND XMOF2D_FOUND)
 
-       cinch_add_unit(test_multimat_driver
+       cinch_add_unit(test_driver_multimat
        SOURCES test/test_multimat_driver.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_multimat_driver_2ndOrder
+       cinch_add_unit(test_driver_multimat_second_order
        SOURCES test/test_multimat_driver_2ndOrder.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_uberdriver_multimat
+       cinch_add_unit(test_driver_uber_multimat
        SOURCES test/test_uberdriver_multimat.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_uberdriver_multimat_swept
+       cinch_add_unit(test_driver_uber_multimat_swept
        SOURCES test/test_uberdriver_multimat_swept.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
        POLICY MPI
@@ -102,13 +102,13 @@ if (ENABLE_UNIT_TESTS)
 
      if (TANGRAM_FOUND)
 
-       cinch_add_unit(test_multimat_driver_distributed
+       cinch_add_unit(test_driver_multimat_distributed
        SOURCES test/test_multimat_driver_distributed
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} 
        POLICY MPI
        THREADS 4)
 
-       cinch_add_unit(test_multimat_uberdriver_distributed
+       cinch_add_unit(test_driver_uber_multimat_distributed
        SOURCES test/test_multimat_uberdriver_distributed
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} 
        POLICY MPI
@@ -116,7 +116,7 @@ if (ENABLE_UNIT_TESTS)
 
      endif (TANGRAM_FOUND)
 
-     cinch_add_unit(test_coredriver_singlemat
+     cinch_add_unit(test_driver_core_single_mat
        SOURCES test/test_coredriver_singlemat.cc
        LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
        POLICY MPI
@@ -148,8 +148,8 @@ if (ENABLE_UNIT_TESTS)
      POLICY MPI
      THREADS 1)
 
-   cinch_add_unit(test_part_by_particle
-     SOURCES test/test_part_by_particle
+   cinch_add_unit(test_driver_part_by_particle
+     SOURCES test/test_part_by_particle.cc
      LIBRARIES portage
      POLICY MPI
      THREADS 1)

@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 # Add header files
 set(intersect_HEADERS
         clipper.hpp
-        intersectClipper.h
+        intersect_clipper.h
         intersect_boxes.h
         intersect_polys_r2d.h
         intersect_r2d.h
@@ -27,44 +27,44 @@ set(intersect_SOURCES clipper.cpp PARENT_SCOPE)
 if (ENABLE_UNIT_TESTS)
     if (Jali_DIR)
         cinch_add_unit(test_intersect_clipper
-                SOURCES intersectClipperTest.cc clipper.cpp
+                SOURCES test/test_intersect_clipper.cc clipper.cpp
                 LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
 
-        cinch_add_unit(test_intersect_swept_face_2D
+        cinch_add_unit(test_intersect_swept_face_2d
                 SOURCES test/test_intersect_swept_face_2D.cc
                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
 
-        cinch_add_unit(test_intersect_swept_face_3D
+        cinch_add_unit(test_intersect_swept_face_3d
                 SOURCES test/test_intersect_swept_face_3D.cc
                 LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
                 POLICY MPI)
     endif (Jali_DIR)
 
-    cinch_add_unit(intersect_boxes
+    cinch_add_unit(test_intersect_boxes
             SOURCES test/test_intersect_boxes.cc
             LIBRARIES wonton
             POLICY SERIAL)
 
-    cinch_add_unit(intersect_r2d
-            SOURCES intersect_r2d_test.cc
+    cinch_add_unit(test_intersect_r2d
+            SOURCES test/test_intersect_r2d.cc
             LIBRARIES wonton
             POLICY SERIAL)
 
-    cinch_add_unit(intersect_r3d
-            SOURCES intersect_r3d_test.cc
+    cinch_add_unit(test_intersect_r3d
+            SOURCES test/test_intersect_r3d.cc
             LIBRARIES portage wonton
             POLICY SERIAL)
 
     if (TANGRAM_FOUND AND XMOF2D_FOUND)
         include_directories(${TANGRAM_INCLUDE_DIRS})
-        cinch_add_unit(test_tangram_intersect_2D
+        cinch_add_unit(test_intersect_tangram_2d
                 SOURCES test/test_tangram_intersect_2D
                 LIBRARIES portage
                 POLICY SERIAL)
 
-        cinch_add_unit(test_tangram_intersect_3D
+        cinch_add_unit(test_intersect_tangram_3d
                 SOURCES test/test_tangram_intersect_3D
                 LIBRARIES portage
                 POLICY SERIAL)
