@@ -595,44 +595,46 @@ class MMDriver {
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
 #ifdef PORTAGE_ENABLE_MPI
+    // Create a new mesh wrapper that we can use for redistribution
+    // of the source mesh as necessary (so that every target cell
+    // sees any source cell that it overlaps with)
+    
     Flat_Mesh_Wrapper<> source_mesh_flat;
     Flat_State_Wrapper<Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
 
+    bool redistributed_source = false;
     if (distributed) {
-
-      // Create a new mesh wrapper that we can use for redistribution
-      // of the source mesh as necessary (so that every target cell
-      // sees any source cell that it overlaps with)
-
-      // IN FACT, WE SHOULD DO THE BOUNDING BOX OVERLAP CHECK FIRST
-      // AND ONLY IF WE DETERMINE THAT THE SOURCE MESH NEEDS TO BE
-      // DISTRIBUTED WE SHOULD CREATE THE FLAT MESH WRAPPER AND INVOKE
-      // REDISTRIBUTION; OTHERWISE, WE JUST INVOKE REMAP WITH THE
-      // ORIGINAL WRAPPER
-
-      tic = timer::now();
-
-      source_mesh_flat.initialize(source_mesh_);
-
-      // Note the flat state should be used for everything including the
-      // centroids and volume fractions for interface reconstruction
-      std::vector<std::string> source_remap_var_names;
-      for (auto & stpair : source_target_varname_map_)
-        source_remap_var_names.push_back(stpair.first);
-      source_state_flat.initialize(source_state_, source_remap_var_names);
-
       MPI_Bounding_Boxes distributor(mpiexecutor);
-      distributor.distribute(source_mesh_flat, source_state_flat,
-                             target_mesh_, target_state_);
-
+      if (distributor.is_redistribution_needed(source_mesh_, target_mesh_)) {
+        tic = timer::now();
+        
+        source_mesh_flat.initialize(source_mesh_);
+        
+        // Note the flat state should be used for everything including the
+        // centroids and volume fractions for interface reconstruction
+        std::vector<std::string> source_remap_var_names;
+        for (auto & stpair : source_target_varname_map_)
+          source_remap_var_names.push_back(stpair.first);
+        source_state_flat.initialize(source_state_, source_remap_var_names);
+        
+        distributor.distribute(source_mesh_flat, source_state_flat,
+                               target_mesh_, target_state_);
+        
+        redistributed_source = true;
+        
 #ifdef ENABLE_DEBUG
-      float tot_seconds_dist = timer::elapsed(tic);
-      std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
-          tot_seconds_dist << std::endl;
+        float tot_seconds_dist = timer::elapsed(tic);
+        std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
+            tot_seconds_dist << std::endl;
 #endif
+      }
+    }
+
+    if (redistributed_source) {
+      
       // Why is it not able to deduce the template arguments, if I don't specify
       // Flat_Mesh_Wrapper and Flat_State_Wrapper?
-
+        
       cell_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
           (source_mesh_flat, source_state_flat,
            src_meshvar_names, trg_meshvar_names,
@@ -679,7 +681,7 @@ class MMDriver {
 
     if (not src_meshvar_names.empty()) {
 #ifdef PORTAGE_ENABLE_MPI
-      if (distributed)
+      if (redistributed_source)
         node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
             (source_mesh_flat, source_state_flat,
              src_meshvar_names, trg_meshvar_names,
