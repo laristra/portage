@@ -914,7 +914,7 @@ class CoreDriver : public CoreDriverBase<D,
     int material_id = 0,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
-    int size = 0;
+    int nallent = 0;
 #ifdef HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
@@ -930,22 +930,20 @@ class CoreDriver : public CoreDriverBase<D,
       if (interface_reconstructor_) {
         std::vector<int> mat_cells_all;
         source_state_.mat_get_cells(material_id, &mat_cells_all);
+        nallent = mat_cells_all.size();
 
         // Filter out GHOST cells
         // SHOULD BE IN HANDLED IN THE STATE MANAGER (See ticket LNK-1589)
-        int nownedcells = source_mesh_.num_owned_cells();
-        mat_cells.reserve(mat_cells_all.size());
+        mat_cells.reserve(nallent);
         for (auto const& c : mat_cells_all)
           if (source_mesh_.cell_get_type(c) == PARALLEL_OWNED)
             mat_cells.push_back(c);
-
-        size = mat_cells.size();
       }
       else
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
 #endif
-      size = source_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
+      nallent = source_mesh_.num_entities(ONWHAT, ALL);
 #ifdef HAVE_TANGRAM
     }
 #endif
@@ -961,16 +959,28 @@ class CoreDriver : public CoreDriverBase<D,
                     limiter_type, boundary_limiter_type, source_part);
 #endif
 
-    // create the field
-    Portage::vector<Vector<D>> gradient_field(size);
+    // create the field (material cell indices have owned and ghost
+    // cells mixed together; so we have to have a vector of size
+    // owned+ghost and fill in the right entries; the ghost entries
+    // are zeroed out)
+    Vector<D> zerovec;
+    Portage::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
 #ifdef HAVE_TANGRAM
     if (multimat) {
+      // no need for this to be Portage::vector as it will be copied out
+      std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
+      
       kernel.set_material(material_id);
       Portage::transform(mat_cells.begin(),
                          mat_cells.end(),
-                         gradient_field.begin(), kernel);
+                         owned_gradient_field.begin(), kernel);
+      int i = 0;
+      for (auto const& c : mat_cells) {
+        int cm = source_state_.cell_index_in_material(c, material_id);
+        gradient_field[cm] = owned_gradient_field[i++];
+      }
     } else {
 #endif
       Portage::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
