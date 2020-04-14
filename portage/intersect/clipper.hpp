@@ -455,14 +455,11 @@ private:
 };
 //------------------------------------------------------------------------------
 
-class clipperException : public std::exception
-{
+class clipperException : public std::runtime_error {
   public:
-    explicit clipperException(const char* description): m_descr(description) {}
-    ~clipperException() noexcept override = default;
-    const char* what() const noexcept override { return m_descr.c_str(); }
-  private:
-    std::string m_descr {};
+    explicit clipperException(const char *description)
+      : std::runtime_error(description)
+    {}
 };
 //------------------------------------------------------------------------------
 

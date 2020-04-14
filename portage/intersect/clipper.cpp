@@ -1300,8 +1300,8 @@ void Clipper::Reset()
   m_Scanbeam = ScanbeamList();
   m_ActiveEdges = 0;
   m_SortedEdges = 0;
-  for (MinimaList::iterator lm = m_MinimaList.begin(); lm != m_MinimaList.end(); ++lm)
-    InsertScanbeam(lm->Y);
+  for (auto & lm : m_MinimaList)
+    InsertScanbeam(lm.Y);
 }
 //------------------------------------------------------------------------------
 
@@ -1753,9 +1753,9 @@ void Clipper::AddJoin(OutPt *op1, OutPt *op2, const IntPoint OffPt)
 
 void Clipper::ClearJoins()
 {
-  for (JoinList::size_type i = 0; i < m_Joins.size(); i++)
-    delete m_Joins[i];
-  m_Joins.resize(0);
+  for (auto & m_Join : m_Joins)
+    delete m_Join;
+  m_Joins.clear();
 }
 //------------------------------------------------------------------------------
 
@@ -1763,7 +1763,7 @@ void Clipper::ClearGhostJoins()
 {
   for (auto & m_GhostJoin : m_GhostJoins)
     delete m_GhostJoin;
-  m_GhostJoins.resize(0);
+  m_GhostJoins.clear();
 }
 //------------------------------------------------------------------------------
 
@@ -1880,8 +1880,8 @@ void Clipper::DeleteFromAEL(TEdge *e)
   if( AelPrev ) AelPrev->NextInAEL = AelNext;
   else m_ActiveEdges = AelNext;
   if( AelNext ) AelNext->PrevInAEL = AelPrev;
-  e->NextInAEL = 0;
-  e->PrevInAEL = 0;
+  e->NextInAEL = nullptr;
+  e->PrevInAEL = nullptr;
 }
 //------------------------------------------------------------------------------
 
@@ -1893,8 +1893,8 @@ void Clipper::DeleteFromSEL(TEdge *e)
   if( SelPrev ) SelPrev->NextInSEL = SelNext;
   else m_SortedEdges = SelNext;
   if( SelNext ) SelNext->PrevInSEL = SelPrev;
-  e->NextInSEL = 0;
-  e->PrevInSEL = 0;
+  e->NextInSEL = nullptr;
+  e->PrevInSEL = nullptr;
 }
 //------------------------------------------------------------------------------
 
@@ -2611,8 +2611,7 @@ void Clipper::ProcessHorizontal(TEdge *horzEdge, bool isTopOfScanbeam)
 
 void Clipper::UpdateEdgeIntoAEL(TEdge *&e)
 {
-  if( !e->NextInLML ) throw
-    std::runtime_error("UpdateEdgeIntoAEL: invalid call");
+  if( !e->NextInLML ) throw clipperException("UpdateEdgeIntoAEL: invalid call");
 
   e->NextInLML->OutIdx = e->OutIdx;
   TEdge* AelPrev = e->PrevInAEL;
@@ -2809,7 +2808,7 @@ void Clipper::DoMaxima(TEdge *e)
     DeleteFromAEL(eMaxPair);
   } 
 #endif
-  else throw std::runtime_error("DoMaxima error");
+  else throw clipperException("DoMaxima error");
 }
 //------------------------------------------------------------------------------
 
@@ -2925,7 +2924,7 @@ void Clipper::FixupOutPolygon(OutRec &outrec)
     if (pp->Prev == pp || pp->Prev == pp->Next )
     {
       DisposeOutPts(pp);
-      outrec.Pts = 0;
+      outrec.Pts = nullptr;
       return;
     }
 
@@ -3003,7 +3002,7 @@ void Clipper::BuildResult2(PolyTree& polytree)
         //nb: polytree takes ownership of all the PolyNodes
         polytree.AllNodes.push_back(pn);
         outRec->PolyNd = pn;
-        pn->Parent = 0;
+        pn->Parent = nullptr;
         pn->Index = 0;
         pn->Contour.reserve(cnt);
         OutPt *op = outRec->Pts->Prev;
@@ -3091,13 +3090,13 @@ void Clipper::InsertEdgeIntoAEL(TEdge *edge, TEdge* startEdge)
 {
   if(!m_ActiveEdges)
   {
-    edge->PrevInAEL = 0;
-    edge->NextInAEL = 0;
+    edge->PrevInAEL = nullptr;
+    edge->NextInAEL = nullptr;
     m_ActiveEdges = edge;
   }
   else if(!startEdge && E2InsertsBeforeE1(*m_ActiveEdges, *edge))
   {
-      edge->PrevInAEL = 0;
+      edge->PrevInAEL = nullptr;
       edge->NextInAEL = m_ActiveEdges;
       m_ActiveEdges->PrevInAEL = edge;
       m_ActiveEdges = edge;
