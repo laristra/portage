@@ -183,6 +183,7 @@ if (Jali_DIR)
    message(STATUS "Jali_DIR=${Jali_DIR}")
 
    set(ENABLE_Jali True)
+   set(HAVE_JALI True CACHE BOOL "Have Jali")
 
    # add full path to jali libs (WHAT ABOUT IF JALI IS COMPILED AS A SHARED LIB?)
    unset(_LIBS)

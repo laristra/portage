@@ -25,11 +25,13 @@ Please see the license file at the root of this repository, or at:
 
 #cmakedefine PORTAGE_ENABLE_THRUST
 
-
 // Is Portage compiled with TANGRAM support
 
 #cmakedefine HAVE_TANGRAM
 
+// Is PORTAGE linked with Jali
+
+#cmakedefine HAVE_JALI
 
 #endif  // PORTAGE_CONFIG_H_
 
