@@ -183,6 +183,8 @@ public:
    weight_center_ = center;
 
    int const swarm_size = get_swarm_size();
+
+#ifdef DEBUG
    int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
    int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
 
@@ -192,7 +194,9 @@ public:
      default: throw std::runtime_error("invalid weight center type");
    }
 
-    assert(smoothing_lengths.size() == unsigned(swarm_size));
+   assert(smoothing_lengths.size() == unsigned(swarm_size));
+#endif
+
     kernel_types_.resize(swarm_size, Weight::POLYRAMP);
     geom_types_.resize(swarm_size, Weight::FACETED);
     source_extents_ = source_extents;

@@ -1109,13 +1109,13 @@ class CoreDriver : public CoreDriverBase<D,
     // to prevent bugs when interpolating values:
     // check that each entity id is within the
     // mesh entity index space.
-    
-    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
-    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
 
 #ifdef DEBUG
+    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
+
     Portage::for_each(source_part.cells().begin(),
                       source_part.cells().end(),
                       [&](int current){ assert(current <= max_source_id); });

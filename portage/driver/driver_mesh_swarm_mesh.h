@@ -161,7 +161,7 @@ public:
                            Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
                            Portage::vector<Meshfree::oper::Domain> const& operator_domains = {},
                            Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
-
+#ifdef DEBUG
     assert(source_vars.size() == target_vars.size());
 
     int nvars = source_vars.size();
@@ -170,6 +170,7 @@ public:
       auto const& target_entity = target_state_.get_entity(target_vars[i]);
       assert(source_entity == target_entity);
     }
+#endif
 
     source_vars_      = source_vars;
     target_vars_      = target_vars;

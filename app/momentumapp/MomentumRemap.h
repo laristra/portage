@@ -255,20 +255,20 @@ void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     const T u[D], double* l2err, double* l2norm)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
-  double ux_exact, uy_exact, uz_exact;
-  Wonton::Point<D> xyz;
 
   *l2err = 0.0;
   *l2norm = 0.0;
 
   for (int n = 0; n < nrows; ++n) {
+    Wonton::Point<D> xyz {};
+
     if (method_ == SGH)
       mesh.node_get_coordinates(n, &xyz);
     else
       mesh.cell_centroid(n, &xyz);
 
-    ux_exact = formula_x(xyz);
-    uy_exact = formula_y(xyz);
+    double const ux_exact = formula_x(xyz);
+    double const uy_exact = formula_y(xyz);
 
     *l2err += (ux_exact - u[0][n]) * (ux_exact - u[0][n])
             + (uy_exact - u[1][n]) * (uy_exact - u[1][n]);
@@ -276,14 +276,15 @@ void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     *l2norm += ux_exact * ux_exact + uy_exact * uy_exact;
 
     if (D == 3) {
-      uz_exact = formula_z(xyz);
+      double const uz_exact = formula_z(xyz);
       *l2err += (uz_exact - u[2][n]) * (uz_exact - u[2][n]);
       *l2norm += uz_exact * uz_exact;
     }
   }
 
-  int nrows_glb;
-  double l2err_glb, l2norm_glb;
+  int nrows_glb = 0;
+  double l2err_glb = 0.;
+  double l2norm_glb = 0.;
 
   MPI_Allreduce(&nrows, &nrows_glb, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(l2err, &l2err_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);

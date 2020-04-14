@@ -401,11 +401,14 @@ namespace Portage {
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
+
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifdef DEBUG
       //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
       assert(cface_id != nfaces);
+#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
@@ -520,7 +523,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
       int const nb_edges = edges.size();
 
-#if DEBUG
+#ifdef DEBUG
       // ensure that we have the same face/edge index for source and target.
       std::vector<int> target_edges, target_dirs, target_nodes;
       target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
@@ -539,7 +542,7 @@ namespace Portage {
         nodes.clear();
         source_mesh_.face_get_nodes(edges[i], &nodes);
 
-#if DEBUG
+#ifdef DEBUG
         // ensure that we have the same nodal indices for source and target.
         target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
         int const nb_source_nodes = nodes.size();
@@ -893,11 +896,14 @@ namespace Portage {
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
+
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifdef DEBUG
       //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
       assert(cface_id != nfaces);
+#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 

@@ -174,15 +174,16 @@ class MMDriver {
     source_target_varname_map_.clear();
 
     int nvars = source_remap_var_names.size();
+#ifdef DEBUG
     for (int i = 0; i < nvars; ++i) {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
       Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
       if (trgkind == Entity_kind::UNKNOWN_KIND)
         continue;  // Presumably field does not exist on target - will get added
 
-      assert(srckind == trgkind);  // if target field exists, entity kinds
-                                   // must match
+      assert(srckind == trgkind);  // if target field exists, entity kinds must match
     }
+#endif
 
     for (int i = 0; i < nvars; i++) {
       source_target_varname_map_[source_remap_var_names[i]] = target_remap_var_names[i];

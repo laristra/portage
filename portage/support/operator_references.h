@@ -118,7 +118,7 @@ template<basis::Type type, size_t dim>
 typename basis::Traits<type, dim>::array_t
 make_translated_exact(typename basis::Traits<type, dim>::array_t const& values,
                       Point<dim> const& point) {
-  typename basis::Traits<type, dim>::array_t tex;
+  typename basis::Traits<type, dim>::array_t tex {};
   auto tf = basis::transfactor<dim>(type, point);
   int const num_tf = tf.size();
 
