@@ -389,11 +389,11 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   std::vector<const double*> field_pointers;
 
   field_names.emplace_back("density");
-  field_pointers.emplace_back(&(density[0]));
+  field_pointers.emplace_back(density.data());
 
   for (int i = 0; i < D; ++i) {
     field_names.emplace_back(momentum[i]);
-    field_pointers.emplace_back(&(momentum_src[i][0]));
+    field_pointers.emplace_back(momentum_src[i].data());
   }
 
   int const num_fields = field_names.size();
