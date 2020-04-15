@@ -5,7 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
@@ -1456,4 +1456,4 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
 
 }  // ThreeMat3D_VOF_MixedOrderRemap
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

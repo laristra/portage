@@ -5,7 +5,7 @@
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -1088,4 +1088,4 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
 
 }  // TwoMat2D_VOF_1stOrderRemap
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

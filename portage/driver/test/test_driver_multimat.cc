@@ -5,7 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <memory>
 
@@ -1327,4 +1327,4 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
 
 }  // ThreeMat3D_VOF_1stOrderRemap
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

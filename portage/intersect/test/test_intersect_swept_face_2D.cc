@@ -16,7 +16,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/intersect/split_r2d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
@@ -33,7 +33,7 @@
 class IntersectSweptBase2D : public testing::Test {
 
 protected:
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,
@@ -71,7 +71,7 @@ public:
   {
     num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // Volume and angle tolerances
     double dst_tol = num_tols.min_absolute_distance;
     double vol_tol = num_tols.min_absolute_volume;
@@ -172,7 +172,7 @@ protected:
   // enable or disable debug prints
   bool verbose = false;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   //interface reconstructor
   //std::vector<Tangram::IterativeMethodTolerances_t> ir_tols(2, {1000, 1e-12, 1e-12});
   std::shared_ptr<Tangram::Driver<Tangram::MOF, 2, Wonton::Jali_Mesh_Wrapper, 
@@ -239,7 +239,7 @@ protected:
 
 TEST_F(IntersectSweptForward2D, MomentsCheck) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
@@ -420,7 +420,7 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
 
 TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,
@@ -613,7 +613,7 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
 TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Intersector intersector(source_mesh_wrapper,
                           source_state_wrapper,
                           target_mesh_wrapper,

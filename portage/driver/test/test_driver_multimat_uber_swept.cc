@@ -4,7 +4,8 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
@@ -426,4 +427,4 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
 }
 
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

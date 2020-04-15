@@ -19,7 +19,7 @@
 #include <limits>
 
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #endif
 
@@ -194,7 +194,7 @@ class CoreDriver {
   Portage::vector<std::vector<Portage::Weights_t>>
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
@@ -240,7 +240,7 @@ class CoreDriver {
     num_tols_ = num_tols;
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver
     @param all_convex Should be set to false if the source mesh contains
@@ -286,7 +286,7 @@ class CoreDriver {
   std::vector<Portage::vector<std::vector<Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
@@ -510,7 +510,7 @@ class CoreDriver {
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
     int nallent = 0;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
@@ -539,13 +539,13 @@ class CoreDriver {
     } else /* single material */ {
 #endif
       nallent = source_mesh_.num_entities(ONWHAT, ALL);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
 
     // instantiate the right kernel according to entity kind (cell/node),
     // as well as source and target meshes and states types.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     Gradient kernel(source_mesh_, source_state_, field_name,
                     limiter_type, boundary_limiter_type,
                     interface_reconstructor_, source_part);
@@ -562,7 +562,7 @@ class CoreDriver {
     Portage::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     if (multimat) {
       // no need for this to be Portage::vector as it will be copied out
       std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
@@ -581,7 +581,7 @@ class CoreDriver {
       Portage::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          source_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          gradient_field.begin(), kernel);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
     return gradient_field;
@@ -773,7 +773,7 @@ class CoreDriver {
   }
   
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   
   /*! CoreDriver::interpolate_mat_var
 
@@ -871,7 +871,7 @@ class CoreDriver {
 
   }  // CoreDriver::interpolate_mat_var
 
-#endif  // HAVE_TANGRAM
+#endif  // PORTAGE_HAS_TANGRAM
 
 
   /*! 
@@ -988,7 +988,7 @@ class CoreDriver {
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the

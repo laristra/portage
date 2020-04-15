@@ -10,30 +10,14 @@ Please see the license file at the root of this repository, or at:
 #------------------------------------------------------------------------------#
 
 # Msm test
-if (ENABLE_MPI)
-if (Jali_DIR)
+if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
 
   add_executable(msmapp msmapp.cc)
-  target_link_libraries(msmapp portage
-    ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  target_link_libraries(msmapp portage)
 
-  # MPI additions - need to push this down into cinch
-  target_link_libraries(msmapp ${MPI_CXX_LIBRARIES})
-  set_target_properties(msmapp PROPERTIES
-  LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
-
-  # Jali additions
-  include_directories(${Jali_INCLUDE_DIRS} ${Jali_TPL_INCLUDE_DIRS})
-  target_link_libraries(msmapp ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES})
-
-  #TCMalloc option
-  set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
-  if(ENABLE_TCMALLOC)
-    set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
-
-    target_link_libraries(msmapp ${TCMALLOC_LIB})
-  endif(ENABLE_TCMALLOC)
-
+  # Can we do a find_package(vtune)? and just link to an imported library?
+  # It would make this a lot less verbose
+  
   # Profiling option (to allow pausing and resuming profiling during execution)
   set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
   if(ENABLE_PROFILE)
@@ -50,5 +34,4 @@ if (Jali_DIR)
   #  add_subdirectory(test)
   #endif (ENABLE_APP_TESTS)
 
-endif (Jali_DIR)
-endif (ENABLE_MPI)
+endif ()

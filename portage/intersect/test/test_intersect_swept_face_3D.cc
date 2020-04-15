@@ -16,7 +16,7 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/intersect/split_r3d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
@@ -32,7 +32,7 @@
 class IntersectSweptBase3D : public testing::Test {
 
 protected:
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,

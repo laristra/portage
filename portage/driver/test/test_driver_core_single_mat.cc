@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 // this should be included prior to the use of Portage macros
 #include "portage/support/portage.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
@@ -200,4 +200,4 @@ TEST(CellDriver, 3D_2ndOrder) {
 }  // CellDriver_3D_2ndOrder
 
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

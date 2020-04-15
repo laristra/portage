@@ -16,7 +16,7 @@ extern "C" {
 #include "wonton/intersect/r3d/r3d.h"
 }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/support/MatPoly.h"
 #endif
 
@@ -41,7 +41,7 @@ struct facetedpoly {
   std::vector<Point<3>> points;
 } facetedpoly_t;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 /*!
  @brief Facetizes a 3D MatPoly and converts it to the facetedpoly_t structure
  @param matpoly  3D material polyhedron object to be converted

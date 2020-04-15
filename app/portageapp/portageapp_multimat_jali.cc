@@ -40,7 +40,7 @@
 #include "user_field.h"
 
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/MOF.h"

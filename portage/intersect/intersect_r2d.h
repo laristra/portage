@@ -21,7 +21,7 @@ extern "C" {
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/intersect/intersect_polys_r2d.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/driver/driver.h"
 #include "tangram/support/MatPoly.h"
@@ -43,7 +43,7 @@ template <Entity_kind on_what, class SourceMeshType,
           class Matpoly_Clipper = void>
 class IntersectR2D {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -51,7 +51,7 @@ class IntersectR2D {
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR2D(SourceMeshType const & source_mesh,
@@ -100,7 +100,7 @@ class IntersectR2D {
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   NumericTolerances_t num_tols_;
@@ -118,7 +118,7 @@ template <class SourceMeshType, class SourceStateType,
 class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -126,7 +126,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR2D(SourceMeshType const & source_mesh,
@@ -172,7 +172,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int nmats = sourceStateWrapper.cell_get_num_mats(s);
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
@@ -250,7 +250,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   NumericTolerances_t num_tols_;
@@ -269,7 +269,7 @@ template <class SourceMeshType, class SourceStateType,
 class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMeshType,
                    InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper> {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor2D =
       Tangram::Driver<InterfaceReconstructorType, 2, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -277,7 +277,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR2D(SourceMeshType const & source_mesh,
@@ -349,7 +349,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   NumericTolerances_t num_tols_;

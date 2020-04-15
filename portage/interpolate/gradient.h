@@ -22,7 +22,7 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/support/MatPoly.h"
@@ -52,7 +52,7 @@ namespace Portage {
   class Limited_Gradient {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -85,7 +85,7 @@ namespace Portage {
         limiter_type_(limiter_type),
         boundary_limiter_type_(boundary_limiter_type) {}
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     Limited_Gradient(Mesh const &mesh, State const &state,
                      std::string const var_name,
                      Limiter_type limiter_type,
@@ -149,7 +149,7 @@ namespace Portage {
   > {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -207,7 +207,7 @@ namespace Portage {
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // Constructor with interface reconstructor for multimaterial remaps.
     Limited_Gradient(Mesh const& mesh,
                      State const& state,
@@ -331,7 +331,7 @@ namespace Portage {
 
       // Loop over cell where grad is needed and its neighboring cells
       for (auto&& neigh_global : neighbors) {
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
         // in the material cell list to access the correct field value
@@ -473,7 +473,7 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> cell_neighbors_;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
     Part<Mesh, State> const* part_;
@@ -502,7 +502,7 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
     Tangram::Driver<
       InterfaceReconstructorType, D, Mesh,
@@ -588,7 +588,7 @@ namespace Portage {
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief Additional constructor to be consistent with cell-centered version.
      *

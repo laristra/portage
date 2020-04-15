@@ -20,7 +20,7 @@ extern "C" {
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/intersect/intersect_polys_r3d.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/driver/driver.h"
 #include "tangram/support/MatPoly.h"
@@ -55,14 +55,14 @@ template <Entity_kind on_what, class SourceMeshType,
           class Matpoly_Clipper = void>
 class IntersectR3D {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor3D =
       Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
 #endif
 
  public:
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR3D(SourceMeshType const & source_mesh,
@@ -114,7 +114,7 @@ class IntersectR3D {
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
   bool rectangular_mesh_ = false;
@@ -133,7 +133,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                    InterfaceReconstructorType,
                    Matpoly_Splitter, Matpoly_Clipper> {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor3D =
       Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -141,7 +141,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR3D(SourceMeshType const & source_mesh,
@@ -200,7 +200,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int nmats = sourceStateWrapper.cell_get_num_mats(s);
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
@@ -268,7 +268,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
   bool rectangular_mesh_ = false;
@@ -287,7 +287,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                    InterfaceReconstructorType,
                    Matpoly_Splitter, Matpoly_Clipper> {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor3D =
       Tangram::Driver<InterfaceReconstructorType, 3, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -295,7 +295,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /// Constructor with interface reconstructor
 
   IntersectR3D(SourceMeshType const & source_mesh,
@@ -385,7 +385,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
   bool rectangular_mesh_ = false;

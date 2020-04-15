@@ -35,7 +35,7 @@
 #include "portage/support/timer.h"
 #include "user_field.h" // parsing and evaluating user defined expressions
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/intersect/split_r2d.h"
   #include "tangram/intersect/split_r3d.h"
   #include "tangram/reconstruct/MOF.h"
@@ -548,7 +548,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
   // the remapper to use
   if (dim == 2) { //2D
-#ifndef HAVE_TANGRAM
+#ifndef PORTAGE_HAS_TANGRAM
     Portage::CoreDriver<2,
                         Wonton::Entity_kind::CELL,
                         Wonton::Jali_Mesh_Wrapper,
@@ -612,7 +612,7 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 #endif
 
   } else { //3D
-#ifndef HAVE_TANGRAM
+#ifndef PORTAGE_HAS_TANGRAM
     Portage::CoreDriver<3,
                         Wonton::Entity_kind::CELL,
                         Wonton::Jali_Mesh_Wrapper,

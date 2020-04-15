@@ -18,7 +18,7 @@
 #include <limits>
 #include <cmath>
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
 #endif
 
@@ -102,7 +102,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // alias for interface reconstructor parameterized on the mesh type.
   // it will be used for gradient field computation.
   template<typename SourceMesh>
@@ -335,7 +335,7 @@ class MMDriver {
       std::cerr << "Type not supported \n";
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver  
     @param all_convex Should be set to false if the source mesh contains 
@@ -714,7 +714,7 @@ class MMDriver {
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the
   // tols vector is currently set to two since MOF requires two
@@ -793,7 +793,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
@@ -819,7 +819,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_cell.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_cell.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  
@@ -1017,7 +1017,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     source_remap_var_names.push_back(stpair.first);
 
   
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
     if (!num_tols_.user_tolerances && (!reconstructor_tols_.empty()) ) {
@@ -1040,7 +1040,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_node.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_node.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  

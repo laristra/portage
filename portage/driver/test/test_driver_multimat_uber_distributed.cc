@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -960,4 +960,4 @@ TEST(UberDriver3D, NestedBox_Linear2ndOrder)
   run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

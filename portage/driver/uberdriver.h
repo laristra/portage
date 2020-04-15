@@ -19,7 +19,7 @@
 #include <memory>
 #include <limits>
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
@@ -376,7 +376,7 @@ public:
     }
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver
     @param all_convex Should be set to false if the source mesh contains
@@ -538,7 +538,7 @@ public:
 
     if (source_state_.field_type(ONWHAT, srcvarname) == Field_type::MULTIMATERIAL_FIELD) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       assert(mat_intersection_completed_);
       assert(ONWHAT == CELL);
       
@@ -730,7 +730,7 @@ public:
       throw std::runtime_error(srcvarname + " not in field variables list");
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using Interpolator = Interpolate<D, CELL,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
