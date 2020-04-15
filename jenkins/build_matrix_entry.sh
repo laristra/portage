@@ -31,96 +31,90 @@ fi
 
 # set modules and install paths
 
-jali_version=1.0.5
-tangram_version=0.9.8
-xmof2d_version=0.9.5
-lapack_version=3.8.0
+wonton_version=new-cmake
+tangram_version=new-cmake
  
 
 export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
+ngc_tpl_dir=$NGC/private
 
 # compiler-specific settings
 if [[ $compiler == "intel18" ]]; then
-  compiler_type=intel
-  compiler_version=18.0.1
-  cxxmodule=intel/${compiler_version}
-  # openmpi version that libs were built against
-  openmpi_version=2.1.2
-  # openmpi module for compiling and linking
-  mpi_module=openmpi/2.1.2
+
+    compiler_type=intel
+    compiler_version=18.0.1
+    cxxmodule=intel/${compiler_version}
+    openmpi_version=2.1.2
+    mpi_module=openmpi/${openmpi_version}
+
 elif [[ $compiler == "gcc6" ]]; then
-  compiler_type=gcc
-  compiler_version=6.4.0
-  cxxmodule=gcc/${compiler_version}
-  # openmpi version that libs were built against
-  openmpi_version=2.1.2
-  # openmpi module for compiling and linking
-  mpi_module=openmpi/2.1.2
+
+    compiler_type=gcc
+    compiler_version=6.4.0
+    cxxmodule=gcc/${compiler_version}
+    openmpi_version=2.1.2
+    mpi_module=openmpi/${openmpi_version}
+
 elif [[ $compiler == "gcc7" ]]; then
-  compiler_type=gcc
-  compiler_version=7.3.0
-  cxxmodule=gcc/${compiler_version}
-  # openmpi version that libs were built against
-  openmpi_version=2.1.2
-  # openmpi module for compiling and linking
-  mpi_module=openmpi/2.1.2
+
+    compiler_type=gcc
+    compiler_version=7.3.0
+    cxxmodule=gcc/${compiler_version}
+    openmpi_version=2.1.2
+    mpi_module=openmpi/${openmpi_version}
+
 fi
 
 
-jali_install_dir=$NGC/private/jali/${jali_version}-${compiler_type}-${compiler_version}-openmpi-${openmpi_version}
-tangram_install_dir_base=$NGC/private/tangram/${tangram_version}-${compiler_type}-${compiler_version}
-xmof2d_install_dir=$NGC/private/xmof2d/${xmof2d_version}-${compiler_type}-${compiler_version}
-lapacke_dir=$NGC/private/lapack/${lapack_version}-patched-${compiler_type}-${compiler_version}
+wonton_install_dir_base=${ngc_tpl_dir}/wonton/${wonton_version}-${compiler_type}-${compiler_version}
+wonton_install_suffix="-openmpi-${openmpi_version}"
+
+tangram_install_dir_base=${ngc_tpl_dir}/tangram/${tangram_version}-${compiler_type}-${compiler_version}
 tangram_install_suffix="-openmpi-${openmpi_version}"
 
-if [[ $compiler == "gcc6" ]]; then
-  flecsi_install_prefix=$NGC/private/flecsi/374b56b-gcc-6.4.0
-  flecsisp_install_prefix=$NGC/private/flecsi-sp/e78c594-gcc-6.4.0
-fi
   
 cmake_build_type=Release
 extra_flags=
-jali_flags="-D Jali_DIR:FILEPATH=$jali_install_dir/lib"
-xmof2d_flags="-D XMOF2D_DIR:FILEPATH=$xmof2d_install_dir/share/cmake"
-mpi_flags="-D ENABLE_MPI=True"
-lapacke_flags="-D LAPACKE_DIR:FILEPATH=$lapacke_dir"
+mpi_flags="-D PORTAGE_ENABLE_MPI=True"
 
 if [[ $build_type == "debug" ]]; then
-  cmake_build_type=Debug
+
+    cmake_build_type=Debug
+    
 elif [[ $build_type == "serial" ]]; then
-  mpi_flags=
-  # jali is not available in serial
-  jali_flags=
-  # use serial version of tangram
-  tangram_install_suffix="-nompi"
+
+    mpi_flags=
+    wonton_install_suffix="-nompi"     # use serial version of wonton
+    tangram_install_suffix="-nompi"    # use serial version of tangram
+
 elif [[ $build_type == "thrust" ]]; then
-  extra_flags="-D ENABLE_THRUST=True"
-  tangram_install_suffix="${tangram_install_suffix}-thrust"
-elif [[ $build_type == "flecsi" ]]; then
-  extra_flags="-D CMAKE_PREFIX_PATH='$flecsi_install_prefix;$flecsisp_install_prefix' \
-               -D ENABLE_FleCSI=True"
-  tangram_install_dir=
+
+    extra_flags="-D PORTAGE_ENABLE_THRUST=True"
+    wonton_install_suffix="${wonton_install_suffix}-thrust"
+    tangram_install_suffix="${tangram_install_suffix}-thrust"
+
 elif [[ $build_type == "coverage" ]]; then
-  extra_flags="-D CMAKE_C_FLAGS='-coverage' \
-               -D CMAKE_CXX_FLAGS='-coverage'"
-  cmake_build_type=Debug
-  export PATH=$NGC/private/bin:${PATH}
+
+    extra_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
+    cmake_build_type=Debug
+    export PATH=$NGC/private/bin:${PATH}
+
 fi
 
-tangram_flags="-D TANGRAM_DIR:FILEPATH=${tangram_install_dir_base}${tangram_install_suffix}"
+wonton_flags="-D WONTON_ROOT:FILEPATH=${wonton_install_dir_base}${wonton_install_suffix}"
+tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True \
+-D TANGRAM_ROOT:FILEPATH=${tangram_install_dir_base}${tangram_install_suffix}"
 
 export SHELL=/bin/sh
 
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
-module load cmake # 3.0 or higher is required
+module load cmake # 3.13 or higher is required
 
 if [[ -n "$mpi_flags" ]] ; then
   module load ${mpi_module}
-  mpi_flags+=" -D CMAKE_C_COMPILER=`which mpicc` \
-               -D CMAKE_CXX_COMPILER=`which mpiCC`"
 fi
 
 echo $WORKSPACE
@@ -134,12 +128,10 @@ cmake \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
-  -D NGC_INCLUDE_DIR:FILEPATH=$ngc_include_dir \
   $mpi_flags \
-  $jali_flags \
+  $wonton_flags \
   $tangram_flags \
   $xmof2d_flags \
-  $lapacke_flags \
   $extra_flags \
   ..
 make -j2
