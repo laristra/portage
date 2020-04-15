@@ -3,7 +3,7 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-#include "intersectClipper.h"
+#include "portage/intersect/intersect_clipper.h"
 #include "gtest/gtest.h"
 #include "Mesh.hh"
 #include "MeshFactory.hh"
@@ -23,9 +23,11 @@ TEST(intersectClipper, simple){
   Wonton::Jali_Mesh_Wrapper s(*sm);
   Wonton::Jali_Mesh_Wrapper t(*tm);
   Portage::IntersectClipper<Wonton::Jali_Mesh_Wrapper> isect{s , t};
-  std::vector<std::vector<double> > moments = isect(0, 0); 
-  for(int i=0;i<moments.size();i++){
-    for(int j=0;j<moments[i].size();j++){
+  auto const moments = isect(0, 0);
+  int const num_moments = moments.size();
+
+  for (int i = 0; i < num_moments; i++) {
+    for (int j = 0; j < num_moments; j++) {
       std::cout << "i, j, m " << i << ", " << j << ", " << moments[i][j] << std::endl;
     }   
   }

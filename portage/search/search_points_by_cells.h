@@ -65,12 +65,14 @@ public:
     int const nb_target = target_swarm_.num_particles();
     bool const do_scatter = (center == Scatter);
 
+#ifdef DEBUG
     // check sizes
     if (do_scatter) {
-      assert(nb_source == source_extents_.size());
+      assert(unsigned(nb_source) == source_extents_.size());
     } else {
-      assert(nb_target == target_extents_.size());
+      assert(unsigned(nb_target) == target_extents_.size());
     }
+#endif
 
     // transpose geometry data to lre namespace structures
     Pairs::vpile source_vp(dim, nb_source);

@@ -153,9 +153,10 @@ void test_operator(WeightCenter center) {
   Portage::vector<std::vector<Point<dim>>> domain_points(1);
   domain_points[0] = reference::points<domain>();
   auto reference_point = reference::points<domain>();
+  int const num_reference_points = reference_point.size();
   Point<dim> centroid(std::vector<double>(dim, 0.));
 
-  for (int i = 0; i < reference_point.size(); i++) {
+  for (int i = 0; i < num_reference_points; i++) {
     for (int j = 0; j < dim; j++) {
       Point<dim> pt = reference_point[i];
       centroid[j] += pt[j];
@@ -163,7 +164,7 @@ void test_operator(WeightCenter center) {
   }
 
   for (int k = 0; k < dim; k++) {
-    centroid[k] /= reference_point.size();
+    centroid[k] /= num_reference_points;
     Point<dim> pt = target_points[0];
     pt[k] = centroid[k];
     target_points[0] = pt;
@@ -212,7 +213,7 @@ void test_operator(WeightCenter center) {
   for (size_t k = 0; k < bsize; k++) {
     for (size_t m = 0; m < jsize; m++) {
       if (opertype == oper::VolumeIntegral) {
-        ASSERT_EQ(jsize, 1);
+        ASSERT_EQ(jsize, unsigned(1));
         using namespace oper;
         switch (btype) {
           case basis::Unitary: {

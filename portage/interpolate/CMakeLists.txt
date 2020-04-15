@@ -28,17 +28,17 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_1st_order
+    cinch_add_unit(test_interpolate_first_order
       SOURCES test/test_interp_1st_order.cc
       LIBRARIES portage  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_2nd_order
+    cinch_add_unit(test_interpolate_second_order
       SOURCES test/test_interp_2nd_order.cc
       LIBRARIES portage  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_3rd_order
+    cinch_add_unit(test_interpolate_third_order
       SOURCES test/test_interp_3rd_order.cc
       LIBRARIES portage  
       POLICY SERIAL)
@@ -49,11 +49,11 @@ if (ENABLE_UNIT_TESTS)
       POLICY SERIAL)
 
     if (JALI_DIR)
-      cinch_add_unit(test_interpolate_1st_order_gentype
+      cinch_add_unit(test_interpolate_first_order_gentype
         SOURCES test/test_interp_1st_order_gentype.cc
         LIBRARIES portage  
         POLICY MPI
-	THREADS 1)
+	      THREADS 1)
     endif ()
 
 endif(ENABLE_UNIT_TESTS)

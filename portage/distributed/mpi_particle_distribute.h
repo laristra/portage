@@ -104,17 +104,19 @@ public:
     int nb_target_points = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
     int nb_source_points = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
 
+#ifdef DEBUG
     if (center == Meshfree::WeightCenter::Gather) {
-      assert(smoothing_lengths.size() == nb_target_points);
-      assert(target_extents.size() == nb_target_points);
-      assert(kernel_types.size() == nb_target_points);
-      assert(geom_types.size() == nb_target_points);
+      assert(smoothing_lengths.size() == unsigned(nb_target_points));
+      assert(target_extents.size()    == unsigned(nb_target_points));
+      assert(kernel_types.size()      == unsigned(nb_target_points));
+      assert(geom_types.size()        == unsigned(nb_target_points));
     } else if (center == Meshfree::WeightCenter::Scatter) {
-      assert(smoothing_lengths.size() == nb_source_points);
-      assert(source_extents.size() == nb_source_points);
-      assert(kernel_types.size() == nb_source_points);
-      assert(geom_types.size() == nb_source_points);
+      assert(smoothing_lengths.size() == unsigned(nb_source_points));
+      assert(source_extents.size()    == unsigned(nb_source_points));
+      assert(kernel_types.size()      == unsigned(nb_source_points));
+      assert(geom_types.size()        == unsigned(nb_source_points));
     }
+#endif
 
     /**************************************************************************
     * Step 1: Compute bounding box for target swarm based on weight center    *
@@ -267,7 +269,7 @@ public:
         smoothing_length_sizes[i] = h.size();
         max_slsize = std::max<int>(smoothing_length_sizes[i], max_slsize);
         for (int j = 0; j < smoothing_length_sizes[i]; j++)
-          assert(h[j].size() == smlen_dim);
+          assert(h[j].size() == unsigned(smlen_dim));
       }
 
       //-----------------------------------------------
@@ -317,7 +319,6 @@ public:
         }
       }
       //move this smoothing length data
-      int sl_unit_size = max_slsize * smlen_dim;
       std::vector<double> sourceRecvSmoothLengths(src_info.new_num * max_slsize * smlen_dim);
       moveField<double>(&src_info, rank, nb_ranks, MPI_DOUBLE, max_slsize * smlen_dim,
                         sourceSendSmoothLengths, &sourceRecvSmoothLengths);
@@ -412,8 +413,8 @@ public:
     *         to other ranks                                                  *
     **************************************************************************/
     auto int_field_names = source_state.template get_field_names<int>();
-
-    for (int nvars = 0; nvars < int_field_names.size(); ++nvars) {
+    int const num_int_fields = int_field_names.size();
+    for (int nvars = 0; nvars < num_int_fields; ++nvars) {
       // Get field data from source state
       auto& srcdata = source_state.get_field_int(int_field_names[nvars]);
 
@@ -446,8 +447,8 @@ public:
     *         to other ranks                                                  *
     **************************************************************************/
     auto dbl_field_names = source_state.template get_field_names<double>();
-
-    for (int nvars = 0; nvars < dbl_field_names.size(); ++nvars) {
+    int const num_dbl_fields = dbl_field_names.size();
+    for (int nvars = 0; nvars < num_dbl_fields; ++nvars) {
       // Get field data from source state
       auto& srcdata = source_state.get_field(dbl_field_names[nvars]);
 
@@ -534,7 +535,7 @@ private:
     // which it will receive data values
     int writeOffset = 0;
     std::vector<MPI_Request> requests;
-    int rcount = 0;
+
     for (int i = 0; i < nb_ranks; i++) {
       if ((i != rank) && (info->recv_counts[i] > 0)) {
         MPI_Request request;

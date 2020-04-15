@@ -139,20 +139,20 @@ void intersect_test() {
   constexpr int max_order = 1;
   constexpr int max_order_with_shift = max_order + CoordSys::moment_shift;
   constexpr int num_moments = Wonton::count_moments<D>(max_order);
-  constexpr int num_moments_with_shift =
-      Wonton::count_moments<D>(max_order_with_shift);
+  constexpr int num_moments_with_shift = Wonton::count_moments<D>(max_order_with_shift);
 
   // Verify weights
   for (auto t_iter = begin; t_iter != end; ++t_iter) {
     auto t_id = *t_iter;
     auto & tgt_cell_weights = weights[t_id];
     for (auto s_iter = tgt_cell_weights.begin();
-        s_iter != tgt_cell_weights.end(); ++s_iter) {
+              s_iter != tgt_cell_weights.end();
+              s_iter++) {
       auto s_id = (*s_iter).entityID;
-      auto & weights = (*s_iter).weights;
+      auto & current_weights = (*s_iter).weights;
 
       // Verify that the search method provided enough moments (0th and 1st)
-      ASSERT_GE(weights.size(), num_moments);
+      ASSERT_GE(current_weights.size(), unsigned(num_moments));
 
       // Intersection for target cell t_id and source cell s_id.
       // Weights is list of weights in moment order (volume, M_x, ...).
@@ -171,19 +171,20 @@ void intersect_test() {
 
       // Compute moments analytically
       std::vector<double> analytic_moments(num_moments);
-      for (int idx = 0; idx < analytic_moments.size(); ++idx) {
+      int const num_analytic_moments = analytic_moments.size();
+      for (int idx = 0; idx < num_analytic_moments; ++idx) {
         int order;
-        std::array<int,D> exponents;
+        std::array<int,D> exponents{};
         std::tie(order,exponents) = Wonton::index_to_moment<D>(idx);
-        analytic_moments[idx] =
-            analytic_moment<D,CoordSys>(exponents, xbar, dx);
+        analytic_moments[idx] = analytic_moment<D,CoordSys>(exponents, xbar, dx);
       }
 
       // Compute Cartesian moments
       std::vector<double> cartesian_moments(num_moments_with_shift);
-      for (int idx = 0; idx < cartesian_moments.size(); ++idx) {
+      int const num_cartesian_moments = cartesian_moments.size();
+      for (int idx = 0; idx < num_cartesian_moments; ++idx) {
         int order;
-        std::array<int,D> exponents;
+        std::array<int,D> exponents{};
         std::tie(order,exponents) = Wonton::index_to_moment<D>(idx);
         cartesian_moments[idx] = cartesian_moment<D>(exponents, xbar, dx);
       }
@@ -218,25 +219,22 @@ void intersect_test() {
       for (int idx = 0; idx < num_moments; ++idx) {
         std::string name;
         switch (idx) {
-          case 0 : name = "volume";
-                   break;
-          case 1 : name = "first moment x";
-                   break;
-          case 2 : name = "first moment y";
-                   break;
-          case 3 : name = "first moment z";
-                   break;
+          case 0 : name = "volume"; break;
+          case 1 : name = "first moment x"; break;
+          case 2 : name = "first moment y"; break;
+          case 3 : name = "first moment z"; break;
+          default: break;
         }
         constexpr double TOL = 5e-15;
-        ASSERT_NEAR(weights[idx], analytic_moments[idx], TOL*weights[idx])
+        ASSERT_NEAR(current_weights[idx], analytic_moments[idx], TOL * current_weights[idx])
             << " With index of: " << idx << " (" << name << ")\n"
             << "          xbar: " << xbar << "\n"
             << "            dx: " << dx;
-        ASSERT_NEAR(weights[idx], box_moments[idx], TOL*weights[idx])
+        ASSERT_NEAR(current_weights[idx], box_moments[idx], TOL * current_weights[idx])
             << " With index of: " << idx << " (" << name << ")\n"
             << "          xbar: " << xbar << "\n"
             << "            dx: " << dx;
-        ASSERT_NEAR(weights[idx], shifted_moments[idx], TOL*weights[idx])
+        ASSERT_NEAR(current_weights[idx], shifted_moments[idx], TOL * current_weights[idx])
             << " With index of: " << idx << " (" << name << ")\n"
             << "          xbar: " << xbar << "\n"
             << "            dx: " << dx;

@@ -112,8 +112,8 @@ class CoreDriverBase {
                                     CoordSys>;
   
  public:
-  CoreDriverBase() {}
-  virtual ~CoreDriverBase() {}  // Necessary
+  CoreDriverBase() = default;
+  virtual ~CoreDriverBase() = default;  // Necessary
   
   // Entity kind that a derived class is defined on
   virtual Entity_kind onwhat() = 0;
@@ -523,8 +523,10 @@ class CoreDriver : public CoreDriverBase<D,
              TargetMesh const& target_mesh,
              TargetState& target_state,
              Wonton::Executor_type const *executor = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         executor_(executor)
   {
 #ifdef PORTAGE_ENABLE_MPI
@@ -545,7 +547,7 @@ class CoreDriver : public CoreDriverBase<D,
   CoreDriver & operator = (const CoreDriver &) = delete;
 
   /// Destructor
-  ~CoreDriver() {}
+  ~CoreDriver() = default;
 
   /// What entity kind is this defined on?
   Entity_kind onwhat() {return ONWHAT;}
@@ -606,7 +608,7 @@ class CoreDriver : public CoreDriverBase<D,
     }
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
-    else if (num_tols_.user_tolerances == false) {
+    else if (!num_tols_.user_tolerances) {
       num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
       num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
@@ -717,8 +719,7 @@ class CoreDriver : public CoreDriverBase<D,
                           Matpoly_Splitter,
                           Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
                                            reconstructor_all_convex_));
-    
-    int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
 
@@ -794,7 +795,7 @@ class CoreDriver : public CoreDriverBase<D,
       // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
       // WILL GET NEW MATERIALS
 
-      int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
+      ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
       for (int c = 0; c < ntargetcells; c++) {
         std::vector<Weights_t> const& cell_mat_sources_and_weights =
@@ -1108,11 +1109,12 @@ class CoreDriver : public CoreDriverBase<D,
     // to prevent bugs when interpolating values:
     // check that each entity id is within the
     // mesh entity index space.
-    
-    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
-    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
+
+#ifdef DEBUG
+    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
     Portage::for_each(source_part.cells().begin(),
                       source_part.cells().end(),
@@ -1121,8 +1123,8 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::for_each(target_part.cells().begin(),
                       target_part.cells().end(),
                       [&](int current){ assert(current <= max_target_id); });
+#endif
 
-    int const target_mesh_size = sources_and_weights.size();
     int const target_part_size = target_part.size();
 
     // 2. Filter intersection weights list.
@@ -1445,8 +1447,7 @@ class CoreDriver : public CoreDriverBase<D,
     for (int m = 0; m < nmats; m++) {
       std::vector<int> cellids;
       source_state_.mat_get_cells(m, &cellids);
-      for (int ic = 0; ic < cellids.size(); ic++) {
-        int c = cellids[ic];
+      for (int c : cellids) {
         int nmatc = cell_num_mats[c];
         cell_mat_ids_full[c*nmats+nmatc] = m;
         cell_num_mats[c]++;
@@ -1455,16 +1456,18 @@ class CoreDriver : public CoreDriverBase<D,
 
       double const * matfracptr;
       source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-      for (int ic = 0; ic < cellids.size(); ic++)
+      int const num_cell_ids = cellids.size();
+      for (int ic = 0; ic < num_cell_ids; ic++)
         cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
 
       Wonton::Point<D> const *matcenvec;
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-      if (cellids.size() && !matcenvec)
+      if (cellids.size() && !matcenvec) {
         have_centroids = false;  // VOF
-      else
-        for (int ic = 0; ic < cellids.size(); ic++)
+      } else {
+        for (int ic = 0; ic < num_cell_ids; ic++)
           cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+      }
     }
 
     // At this point nvals contains the number of non-zero volume

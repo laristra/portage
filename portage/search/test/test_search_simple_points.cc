@@ -59,7 +59,7 @@ TEST(search_simple_points, scatter_2d) {
       auto candidates = search(target_point);
 
       // there should be four candidate source points, in a square
-      ASSERT_EQ(4, candidates.size());
+      ASSERT_EQ(unsigned(4), candidates.size());
       // compute source_point_base = index of lower left source point
       const int source_point_base = i + j * 4;
       ASSERT_EQ(source_point_base,     candidates[0]);
@@ -124,7 +124,7 @@ TEST(search_simple_points, scatter_3d) {
         int const target_point_index = i + j * 2 + k * 4;
         auto candidates = search(target_point_index);
         // there should be eight candidate source points, in a cube
-        ASSERT_EQ(8, candidates.size());
+        ASSERT_EQ(unsigned(8), candidates.size());
 
         // compute source_point_base = index of lower left source point
         int const source_point_base = i + j * 3 + k * 9;
@@ -186,7 +186,7 @@ TEST(search_simple_points, gather_2d) {
       auto candidates = search(tp);
 
       // there should be four candidate source points, in a square
-      ASSERT_EQ(4, candidates.size());
+      ASSERT_EQ(unsigned(4), candidates.size());
       // compute source_point_base = index of lower left source point
       const int source_point_base = i + j * 4;
       ASSERT_EQ(source_point_base,     candidates[0]);
@@ -250,7 +250,7 @@ TEST(search_simple_points, gather_3d) {
         int const target_point_index = i + j * 2 + k * 4;
         auto candidates = search(target_point_index);
         // there should be eight candidate source points, in a cube
-        ASSERT_EQ(8, candidates.size());
+        ASSERT_EQ(unsigned(8), candidates.size());
 
         // compute source_point_base = index of lower left source point
         int const source_point_base = i + j * 3 + k * 9;

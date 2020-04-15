@@ -85,7 +85,7 @@ class IntersectR2D {
   /// \return vector of Weights_t structure containing moments of intersection
 
   std::vector<Weights_t>
-  operator() (const int tgt_entity, const std::vector<int> src_entities) const {
+  operator() (const int tgt_entity, std::vector<int> const& src_entities) const {
     std::cerr << "IntersectR3D not implemented for this entity type" << std::endl;
     return std::vector<Weights_t>(0);
   }
@@ -100,11 +100,10 @@ class IntersectR2D {
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
+  NumericTolerances_t num_tols_;
 };  // class IntersectR2D
 
 
@@ -160,8 +159,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   /// \param[in] src_entities List of source cells to intersect against
   /// \return vector of Weights_t structure containing moments of intersection
 
-  std::vector<Weights_t>
-  operator() (const int tgt_cell, const std::vector<int> src_cells) const {
+  std::vector<Weights_t> operator() (int tgt_cell, std::vector<int> const& src_cells) const {
     std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.cell_get_coordinates(tgt_cell, &target_poly);
 
@@ -212,8 +210,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
               cellmatpoly.get_matpolys(matid_);
 
           this_wt.weights.resize(3, 0.0);
-          for (int j = 0; j < matpolys.size(); j++) {
-            std::vector<Wonton::Point<2>> tpnts = matpolys[j].points();
+          for (auto& matpoly : matpolys) {
+            std::vector<Wonton::Point<2>> tpnts = matpoly.points();
             std::vector<Wonton::Point<2>> source_poly;
             source_poly.reserve(tpnts.size());
             for (auto const & p : tpnts) source_poly.push_back(p);
@@ -234,7 +232,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 #endif
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
+      if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -252,11 +250,10 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
+  NumericTolerances_t num_tols_;
 };  // class IntersectR2D
 
 
@@ -315,8 +312,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   /// \param[in] src_nodes List of source nodes whose control volumes we will intersect against
   /// \return vector of Weights_t structure containing moments of intersection
 
-  std::vector<Weights_t>
-  operator() (const int tgt_node, const std::vector<int> src_nodes) const {
+  std::vector<Weights_t> operator() (int tgt_node, std::vector<int> const& src_nodes) const {
     std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.dual_cell_get_coordinates(tgt_node, &target_poly);
 
@@ -334,7 +330,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                                             num_tols_);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
+      if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -353,11 +349,10 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
   int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
+  NumericTolerances_t num_tols_;
 };  // class IntersectR2D
 
 } // namespace Portage

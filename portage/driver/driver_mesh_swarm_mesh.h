@@ -102,17 +102,17 @@ public:
              double part_tolerance = std::numeric_limits<double>::infinity())
 
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         target_state_(target_state),
         smoothing_factor_(smoothing_factor),
         boundary_factor_(boundary_factor),
-        geometry_(geometry),
         kernel_(kernel),
+        geometry_(geometry),
         center_(center),
-        dim_(source_mesh.space_dimension()),
         part_field_(part_field), 
-        part_tolerance_(part_tolerance) {
+        part_tolerance_(part_tolerance),
+        dim_(source_mesh.space_dimension()) {
 
     assert(source_mesh.space_dimension() == target_mesh.space_dimension());
     assert(source_mesh.space_dimension() == dim);
@@ -161,7 +161,7 @@ public:
                            Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
                            Portage::vector<Meshfree::oper::Domain> const& operator_domains = {},
                            Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
-
+#ifdef DEBUG
     assert(source_vars.size() == target_vars.size());
 
     int nvars = source_vars.size();
@@ -170,6 +170,7 @@ public:
       auto const& target_entity = target_state_.get_entity(target_vars[i]);
       assert(source_entity == target_entity);
     }
+#endif
 
     source_vars_      = source_vars;
     target_vars_      = target_vars;
@@ -210,12 +211,8 @@ public:
     using SwarmRemap = SwarmDriver<Search, Accumulate, Estimate, dim,
                                    Swarm<dim>, SwarmState<dim>>;
 
-    bool distributed = false;
     int rank = 0;
     int nprocs = 1;
-    
-    // Will be null if it's a parallel executor
-    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
     
 #ifdef PORTAGE_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
@@ -225,7 +222,6 @@ public:
       MPI_Comm_rank(mycomm, &rank);
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1) {
-        distributed = true;
         std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet";
         std::cerr << std::endl;
         return;
@@ -239,10 +235,10 @@ public:
     int ncells = target_mesh_.num_owned_cells();
     std::cout << "Number of owned target cells on rank "<< rank <<": "<< ncells;
     std::cout << std::endl;
-#endif
-    int nvars = source_vars_.size();
 
     auto tic = timer::now();
+#endif
+    int nvars = source_vars_.size();
 
     // Wonton::CELL VARIABLE SECTION ---------------------------------------------------
 
@@ -354,6 +350,7 @@ public:
                                          kernel_, geometry_, center_);
       }
 
+      assert(swarm_remap_ptr != nullptr);
       SwarmRemap& swarm_remap(*swarm_remap_ptr);
       swarm_remap.set_remap_var_names(source_cellvar_names, target_cellvar_names,
                                       estimate_, basis_, operator_spec_,
@@ -443,9 +440,8 @@ public:
       }
     }
 
-    float elapsed = timer::elapsed(tic);
-
 #if ENABLE_DEBUG
+    float elapsed = timer::elapsed(tic);
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif
   }

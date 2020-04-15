@@ -161,7 +161,7 @@ namespace Portage {
     //Constructor for single material remap
     Limited_Gradient(Mesh const& mesh,
                      State const& state,
-                     std::string const var_name,
+                     std::string var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      const Part<Mesh, State>* part = nullptr)
@@ -276,7 +276,7 @@ namespace Portage {
       }
     }
 
-    void set_interpolation_variable(std::string const variable_name,
+    void set_interpolation_variable(std::string variable_name,
                                     Limiter_type limiter_type,
                                     Boundary_Limiter_type boundary_limiter_type) {
 
@@ -445,7 +445,6 @@ namespace Portage {
         // Since the reconstruction is linear, this will occur at one of
         // the nodes of the cell. So find the values of the reconstructed
         // function at the nodes of the cell
-        int dim = mesh_.space_dimension();
         std::vector<Point<D>> cellcoords;
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
@@ -523,7 +522,7 @@ namespace Portage {
     */
     Limited_Gradient(Mesh const& mesh,
                      State const& state,
-                     std::string const var_name,
+                     std::string var_name,
                      Limiter_type limiter_type,
                      Boundary_Limiter_type boundary_limiter_type,
                      const Part<Mesh, State>* part = nullptr)
