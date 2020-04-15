@@ -1443,7 +1443,7 @@ class CoreDriver : public CoreDriverBase<D,
       // handle the case where we don't have centroids in the state manager at all
       if (source_state_.get_entity("mat_centroids")==Entity_kind::UNKNOWN_KIND) {
         have_centroids = false;
-	continue;
+        continue;
       }	
       
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
