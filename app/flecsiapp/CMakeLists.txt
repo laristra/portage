@@ -19,7 +19,7 @@ if(ENABLE_PROFILE)
 
   include_directories(${VTUNE_INCLUDE_DIR})
 
-  if (ENABLE_FleCSI)
+  if (WONTON_ENABLE_FleCSI)
     target_link_libraries(flecsiapp ${VTUNE_LIB})
   endif (ENABLE_FleCSI)
 endif(ENABLE_PROFILE)
