@@ -102,8 +102,7 @@ template<>
 class consistent_order<Portage::Interpolate_1stOrder>{
 public:
   static bool check(Portage::Meshfree::basis::Type type){
-    if (type == Portage::Meshfree::basis::Linear) return true;
-    else return false;
+    return type == Portage::Meshfree::basis::Linear;
   }
 };
 
@@ -111,14 +110,13 @@ template<>
 class consistent_order<Portage::Interpolate_2ndOrder>{
 public:
   static bool check(Portage::Meshfree::basis::Type type){
-    if (type == Portage::Meshfree::basis::Quadratic) return true;
-    else return false;
+    return type == Portage::Meshfree::basis::Quadratic;
   }
 };
 
 
 //methods for computing initial field values
-template<unsigned int D>
+template<int D>
 double field_func(int example, Portage::Point<D> coord) {
   double value = 0.0;
   switch (example) {
@@ -203,8 +201,7 @@ public:
   void runit()
   {
     // process controls
-    double smoothing_factor = controls_.smoothing_factor;
-    Portage::Meshfree::basis::Type basis;
+    Portage::Meshfree::basis::Type basis {};
     if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
@@ -225,7 +222,7 @@ public:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    for (unsigned int c = 0; c < nsrccells; ++c) {
+    for (int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
       sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<Dimension>(controls_.example, cen);
@@ -234,7 +231,7 @@ public:
     	"celldata", Portage::Entity_kind::CELL, sourceData)
     );
     
-    for (unsigned int c = 0; c < nsrcnodes; ++c) {
+    for (int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
       sourceMesh->node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<Dimension>(controls_.example, cen);
@@ -263,8 +260,8 @@ public:
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("celldata");
+    remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
@@ -320,7 +317,6 @@ public:
     msmdriver.run();
 
     //Check the answer
-    double stdval, err;
     double totmerr=0., totserr=0., totint=0.;
 
     auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
@@ -528,12 +524,12 @@ protected:
   void runit()
   {
     // process controls
-    Portage::Meshfree::basis::Type basis;
+    Portage::Meshfree::basis::Type basis {};
     if (controls_.order == 0) basis = Portage::Meshfree::basis::Unitary;
     if (controls_.order == 1) basis = Portage::Meshfree::basis::Linear;
     if (controls_.order == 2) basis = Portage::Meshfree::basis::Quadratic;
     assert(consistent_order<Interpolate>::check(basis));
-    Portage::Meshfree::oper::Type oper8tor;
+    Portage::Meshfree::oper::Type oper8tor {};
     if (controls_.oper8tor == "VolumeIntegral") {
       oper8tor = Portage::Meshfree::oper::VolumeIntegral;
     } else if (controls_.oper8tor != "none") {
@@ -547,21 +543,24 @@ protected:
     std::vector<double> sourceDataNode(nsrcnodes);
 
     //Create the source data for given function
-    for (unsigned int c = 0; c < nsrccells; ++c) {
+    for (int c = 0; c < nsrccells; ++c) {
       Portage::Point<Dimension> cen;
       sourceMeshWrapper.cell_centroid(c, &cen);
       sourceData[c] = field_func<Dimension>(controls_.example, cen);
     }
-    Jali::UniStateVector<double> &sourceVec(sourceState->add("celldata",
-      sourceMesh, Jali::Entity_kind::CELL, Jali::Entity_type::ALL, &(sourceData[0])));
+    sourceState->add("celldata",sourceMesh,
+                     Jali::Entity_kind::CELL, Jali::Entity_type::ALL,
+                     &(sourceData[0]));
 
-    for (unsigned int c = 0; c < nsrcnodes; ++c) {
+    for (int c = 0; c < nsrcnodes; ++c) {
       Portage::Point<Dimension> cen;
       sourceMeshWrapper.node_get_coordinates(c, &cen);
       sourceDataNode[c] = field_func<Dimension>(controls_.example, cen);
     }
-    Jali::UniStateVector<double> &sourceVecNode(sourceState->add("nodedata",
-      sourceMesh, Jali::Entity_kind::NODE, Jali::Entity_type::ALL, &(sourceDataNode[0])));
+
+    sourceState->add("nodedata",sourceMesh,
+                     Jali::Entity_kind::NODE, Jali::Entity_type::ALL,
+                     &(sourceDataNode[0]));
 
     //Build the target state storage
     const int ntarcells = targetMeshWrapper.num_owned_cells();
@@ -575,8 +574,8 @@ protected:
 
     // Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("celldata");
+    remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
     Portage::vector<std::vector<Portage::Point<Dimension>>> data;
@@ -591,7 +590,9 @@ protected:
         std::vector<int> cellnodes;
         targetMeshWrapper.cell_get_nodes(c, &cellnodes);
         std::vector<Portage::Point<Dimension>> cellverts(cellnodes.size());
-        for (int i=0; i<cellnodes.size(); i) {
+        int const num_cell_nodes = cellnodes.size();
+
+        for (int i = 0; i < num_cell_nodes; ++i) {
           targetMeshWrapper.node_get_coordinates(cellnodes[i], &cellverts[i]);
         }
         data[c] = cellverts;
@@ -634,7 +635,6 @@ protected:
     msmdriver.run();
 
     //Check the answer
-    double stdval, err;
     double totmerr=0., totserr=0., totint=0.;
 
     std::vector<double> cellvecout(ntarcells), cellvecout2(ntarcells);
@@ -1025,7 +1025,7 @@ int main(int argc, char** argv) {
   }
 
   bool error = false;
-  for (size_t i=0; i<dimension; i++) {
+  for (int i = 0; i < dimension; i++) {
     if (ctl.smin[i]>=ctl.smax[i]) error = true;
     if (ctl.tmin[i]>=ctl.tmax[i]) error = true;
     if (ctl.scells[i]<0) error = true;

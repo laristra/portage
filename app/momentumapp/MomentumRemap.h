@@ -36,8 +36,8 @@ const int CCH = 2;
 template<int D, class Mesh_Wrapper>
 class MomentumRemap {
  public:
-  MomentumRemap(int method) : method_(method) {};
-  ~MomentumRemap() {};
+  explicit MomentumRemap(int method) : method_(method) {}
+  ~MomentumRemap() = default;
 
   // initialization using formula for density
   void InitMass(
@@ -255,20 +255,20 @@ void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     const T u[D], double* l2err, double* l2norm)
 {
   int nrows = (method_ == SGH) ? mesh.num_owned_nodes() : mesh.num_owned_cells();
-  double ux_exact, uy_exact, uz_exact;
-  Wonton::Point<D> xyz;
 
   *l2err = 0.0;
   *l2norm = 0.0;
 
   for (int n = 0; n < nrows; ++n) {
+    Wonton::Point<D> xyz {};
+
     if (method_ == SGH)
       mesh.node_get_coordinates(n, &xyz);
     else
       mesh.cell_centroid(n, &xyz);
 
-    ux_exact = formula_x(xyz);
-    uy_exact = formula_y(xyz);
+    double const ux_exact = formula_x(xyz);
+    double const uy_exact = formula_y(xyz);
 
     *l2err += (ux_exact - u[0][n]) * (ux_exact - u[0][n])
             + (uy_exact - u[1][n]) * (uy_exact - u[1][n]);
@@ -276,14 +276,15 @@ void MomentumRemap<D, Mesh_Wrapper>::ErrorVelocity(
     *l2norm += ux_exact * ux_exact + uy_exact * uy_exact;
 
     if (D == 3) {
-      uz_exact = formula_z(xyz);
+      double const uz_exact = formula_z(xyz);
       *l2err += (uz_exact - u[2][n]) * (uz_exact - u[2][n]);
       *l2norm += uz_exact * uz_exact;
     }
   }
 
-  int nrows_glb;
-  double l2err_glb, l2norm_glb;
+  int nrows_glb = 0;
+  double l2err_glb = 0.;
+  double l2norm_glb = 0.;
 
   MPI_Allreduce(&nrows, &nrows_glb, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(l2err, &l2err_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
@@ -388,16 +389,18 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   std::vector<std::string> field_names;
   std::vector<const double*> field_pointers;
 
-  field_names.push_back("density");
-  field_pointers.push_back(&(density[0]));
+  field_names.emplace_back("density");
+  field_pointers.emplace_back(density.data());
 
   for (int i = 0; i < D; ++i) {
-    field_names.push_back(momentum[i]);
-    field_pointers.push_back(&(momentum_src[i][0]));
+    field_names.emplace_back(momentum[i]);
+    field_pointers.emplace_back(momentum_src[i].data());
   }
 
+  int const num_fields = field_names.size();
   std::vector<double> tmp(ncells_trg);
-  for (int i = 0; i < field_names.size(); ++i) {
+
+  for (int i = 0; i < num_fields; ++i) {
     srcstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], field_pointers[i]);
     trgstate_wrapper.mesh_add_data(Wonton::Entity_kind::CELL, field_names[i], &(tmp[0]));
 
@@ -415,7 +418,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       field_names.size(), Portage::vector<Wonton::Vector<D>>(ncells_all));
 
   if (method_ == SGH) {
-    for (int i = 0; i < field_names.size(); ++i) {
+    for (int i = 0; i < num_fields; ++i) {
       Portage::Limited_Gradient<D, Wonton::Entity_kind::CELL, 
                                 Mesh_Wrapper, State_Wrapper>
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
@@ -468,8 +471,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       trgmesh_wrapper.cell_centroid(c, &xc);
       trgmesh_wrapper.cell_get_corners(c, &corners);
 
-      for (auto cn : corners) {
-        double volume = trgmesh_wrapper.corner_volume(cn); 
+      for (auto&& cn : corners) {
         trgmesh_wrapper.corner_get_wedges(cn, &wedges);
 
         corner_get_centroid(cn, trgmesh_wrapper, xcn);

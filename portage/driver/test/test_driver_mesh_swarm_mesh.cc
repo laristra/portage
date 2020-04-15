@@ -229,12 +229,12 @@ public:
     swarm_remap.run();
 
     // Check the answer
-    double stdval, err;
     double toterr = 0.;
-
+#ifdef ENABLE_DEBUG
     auto& cell_field1 = target_state_one.get<Field>("celldata")->get_data();
-    auto& cell_field2 = target_state_two.get<Field>("celldata")->get_data();
     auto& node_field1 = target_state_one.get<Field>("nodedata")->get_data();
+#endif
+    auto& cell_field2 = target_state_two.get<Field>("celldata")->get_data();
     auto& node_field2 = target_state_two.get<Field>("nodedata")->get_data();
 
     Wonton::Flat_Mesh_Wrapper<double> target_flat_mesh;
@@ -245,10 +245,10 @@ public:
         Wonton::Point<dim> c;
         target_flat_mesh.cell_centroid(i, &c);
         double const value = compute_initial_field(c);
-        double const mesh_error  = cell_field1[i] - value;
         double const swarm_error = cell_field2[i] - value;
 
         #if ENABLE_DEBUG
+          double const mesh_error  = cell_field1[i] - value;
           //  dump diagnostics for each cell
           switch (dim) {
             case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
@@ -274,10 +274,11 @@ public:
           Wonton::Point<dim> p;
           target_flat_mesh.node_get_coordinates(i, &p);
           double const value = compute_initial_field(p);
-          double const mesh_error  = node_field1[i] - value;
           double const swarm_error = node_field2[i] - value;
 
           #if ENABLE_DEBUG
+            double const mesh_error  = node_field1[i] - value;
+
             //  dump diagnostics for each node
             switch (dim) {
               case 2: std::printf("node: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;

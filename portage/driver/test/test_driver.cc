@@ -67,7 +67,7 @@ class DriverTest : public ::testing::Test {
     std::vector<double> sourceData(nsrccells);
 
     // Create the source data for given function
-    for (unsigned int c = 0; c < nsrccells; ++c) {
+    for (int c = 0; c < nsrccells; ++c) {
       JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
       sourceData[c] = compute_initial_field(cen);
     }
@@ -83,7 +83,7 @@ class DriverTest : public ::testing::Test {
     //  Build the main driver data for this mesh type
     //  Register the variable name and interpolation order with the driver
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
+    remap_fields.emplace_back("celldata");
 
     Portage::MMDriver<Portage::SearchKDTree,
     Intersect,
@@ -99,8 +99,6 @@ class DriverTest : public ::testing::Test {
 
     // Check the answer
     Portage::Point<Dimension> nodexy;
-    const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-    double stdval, err;
 
     Jali::UniStateVector<double, Jali::Mesh> cellvecout;
     bool found = targetState->get<double, Jali::Mesh>("celldata", targetMesh,

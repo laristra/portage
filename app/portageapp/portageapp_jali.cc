@@ -164,7 +164,11 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-  struct timeval begin, end, diff;
+#ifdef ENABLE_DEBUG
+  struct timeval begin {};
+  struct timeval end {};
+  struct timeval diff {};
+#endif
 
   // Initialize MPI
   int mpi_init_flag;
@@ -200,7 +204,7 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
+    std::size_t keyword_end = arg.find_first_of('=');
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
@@ -306,14 +310,15 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-
-  gettimeofday(&begin, 0);
+#ifdef ENABLE_DEBUG
+  gettimeofday(&begin, nullptr);
+#endif
 
 
   // The mesh factory and mesh setup
   std::shared_ptr<Jali::Mesh> source_mesh, target_mesh, cyclic_mesh;
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
 
   double trglo = srclo, trghi = srchi;  // bounds of generated mesh in each dir
   if (!conformal) {
@@ -339,31 +344,35 @@ int main(int argc, char** argv) {
   for (int i = 0; i < n_converge; i++) {
 
     // If a file is being internally generated, do it inside convergence loop
-    if (nsourcecells)
+    if (nsourcecells) {
       if (dim == 2) {
         source_mesh = mf(srclo, srclo, srchi, srchi, nsourcecells,
                          nsourcecells);
         cyclic_mesh = mf(srclo, srclo, srchi, srchi, nsourcecells,
                          nsourcecells);
-      }
-      else if (dim == 3) {
+      } else if (dim == 3) {
         source_mesh = mf(srclo, srclo, srclo, srchi, srchi, srchi,
                          nsourcecells, nsourcecells, nsourcecells);
         cyclic_mesh = mf(srclo, srclo, srclo, srchi, srchi, srchi,
                          nsourcecells, nsourcecells, nsourcecells);
       }
-    if (ntargetcells)
-      if (dim == 2)
+    }
+
+    if (ntargetcells) {
+      if (dim == 2) {
         target_mesh = mf(trglo, trglo, trghi, trghi,
                          ntargetcells, ntargetcells);
-      else if (dim == 3)
+      } else if (dim == 3) {
         target_mesh = mf(trglo, trglo, trglo, trghi, trghi, trghi,
                          ntargetcells, ntargetcells, ntargetcells);
+      }
+    }
 
-    gettimeofday(&end, 0);
-    timersub(&end, &begin, &diff);
-    float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
 #ifdef ENABLE_DEBUG
+    gettimeofday(&end, nullptr);
+    timersub(&end, &begin, &diff);
+    float seconds = static_cast<float>(diff.tv_sec + 1.0E-6*diff.tv_usec);
+
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Mesh Initialization Time: " << seconds << std::endl;
@@ -371,8 +380,9 @@ int main(int argc, char** argv) {
         std::cout << "Mesh Initialization Time (Iteration i): " <<
             seconds << std::endl;
     }
+
+    gettimeofday(&begin, nullptr);
 #endif
-    gettimeofday(&begin, 0);
 
     // Make sure we have the right dimension and that source and
     // target mesh dimensions match (important when one or both of the
@@ -419,10 +429,16 @@ int main(int argc, char** argv) {
 
     if (remap_back) {
       Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-      double cyclic_error = 0.0, cyclic_error_norm = 0.0,
-             max_initial = -1.0e50, max_final = -1.0e50,
-             min_vol = 1.0e50, max_vol = -1.0e50;
-      for (int j=0; j < initialData.size(); j++) {
+      double cyclic_error      = 0.0;
+      double cyclic_error_norm = 0.0;
+      double max_initial       = -1.0e50;
+      double max_final         = -1.0e50;
+      double min_vol           = 1.0e50;
+      double max_vol           = -1.0e50;
+
+      int const num_initial_data = initialData.size();
+
+      for (int j = 0; j < num_initial_data; j++) {
         cyclic_error += fabs( initialData[j] - sourceData[j] ) *
                         sourceMeshWrapper.cell_volume(j);
         cyclic_error_norm += fabs( initialData[j] ) *
@@ -442,29 +458,28 @@ int main(int argc, char** argv) {
       std::cout << "min_vol, max_vol = " << min_vol << " " << max_vol << std::endl;
 #endif
     }
-    else {
 #ifdef ENABLE_DEBUG
+    else {
       std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
 
       std::cout << "L2 norm of error for iteration " << i << " is " <<
         l2_err[i] << std::endl;
-#endif
     }
 
-    gettimeofday(&end, 0);
+    gettimeofday(&end, nullptr);
     timersub(&end, &begin, &diff);
-    seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
-#ifdef ENABLE_DEBUG
+    seconds = static_cast<float>(diff.tv_sec + 1.0E-6*diff.tv_usec);
+
     if (rank == 0) {
       if (n_converge == 1)
         std::cout << "Remap Time: " << seconds << std::endl;
       else
         std::cout << "Remap Time (Iteration i): " << seconds << std::endl;
     }
-#endif
-    gettimeofday(&begin, 0);
 
+    gettimeofday(&begin, 0);
+#endif
 
     // if convergence study, double the mesh resolution
     nsourcecells *= 2;
@@ -487,15 +502,15 @@ int main(int argc, char** argv) {
 //
 
 template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
-                           std::shared_ptr<Jali::Mesh> targetMesh,
-                           Portage::Limiter_type limiter,
-                           Portage::Boundary_Limiter_type bnd_limiter,
-                           int interp_order, std::string field_expression,
-                           std::string field_filename, bool mesh_output,
-                           int rank, int numpe, Jali::Entity_kind entityKind,
-                           double *L1_error, double *L2_error, bool remap_back,
-                           std::vector<double> &sourceData,
-                           std::vector<double> &targetData) {
+                   std::shared_ptr<Jali::Mesh> targetMesh,
+                   Portage::Limiter_type limiter,
+                   Portage::Boundary_Limiter_type bnd_limiter,
+                   int interp_order, std::string field_expression,
+                   std::string field_filename, bool mesh_output,
+                   int rank, int numpe, Jali::Entity_kind entityKind,
+                   double *L1_error, double *L2_error, bool remap_back,
+                   std::vector<double> &sourceData,
+                   std::vector<double> &targetData) {
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -541,7 +556,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     sourceData.resize(nsrccells);
 
     if (!remap_back) {
-      for (unsigned int c = 0; c < nsrccells; ++c)
+      for (int c = 0; c < nsrccells; ++c)
         sourceData[c] = source_field(sourceMesh->cell_centroid(c));
     }
 
@@ -554,7 +569,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                 Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and interpolation order with the driver
-    remap_fields.push_back("celldata");
+    remap_fields.emplace_back("celldata");
 
   } else {  // node-centered
     sourceData.resize(nsrcnodes);
@@ -579,7 +594,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                 Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and remap order with the driver
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("nodedata");
 
   }
 
@@ -666,7 +681,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
 
   // Output results for small test cases
-  double error, toterr = 0.0;
+  double error;
   double const * cellvecout;
   double const * cellvecin;
   double const * nodevecout;
@@ -712,10 +727,10 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       target_mass += cellvecout[c] * cellvol;
 
       if (!targetMeshWrapper.on_exterior_boundary(Portage::Entity_kind::CELL, c)) {
-        double cellvol = targetMeshWrapper.cell_volume(c);
-        totvolume += cellvol;
-        *L1_error += fabs(error)*cellvol;
-        *L2_error += error*error*cellvol;
+        double volume = targetMeshWrapper.cell_volume(c);
+        totvolume += volume;
+        *L1_error += std::fabs(error) * volume;
+        *L2_error += error * error * volume;
       }
       if (ntarcells < 10) {
     	std::printf("Rank %d\n", rank);
@@ -812,7 +827,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // construct the field file name and open the file
 
-  if (field_filename.length()) {
+  if (!field_filename.empty()) {
     std::vector<int> lgid;
     std::vector<double> lvalues;
     std::string entstr;
@@ -841,7 +856,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     reorder(lvalues, idx);  // sort the values
 
     if (numpe > 1) {
-      int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
+      int const maxwidth = std::ceil(std::log10(numpe));
       char rankstr[10];
       std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
       field_filename = field_filename + "." + std::string(rankstr);
@@ -851,7 +866,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     fout.precision(17);
 
     // write out the values
-    for (int i=0; i < lgid.size(); i++)
+    int const num_lgid = lgid.size();
+    for (int i=0; i < num_lgid; i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }
 }

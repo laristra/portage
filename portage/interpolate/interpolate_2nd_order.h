@@ -115,10 +115,10 @@ namespace Portage {
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
-        interface_reconstructor_(ir),
         variable_name_("VariableNameNotSet"),
         source_values_(nullptr),
-        num_tols_(num_tols) { CoordSys::template verify_coordinate_system<D>(); }
+        num_tols_(num_tols),
+        interface_reconstructor_(ir) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
     /**
@@ -291,10 +291,10 @@ namespace Portage {
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
-        interface_reconstructor_(ir),
         variable_name_("VariableNameNotSet"),
         source_values_(nullptr),
         num_tols_(num_tols),
+        interface_reconstructor_(ir),
         parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 #endif
 
@@ -410,7 +410,6 @@ namespace Portage {
               auto const& cellmatpoly = interface_reconstructor_->cell_matpoly_data(src_cell);
               auto matpolys = cellmatpoly.get_matpolys(material_id_);
 
-              int cnt = 0;
               for (int k = 0; k < D; k++)
                 source_centroid[k] = 0;
 
@@ -574,10 +573,10 @@ namespace Portage {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       variable_name_("VariableNameNotSet"),
       source_values_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      interface_reconstructor_(ir) {}
 #endif
 
     /**
@@ -648,7 +647,6 @@ namespace Portage {
         return 0.;
 
       auto const& gradient_field = *gradients_;
-      int const nb_source_nodes = sources_and_weights.size();
       double total_value = 0.;
       double normalization = 0.;
 

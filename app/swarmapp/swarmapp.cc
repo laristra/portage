@@ -73,8 +73,8 @@ public:
   ExampleProperties(int in_field_order,
                     int in_estimation_order,
                     int in_dimension)
-    : field_order(in_field_order),
-      estimation_order(in_estimation_order),
+    : estimation_order(in_estimation_order),
+      field_order(in_field_order),
       dimension(in_dimension)
   {}
 

@@ -103,8 +103,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -225,8 +226,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -354,8 +356,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -473,8 +476,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Const_3D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -594,8 +598,9 @@ TEST(Interpolate_1st_Order, Cell_Ctr_Lin_3D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -723,8 +728,9 @@ TEST(Interpolate_1st_Order, Node_Ctr_Const_3D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }

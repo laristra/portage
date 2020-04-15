@@ -36,46 +36,46 @@ set(search_SOURCES
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
-   cinch_add_unit(search_direct_product_test
-    SOURCES search_direct_product_test.cc
+   cinch_add_unit(test_search_direct_product
+    SOURCES test/test_search_direct_product.cc
     LIBRARIES portage  
     POLICY SERIAL)
   
-   cinch_add_unit(search_simple_test
-    SOURCES search_simple_test.cc
+   cinch_add_unit(test_search_simple
+    SOURCES test/test_search_simple.cc
     LIBRARIES portage  
     POLICY SERIAL)
   
-  cinch_add_unit(search_kdtree2_test
-    SOURCES search_kdtree2_test.cc
+  cinch_add_unit(test_search_kdtree2
+    SOURCES test/test_search_kdtree2.cc
     LIBRARIES portage  
     POLICY SERIAL)
 
-  cinch_add_unit(search_kdtree3_test
-    SOURCES search_kdtree3_test.cc
+  cinch_add_unit(test_search_kdtree3
+    SOURCES test/test_search_kdtree3.cc
     LIBRARIES portage 
     POLICY SERIAL)
 
-  cinch_add_unit(search_swept_face_test
-    SOURCES search_swept_face_test.cc
+  cinch_add_unit(test_search_swept_face
+    SOURCES test/test_search_swept_face.cc
     LIBRARIES portage 
     POLICY SERIAL)
 
-  cinch_add_unit(search_simple_points_test
-    SOURCES search_simple_points_test.cc
+  cinch_add_unit(test_search_simple_points
+    SOURCES test/test_search_simple_points.cc
     LIBRARIES portage  
     POLICY MPI
     THREADS 1)
 
-  cinch_add_unit(search_points_by_cells_test
-    SOURCES pairs.cc search_points_by_cells_test.cc 
+  cinch_add_unit(test_search_points_by_cells
+    SOURCES pairs.cc test/test_search_points_by_cells.cc
     LIBRARIES portage 
     POLICY MPI
     THREADS 1)
 
   if (nanoflann_FOUND)
     cinch_add_unit(test_search_kdtree_nanoflann
-      SOURCES test_search_kdtree_nanoflann.cc
+      SOURCES test/test_search_kdtree_nanoflann.cc
       LIBRARIES portage 
       POLICY MPI
       THREADS 1)

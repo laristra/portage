@@ -118,10 +118,10 @@ int print_usage() {
 // with respect to the specified field. If a field was not specified and
 // remap only volume fractions (and if specified, centroids)
 void run(
-        const Simple_Mesh& sourceMesh,
+  const Simple_Mesh& sourceMesh,
   const Simple_Mesh& targetMesh,
-  const std::string material_filename,
-  const std::vector<std::string> material_field_expressions,
+  std::string material_filename,
+  std::vector<std::string> const& material_field_expressions,
   Portage::Limiter_type limiter,
   Portage::Boundary_Limiter_type bnd_limiter,
   int interp_order,
@@ -129,8 +129,7 @@ void run(
   bool mesh_output,
   Portage::Entity_kind entityKind,
   double *L1_error,
-  double *L2_error
-        ) {
+  double *L2_error) {
 
   std::cout << "starting simple_mesh_mm_app...\n";
 
@@ -141,10 +140,6 @@ void run(
   const int nsrccells = source_mesh_wrapper.num_owned_cells() +
       source_mesh_wrapper.num_ghost_cells(); // I don't believe there are ghosts
   const int ntarcells = target_mesh_wrapper.num_owned_cells();
-
-  const int nsrcnodes = source_mesh_wrapper.num_owned_nodes() +
-      source_mesh_wrapper.num_ghost_nodes(); // I don't believe there are ghosts
-  const int ntarnodes = target_mesh_wrapper.num_owned_nodes();
 
         // declare local variables for the material data
   std::vector<int> cell_num_mats;
@@ -161,19 +156,27 @@ void run(
   // debug info
   std::cout<<"\n\nSource Mesh: \n"<<std::endl;
   std::cout<<"cell_num_mats: ";
-  for (auto x: cell_num_mats) std::cout<<x<<" "; std::cout<<std::endl;
+  for (auto x: cell_num_mats)
+    std::cout<<x<<" ";
+  std::cout<<std::endl;
 
   std::cout<<"cell_mat_ids: ";
-  for (auto x: cell_mat_ids) std::cout<<x<<" "; std::cout<<std::endl;
+  for (auto x: cell_mat_ids)
+    std::cout<<x<<" ";
+  std::cout<<std::endl;
 
   std::cout<<"cell_mat_volfracs: ";
-  for (auto x: cell_mat_volfracs) std::cout<<x<<" "; std::cout<<std::endl;
+  for (auto x: cell_mat_volfracs)
+    std::cout<<x<<" ";
+  std::cout<<std::endl;
 
   std::cout<<"cell_mat_centroids:\n";
-  for (auto x: cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
+  for (auto x: cell_mat_centroids)
+    std::cout << x[0] << " " << x[1] << std::endl;
+  std::cout<<std::endl;
   #endif
 
-  bool mat_centroids_given = (cell_mat_centroids.size() > 0);
+  bool mat_centroids_given = !cell_mat_centroids.empty();
 
   // Compute offsets into flattened arrays based on cell_num_mats
   std::vector<int> offsets(nsrccells);
@@ -191,7 +194,7 @@ void run(
 
   std::cout << "Source mesh has " << nsrccells << " cells\n";
   std::cout << "Target mesh has " << ntarcells << " cells\n";
-  if (material_field_expressions.size()) {
+  if (!material_field_expressions.empty()) {
     std::cout << " Specified fields for materials are ";
     for (auto const& expr : material_field_expressions)
       std::cout << "    " << expr << ", ";
@@ -265,21 +268,18 @@ void run(
   std::vector<user_field_t> mat_fields(nmats);
 
   // only do this block if there are any user specified fields
-  if (material_field_expressions.size()) {
+  if (!material_field_expressions.empty()) {
 
     // the mm state
     std::unordered_map<int,std::vector<double>> user_field;
 
+    int const num_mats = static_cast<int>(nmats);
     // loop over materials (there needs to be one field per material
-    for (int m = 0; m < nmats; m++) {
-
+    for (int m = 0; m < num_mats; m++) {
       // if we can't create the user field then die
       if (!mat_fields[m].initialize(2, material_field_expressions[m]))
         throw std::runtime_error("Could not initialize user field: "
                 +material_field_expressions[m]);
-
-      // number of cells for this material
-      int nmatcells = matcells[m].size();
 
       // field values for this material
       std::vector<double> matData;
@@ -302,7 +302,8 @@ void run(
 
   // print what the state manager knows about
   std::cout<<"\nState manager fields: ";
-  for (auto x: source_state.names()) std::cout<<x<<" ";
+  for (const auto& x: source_state.names())
+    std::cout<< x <<" ";
   std::cout<<std::endl;
 
   // Add the materials into the target mesh without cell indices
@@ -321,10 +322,10 @@ void run(
 
   // If the user specified some material fields, then add a placeholder for
   // them on the target side
-  if (material_field_expressions.size()) {
+  if (!material_field_expressions.empty()) {
         target_state.add(
                 std::make_shared<StateVectorMulti<>>(StateVectorMulti<>{"cellmatdata"}));
-    remap_fields.push_back("cellmatdata");
+    remap_fields.emplace_back("cellmatdata");
   }
 
   // print what the state manager knows about
@@ -397,7 +398,8 @@ void run(
     const auto& centroids = target_state.get<StateVectorMulti<Point<2>>>("mat_centroids")->get_data()[m];
 
     // loop over the cell id's
-    for (int i = 0; i < cells.size(); ++i) {
+    int const num_cells = cells.size();
+    for (int i = 0; i < num_cells; ++i) {
       // get this cell id
       const int c = cells[i];
 
@@ -414,45 +416,50 @@ void run(
   std::vector<double> target_cell_mat_volfracs;
   std::vector<Wonton::Point<2>> target_cell_mat_centroids;
 
-        for (int c = 0; c<ntarcells; ++c){
+  for (int c = 0; c < ntarcells; ++c) {
 
-                // get the vector of material ids,volume fraction and centroid
-                // with thrust turned on, these need to be portage vectors, not std::vectors
-                const Portage::vector<int> mats{map_target_cell_materials.at(c)};
-                const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-                const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+    // get the vector of material ids,volume fraction and centroid
+    // with thrust turned on, these need to be portage vectors, not std::vectors
+    const Portage::vector<int> mats{map_target_cell_materials.at(c)};
+    const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
+    const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+    int const num_mats = mats.size();
 
-                // push the size onto the number of mats
-                target_cell_num_mats.push_back(mats.size());
+    // push the size onto the number of mats
+    target_cell_num_mats.push_back(num_mats);
 
-                // loop over the matid's
-                for (int i=0; i<mats.size(); ++i){
+    // loop over the matid's
+    for (int i = 0; i < num_mats; ++i) {
 
-                        // get the material id
-                        int matid=mats[i];
+      // get the material id
+      int matid = mats[i];
 
-                        // push the material id, volume fraction and centroid
-                        target_cell_mat_ids.push_back(matid);
-                        target_cell_mat_volfracs.push_back(volfracs[i]);
-                        target_cell_mat_centroids.push_back(centroids[i]);
-                }
+      // push the material id, volume fraction and centroid
+      target_cell_mat_ids.push_back(matid);
+      target_cell_mat_volfracs.push_back(volfracs[i]);
+      target_cell_mat_centroids.push_back(centroids[i]);
+    }
 
-        }
+  }
 
 #ifdef DEBUG
-    // debug info
-                std::cout<<"\n\nTarget Mesh: \n"<<std::endl;
-                std::cout<<"target_cell_num_mats: ";
-                for (auto x: target_cell_num_mats) std::cout<<x<<" "; std::cout<<std::endl;
+  // debug info
+  std::cout << "\n\nTarget Mesh: \n" << std::endl;
+  std::cout << "target_cell_num_mats: ";
+  for (auto x: target_cell_num_mats) std::cout << x << " ";
+  std::cout << std::endl;
 
-                std::cout<<"target_cell_mat_ids: ";
-                for (auto x: target_cell_mat_ids) std::cout<<x<<" "; std::cout<<std::endl;
+  std::cout << "target_cell_mat_ids: ";
+  for (auto x: target_cell_mat_ids) std::cout << x << " ";
+  std::cout << std::endl;
 
-                std::cout<<"target_cell_mat_volfracs: ";
-                for (auto x: target_cell_mat_volfracs) std::cout<<x<<" "; std::cout<<std::endl;
+  std::cout << "target_cell_mat_volfracs: ";
+  for (auto x: target_cell_mat_volfracs) std::cout << x << " ";
+  std::cout << std::endl;
 
-                std::cout<<"target_cell_mat_centroids:\n";
-                for (Wonton::Point<2>  x: target_cell_mat_centroids) std::cout<<x[0]<<" "<<x[1]<<"\n"; std::cout<<std::endl;
+  std::cout << "target_cell_mat_centroids:\n";
+  for (Wonton::Point<2> x: target_cell_mat_centroids) std::cout << x[0] << " " << x[1] << "\n";
+  std::cout << std::endl;
 #endif
 
   // Perform interface reconstruction on target mesh for pretty pictures
@@ -485,21 +492,22 @@ void run(
 
   // Compute error
 
-  if (material_field_expressions.size()) {
-    double error, toterr = 0.0;
+  if (!material_field_expressions.empty()) {
+    double error;
     double const * cellmatvals;
     double totvolume = 0.;
-    for (int m = 0; m < nmats; m++) {
+    int const num_mats = static_cast<int>(nmats);
+    for (int m = 0; m < num_mats; m++) {
       target_state.mat_get_celldata<double>("cellmatdata", m, &cellmatvals);
 
-      std::vector<int> matcells;
-      target_state.mat_get_cells(m, &matcells);
+      std::vector<int> mat_cells;
+      target_state.mat_get_cells(m, &mat_cells);
 
       // Cell error computation
       Wonton::Point<2> ccen;
-      int nmatcells = matcells.size();
+      int const nmatcells = mat_cells.size();
       for (int ic = 0; ic < nmatcells; ++ic) {
-        int c = matcells[ic];
+        int c = mat_cells[ic];
         target_mesh_wrapper.cell_centroid(c, &ccen);
         error = mat_fields[m](ccen) - cellmatvals[ic];
 
@@ -529,14 +537,17 @@ void run(
     fout << std::endl;
 
     // write out the values
-    for (int m=0; m<nmats; ++m){
-        std::vector<int>cells = target_state.get_material_cells().at(m);
-        std::vector<double> data = target_state.get<StateVectorMulti<double>>("cellmatdata")->get_data().at(m);
-        fout << "material: " << m << std::endl;
+    int const num_mats = static_cast<int>(nmats);
+    for (int m = 0; m < num_mats; ++m) {
+      std::vector<int>cells = target_state.get_material_cells().at(m);
+      std::vector<double> data =
+        target_state.get<StateVectorMulti<double>>("cellmatdata")->get_data().at(m);
+      fout << "material: " << m << std::endl;
 
-        for (int i=0; i<data.size(); ++i){
-                fout<<"  cell "<<cells[i]<<": "<<data[i]<<std::endl;
-        }
+      int const num_data = data.size();
+      for (int i = 0; i < num_data; ++i) {
+        fout<<"  cell "<<cells[i]<<": "<<data[i]<<std::endl;
+      }
     }
   }
 }
@@ -560,11 +571,12 @@ int main(int argc, char** argv) {
         return -1;
   }
 
-  struct timeval begin, end, diff;
+  struct timeval begin {};
+  struct timeval end {};
+  struct timeval diff {};
 
         // declare simulation parameters
   int nsourcecells = 0, ntargetcells = 0;  // No default
-  int dim = 2;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
   bool conformal = true;
   std::string material_filename;
@@ -585,7 +597,7 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
+    std::size_t keyword_end = arg.find_first_of('=');
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
@@ -606,7 +618,7 @@ int main(int argc, char** argv) {
       assert(interp_order > 0 && interp_order < 3);
     }  else if (keyword == "material_fields") {
       // Expecting comma-separated quoted expressions
-      std::string exprlist = valueword;
+      std::string const& exprlist = valueword;
       std::size_t expr_beg = 0;
       std::size_t expr_end = 0;
       bool exprdone = false;
@@ -647,11 +659,12 @@ int main(int argc, char** argv) {
       std::cerr << "Unrecognized option " << keyword << std::endl;
   }
 
-  gettimeofday(&begin, 0);
+  gettimeofday(&begin, nullptr);
 
-        double mesh_offset = conformal ? 0. : (srchi-srclo)/ntargetcells/2.;
-        std::cout<<"mesh_offset="<<mesh_offset<<std::endl;
-        // define the source and target meshes
+  double mesh_offset = conformal ? 0. : (srchi-srclo)/ntargetcells/2.;
+  std::cout<<"mesh_offset="<<mesh_offset<<std::endl;
+
+  // define the source and target meshes
   Simple_Mesh source_mesh{srclo, srclo, srchi, srchi, nsourcecells, nsourcecells};
   Simple_Mesh target_mesh{
         srclo + mesh_offset, srclo+ mesh_offset,
@@ -659,28 +672,17 @@ int main(int argc, char** argv) {
         ntargetcells, ntargetcells};
 
   // Now run the remap on the meshes and get back the L2 error
-  run(
-        source_mesh,
-        target_mesh,
-        material_filename,
-        material_field_expressions,
-        limiter, bnd_limiter,
-        interp_order,
-    field_output_filename,
-    mesh_output,
-    entityKind,
-    &L1_error,
-    &L2_error
-        );
+  run(source_mesh, target_mesh, material_filename, material_field_expressions,
+      limiter, bnd_limiter, interp_order, field_output_filename, mesh_output,
+      entityKind, &L1_error, &L2_error);
 
-
-  gettimeofday(&end, 0);
+  gettimeofday(&end, nullptr);
   timersub(&end, &begin, &diff);
-  float seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
+  auto seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
 
-  #ifdef PORTAGE_ENABLE_MPI
+#ifdef PORTAGE_ENABLE_MPI
   MPI_Finalize();
-        #endif
+#endif
 
 }

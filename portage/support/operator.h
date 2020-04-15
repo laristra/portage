@@ -606,28 +606,42 @@ inline std::array<size_t,3> size_info(Type type, basis::Type basis, Domain domai
 template<class OP>
 inline void copy_points(const std::vector<Wonton::Point<OP::dim>>& points,
                         typename OP::points_t& apts) {
-  for (int i = 0; i < OP::point_size; i++) {
+  int const num_points = OP::point_size;
+  for (int i = 0; i < num_points; i++) {
     apts[i] = points[i];
   }
 }
 
 template<class OP>
 inline Wonton::Point<OP::dim> centroid(const typename OP::points_t& apts) {
-  Wonton::Point<OP::dim> cent;
-  for (int j = 0; j < OP::dim; j++) cent[j] = 0.;
-  for (int i = 0; i < OP::point_size; i++)
-    for (int j = 0; j < OP::dim; j++)
+
+  int const dim = OP::dim;
+  int const num_points = OP::point_size;
+  Wonton::Point<dim> cent {};
+
+  for (int i = 0; i < num_points; i++) {
+    for (int j = 0; j < dim; j++) {
       cent[j] += apts[i][j];
-  for (int j = 0; j < OP::dim; j++)
-    cent[j] /= OP::point_size;
+    }
+  }
+
+  for (int j = 0; j < dim; j++) {
+    cent[j] /= num_points;
+  }
   return cent;
 }
 
 template<class OP>
 inline void shift_points(const Wonton::Point<OP::dim> c, typename OP::points_t& apts) {
-  for (int i = 0; i < OP::point_size; i++)
-    for (int j = 0; j < OP::dim; j++)
+
+  int const num_points = OP::point_size;
+  int const dim = OP::dim;
+
+  for (int i = 0; i < num_points; i++) {
+    for (int j = 0; j < dim; j++) {
       apts[i][j] = apts[i][j] - c[j];
+    }
+  }
 }
 
 template<class OP>
@@ -641,8 +655,11 @@ inline void resize_result(std::vector<std::vector<double>>& result) {
 template<class OP>
 inline void copy_result(const typename OP::result_t& ares,
                         std::vector<std::vector<double>>& result) {
-  for (int i = 0; i < OP::basis_size; i++) {
-    for (int j = 0; j < OP::operator_size; j++) {
+  int const num_basis = OP::basis_size;
+  int const num_operators = OP::operator_size;
+
+  for (int i = 0; i < num_basis; i++) {
+    for (int j = 0; j < num_operators; j++) {
       result[i][j] = ares[i][j];
     }
   }
@@ -654,20 +671,29 @@ inline void get_result(const std::vector<Wonton::Point<OP::dim>>& points,
   resize_result<OP>(result);
   typename OP::points_t apts;
   copy_points<OP>(points, apts);
+
   if (center) {
     Wonton::Point<OP::dim> c = centroid<OP>(apts);
     shift_points<OP>(c, apts);
     auto tf = basis::transfactor<OP::dim>(OP::basis, c);
     typename OP::result_t ares = OP::apply(apts);
-    for (int i = 0; i < OP::basis_size; i++)
-      for (int j = 0; j < OP::operator_size; j++) {
+
+    int const num_basis = OP::basis_size;
+    int const num_operators = OP::operator_size;
+
+    for (int i = 0; i < num_basis; i++) {
+      for (int j = 0; j < num_operators; j++) {
         result[i][j] = 0.;
       }
-    for (int j = 0; j < OP::operator_size; j++)
-      for (int i = 0; i < OP::basis_size; i++)
-        for (int k = 0; k < OP::basis_size; k++) {
+    }
+
+    for (int j = 0; j < num_operators; j++) {
+      for (int i = 0; i < num_basis; i++) {
+        for (int k = 0; k < num_basis; k++) {
           result[i][j] += tf[i][k] * ares[k][j];
         }
+      }
+    }
   } else {
     typename OP::result_t ares = OP::apply(apts);
     copy_result<OP>(ares, result);

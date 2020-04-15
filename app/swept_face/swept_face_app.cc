@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
+    std::size_t keyword_end = arg.find_first_of('=');
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
@@ -400,7 +400,7 @@ int main(int argc, char** argv) {
   // make sure that we have the right dimension and that source and
   // target mesh dimensions matches.
   assert(source_mesh->space_dimension() == target_mesh->space_dimension());
-  assert(dim == source_mesh->space_dimension());
+  assert(unsigned(dim) == source_mesh->space_dimension());
 
 #if ENABLE_TIMINGS
   profiler->time.mesh_init = timer::elapsed(tic);

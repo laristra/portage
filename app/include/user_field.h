@@ -12,18 +12,27 @@
 // See http://www.partow.net/programming/exprtk/ for source and examples
 
 #include "exprtk.hpp"
+#include "wonton/support/Point.h"
+#ifdef HAVE_JALI
+  #include "Point.hh"
+#endif
 
 // This functor initializes a general field from a string expression
 // and returns its value at any given point
 
-typedef struct user_field {
-  double x, y, z;
-  int dim_;
-  exprtk::symbol_table<double> symbol_table;
-  exprtk::expression<double> expression;
-  exprtk::parser<double> parser;
+class user_field_t {
+public:
+  double x = 0.;
+  double y = 0.;
+  double z = 0.;
+  int dim_ = 0;
 
-  user_field() : dim_(0) {}
+  exprtk::symbol_table<double> symbol_table {};
+  exprtk::expression<double> expression {};
+  exprtk::parser<double> parser {};
+
+  user_field_t() = default;
+  ~user_field_t() = default;
 
   int initialize(int dim, std::string const& expression_str) {
     dim_ = dim;
@@ -49,14 +58,31 @@ typedef struct user_field {
     return 1;
   }
 
-  template<class P> double operator()(const P &c) {
-    if (dim_ > 0) x = c[0];
-    if (dim_ > 1) y = c[1];
-    if (dim_ > 2) z = c[2];
-    double val = expression.value();
-    return val;
+  template<int D>
+  double operator()(Wonton::Point<D> const& c) {
+    if (dim_ == D) {
+      if (dim_ > 0) x = c[0];
+      if (dim_ > 1) y = c[1];
+      if (dim_ > 2) z = c[2];
+      double const val = expression.value();
+      return val;
+    } else
+      throw std::runtime_error("incompatible dimensions");
   }
-} user_field_t;
+
+#ifdef HAVE_JALI
+  double operator()(JaliGeometry::Point const& c) {
+    if (dim_ == c.dim()) {
+      if (dim_ > 0) x = c[0];
+      if (dim_ > 1) y = c[1];
+      if (dim_ > 2) z = c[2];
+      double const val = expression.value();
+      return val;
+    } else
+      throw std::runtime_error("incompatible dimensions");
+  }
+#endif
+};
 
 
 

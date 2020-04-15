@@ -34,7 +34,7 @@ TEST(search_kdtree3, cell)
 
         // there should be eight candidate source cells, in a cube
         // compute scbase = index of lower left source cell
-        ASSERT_EQ(8, candidates.size());
+        ASSERT_EQ(unsigned(8), candidates.size());
         const int tx = tc % 2;
         const int ty = (tc / 2) % 2;
         const int tz = tc / 4;
