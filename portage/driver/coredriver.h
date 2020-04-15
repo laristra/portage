@@ -1439,6 +1439,13 @@ class CoreDriver : public CoreDriverBase<D,
         cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
 
       Wonton::Point<D> const *matcenvec;
+      
+      // handle the case where we don't have centroids in the state manager at all
+      if (source_state_.get_entity("mat_centroids")==Entity_kind::UNKNOWN_KIND) {
+        have_centroids = false;
+	continue;
+      }	
+      
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
       if (cellids.size() && !matcenvec)
         have_centroids = false;  // VOF
