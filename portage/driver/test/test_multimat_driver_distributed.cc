@@ -1,3 +1,4 @@
+#include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
 #include <cmath>
