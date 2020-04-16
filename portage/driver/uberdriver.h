@@ -132,13 +132,15 @@ class UberDriver {
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
-              std::vector<std::string> source_vars_to_remap,
+              std::vector<std::string> const& source_vars_to_remap,
               Wonton::Executor_type const *executor = nullptr,
               std::string *errmsg = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
-        source_vars_to_remap_(source_vars_to_remap),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         dim_(source_mesh.space_dimension()),
+        source_vars_to_remap_(source_vars_to_remap),
         executor_(executor) {
 
     assert(source_mesh.space_dimension() == target_mesh.space_dimension());
@@ -182,8 +184,10 @@ class UberDriver {
               TargetState& target_state,
               Wonton::Executor_type const *executor = nullptr,
               std::string *errmsg = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         dim_(source_mesh.space_dimension()),
         executor_(executor) {
 
@@ -226,10 +230,10 @@ class UberDriver {
   UberDriver & operator = (const UberDriver &) = delete;
 
   /// Enable move semantics
-  UberDriver(UberDriver &&) = default;
+  UberDriver(UberDriver&&) noexcept = default;
 
   /// Destructor
-  ~UberDriver() {}
+  ~UberDriver() = default;
 
   /// Is this a distributed (multi-rank) run?
 
@@ -809,33 +813,32 @@ class UberDriver {
  private:
 
   // Inputs specified by calling app
-  Wonton::Executor_type const *executor_;
   SourceMesh const& source_mesh_;
   TargetMesh const& target_mesh_;
   SourceState const& source_state_;
   TargetState& target_state_;
-  unsigned int dim_;
-
+  int dim_ = 0;
 
   // Component variables
   bool distributed_ = false;  // default is serial
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
 
 #ifdef PORTAGE_ENABLE_MPI
+  int comm_rank_ = 0;
+  int nprocs_ = 1;
+  Wonton::Executor_type const *executor_;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
-  std::vector<std::string> source_vars_to_remap_;
-  std::vector<Entity_kind> entity_kinds_;
-  std::vector<Field_type> field_types_;
+  std::vector<std::string> source_vars_to_remap_ {};
+  std::vector<Entity_kind> entity_kinds_ {};
+  std::vector<Field_type> field_types_ {};
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;
 
   // Track what steps are completed
-  std::map<Entity_kind, bool> search_completed_;
-  std::map<Entity_kind, bool> mesh_intersection_completed_;
+  std::map<Entity_kind, bool> search_completed_ {};
+  std::map<Entity_kind, bool> mesh_intersection_completed_ {};
   bool mat_intersection_completed_ = false;
 
   // Pointers to core drivers designed to work on a particular
@@ -843,7 +846,7 @@ class UberDriver {
   // parallel runs where the distribution via flat mesh/state has already
   // occurred.
 
-  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_;
+  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_ {};
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -858,7 +861,7 @@ class UberDriver {
   //   ||                        ||     for each target entity
   //   ||                        ||           ||
   //   \/                        \/           \/
-  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_;
+  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_ {};
 
   // Weights of intersection b/w target CELLS and source material polygons
   // Each intersection is between a target cell and material polygon in
@@ -873,7 +876,7 @@ class UberDriver {
   //   ||               ||     each target entity
   //   ||               ||           ||
   //   \/               \/           \/
-  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_;
+  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
 
   /*!
     @brief Instantiate core drivers that abstract away whether we
