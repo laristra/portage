@@ -7,35 +7,33 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
-#include <iostream>
 #include <memory>
+
 
 #include "gtest/gtest.h"
 #ifdef PORTAGE_ENABLE_MPI
 #include "mpi.h"
 #endif
 
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliStateVector.h"
+#include "JaliState.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/mmdriver.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliStateVector.h"
-#include "JaliState.h"
 
 double TOL = 1e-6;
 
@@ -314,7 +312,7 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -342,8 +340,8 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 2; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
+      for (int dim = 0; dim < 2; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -387,7 +385,7 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0;
-    double error = 0.0, l1error = 0.0, l2error = 0.0;
+    double error, l1error = 0.0, l2error = 0.0;
     int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
       error = matrho_trg[m][ic] - rho[ic];
@@ -660,7 +658,7 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -687,8 +685,8 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-8);
+      for (int dim = 0; dim < 3; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-8);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -731,11 +729,10 @@ for (int ic = 0; ic < num_matcells; ic++) {
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0;
-    double error = 0.0, l1error = 0.0, l2error = 0.0;
+    double l1error = 0.0, l2error = 0.0;
     int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
-      error = matrho_trg[m][ic] - rho[ic];
-
+      double error = matrho_trg[m][ic] - rho[ic];
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       l1error += fabs(error)*cellvol;
       l2error += error*error*cellvol;

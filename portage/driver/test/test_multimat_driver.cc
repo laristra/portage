@@ -7,7 +7,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
-#include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
@@ -17,25 +16,14 @@ Please see the license file at the root of this repository, or at:
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/mmdriver.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
-#include "portage/interpolate/interpolate_1st_order.h"
+
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-#include "JaliStateVector.h"
 #include "JaliState.h"
 
 double TOL = 1e-6;
