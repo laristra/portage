@@ -1,3 +1,4 @@
+#include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
 #include <cmath>
@@ -17,8 +18,10 @@
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 
 //Portage includes
+#include "portage/driver/uberdriver.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 
@@ -902,5 +905,185 @@ TEST(MMDriver3D, NestedBox_Linear2ndOrder)
   //Remap
   run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
+
+// 2-material problem with VOF
+
+TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
+
+  // Source and target meshes
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  // Source and target mesh state
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
+
+  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 6);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+
+  // The material geometry in the overall domain will look like this
+  // and we will put down a rectangular mesh that has multiple cells
+  // in each direction on this domain so that we get some pure and
+  // some mixed cells
+  //
+  // Note that only MOF type algorithms or VOF algorithms with the
+  // material ordering 0,1,2 will get the T-junction geometry right
+  //
+  //    0,1           0.5,1         1,1
+  //     *-------------:------------*
+  //     |             :            |
+  //     |             :            |
+  //     |             :            |
+  //     |             :            |
+  //     |             :            |
+  //     |     0       +     1      |     
+  //     |   mat0      :   mat1     |
+  //     |             :            |
+  //     |             :            |
+  //     |             :            |
+  //     |             :            |
+  //     *-------------:------------*
+  //    0,0           0.5,0         1,0
+
+  constexpr int nmats = 2;
+  std::string matnames[nmats] = {"mat0", "mat1"};
+
+  // Extents of the materials in the overall domain
+
+  Wonton::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<2>(0.0, 0.0);
+  mathi[0] = Wonton::Point<2>(0.5, 1.0);
+  matlo[1] = Wonton::Point<2>(0.5, 0.0);
+  mathi[1] = Wonton::Point<2>(1.0, 1.0);
+
+
+  std::vector<int> matcells_src[nmats];
+  std::vector<double> matvf_src[nmats];
+  std::vector<double> matrho_src[nmats];
+
+
+  //-------------------------------------------------------------------
+  // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
+  // CELL LISTS
+  //-------------------------------------------------------------------
+  //
+  // Based on the material geometry, make a list of SOURCE cells that
+  // are in each material and collect their material volume fractions
+
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
+  for (int c = 0; c < nsrccells; c++) {
+    std::vector<Wonton::Point<2>> ccoords;
+    sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
+
+    double cellvol = sourceMeshWrapper.cell_volume(c);
+
+    Wonton::Point<2> cell_lo, cell_hi;
+    BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
+
+    std::vector<double> xmoments;
+    for (int m = 0; m < nmats; m++) {
+      if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
+                                            cell_lo, cell_hi, &xmoments)) {
+        if (xmoments[0] > 1.0e-06) {  // non-trivial intersection
+          matcells_src[m].push_back(c);
+          matvf_src[m].push_back(xmoments[0]/cellvol);
+          matrho_src[m].push_back(m);
+        }
+      }
+    }
+  }
+
+
+  //-------------------------------------------------------------------
+  // Now add the material and material cells to the source state
+  //-------------------------------------------------------------------
+
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.add_material(matnames[m], matcells_src[m]);
+
+  // Create multi-material variables to store the volume fractions and
+  // for each material in the cells
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &(matvf_src[m][0]));
+
+  // Also assign a different constant density value for each material
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
+
+
+  //-------------------------------------------------------------------
+  // Add the materials and fields to the target mesh.
+  //-------------------------------------------------------------------
+
+  std::vector<int> dummymatcells;
+  targetStateWrapper.add_material("mat0", dummymatcells);
+  targetStateWrapper.add_material("mat1", dummymatcells);
+
+  targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
+  targetStateWrapper.mat_add_celldata<double>("density", 0.0);
+
+
+  //-------------------------------------------------------------------
+  // The driver is no longer responsible for distributing the mesh.
+  // The calling program is responsible, so we create the flat mesh/state
+  // prior to instantiating the driver distribute here.
+  //-------------------------------------------------------------------
+
+  // create the flat mesh
+  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
+  source_mesh_flat.initialize(sourceMeshWrapper);
+
+  // create the flat state
+  Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
+
+  // mat_volfracs and mat_centroids are always imported from the state wrapper
+  source_state_flat.initialize(sourceStateWrapper, {"density"});
+
+  int numpe; 
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  
+  // Use a bounding box distributor to send the source cells to the target
+  // partitions where they are needed
+  Portage::MPI_Bounding_Boxes distributor(&mpiexecutor);
+  distributor.distribute(source_mesh_flat, source_state_flat, targetMeshWrapper,
+                         targetStateWrapper);
+
+
+  //-------------------------------------------------------------------
+  //  Run the remap driver using XMOF-2D as the interface
+  //  reconstructor which is guaranteed to recover the correct
+  //  geometry of the T-junction. A VOF-based interface reconstructor
+  //  will get the right geometry for the T-junction only if the
+  //  material ordering is 0, 1, 2
+  //-------------------------------------------------------------------
+
+  Portage::UberDriver<2,
+                      Wonton::Flat_Mesh_Wrapper<>, 
+                      Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+    d(source_mesh_flat, source_state_flat,
+        targetMeshWrapper, targetStateWrapper, &mpiexecutor);
+
+
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+
+  double dblmax =  std::numeric_limits<double>::max();
+
+  d.interpolate<double, Portage::Entity_kind::CELL,
+                Portage::Interpolate_2ndOrder>("density", "density",
+  					       0.0, dblmax,
+                                               Portage::Limiter_type::NOLIMITER,
+                                               Portage::Boundary_Limiter_type::BND_NOLIMITER);
+
+}  // TwoMat2D_VOF_1stOrderRemap
 
 #endif  // ifdef have_tangram
