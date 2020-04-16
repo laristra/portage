@@ -4,6 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
 #include <iostream>
@@ -116,9 +117,6 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.375, 1.0, 3.3750};
-  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
-                                    Wonton::Point<2>(0.75,0.25),
-                                    Wonton::Point<2>(0.75,0.75)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -198,7 +196,8 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -365,7 +364,8 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
 
     Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -381,14 +381,15 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
-    double *vf, *rho;
-    Wonton::Point<2> *cen;
+    double* vf;
+    double* rho;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    double volume = 0.0, mass = 0.0;
+    double volume = 0.0;
     double error = 0.0, l1error = 0.0, l2error = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       error = matrho_trg[m][ic] - rho[ic];
 
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
@@ -461,9 +462,6 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.625, 1.5, 4.5};
-  Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
-                                    Wonton::Point<3>(0.75,0.25,0.5),
-                                    Wonton::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -544,7 +542,8 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -710,7 +709,8 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
 
     Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -725,14 +725,15 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
   for (int m = 0; m < nmats; m++) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
-    double *vf, *rho;
-    Wonton::Point<3> *cen;
+    double* vf;
+    double* rho;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    double volume = 0.0, mass = 0.0;
+    double volume = 0.0;
     double error = 0.0, l1error = 0.0, l2error = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       error = matrho_trg[m][ic] - rho[ic];
 
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
@@ -804,8 +805,6 @@ TEST(UberDriver, TwoMat2D_VOF_2ndOrderRemap) {
 
   double matvol[nmats] = {0.5, 0.5};
   double matmass[nmats] = {0.0, 0.0};  // calculate later
-  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
-                                    Wonton::Point<2>(0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -886,7 +885,8 @@ TEST(UberDriver, TwoMat2D_VOF_2ndOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1038,12 +1038,12 @@ TEST(UberDriver, TwoMat2D_VOF_2ndOrderRemap) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
     double *vf, *rho;
-    Wonton::Point<2> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1114,8 +1114,6 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
 
   double matvol[nmats] = {0.5, 0.5};
   double matmass[nmats] = {0.0, 0.0};  // calculate later
-  Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
-                                    Wonton::Point<3>(0.75,0.5,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -1197,7 +1195,8 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1356,7 +1355,8 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
