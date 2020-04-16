@@ -14,8 +14,15 @@ Please see the license file at the root of this repository, or at:
 #include "mpi.h"
 #endif
 
+#include "tangram/reconstruct/xmof2D_wrapper.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
+
 
 #include "portage/driver/mmdriver.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
@@ -309,7 +316,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
