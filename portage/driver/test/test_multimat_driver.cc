@@ -4,6 +4,7 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
 #include <iostream>
@@ -121,9 +122,6 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-  Portage::Point<2> matcen[nmats] = {Portage::Point<2>(0.25,0.5),
-                                     Portage::Point<2>(0.75,0.25),
-                                     Portage::Point<2>(0.75,0.75)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -208,7 +206,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -369,7 +368,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
 
     Portage::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -456,9 +456,6 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-  Portage::Point<3> matcen[nmats] = {Portage::Point<3>(0.25,0.5,0.5),
-                                     Portage::Point<3>(0.75,0.25,0.5),
-                                     Portage::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -543,7 +540,8 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -708,7 +706,8 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
 
     Portage::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -865,7 +864,8 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1008,7 +1008,8 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1165,7 +1166,8 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1310,7 +1312,8 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
