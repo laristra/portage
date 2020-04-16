@@ -3,7 +3,7 @@ This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
-
+#include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
 #include <iostream>
@@ -64,11 +64,8 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
-
   // move a single node of the target mesh in x direction by DX
-  std::array<double, 2> pnt;
+  std::array<double, 2> pnt {};
   targetMesh->node_get_coordinates(5, &pnt);
   double DX = 0.01;
   pnt[0] += DX;
@@ -200,7 +197,8 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -269,8 +267,6 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   for (int c = 0; c < ntrgcells; c++) {
     std::vector<Wonton::Point<2>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
-
-    double cellvol = targetMeshWrapper.cell_volume(c);
 
     Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
@@ -350,7 +346,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -401,7 +397,8 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
 
     Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+      int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
