@@ -323,7 +323,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -351,8 +351,8 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 2; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
+      for (int dim = 0; dim < 2; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -396,7 +396,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
 
     double volume = 0.0;
     double error = 0.0, l1error = 0.0, l2error = 0.0;
-      int const num_matcells = matcells.size();
+    int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
       error = matrho_trg[m][ic] - rho[ic];
 
@@ -693,7 +693,7 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -1050,7 +1050,7 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -1397,7 +1397,7 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
