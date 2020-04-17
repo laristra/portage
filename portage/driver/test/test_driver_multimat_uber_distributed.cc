@@ -1,3 +1,11 @@
+/*
+ * This file is part of the Ristra portage project.
+ * Please see the license file at the root of this repository, or at:
+ * https://github.com/laristra/portage/blob/master/LICENSE
+*/
+
+#include "portage/support/portage.h"
+
 #ifdef HAVE_TANGRAM
 
 #include <cmath>
@@ -12,6 +20,7 @@
 #include "gtest/gtest.h"
 
 //Tangram includes
+#include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 #include "tangram/intersect/split_r2d.h"
@@ -19,7 +28,7 @@
 #include "tangram/reconstruct/MOF.h"
 
 //Portage includes
-#include "portage/driver/mmdriver.h"
+#include "portage/driver/uberdriver.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 
 //Jali includes
@@ -393,7 +402,6 @@ void compute_material_fields_on_mesh(
 
     std::vector<double> xmoments;
     for (int m = 0; m < mdata.nmats; m++) {
-     int cnt = 0; 
      double vol = 0.0;    
      Portage::Point<dim> mcen; 
      for (int d = 0; d < dim; d++) mcen[d] = 0.0; 
@@ -443,50 +451,49 @@ void check_fields_after_remap(
 
     compute_material_fields_on_mesh<dim, mconfig>(targetMeshWrapper, 
     Portage::Entity_type::PARALLEL_OWNED, mdata, 
-    matcells_ref, matvf_ref, matcen_ref, matrho_ref, dtype); 
+    matcells_ref, matvf_ref, matcen_ref, matrho_ref, dtype);
 
-    if (dbg_print) {
-     for (int m = 0; m < nmats; m++) {
- 
-      // Get target material cells and their vf, centroids, density values. 
-      std::vector<int> matcells_remap; 
-      targetStateWrapper.mat_get_cells(m, &matcells_remap);
+  if (dbg_print) {
+    for (int m = 0; m < nmats; m++) {
 
+      // Get target material cells and their vf, centroids, density values.
+      std::vector<int> matcells_remap;
       double const *matvf_remap;
-      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
-
-      Portage::Point<2> const *matcen_remap;
-      targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
-
       double const *matrho_remap;
+      Portage::Point<2> const *matcen_remap;
+
+      targetStateWrapper.mat_get_cells(m, &matcells_remap);
+      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+      targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
       targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
-      // Print details   
+      // Print details
       std::cerr<<"Mat ID "<<m<<std::endl;
       std::cerr<<"matcells_ref.size() = "<<matcells_ref[m].size()<<
-                 ", matcells_remap.size() = "<< matcells_remap.size()<<std::endl; 
-      
+               ", matcells_remap.size() = "<< matcells_remap.size()<<std::endl;
+
       std::cerr<<" Reference cell id :: { vf,  centroid, density}"<<std::endl;
-      for (int c = 0; c < matcells_ref[m].size(); c++)
-      {
-        int gid = targetMeshWrapper.get_global_id(matcells_ref[m][c], Portage::Entity_kind::CELL); 
-	std::cerr<<gid<<":: { "<<matvf_ref[m][c]
-        <<", {"<<matcen_ref[m][c][0]<<", "<<matcen_ref[m][c][1]
-        <<"}, "<<matrho_ref[m][c]<<" }"<<std::endl; 
+
+      int const num_current_matcells_ref = matcells_ref[m].size();
+      int const num_matcells_remap = matcells_remap.size();
+
+      for (int c = 0; c < num_current_matcells_ref; c++) {
+        int gid = targetMeshWrapper.get_global_id(matcells_ref[m][c], Wonton::CELL);
+        std::cerr << gid << ":: { " << matvf_ref[m][c] <<", {"
+                  << matcen_ref[m][c][0] <<", " << matcen_ref[m][c][1] <<"}, "
+                  << matrho_ref[m][c]<<" }" << std::endl;
       }
-      std::cerr<<std::endl; 
+      std::cerr<<std::endl;
 
       std::cerr<<" Remapped cell id :: { vf,  centroid, density}"<<std::endl;
-      for (int c = 0; c < matcells_remap.size(); c++)
-      {
-        int gid = targetMeshWrapper.get_global_id(matcells_remap[c], Portage::Entity_kind::CELL); 
-	std::cerr<<gid<<":: { "<<matvf_remap[c]
-        <<", {"<<matcen_remap[c][0]<<", "<<matcen_remap[c][1]
-        <<"}, "<<matrho_remap[c]<<" }"<<std::endl; 
+      for (int c = 0; c < num_matcells_remap; c++) {
+        int gid = targetMeshWrapper.get_global_id(matcells_remap[c], Wonton::CELL);
+        std::cerr << gid << ":: { " << matvf_remap[c] << ", {"
+                  << matcen_remap[c][0] <<", " << matcen_remap[c][1] <<"}, "
+                  << matrho_remap[c] << " }" << std::endl;
       }
-    } 
-  }
-  else {
+    }
+  } else {
 
    //------------------------------------------------------------------------
     // CHECK 1: Number of materials on target 
@@ -494,7 +501,7 @@ void check_fields_after_remap(
 
     ASSERT_EQ(mdata.nmats, targetStateWrapper.num_materials());
     for (int m = 0; m < nmats; m++)
-    ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
+      ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
 
     //-----------------------------------------------------------------------
     // CHECK 2: Cells in each material on target 
@@ -506,7 +513,7 @@ void check_fields_after_remap(
       int nmatcells = matcells_remap[m].size();
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
+	      ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
     }
 
     //------------------------------------------------------------------------
@@ -520,7 +527,7 @@ void check_fields_after_remap(
       targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
+	      ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
 
       // MOF cannot match moments and centroids as well as it can volume
       // fractions - so use looser tolerances
@@ -544,7 +551,7 @@ void check_fields_after_remap(
       targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
+	      ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
     }
  } //dbg_print     
 } //check_fields_after_remap
@@ -615,7 +622,8 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -649,63 +657,113 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   //-------------------------------------------------------------------
+  // The driver is no longer responsible for distributing the mesh.
+  // The calling program is responsible, so we create the flat mesh/state
+  // prior to instantiating the driver distribute here.
+  //-------------------------------------------------------------------
+
+  // create the flat mesh
+  Wonton::Flat_Mesh_Wrapper<> source_mesh_flat;
+  source_mesh_flat.initialize(sourceMeshWrapper);
+
+  // create the flat state
+  Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>> source_state_flat(source_mesh_flat);
+
+  // mat_volfracs and mat_centroids are always imported from the state wrapper
+  source_state_flat.initialize(sourceStateWrapper, {"density"});
+
+  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  
+  // Use a bounding box distributor to send the source cells to the target
+  // partitions where they are needed
+  Portage::MPI_Bounding_Boxes distributor(&mpiexecutor);
+  distributor.distribute(source_mesh_flat, source_state_flat, targetMeshWrapper,
+                         targetStateWrapper);
+
+
+
+
+
+  //-------------------------------------------------------------------
   // Run the remap driver using MOF as the interface
   // reconstructor which is guaranteed to recover the correct
   // geometry of the linear interfaces. 
   //-------------------------------------------------------------------
-  int numpe; 
-  MPI_Comm_size(MPI_COMM_WORLD, &numpe); 
+  //int numpe; 
+  //MPI_Comm_size(MPI_COMM_WORLD, &numpe); 
 
-  Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
-  Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+  //Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
+  //Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
+
+  double dblmin = -std::numeric_limits<double>::max();
+  double dblmax =  std::numeric_limits<double>::max();
 
   if ((dim == 2) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
-		      Portage::Interpolate_1stOrder, 2,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
-    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    d.set_limiter(Portage::Limiter_type::NOLIMITER);
-    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
-    d.run(executor);  // run in parallel
+    Portage::UberDriver<2,
+                       Wonton::Flat_Mesh_Wrapper<>, 
+                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::XMOF2D_Wrapper>
+    d(source_mesh_flat, source_state_flat,
+        targetMeshWrapper, targetStateWrapper, &mpiexecutor);
+        
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+
+
+    d.interpolate<double, Portage::Entity_kind::CELL,
+                  Portage::Interpolate_1stOrder>("density", "density",
+    					       dblmin, dblmax);
   }
   else if ((dim == 2) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
-		      Portage::Interpolate_2ndOrder, 2,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
-    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    d.set_limiter(Portage::Limiter_type::NOLIMITER);
-    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
-    d.run(executor);  // run in parallel
+    Portage::UberDriver<2,
+                       Wonton::Flat_Mesh_Wrapper<>, 
+                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::XMOF2D_Wrapper>
+    d(source_mesh_flat, source_state_flat,
+        targetMeshWrapper, targetStateWrapper, &mpiexecutor);
+        
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+
+    d.interpolate<double, Portage::Entity_kind::CELL,
+                  Portage::Interpolate_2ndOrder>("density", "density",
+    					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
+                     Portage::Boundary_Limiter_type::BND_NOLIMITER);
+
   }
   else if ((dim == 3) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
-		      Portage::Interpolate_1stOrder, 3,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
-    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    d.set_limiter(Portage::Limiter_type::NOLIMITER);
-    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
-    d.run(executor);  // run in parallel
+    Portage::UberDriver<3,
+                       Wonton::Flat_Mesh_Wrapper<>, 
+                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+    d(source_mesh_flat, source_state_flat,
+        targetMeshWrapper, targetStateWrapper, &mpiexecutor);
+        
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+
+
+    d.interpolate<double, Portage::Entity_kind::CELL,
+                  Portage::Interpolate_1stOrder>("density", "density",
+    					       dblmin, dblmax);
+
   }
   else if ((dim == 3) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
-		      Portage::Interpolate_2ndOrder, 3,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
-    d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
-    d.set_remap_var_names(remap_fields);
-    d.set_limiter(Portage::Limiter_type::NOLIMITER);
-    d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
-    d.run(executor);  // run in parallel
+    Portage::UberDriver<3,
+                       Wonton::Flat_Mesh_Wrapper<>, 
+                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
+                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+    d(source_mesh_flat, source_state_flat,
+        targetMeshWrapper, targetStateWrapper, &mpiexecutor);
+        
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+
+
+    d.interpolate<double, Portage::Entity_kind::CELL,
+                  Portage::Interpolate_2ndOrder>("density", "density",
+    					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
+                     Portage::Boundary_Limiter_type::BND_NOLIMITER);
   }
  else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
@@ -717,7 +775,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
    dtype);
 } //run
 
-TEST(MMDriver2D, Layer_Const1stOrder)
+TEST(UberDriver2D, Layer_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -740,7 +798,7 @@ TEST(MMDriver2D, Layer_Const1stOrder)
   run<2, LAYER>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
-TEST(MMDriver2D, Layer_Linear2ndOrder)
+TEST(UberDriver2D, Layer_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -763,7 +821,7 @@ TEST(MMDriver2D, Layer_Linear2ndOrder)
   run<2, LAYER>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-TEST(MMDriver3D, Layer_Const1stOrder)
+TEST(UberDriver3D, Layer_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -787,7 +845,7 @@ TEST(MMDriver3D, Layer_Const1stOrder)
 }
 
 
-TEST(MMDriver3D, Layer_Linear2ndOrder)
+TEST(UberDriver3D, Layer_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -811,7 +869,7 @@ TEST(MMDriver3D, Layer_Linear2ndOrder)
 }
 
 
-TEST(MMDriver2D, NestedBox_Const1stOrder)
+TEST(UberDriver2D, NestedBox_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -834,7 +892,7 @@ TEST(MMDriver2D, NestedBox_Const1stOrder)
   run<2, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
-TEST(MMDriver2D, NestedBox_Linear2ndOrder)
+TEST(UberDriver2D, NestedBox_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -857,7 +915,7 @@ TEST(MMDriver2D, NestedBox_Linear2ndOrder)
   run<2, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-TEST(MMDriver3D, NestedBox_Const1stOrder)
+TEST(UberDriver3D, NestedBox_Const1stOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -880,7 +938,7 @@ TEST(MMDriver3D, NestedBox_Const1stOrder)
   run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, CONSTANT);
 }
 
-TEST(MMDriver3D, NestedBox_Linear2ndOrder)
+TEST(UberDriver3D, NestedBox_Linear2ndOrder)
 {
   // Create source/target meshes and states
   std::shared_ptr<Jali::Mesh> sourceMesh;

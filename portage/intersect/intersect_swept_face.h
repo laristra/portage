@@ -78,8 +78,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructorDriver> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -98,8 +98,8 @@ namespace Portage {
                        TargetMesh const &target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
@@ -171,7 +171,7 @@ namespace Portage {
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
@@ -232,8 +232,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor2D> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -252,8 +252,8 @@ namespace Portage {
                        TargetMesh const &target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
@@ -401,11 +401,14 @@ namespace Portage {
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
+
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifdef DEBUG
       //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
       assert(cface_id != nfaces);
+#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
@@ -520,7 +523,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
       int const nb_edges = edges.size();
 
-#if DEBUG
+#ifdef DEBUG
       // ensure that we have the same face/edge index for source and target.
       std::vector<int> target_edges, target_dirs, target_nodes;
       target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
@@ -539,7 +542,7 @@ namespace Portage {
         nodes.clear();
         source_mesh_.face_get_nodes(edges[i], &nodes);
 
-#if DEBUG
+#ifdef DEBUG
         // ensure that we have the same nodal indices for source and target.
         target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
         int const nb_source_nodes = nodes.size();
@@ -648,7 +651,7 @@ namespace Portage {
     TargetMesh const &target_mesh_;
     SourceState const &source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
@@ -711,8 +714,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructor3D> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -731,8 +734,8 @@ namespace Portage {
                        TargetMesh const& target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
@@ -893,11 +896,14 @@ namespace Portage {
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-      int nfaces = cfaces.size();
+
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifdef DEBUG
       //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
       assert(cface_id != nfaces);
+#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
@@ -1218,7 +1224,7 @@ namespace Portage {
     TargetMesh const& target_mesh_;
     SourceState const& source_state_;
     int material_id_ = -1;
-    NumericTolerances_t num_tols_;
+    NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
 #ifdef HAVE_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;

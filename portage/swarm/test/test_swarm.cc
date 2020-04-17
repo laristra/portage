@@ -329,7 +329,6 @@ TEST_F(SwarmTest, Multiple_2D) {
 
   ASSERT_EQ(swarm.num_particles(), 100);
 
-  int m = 0;
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 25; ++j) {
       auto p = swarm.get_particle_coordinates(i * 25 + j);

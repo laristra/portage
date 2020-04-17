@@ -11,6 +11,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef DUMMY_INTERFACE_RECONSTRUCTOR_H
 #define DUMMY_INTERFACE_RECONSTRUCTOR_H
 
+#include "portage-config.h"
 #include "wonton/support/Point.h"
 
 #ifdef HAVE_TANGRAM
@@ -28,7 +29,7 @@ template<class Mesh_Wrapper,
          class MatPoly_Clipper=void>
 class DummyInterfaceReconstructor {
  public:
-  DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
+  explicit DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
 
 #ifdef HAVE_TANGRAM
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh,
@@ -48,7 +49,9 @@ class DummyInterfaceReconstructor {
   void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
 
 #ifdef HAVE_TANGRAM
-  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {}
+  std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {
+    throw std::runtime_error("not implemented");
+  }
 #endif
 
 };

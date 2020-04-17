@@ -31,7 +31,7 @@ TEST(search_kdtree2, cell) {
 
     // there should be four candidate source cells, in a square
     // compute scbase = index of lower left source cell
-    ASSERT_EQ(4, candidates.size());
+    ASSERT_EQ(unsigned(4), candidates.size());
     const int tx = tc % 2;
     const int ty = tc / 2;
     const int scbase = tx + ty * 3;
@@ -61,7 +61,7 @@ TEST(search_kdtree2, node) {
 
     // there should be four candidate source nodes, in a square
     // compute snbase = index of lower left source node
-    ASSERT_EQ(4, candidates.size());
+    ASSERT_EQ(unsigned(4), candidates.size());
     const int tx = tc % 3;
     const int ty = tc / 3;
     const int snbase = tx + ty * 4;

@@ -110,7 +110,7 @@ public:
     // check all fields in all states
     for (auto&& state : states) {
       auto current = state->names();
-      if (current.size() == num_fields) {
+      if (current.size() == unsigned(num_fields)) {
         for (int i = 0; i < num_fields; ++i)
           if (names[i] != current[i])
             throw std::runtime_error("field names do not match");
@@ -179,7 +179,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_local_points_);
+    assert(value.size() == unsigned(num_local_points_));
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];
@@ -205,7 +205,7 @@ public:
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
-    assert(value.size() == num_local_points_);
+    assert(value.size() == unsigned(num_local_points_));
 
     if (std::is_integral<T>::value) {
       auto& field = fields_int_[name];

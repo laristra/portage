@@ -50,10 +50,10 @@ namespace Pairs {
     Each element of a vpile is a pile.
   */
 
-  class vpile: public valarray< pile > {
+class vpile: public std::valarray<pile> {
   private:
+    size_t nvec;  ///< number of elements
     size_t nval;  ///< size of piles
-    size_t nvec;  ///< number of elements 
  
   public:
     // constructors
@@ -73,7 +73,7 @@ namespace Pairs {
     vector<size_t> size() const;
 
     // change sizes
-    void resize(const size_t, const size_t);
+    void resize(size_t, size_t);
   };
 
   //\///////////////////////////////////////////////////////////////////////////
@@ -102,8 +102,8 @@ namespace Pairs {
   /** \code vpile a(m,n,data) \endcode converts a two-dimensional
       C-style array to a vpile with \code a[i][j]=data[i][j] \endcode
   */
-  inline vpile::vpile(size_t m, size_t n, double** data) : 
-		nvec(m), nval(n), valarray< pile >(pile(n), m)
+  inline vpile::vpile(size_t m, size_t n, double** data) :
+    std::valarray<pile>(pile(n), m), nvec(m), nval(n)
     {
       for (size_t i=0; i<m; i++) for (size_t j=0; j<n; j++) {
 	(*this)[i][j] = data[i][j];
@@ -111,12 +111,12 @@ namespace Pairs {
     }
 	
   /** default destructor */
-  inline vpile::~vpile(){}
+  inline vpile::~vpile()= default;
 
   /** unsurprising operator= */
   inline vpile& vpile::operator=(const vpile& vp) {
     nval=vp.nval; nvec=vp.nvec; 
-    vpile& vpnc=const_cast<vpile&>(vp);
+    auto& vpnc=const_cast<vpile&>(vp);
     *(dynamic_cast< valarray<pile>* >(this))=
       dynamic_cast< valarray<pile>& >(vpnc); 
     return *this;
@@ -188,7 +188,7 @@ namespace Pairs {
     vector<size_t> size() const;
 
     // change sizes
-    void resize(const size_t, const size_t, const size_t);
+    void resize(size_t, size_t, size_t);
   };
 
   //\///////////////////////////////////////////////////////////////////////////
@@ -230,12 +230,12 @@ namespace Pairs {
     }
 	
   /** default destructor */
-  inline vvpile::~vvpile(){}
+  inline vvpile::~vvpile() = default;
 
   /** unsurprising operator= */
   inline vvpile& vvpile::operator=(const vvpile& vvp) {
     nval=vvp.nval; nvec1=vvp.nvec1; nvec0=vvp.nvec0;
-    vvpile& vvpnc=const_cast<vvpile&>(vvp);
+    auto& vvpnc=const_cast<vvpile&>(vvp);
     *(dynamic_cast< valarray<vpile>* >(this))=
       dynamic_cast< valarray<vpile>& >(vvpnc);
     return *this;
@@ -358,12 +358,12 @@ namespace Pairs {
     }
 	
   /** default destructor */
-  inline vvvpile::~vvvpile(){}
+  inline vvvpile::~vvvpile() = default;
 
   /** unsurprising operator= */
   inline vvvpile& vvvpile::operator=(const vvvpile& vvvp) {
     nval=vvvp.nval; nvec1=vvvp.nvec1; nvec0=vvvp.nvec0;
-    vvvpile& vvvpnc=const_cast<vvvpile&>(vvvp);
+    auto& vvvpnc=const_cast<vvvpile&>(vvvp);
     *(dynamic_cast< valarray<vvpile>* >(this))=
       dynamic_cast< valarray<vvpile>& >(vvvpnc);
     return *this;

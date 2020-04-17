@@ -112,8 +112,8 @@ class CoreDriverBase {
                                     CoordSys>;
   
  public:
-  CoreDriverBase() {}
-  virtual ~CoreDriverBase() {}  // Necessary
+  CoreDriverBase() = default;
+  virtual ~CoreDriverBase() = default;  // Necessary
   
   // Entity kind that a derived class is defined on
   virtual Entity_kind onwhat() = 0;
@@ -523,8 +523,10 @@ class CoreDriver : public CoreDriverBase<D,
              TargetMesh const& target_mesh,
              TargetState& target_state,
              Wonton::Executor_type const *executor = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         executor_(executor)
   {
 #ifdef PORTAGE_ENABLE_MPI
@@ -545,7 +547,7 @@ class CoreDriver : public CoreDriverBase<D,
   CoreDriver & operator = (const CoreDriver &) = delete;
 
   /// Destructor
-  ~CoreDriver() {}
+  ~CoreDriver() = default;
 
   /// What entity kind is this defined on?
   Entity_kind onwhat() {return ONWHAT;}
@@ -606,7 +608,7 @@ class CoreDriver : public CoreDriverBase<D,
     }
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
-    else if (num_tols_.user_tolerances == false) {
+    else if (!num_tols_.user_tolerances) {
       num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
       num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
     }
@@ -687,12 +689,10 @@ class CoreDriver : public CoreDriverBase<D,
     >
   std::vector<Portage::vector<std::vector<Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
-      
-    int nmats = source_state_.num_materials();
-
 
 #ifdef HAVE_TANGRAM
 
+    int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
 
     assert(typeid(InterfaceReconstructorType<SourceMesh, D,
@@ -717,8 +717,7 @@ class CoreDriver : public CoreDriverBase<D,
                           Matpoly_Splitter,
                           Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
                                            reconstructor_all_convex_));
-    
-    int nsourcecells = source_mesh_.num_entities(CELL, ALL);
+
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
 
@@ -794,7 +793,7 @@ class CoreDriver : public CoreDriverBase<D,
       // LOOK AT INTERSECTION WEIGHTS TO DETERMINE WHICH TARGET CELLS
       // WILL GET NEW MATERIALS
 
-      int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
+      ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
       for (int c = 0; c < ntargetcells; c++) {
         std::vector<Weights_t> const& cell_mat_sources_and_weights =
@@ -914,7 +913,7 @@ class CoreDriver : public CoreDriverBase<D,
     int material_id = 0,
     const Part<SourceMesh, SourceState>* source_part = nullptr) const {
 
-    int size = 0;
+    int nallent = 0;
 #ifdef HAVE_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
@@ -928,14 +927,22 @@ class CoreDriver : public CoreDriverBase<D,
 
     if (multimat) {
       if (interface_reconstructor_) {
-        source_state_.mat_get_cells(material_id, &mat_cells);
-        size = mat_cells.size();
+        std::vector<int> mat_cells_all;
+        source_state_.mat_get_cells(material_id, &mat_cells_all);
+        nallent = mat_cells_all.size();
+
+        // Filter out GHOST cells
+        // SHOULD BE IN HANDLED IN THE STATE MANAGER (See ticket LNK-1589)
+        mat_cells.reserve(nallent);
+        for (auto const& c : mat_cells_all)
+          if (source_mesh_.cell_get_type(c) == PARALLEL_OWNED)
+            mat_cells.push_back(c);
       }
       else
         throw std::runtime_error("interface reconstructor not set");
     } else /* single material */ {
 #endif
-      size = source_mesh_.num_entities(ONWHAT);
+      nallent = source_mesh_.num_entities(ONWHAT, ALL);
 #ifdef HAVE_TANGRAM
     }
 #endif
@@ -951,20 +958,32 @@ class CoreDriver : public CoreDriverBase<D,
                     limiter_type, boundary_limiter_type, source_part);
 #endif
 
-    // create the field
-    Portage::vector<Vector<D>> gradient_field(size);
+    // create the field (material cell indices have owned and ghost
+    // cells mixed together; so we have to have a vector of size
+    // owned+ghost and fill in the right entries; the ghost entries
+    // are zeroed out)
+    Vector<D> zerovec;
+    Portage::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
 #ifdef HAVE_TANGRAM
     if (multimat) {
+      // no need for this to be Portage::vector as it will be copied out
+      std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
+      
       kernel.set_material(material_id);
       Portage::transform(mat_cells.begin(),
                          mat_cells.end(),
-                         gradient_field.begin(), kernel);
+                         owned_gradient_field.begin(), kernel);
+      int i = 0;
+      for (auto const& c : mat_cells) {
+        int cm = source_state_.cell_index_in_material(c, material_id);
+        gradient_field[cm] = owned_gradient_field[i++];
+      }
     } else {
 #endif
-      Portage::transform(source_mesh_.begin(ONWHAT),
-                         source_mesh_.end(ONWHAT),
+      Portage::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+                         source_mesh_.end(ONWHAT, PARALLEL_OWNED),
                          gradient_field.begin(), kernel);
 #ifdef HAVE_TANGRAM
     }
@@ -1088,11 +1107,12 @@ class CoreDriver : public CoreDriverBase<D,
     // to prevent bugs when interpolating values:
     // check that each entity id is within the
     // mesh entity index space.
-    
-    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
-    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
+
+#ifdef DEBUG
+    int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
+    int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
     Portage::for_each(source_part.cells().begin(),
                       source_part.cells().end(),
@@ -1101,8 +1121,8 @@ class CoreDriver : public CoreDriverBase<D,
     Portage::for_each(target_part.cells().begin(),
                       target_part.cells().end(),
                       [&](int current){ assert(current <= max_target_id); });
+#endif
 
-    int const target_mesh_size = sources_and_weights.size();
     int const target_part_size = target_part.size();
 
     // 2. Filter intersection weights list.
@@ -1425,8 +1445,7 @@ class CoreDriver : public CoreDriverBase<D,
     for (int m = 0; m < nmats; m++) {
       std::vector<int> cellids;
       source_state_.mat_get_cells(m, &cellids);
-      for (int ic = 0; ic < cellids.size(); ic++) {
-        int c = cellids[ic];
+      for (int c : cellids) {
         int nmatc = cell_num_mats[c];
         cell_mat_ids_full[c*nmats+nmatc] = m;
         cell_num_mats[c]++;
@@ -1435,16 +1454,25 @@ class CoreDriver : public CoreDriverBase<D,
 
       double const * matfracptr;
       source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
-      for (int ic = 0; ic < cellids.size(); ic++)
+      int const num_cell_ids = cellids.size();
+      for (int ic = 0; ic < num_cell_ids; ic++)
         cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
 
       Wonton::Point<D> const *matcenvec;
+      
+      // handle the case where we don't have centroids in the state manager at all
+      if (source_state_.get_entity("mat_centroids")==Entity_kind::UNKNOWN_KIND) {
+        have_centroids = false;
+        continue;
+      }	
+      
       source_state_.mat_get_celldata("mat_centroids", m, &matcenvec);
-      if (cellids.size() && !matcenvec)
+      if (cellids.size() && !matcenvec) {
         have_centroids = false;  // VOF
-      else
-        for (int ic = 0; ic < cellids.size(); ic++)
+      } else {
+        for (int ic = 0; ic < num_cell_ids; ic++)
           cell_mat_centroids_full[cellids[ic]*nmats+m] = matcenvec[ic];
+      }
     }
 
     // At this point nvals contains the number of non-zero volume

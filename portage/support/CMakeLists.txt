@@ -16,6 +16,7 @@ set(support_HEADERS
     operator.h
     operator_references.h
     faceted_setup.h
+    timer.h
     PARENT_SCOPE
 )
 

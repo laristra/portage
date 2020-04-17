@@ -25,18 +25,21 @@ namespace Portage {
   @returns std::vector<double>--area, mx, my
 */
 inline
-std::vector<double> areaAndMomentPolygon(const std::vector<Wonton::Point<2>> poly){
+std::vector<double> areaAndMomentPolygon(std::vector<Wonton::Point<2>> const& poly){
   double area = 0;
   double cx = 0;
   double cy = 0;
   std::vector <double> ret;
-  for(int i=0;i<poly.size()-1;i++){
+
+  int lastIndex = poly.size()-1;
+
+  for(int i=0; i < lastIndex; i++){
     double a = (poly[i][0]*poly[i+1][1]-poly[i+1][0]*poly[i][1]);
     area+=a;
     cx+= (poly[i][0]+poly[i+1][0])*a;
     cy+= (poly[i][1]+poly[i+1][1])*a;
   }
-  int lastIndex = poly.size()-1;
+
   //close the polygon
   double a = poly[lastIndex][0]*poly[0][1] - poly[0][0]*poly[lastIndex][1];
   area+= a;
@@ -118,7 +121,7 @@ std::vector<std::vector<double> > operator() (const int cellA, const int cellB) 
 }
 
 /// Default constructor.
-IntersectClipper() {}
+IntersectClipper() = default;
 
 /// Copy constructor (disabled)
 IntersectClipper(const IntersectClipper &) = delete;
