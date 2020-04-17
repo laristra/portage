@@ -549,7 +549,12 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   for (int c = 0; c < nsrccells; c++) {
     std::vector<Wonton::Point<3>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
-
+    
+    /*std::cout<<"cell "<<c<<":\n"; 
+    for (int nc = 0; nc < ccoords.size(); nc++)
+	std::cout<<"coords["<<nc<<"] = "<<ccoords[nc][0]<<" "<<ccoords[nc][1]
+		 <<" "<<ccoords[nc][2]<<std::endl;
+    */
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
     Wonton::Point<3> cell_lo, cell_hi;
@@ -611,6 +616,9 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
       mass += rho[ic]*cellvol;
     }
 
+    /*for (int ic = 0; ic < matcells.size(); ic++)
+      std::cout<<"m "<<m<<", src cell "<<matcells[ic]<<std::endl;
+    */ 
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
   }
@@ -694,13 +702,39 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   //------------------------------------------------------------------
   // Exact analytic volume fractions on the target mesh
   //------------------------------------------------------------------
-  //  ___________
-  // |   |0: |  2|
-  // |2__|5:_|8__|
-  // |   | :.|...|
-  // |1__\4:_|7_1|
-  // |   / : |   |
-  // |0__|3:_|6__|
+  // material layout
+  // ---------------
+  // |   \  :  | 2  |
+  // ---------------
+  // |  0 | : .|....|
+  // ---------------
+  // |   /  :  | 1  |
+  // ---------------
+  //
+  // cells: index z = 0 
+  /// --------------
+  // | 6  \  15 | 24 |
+  // ---------------
+  // | 3   | 12 | 21 |
+  // ---------------
+  // | 0  /  9  | 18 |
+  // ----------------
+  // index z = 1
+  /// ----------------
+  // | 7 \  16 | 25 |
+  // -----------------
+  // | 4  | 13 | 22 |
+  // -----------------
+  // | 1 /  10 | 19 |
+  // -----------------
+  // index z = 2
+  /// ----------------
+  // | 8 \  17 | 26 |
+  // -----------------
+  // | 5  | 14 | 23 |
+  // -----------------
+  // | 2 /  11 | 20 |
+  // -----------------
 
   // Difference between the source volume fraction of 1/2 and a target volume
   // fraction in a multi-material cell for this particular case. For target,
@@ -714,58 +748,55 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   double vf_diff1 = 1./2.-(CVOL/2.-CVOL1)/(CVOL-CVOL1);
   double vf_diff2 = 1./2.-(CVOL/2.-CVOL2)/(CVOL-CVOL2);
 
-  //mat 0: cells 0, 1, 2, 3, 4, 5, 
-  //             9, 10, 11, 12, 13, 14,
+  //mat 0: cells 0, 1, 2, 3, 4, 5, 6, 7, 8 
+  //             9, 10, 11, 12, 13, 14, 15, 16, 17
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);            
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);            
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);             
+  matvf_trg[0].push_back(1.0);            
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+  matvf_trg[0].push_back(0.5 - vf_diff2);   
+  matvf_trg[0].push_back(0.5 - vf_diff2);   
+  matvf_trg[0].push_back(0.5 - vf_diff2);   
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+  matvf_trg[0].push_back(0.5 - vf_diff1);   
+
+  //mat 0: cells 9, 10, 11, 12, 13, 14, 
   //             18, 19, 20, 21, 22, 23
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);            
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-  matvf_trg[0].push_back(0.5 - vf_diff2);   
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);            
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-  matvf_trg[0].push_back(0.5 - vf_diff2);   
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);             
-  matvf_trg[0].push_back(1.0);            
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-  matvf_trg[0].push_back(0.5 - vf_diff2);   
-  matvf_trg[0].push_back(0.5 - vf_diff1);   
-
-  //mat 0: cells 3, 4, 6, 7 
-  //             12, 13, 15, 16
-  //             21, 22, 24, 25
+  matvf_trg[1].push_back(0.5 + vf_diff1);      
+  matvf_trg[1].push_back(0.5 + vf_diff1);      
   matvf_trg[1].push_back(0.5 + vf_diff1);      
   matvf_trg[1].push_back((0.5+vf_diff2)/2.);
+  matvf_trg[1].push_back((0.5+vf_diff2)/2.);
+  matvf_trg[1].push_back((0.5+vf_diff2)/2.);
+  matvf_trg[1].push_back(1.0);             
+  matvf_trg[1].push_back(1.0);             
   matvf_trg[1].push_back(1.0);             
   matvf_trg[1].push_back(0.5);            
-  matvf_trg[1].push_back(0.5 + vf_diff1);      
-  matvf_trg[1].push_back((0.5+vf_diff2)/2.);
-  matvf_trg[1].push_back(1.0);             
   matvf_trg[1].push_back(0.5);            
-  matvf_trg[1].push_back(0.5 + vf_diff1);      
-  matvf_trg[1].push_back((0.5+vf_diff2)/2.);
-  matvf_trg[1].push_back(1.0);             
   matvf_trg[1].push_back(0.5);            
 
-  //mat 0: cells 4, 5, 7, 8 
-  //             13, 14, 16, 17
-  //             22, 23, 25, 26
+  //mat 0: cells 12, 13, 14, 15, 16, 17, 
+  //             21, 22, 23, 24, 25, 26
+  matvf_trg[2].push_back((0.5+vf_diff2)/2.);
+  matvf_trg[2].push_back((0.5+vf_diff2)/2.);
   matvf_trg[2].push_back((0.5+vf_diff2)/2.);
   matvf_trg[2].push_back(0.5+vf_diff1);             
+  matvf_trg[2].push_back(0.5+vf_diff1);             
+  matvf_trg[2].push_back(0.5+vf_diff1);             
+  matvf_trg[2].push_back(0.5);             
+  matvf_trg[2].push_back(0.5);             
   matvf_trg[2].push_back(0.5);             
   matvf_trg[2].push_back(1.0);             
-  matvf_trg[2].push_back((0.5+vf_diff2)/2.);
-  matvf_trg[2].push_back(0.5+vf_diff1);             
-  matvf_trg[2].push_back(0.5);             
   matvf_trg[2].push_back(1.0);             
-  matvf_trg[2].push_back((0.5+vf_diff2)/2.);
-  matvf_trg[2].push_back(0.5+vf_diff1);             
-  matvf_trg[2].push_back(0.5);             
   matvf_trg[2].push_back(1.0);             
 
   //-------------------------------------------------------------------
@@ -801,6 +832,9 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<std::endl;
   }
   
 
@@ -811,14 +845,22 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
+ //   for (int ic = 0; ic < nmatcells; ic++)
+  //    ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
+    
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
+      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<" vf (trg, rm) :"
+      <<matvf_trg[m][ic]<<" "<< matvf_remap[ic]<<std::endl; 
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+    //for (int ic = 0; ic < nmatcells; ic++)
+     // ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
+
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
+      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<" density (trg, rm) :"
+      <<matrho[m]<<" "<< density_remap[ic]<<std::endl; 
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
