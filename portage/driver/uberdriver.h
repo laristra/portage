@@ -821,11 +821,9 @@ class UberDriver {
 
   // Component variables
   bool distributed_ = false;  // default is serial
-
-#ifdef PORTAGE_ENABLE_MPI
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
   Wonton::Executor_type const *executor_;
+#ifdef PORTAGE_ENABLE_MPI
+  int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
