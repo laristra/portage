@@ -119,6 +119,11 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
+#ifdef DEBUG
+  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
+                                    Wonton::Point<2>(0.75,0.25),
+                                    Wonton::Point<2>(0.75,0.75)};
+#endif
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
