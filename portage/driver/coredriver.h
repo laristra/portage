@@ -689,12 +689,10 @@ class CoreDriver : public CoreDriverBase<D,
     >
   std::vector<Portage::vector<std::vector<Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
-      
-    int nmats = source_state_.num_materials();
-
 
 #ifdef HAVE_TANGRAM
 
+    int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
 
     assert(typeid(InterfaceReconstructorType<SourceMesh, D,

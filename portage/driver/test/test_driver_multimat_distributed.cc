@@ -1,3 +1,9 @@
+/*
+ * This file is part of the Ristra portage project.
+ * Please see the license file at the root of this repository, or at:
+ * https://github.com/laristra/portage/blob/master/LICENSE
+*/
+
 #include "portage/support/portage.h"
 #ifdef HAVE_TANGRAM
 
@@ -396,7 +402,6 @@ void compute_material_fields_on_mesh(
 
     std::vector<double> xmoments;
     for (int m = 0; m < mdata.nmats; m++) {
-     int cnt = 0; 
      double vol = 0.0;    
      Portage::Point<dim> mcen; 
      for (int d = 0; d < dim; d++) mcen[d] = 0.0; 
@@ -449,55 +454,54 @@ void check_fields_after_remap(
     matcells_ref, matvf_ref, matcen_ref, matrho_ref, dtype); 
 
     if (dbg_print) {
-     for (int m = 0; m < nmats; m++) {
- 
-      // Get target material cells and their vf, centroids, density values. 
-      std::vector<int> matcells_remap; 
-      targetStateWrapper.mat_get_cells(m, &matcells_remap);
+      for (int m = 0; m < nmats; m++) {
 
-      double const *matvf_remap;
-      targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+        // Get target material cells and their vf, centroids, density values.
+        std::vector<int> matcells_remap;
+        double const *matvf_remap;
+        double const *matrho_remap;
+        Portage::Point<2> const *matcen_remap;
 
-      Portage::Point<2> const *matcen_remap;
-      targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+        targetStateWrapper.mat_get_cells(m, &matcells_remap);
+        targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+        targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+        targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
-      double const *matrho_remap;
-      targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
+        // Print details
+        std::cerr<<"Mat ID "<<m<<std::endl;
+        std::cerr<<"matcells_ref.size() = "<<matcells_ref[m].size()<<
+                   ", matcells_remap.size() = "<< matcells_remap.size()<<std::endl;
 
-      // Print details   
-      std::cerr<<"Mat ID "<<m<<std::endl;
-      std::cerr<<"matcells_ref.size() = "<<matcells_ref[m].size()<<
-                 ", matcells_remap.size() = "<< matcells_remap.size()<<std::endl; 
-      
-      std::cerr<<" Reference cell id :: { vf,  centroid, density}"<<std::endl;
-      for (int c = 0; c < matcells_ref[m].size(); c++)
-      {
-        int gid = targetMeshWrapper.get_global_id(matcells_ref[m][c], Portage::Entity_kind::CELL); 
-	std::cerr<<gid<<":: { "<<matvf_ref[m][c]
-        <<", {"<<matcen_ref[m][c][0]<<", "<<matcen_ref[m][c][1]
-        <<"}, "<<matrho_ref[m][c]<<" }"<<std::endl; 
-      }
-      std::cerr<<std::endl; 
+        std::cerr<<" Reference cell id :: { vf,  centroid, density}"<<std::endl;
 
-      std::cerr<<" Remapped cell id :: { vf,  centroid, density}"<<std::endl;
-      for (int c = 0; c < matcells_remap.size(); c++)
-      {
-        int gid = targetMeshWrapper.get_global_id(matcells_remap[c], Portage::Entity_kind::CELL); 
-	std::cerr<<gid<<":: { "<<matvf_remap[c]
-        <<", {"<<matcen_remap[c][0]<<", "<<matcen_remap[c][1]
-        <<"}, "<<matrho_remap[c]<<" }"<<std::endl; 
-      }
+        int const num_current_matcells_ref = matcells_ref[m].size();
+        int const num_matcells_remap = matcells_remap.size();
+
+        for (int c = 0; c < num_current_matcells_ref; c++) {
+          int gid = targetMeshWrapper.get_global_id(matcells_ref[m][c], Wonton::CELL);
+          std::cerr << gid << ":: { " << matvf_ref[m][c] <<", {"
+                    << matcen_ref[m][c][0] <<", " << matcen_ref[m][c][1] <<"}, "
+                    << matrho_ref[m][c]<<" }" << std::endl;
+        }
+        std::cerr<<std::endl;
+
+        std::cerr<<" Remapped cell id :: { vf,  centroid, density}"<<std::endl;
+        for (int c = 0; c < num_matcells_remap; c++) {
+          int gid = targetMeshWrapper.get_global_id(matcells_remap[c], Wonton::CELL);
+          std::cerr << gid << ":: { " << matvf_remap[c] << ", {"
+                    << matcen_remap[c][0] <<", " << matcen_remap[c][1] <<"}, "
+                    << matrho_remap[c] << " }" << std::endl;
+        }
     } 
-  }
-  else {
+  } else {
 
-   //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
     // CHECK 1: Number of materials on target 
     //-----------------------------------------------------------------------
 
     ASSERT_EQ(mdata.nmats, targetStateWrapper.num_materials());
     for (int m = 0; m < nmats; m++)
-    ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
+      ASSERT_EQ(mdata.matnames[m], targetStateWrapper.material_name(m));
 
     //-----------------------------------------------------------------------
     // CHECK 2: Cells in each material on target 
@@ -509,7 +513,7 @@ void check_fields_after_remap(
       int nmatcells = matcells_remap[m].size();
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
+        ASSERT_EQ(matcells_remap[m][ic], matcells_ref[m][ic]);
     }
 
     //------------------------------------------------------------------------
@@ -523,7 +527,7 @@ void check_fields_after_remap(
       targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
+        ASSERT_NEAR( matvf_remap[ic], matvf_ref[m][ic], 1.0e-09);
 
       // MOF cannot match moments and centroids as well as it can volume
       // fractions - so use looser tolerances
@@ -547,7 +551,7 @@ void check_fields_after_remap(
       targetStateWrapper.mat_get_celldata("density", m, &matrho_remap);
 
       for (int ic = 0; ic < nmatcells; ic++)
-	ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
+        ASSERT_NEAR( matrho_remap[ic], matrho_ref[m][ic], 1.0e-10);
     }
  } //dbg_print     
 } //check_fields_after_remap
@@ -617,8 +621,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
-    double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    double volume = 0.0;
+    double mass = 0.0;
+    int const num_matcells = matcells.size();
+
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -673,8 +680,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
-  }
-  else if ((dim == 2) && (dtype == LINEAR)){
+  } else if ((dim == 2) && (dtype == LINEAR)){
     Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
 		      Portage::Interpolate_2ndOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -685,8 +691,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
-  }
-  else if ((dim == 3) && (dtype == CONSTANT)){
+  } else if ((dim == 3) && (dtype == CONSTANT)){
     Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
 		      Portage::Interpolate_1stOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -697,8 +702,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
-  }
-  else if ((dim == 3) && (dtype == LINEAR)){
+  } else if ((dim == 3) && (dtype == LINEAR)){
     Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
 		      Portage::Interpolate_2ndOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -709,8 +713,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
-  }
- else
+  } else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
 
   //-------------------------------------------------------------------
@@ -730,7 +733,7 @@ TEST(MMDriver2D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
@@ -753,7 +756,7 @@ TEST(MMDriver2D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
@@ -776,7 +779,7 @@ TEST(MMDriver3D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -800,7 +803,7 @@ TEST(MMDriver3D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -824,7 +827,7 @@ TEST(MMDriver2D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -847,7 +850,7 @@ TEST(MMDriver2D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -870,7 +873,7 @@ TEST(MMDriver3D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
@@ -893,7 +896,7 @@ TEST(MMDriver3D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
@@ -1047,7 +1050,6 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
   // mat_volfracs and mat_centroids are always imported from the state wrapper
   source_state_flat.initialize(sourceStateWrapper, {"density"});
 
-  int numpe; 
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   
   // Use a bounding box distributor to send the source cells to the target

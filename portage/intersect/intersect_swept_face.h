@@ -78,8 +78,8 @@ namespace Portage {
                        NumericTolerances_t num_tols,
                        std::shared_ptr<InterfaceReconstructorDriver> ir)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols),
         interface_reconstructor(ir) {}
 
@@ -98,8 +98,8 @@ namespace Portage {
                        TargetMesh const &target_mesh,
                        NumericTolerances_t num_tols)
       : source_mesh_(source_mesh),
-        source_state_(source_state),
         target_mesh_(target_mesh),
+        source_state_(source_state),
         num_tols_(num_tols) {}
 
     /**
