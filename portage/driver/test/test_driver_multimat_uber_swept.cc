@@ -443,41 +443,48 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
 
+  for (int n = 0; n<ntrgnodes; n++)
+  {
+    std::array<double, 3 > pnt; 
+    targetMesh->node_get_coordinates(n, &pnt);
+    std::cout<<" pnt "<<n<<": coords = "<<pnt[0]<<" "<<pnt[1]<<" "<<pnt[2]<<std::endl;
+  }
+
   // move few(8) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
 
-  targetMesh->node_get_coordinates(5, &pnt);
+  targetMesh->node_get_coordinates(20, &pnt);
   pnt[0] += DX;
-  targetMesh->node_set_coordinates(5, pnt.data());
+  targetMesh->node_set_coordinates(20, pnt.data());
   
-  targetMesh->node_get_coordinates(6, &pnt);
-  pnt[0] += DX;
-  targetMesh->node_set_coordinates(6, pnt.data());
-
   targetMesh->node_get_coordinates(21, &pnt);
   pnt[0] += DX;
   targetMesh->node_set_coordinates(21, pnt.data());
-  
+
   targetMesh->node_get_coordinates(22, &pnt);
   pnt[0] += DX;
   targetMesh->node_set_coordinates(22, pnt.data());
-
-  targetMesh->node_get_coordinates(37, &pnt);
-  pnt[0] += DX;
-  targetMesh->node_set_coordinates(37, pnt.data());
   
-  targetMesh->node_get_coordinates(38, &pnt);
+  targetMesh->node_get_coordinates(23, &pnt);
   pnt[0] += DX;
-  targetMesh->node_set_coordinates(38, pnt.data());
+  targetMesh->node_set_coordinates(23, pnt.data());
 
-  targetMesh->node_get_coordinates(53, &pnt);
+  targetMesh->node_get_coordinates(24, &pnt);
   pnt[0] += DX;
-  targetMesh->node_set_coordinates(53, pnt.data());
+  targetMesh->node_set_coordinates(24, pnt.data());
   
-  targetMesh->node_get_coordinates(54, &pnt);
+  targetMesh->node_get_coordinates(25, &pnt);
   pnt[0] += DX;
-  targetMesh->node_set_coordinates(54, pnt.data());
+  targetMesh->node_set_coordinates(25, pnt.data());
+
+  targetMesh->node_get_coordinates(26, &pnt);
+  pnt[0] += DX;
+  targetMesh->node_set_coordinates(26, pnt.data());
+  
+  targetMesh->node_get_coordinates(27, &pnt);
+  pnt[0] += DX;
+  targetMesh->node_set_coordinates(27, pnt.data());
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
