@@ -443,13 +443,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
                                           Jali::Entity_type::ALL);
 
-  for (int n = 0; n<ntrgnodes; n++)
-  {
-    std::array<double, 3 > pnt; 
-    targetMesh->node_get_coordinates(n, &pnt);
-    std::cout<<" pnt "<<n<<": coords = "<<pnt[0]<<" "<<pnt[1]<<" "<<pnt[2]<<std::endl;
-  }
-
   // move few(8) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
@@ -557,11 +550,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     std::vector<Wonton::Point<3>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
     
-    /*std::cout<<"cell "<<c<<":\n"; 
-    for (int nc = 0; nc < ccoords.size(); nc++)
-	std::cout<<"coords["<<nc<<"] = "<<ccoords[nc][0]<<" "<<ccoords[nc][1]
-		 <<" "<<ccoords[nc][2]<<std::endl;
-    */
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
     Wonton::Point<3> cell_lo, cell_hi;
@@ -623,9 +611,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
       mass += rho[ic]*cellvol;
     }
 
-    /*for (int ic = 0; ic < matcells.size(); ic++)
-      std::cout<<"m "<<m<<", src cell "<<matcells[ic]<<std::endl;
-    */ 
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
   }
@@ -839,9 +824,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
-
-    for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<std::endl;
   }
   
 
@@ -852,22 +834,14 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     double const *matvf_remap;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
- //   for (int ic = 0; ic < nmatcells; ic++)
-  //    ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
-    
     for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<" vf (trg, rm) :"
-      <<matvf_trg[m][ic]<<" "<< matvf_remap[ic]<<std::endl; 
+     ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
-    //for (int ic = 0; ic < nmatcells; ic++)
-     // ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
-
     for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<"m "<<m<<", cell "<<matcells_remap[m][ic]<<" density (trg, rm) :"
-      <<matrho[m]<<" "<< density_remap[ic]<<std::endl; 
+      ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
