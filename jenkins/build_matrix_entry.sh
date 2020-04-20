@@ -111,7 +111,7 @@ export SHELL=/bin/sh
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
-module load cmake # 3.13 or higher is required
+module load cmake/3.14.0 # 3.13 or higher is required
 
 if [[ -n "$mpi_flags" ]] ; then
   module load ${mpi_module}

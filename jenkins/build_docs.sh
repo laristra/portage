@@ -29,7 +29,7 @@ export MODULEPATH=""
 
 # Setup modules
 . /opt/local/packages/Modules/default/init/sh
-module load gcc/6.4.0 openmpi/${openmpi_version} cmake
+module load gcc/6.4.0 openmpi/${openmpi_version} cmake/3.14.0
 
 # the system doxygen and LaTeX are too old; use these instead
 export PATH=/usr/local/codes/ngc/home/cmalone/texlive/2016/bin/x86_64-linux/:$PATH

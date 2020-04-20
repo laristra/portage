@@ -142,7 +142,7 @@ TPL_PREFIX=/usr/projects/ngc/private
 
 # load the correct boost, compiler, and openmpi
 module purge
-module load cmake openmpi/${MPI_VERSION}-intel_${INTEL_VERSION} boost/${BOOST_VERSION}
+module load cmake/3.15.3 openmpi/${MPI_VERSION}-intel_${INTEL_VERSION} boost/${BOOST_VERSION}
 
 cmake \
     -D CMAKE_BUILD_TYPE=Release \
@@ -176,7 +176,7 @@ TANGRAM_VERSION=new-cmake
 
 TPL_PREFIX=/usr/projects/ngc/private
 
-module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
 
 
 mkdir build
@@ -208,7 +208,7 @@ MPI_VERSION=2.1.2
 WONTON_VERSION=new-cmake
 TANGRAM_VERSION=new-cmake
 
-module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
 TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.8-intel-18.0.5-openmpi-2.1.2-thrust
 mkdir build-thrust
 cd build-thrust
@@ -243,7 +243,7 @@ TANGRAM_VERSION=new-cmake
 
 TPL_PREFIX=/usr/local/codes/ngc/private
 
-module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.0
 mkdir build
 cd build
 cmake \
