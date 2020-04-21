@@ -292,8 +292,10 @@ class UberDriver {
     @param min_absolute_volume selected minimal volume
   */
   void set_num_tols(double min_absolute_distance, double min_absolute_volume) {
-    driver_cell_->template set_num_tols<CELL>(min_absolute_distance, min_absolute_volume);
-    driver_node_->template set_num_tols<NODE>(min_absolute_distance, min_absolute_volume);
+    if (remap_kind_[CELL])
+      driver_cell_->template set_num_tols(min_absolute_distance, min_absolute_volume);
+    if (remap_kind_[NODE])
+      driver_node_->template set_num_tols(min_absolute_distance, min_absolute_volume);
   }
   
   /*!
@@ -304,8 +306,8 @@ class UberDriver {
     @param num_tols     struct of selected numerical tolerances
   */
   void set_num_tols(const NumericTolerances_t& num_tols) {
-    driver_cell_->template set_num_tols<CELL>(num_tols);
-    driver_node_->template set_num_tols<NODE>(num_tols);
+    if (remap_kind_[CELL]) driver_cell_->template set_num_tols(num_tols);
+    if (remap_kind_[NODE]) driver_node_->template set_num_tols(num_tols);
   }
 
   /*!
@@ -390,8 +392,8 @@ class UberDriver {
     argument.
   */
   void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
+    assert(remap_kind_[CELL]);
     driver_cell_->set_interface_reconstructor_options(all_convex, tols);
   }
 
@@ -419,6 +421,7 @@ class UberDriver {
     >
   std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
+    assert(remap_kind_[CELL]);
     mat_intersection_completed_ = true;
     return driver_cell_->template intersect_materials<Intersect>(candidates);
   }
@@ -832,18 +835,21 @@ class UberDriver {
 
   void instantiate_core_drivers(Wonton::Executor_type const *executor = nullptr) {
 
-    search_completed_[NODE] = false;
-    search_completed_[CELL] = false;
-    mesh_intersection_completed_[NODE] = false;
-    mesh_intersection_completed_[CELL] = false;
+    if (remap_kind_[NODE]) {
+      search_completed_[NODE] = false;
+      mesh_intersection_completed_[NODE] = false;
+      auto driver_node = new NodeDriver(source_mesh_, source_state_,
+                                        target_mesh_, target_state_, executor);
+      driver_node_ = std::unique_ptr<NodeDriver>(driver_node);
+    }
 
-    auto driver_node = new NodeDriver(source_mesh_, source_state_,
-                                      target_mesh_, target_state_, executor);
-    auto driver_cell = new CellDriver(source_mesh_, source_state_,
-                                      target_mesh_, target_state_, executor);
-
-    driver_node_ = std::unique_ptr<NodeDriver>(driver_node);
-    driver_cell_ = std::unique_ptr<CellDriver>(driver_cell);
+    if (remap_kind_[CELL]) {
+      search_completed_[CELL] = false;
+      mesh_intersection_completed_[CELL] = false;
+      auto driver_cell = new CellDriver(source_mesh_, source_state_,
+                                        target_mesh_, target_state_, executor);
+      driver_cell_ = std::unique_ptr<CellDriver>(driver_cell);
+    }
   }  // UberDriver::instantiate_core_drivers
 
 };  // UberDriver
