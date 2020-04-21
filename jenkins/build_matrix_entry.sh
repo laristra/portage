@@ -85,8 +85,8 @@ if [[ $build_type == "debug" ]]; then
 elif [[ $build_type == "serial" ]]; then
 
     mpi_flags=
-    wonton_install_suffix="-nompi"     # use serial version of wonton
-    tangram_install_suffix="-nompi"    # use serial version of tangram
+    wonton_install_suffix=     # use serial version of wonton
+    tangram_install_suffix=    # use serial version of tangram
 
 elif [[ $build_type == "thrust" ]]; then
 
