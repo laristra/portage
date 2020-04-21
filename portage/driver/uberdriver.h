@@ -123,8 +123,7 @@ class UberDriver {
               TargetMesh const& target_mesh,
               TargetState& target_state,
               std::vector<std::string> const& source_vars_to_remap,
-              Wonton::Executor_type const *executor = nullptr,
-              std::string *errmsg = nullptr)
+              Wonton::Executor_type const *executor = nullptr)
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
@@ -166,8 +165,7 @@ class UberDriver {
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
-              Wonton::Executor_type const *executor = nullptr,
-              std::string *errmsg = nullptr)
+              Wonton::Executor_type const *executor = nullptr)
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
@@ -189,7 +187,7 @@ class UberDriver {
       remap_kind_[onwhat] = true;
       Field_type fieldtype = source_state_.field_type(onwhat, source_varname);
       if (not contains(field_types_, fieldtype))
-        field_types_.push_back(fieldtype);
+        field_types_.emplace_back(fieldtype);
 
       if (fieldtype == Field_type::MULTIMATERIAL_FIELD)
         have_multi_material_fields_ = true;
@@ -238,8 +236,7 @@ class UberDriver {
     geometry)
   */
   
-  bool source_needs_redistribution(Wonton::Executor_type const *executor =
-                                   nullptr) {
+  bool source_needs_redistribution(Wonton::Executor_type const *executor = nullptr) {
     // for now if it is a distributed run, we always "redistribute"
     // even if that means copying the data into the flat mesh/state
     // but not moving data around. Eventually, we will determine if
@@ -374,7 +371,7 @@ class UberDriver {
         driver_node_->template check_mismatch(weights);
         mesh_intersection_completed_[NODE] = true;
         return weights;
-      }
+      } break;
       default: throw std::runtime_error("unsupported field type");
     }
   }
@@ -717,21 +714,18 @@ class UberDriver {
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
-                           T lower_bound, T upper_bound,
+                           T/* unused */, T/* unused */,
                            Limiter_type limiter,
                            Boundary_Limiter_type bnd_limiter,
-                           Partial_fixup_type partial_fixup_type,
-                           Empty_fixup_type empty_fixup_type,
-                           double conservation_tol,
-                           int max_fixup_iter) {
+                           Partial_fixup_type/* unused */,
+                           Empty_fixup_type/* unused */,
+                           double/* unused */,
+                           int/* unused */) {
 
     assert(source_state_.get_entity(srcvarname) == CELL);
 
-    if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
-                  srcvarname) == source_vars_to_remap_.end()) {
-      std::cerr << "Cannot remap source variable " << srcvarname <<
-          " - not specified in initial variable list in the constructor \n";
-      return;
+    if (not contains(source_vars_to_remap_, srcvarname)) {
+      throw std::runtime_error(srcvarname + " not in field variables list");
     }
 
 #ifdef HAVE_TANGRAM
