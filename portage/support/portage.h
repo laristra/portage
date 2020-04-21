@@ -23,12 +23,12 @@ Please see the license file at the root of this repository, or at:
 #include <boost/iterator/counting_iterator.hpp>
 
 #include <vector>
-#include <algorithm>
 #include <string>
 #include <limits>
 
 #endif
 
+#include <algorithm>
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 #include "wonton/support/Matrix.h"
@@ -267,6 +267,11 @@ inline void for_each(InputIterator first, InputIterator last,
 }
 
 #endif
+
+template<typename T>
+bool contains(std::vector<T> const& haystack, T const& needle) {
+  return std::find(haystack.begin(), haystack.end(), needle) != haystack.end();
+}
 
 }  // namespace Portage
 
