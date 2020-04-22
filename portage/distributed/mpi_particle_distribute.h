@@ -87,11 +87,11 @@ public:
   template<class SourceSwarm, class SourceState, class TargetSwarm, class TargetState>
   void distribute(SourceSwarm& source_swarm, SourceState& source_state,
                   TargetSwarm& target_swarm, TargetState& target_state,
-                  Portage::vector<std::vector<std::vector<double>>>& smoothing_lengths,
-                  Portage::vector<Point<dim>>& source_extents,
-                  Portage::vector<Point<dim>>& target_extents,
-                  Portage::vector<Meshfree::Weight::Kernel>& kernel_types,
-                  Portage::vector<Meshfree::Weight::Geometry>& geom_types,
+                  Wonton::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                  Wonton::vector<Point<dim>>& source_extents,
+                  Wonton::vector<Point<dim>>& target_extents,
+                  Wonton::vector<Meshfree::Weight::Kernel>& kernel_types,
+                  Wonton::vector<Meshfree::Weight::Geometry>& geom_types,
                   Meshfree::WeightCenter center = Meshfree::WeightCenter::Gather) {
     // Get the MPI communicator size and rank information
     int nb_ranks, rank;
@@ -437,7 +437,7 @@ public:
 
       //update local source field data with the received data
       {
-        vector<int> recvtmp(sourceRecvData);
+	Wonton::vector<int> recvtmp(sourceRecvData);
         source_state.extend_field(int_field_names[nvars], recvtmp);
       }
     }
@@ -471,7 +471,7 @@ public:
 
       //update local source field data with the received data
       {
-        vector<double> recvtmp(sourceRecvData);
+	Wonton::vector<double> recvtmp(sourceRecvData);
         source_state.extend_field(dbl_field_names[nvars], recvtmp);
       }
     }
