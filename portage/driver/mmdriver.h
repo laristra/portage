@@ -860,7 +860,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, CELL,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
@@ -914,7 +914,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         coredriver_cell.template intersect_materials<Intersect>(candidates);
     
     int nmatvars = src_matvar_names.size();
-    std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+    std::vector<Wonton::vector<Vector<D>>> matgradients(nmats);
 
     for (int i = 0; i < nmatvars; ++i) {
       std::string const& srcvar = src_matvar_names[i];
@@ -1080,7 +1080,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, NODE,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,

@@ -171,7 +171,7 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -324,7 +324,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -518,7 +518,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)

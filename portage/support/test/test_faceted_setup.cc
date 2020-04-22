@@ -27,9 +27,9 @@ TEST(Faceted_Setup, Simple2D) {
 
   Wonton::Simple_Mesh mesh(0., 0., 1., .1, ncells, ncells); // high aspect ratio
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing
+  Wonton::vector<std::vector<std::vector<double>>> smoothing
     (ncells * ncells, std::vector<std::vector<double>>(4, std::vector<double>(3)));
-  Portage::vector<Wonton::Point<2>> extents;
+  Wonton::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
@@ -67,9 +67,9 @@ TEST(Faceted_Setup, Simple3D) {
 
   Wonton::Simple_Mesh mesh(0., 0., 0., 1., .1, .01, ncells, ncells, ncells); // high aspect ratio
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing
+  Wonton::vector<std::vector<std::vector<double>>> smoothing
     (ncells * ncells * ncells, std::vector<std::vector<double>>(6, std::vector<double>(4)));
-  Portage::vector<Wonton::Point<3>> extents;
+  Wonton::vector<Wonton::Point<3>> extents;
   double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
@@ -130,9 +130,9 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
   mesh.transform<2>(affine);
   // set smoothing
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing
+  Wonton::vector<std::vector<std::vector<double>>> smoothing
     (ncells * ncells, std::vector<std::vector<double>>(4, std::vector<double>(3)));
-  Portage::vector<Wonton::Point<2>> extents;
+  Wonton::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
@@ -187,9 +187,9 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
   mesh.transform<3>(affine);
   // set smoothing
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing
+  Wonton::vector<std::vector<std::vector<double>>> smoothing
     (ncells * ncells * ncells, std::vector<std::vector<double>>(6, std::vector<double>(4)));
-  Portage::vector<Wonton::Point<3>> extents;
+  Wonton::vector<Wonton::Point<3>> extents;
   double factor = 1.5, bfactor = 1.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
@@ -256,9 +256,9 @@ TEST(Faceted_Setup, Simple2DFace) {
 
   Wonton::Simple_Mesh mesh(0., 0., 1., .1, ncells, ncells); // high aspect ratio
   Wonton::Simple_Mesh_Wrapper wrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing
+  Wonton::vector<std::vector<std::vector<double>>> smoothing
     (ncells * ncells, std::vector<std::vector<double>>(4, std::vector<double>(3)));
-  Portage::vector<Wonton::Point<2>> extents;
+  Wonton::vector<Wonton::Point<2>> extents;
   double factor = 1.5, bfactor=0.5;
 
   Portage::Meshfree::Weight::faceted_setup_cell
@@ -318,8 +318,8 @@ TEST(Faceted_Setup, InternalBoundary) {
     std::make_shared<Wonton::Simple_Mesh>(-1., -1., 1., 1., ncells, ncells);
   Wonton::Simple_Mesh &mesh = *mesh_ptr;
   Wonton::Simple_Mesh_Wrapper mwrapper(mesh);
-  Portage::vector<std::vector<std::vector<double>>> smoothing;
-  Portage::vector<Wonton::Point<2>> extents;
+  Wonton::vector<std::vector<std::vector<double>>> smoothing;
+  Wonton::vector<Wonton::Point<2>> extents;
   double factor = 1.25, bfactor=0.5, dx=0.5;
 
   int const ncells2d = mesh.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);

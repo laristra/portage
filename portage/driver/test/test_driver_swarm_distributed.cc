@@ -100,7 +100,7 @@ public:
     int const nb_target = target_swarm.num_owned_particles();
 
     // Create the source data for given function
-    Portage::vector<double> source_data(nb_source);
+    Wonton::vector<double> source_data(nb_source);
 
     for (int p = 0; p < nb_source; ++p) {
       auto coord = source_swarm.get_particle_coordinates(p);
@@ -154,7 +154,7 @@ protected:
   SwarmState<dim> target_state;
 
   // smoothing lengths matrix and weight center type
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths_ {};
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths_ {};
   WeightCenter center_ = Gather;
 };
 

@@ -420,9 +420,9 @@ void run(
 
     // get the vector of material ids,volume fraction and centroid
     // with thrust turned on, these need to be portage vectors, not std::vectors
-    const Portage::vector<int> mats{map_target_cell_materials.at(c)};
-    const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-    const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+    const Wonton::vector<int> mats{map_target_cell_materials.at(c)};
+    const Wonton::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
+    const Wonton::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
     int const num_mats = mats.size();
 
     // push the size onto the number of mats

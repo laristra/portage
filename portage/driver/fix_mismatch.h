@@ -151,7 +151,7 @@ class MismatchFixer {
   /// @param[in] sources_and_weights Intersection sources and moments (vols, centroids)
   /// @returns whether the mesh domains are mismatched
   bool check_mismatch(
-    Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
+    Wonton::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
     
     // If we have already computed the mismatch, just return the result
     if (computed_mismatch_) return mismatch_;

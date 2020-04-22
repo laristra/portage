@@ -47,8 +47,8 @@ public:
   SearchSimplePoints(
     SourceSwarm const& source_swarm,
     TargetSwarm const& target_swarm,
-    Portage::vector<Point<dim>> const& source_extents,
-    Portage::vector<Point<dim>> const& target_extents,
+    Wonton::vector<Point<dim>> const& source_extents,
+    Wonton::vector<Point<dim>> const& target_extents,
     Meshfree::WeightCenter center = Meshfree::Scatter)
       : source_swarm_(source_swarm),
         target_swarm_(target_swarm),
@@ -114,8 +114,8 @@ private:
   // Aggregate data members
   SourceSwarm const& source_swarm_;
   TargetSwarm const& target_swarm_;
-  Portage::vector<Point<dim>> const& source_extents_;
-  Portage::vector<Point<dim>> const& target_extents_;
+  Wonton::vector<Point<dim>> const& source_extents_;
+  Wonton::vector<Point<dim>> const& target_extents_;
   Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
 }; // class SearchSimplePoints

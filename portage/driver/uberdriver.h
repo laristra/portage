@@ -323,7 +323,7 @@ public:
     Entity_kind ONWHAT,
     template <int, Entity_kind, class, class> class Search
     >
-  Portage::vector<std::vector<int>> search() {
+  Wonton::vector<std::vector<int>> search() {
     search_completed_[ONWHAT] = true;
     switch (ONWHAT) {
       case CELL: return driver_cell_->template search<Search>();
@@ -351,7 +351,7 @@ public:
               template <class, int, class, class> class,
               class, class> class Intersect
     >
-  Portage::vector<std::vector<Portage::Weights_t>>         // return type
+  Wonton::vector<std::vector<Portage::Weights_t>>         // return type
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
     switch (ONWHAT) {
       case CELL: {
@@ -418,8 +418,8 @@ public:
               template <class, int, class, class> class,
               class, class> class Intersect
     >
-  std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
-  intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
+  std::vector<Wonton::vector<std::vector<Portage::Weights_t>>>
+  intersect_materials(Wonton::vector<std::vector<int>> const& candidates) {
     assert(remap_kind_[CELL]);
     mat_intersection_completed_ = true;
     return driver_cell_->template intersect_materials<Intersect>(candidates);
@@ -607,7 +607,7 @@ public:
                     class, class, class> class Interpolate
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights_in,
+                            Wonton::vector<std::vector<Weights_t>> const& sources_and_weights_in,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Boundary_Limiter_type bnd_limiter,
@@ -715,7 +715,7 @@ public:
                      class, class, class> class Interpolate
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
+                           std::vector<Wonton::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
                            T/* unused */, T/* unused */,
                            Limiter_type limiter,
                            Boundary_Limiter_type bnd_limiter,
@@ -741,7 +741,7 @@ public:
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
-      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
+      std::vector<Wonton::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver_cell_->compute_source_gradient(srcvarname, limiter,
                                                              bnd_limiter, i);
@@ -806,7 +806,7 @@ public:
   //   ||                        ||     for each target entity
   //   ||                        ||           ||
   //   \/                        \/           \/
-  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_ {};
+  std::map<Entity_kind, Wonton::vector<std::vector<Weights_t>>> source_weights_ {};
 
   // Weights of intersection b/w target CELLS and source material polygons
   // Each intersection is between a target cell and material polygon in
@@ -821,7 +821,7 @@ public:
   //   ||               ||     each target entity
   //   ||               ||           ||
   //   \/               \/           \/
-  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
+  std::vector<Wonton::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
 
   /*!
     @brief Instantiate core drivers that abstract away whether we

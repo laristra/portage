@@ -185,7 +185,7 @@ namespace Portage {
         bool const use_masks = masks != nullptr;
 
         // compute the volume of each entity of the part
-        Portage::for_each(cells_.begin(), cells_.end(), [&](int s) {
+        Wonton::for_each(cells_.begin(), cells_.end(), [&](int s) {
           auto const& i = index_[s];
           auto const& volume = mesh_.cell_volume(s);
           volumes_[i] = (use_masks ? masks[s] * volume : volume);
@@ -332,12 +332,12 @@ public:
    * @return the total intersection volume.
    */
   double compute_intersect_volumes
-    (Portage::vector<entity_weights_t> const& source_weights) {
+    (Wonton::vector<entity_weights_t> const& source_weights) {
     // retrieve target entities list
     auto const& target_entities = target_.cells();
 
     // compute the intersected volume of each target part entity
-    Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
+    Wonton::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
       auto const& i = target_.index(t);
       // accumulate moments
       entity_weights_t const moments = source_weights[t];
@@ -380,7 +380,7 @@ public:
    * @param source... source entities ID and weights for each target entity.
    * @return true if a mismatch has been identified, false otherwise.
    */
-  bool check_mismatch(Portage::vector<entity_weights_t> const& source_weights) {
+  bool check_mismatch(Wonton::vector<entity_weights_t> const& source_weights) {
 
     // ------------------------------------------
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS

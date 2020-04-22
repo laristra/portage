@@ -50,8 +50,8 @@ public:
   */
   SearchPointsByCells(SourceSwarm const& source_swarm,
                       TargetSwarm const& target_swarm,
-                      Portage::vector<Point<dim>> const& source_extents,
-                      Portage::vector<Point<dim>> const& target_extents,
+                      Wonton::vector<Point<dim>> const& source_extents,
+                      Wonton::vector<Point<dim>> const& target_extents,
                       Meshfree::WeightCenter center = Meshfree::Scatter)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
@@ -142,8 +142,8 @@ private:
   // Aggregate data members
   SourceSwarm const& source_swarm_;
   TargetSwarm const& target_swarm_;
-  Portage::vector<Point<dim>> source_extents_;
-  Portage::vector<Point<dim>> target_extents_;
+  Wonton::vector<Point<dim>> source_extents_;
+  Wonton::vector<Point<dim>> target_extents_;
   std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;  // unavoidable
   Meshfree::WeightCenter center_ = Meshfree::Scatter;
 

@@ -978,7 +978,7 @@ class MPI_Bounding_Boxes {
     case, needs to get converted to gid. We always convert local ids to gids
     before distributing.
    */
-  std::vector<GID_t> to_gid(std::vector<int> const& in, vector<GID_t>const& gids) const {
+  std::vector<GID_t> to_gid(std::vector<int> const& in, std::vector<GID_t>const& gids) const {
     std::vector<GID_t> result;
     result.reserve(in.size());
     for (auto x:in) result.push_back(gids[x]);

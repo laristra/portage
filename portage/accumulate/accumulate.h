@@ -70,12 +70,12 @@ class Accumulate {
    */
   Accumulate(SourceSwarm const& source, TargetSwarm const& target,
              EstimateType estimate, WeightCenter center,
-             Portage::vector<Weight::Kernel> const& kernels,
-             Portage::vector<Weight::Geometry> const& geometries,
-             Portage::vector<std::vector<std::vector<double>>> const& smoothing,
+             Wonton::vector<Weight::Kernel> const& kernels,
+             Wonton::vector<Weight::Geometry> const& geometries,
+             Wonton::vector<std::vector<std::vector<double>>> const& smoothing,
              basis::Type basis, oper::Type operator_spec = oper::LastOperator,
-             Portage::vector<oper::Domain> const& operator_domain = {},
-             Portage::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
+             Wonton::vector<oper::Domain> const& operator_domain = {},
+             Wonton::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
     : source_(source),
       target_(target),
       estimate_(estimate),
@@ -251,13 +251,13 @@ class Accumulate {
   TargetSwarm const& target_;
   EstimateType estimate_;
   WeightCenter center_;
-  Portage::vector<Weight::Kernel> const& kernels_;
-  Portage::vector<Weight::Geometry> const& geometries_;
-  Portage::vector<std::vector<std::vector<double>>> const& smoothing_;
+  Wonton::vector<Weight::Kernel> const& kernels_;
+  Wonton::vector<Weight::Geometry> const& geometries_;
+  Wonton::vector<std::vector<std::vector<double>>> const& smoothing_;
   basis::Type basis_;
   oper::Type operator_spec_;
-  Portage::vector<oper::Domain> operator_domain_;
-  Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
+  Wonton::vector<oper::Domain> operator_domain_;
+  Wonton::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 }}

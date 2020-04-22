@@ -21,10 +21,10 @@ TEST(search_simple_points, scatter_2d) {
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -78,10 +78,10 @@ TEST(search_simple_points, scatter_3d) {
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
@@ -148,10 +148,10 @@ TEST(search_simple_points, gather_2d) {
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -204,10 +204,10 @@ TEST(search_simple_points, gather_3d) {
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {

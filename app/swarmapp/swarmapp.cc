@@ -185,7 +185,7 @@ void run<2>(int example_num, int n_source, int n_target,
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_field(num_source_particles, 0.);
+  Wonton::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto p = source_swarm.get_particle_coordinates(i);
@@ -212,7 +212,7 @@ void run<2>(int example_num, int n_source, int n_target,
   }
 
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, h));
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
 
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   using Remapper = SwarmDriver<Portage::Search_KDTree_Nanoflann,
@@ -342,7 +342,7 @@ void run<3>(int example_num, int n_source, int n_target,
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_field(num_source_particles, 0.);
+  Wonton::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto coord = source_swarm.get_particle_coordinates(i);
@@ -369,7 +369,7 @@ void run<3>(int example_num, int n_source, int n_target,
   }
 
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, h));
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
 
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   using Remapper = SwarmDriver<Portage::Search_KDTree_Nanoflann,

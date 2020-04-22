@@ -140,7 +140,7 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
     int ncells = mesh_.num_entities(Entity_kind::CELL);
     cell_neighbors_.resize(ncells);
 
-    Portage::for_each(mesh_.begin(Entity_kind::CELL), mesh_.end(Entity_kind::CELL),
+    Wonton::for_each(mesh_.begin(Entity_kind::CELL), mesh_.end(Entity_kind::CELL),
                       [this](int c) { mesh_.cell_get_node_adj_cells(
                              c, Entity_type::ALL, &(cell_neighbors_[c])); } );
   }
@@ -309,7 +309,7 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
     int nnodes = mesh_.num_entities(Entity_kind::NODE);
     node_neighbors_.resize(nnodes);
 
-    Portage::for_each(mesh_.begin(Entity_kind::NODE), mesh_.end(Entity_kind::NODE),
+    Wonton::for_each(mesh_.begin(Entity_kind::NODE), mesh_.end(Entity_kind::NODE),
                       [this](int n) { mesh_.dual_cell_get_node_adj_cells(
                              n, Entity_type::ALL, &(node_neighbors_[n])); } );
   }

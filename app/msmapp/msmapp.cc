@@ -264,8 +264,8 @@ public:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL,
                                               Portage::Entity_type::ALL);
@@ -578,8 +578,8 @@ protected:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMeshWrapper.num_owned_cells();
       domains.resize(numcells);

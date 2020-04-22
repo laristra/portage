@@ -241,7 +241,7 @@ TEST_F(SwarmTest, Sanity_Check_3D) {
   std::mt19937 engine { device() };
   std::uniform_real_distribution<double> generator(p_min, p_max);
 
-  Portage::vector<Wonton::Point<3>> points(n);
+  Wonton::vector<Wonton::Point<3>> points(n);
 
   for (auto&& current : points) {
     // point coordinates are not always initialized in order

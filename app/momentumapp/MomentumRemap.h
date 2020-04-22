@@ -414,8 +414,8 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   // -- create linear reconstruction (limited or unlimited) 
   //    of density and specific momentum on the target mesh
   int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
-  std::vector<Portage::vector<Wonton::Vector<D>>> gradients(
-      field_names.size(), Portage::vector<Wonton::Vector<D>>(ncells_all));
+  std::vector<Wonton::vector<Wonton::Vector<D>>> gradients(
+      field_names.size(), Wonton::vector<Wonton::Vector<D>>(ncells_all));
 
   if (method_ == SGH) {
     for (int i = 0; i < num_fields; ++i) {
@@ -424,9 +424,9 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
           gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
                           field_names[i], limiter, Portage::BND_NOLIMITER);
 
-      Portage::vector<Wonton::Vector<D>> gradient(ncells_all);
+      Wonton::vector<Wonton::Vector<D>> gradient(ncells_all);
 
-      Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+      Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
                          gradients[i].begin(), gradient_kernel);
     }

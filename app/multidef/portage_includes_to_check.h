@@ -53,7 +53,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/kdtree.h"
 #include "portage/search/search_direct_product.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/search/search_kdtree_nanoflann.h"
 #include "portage/search/search_points_by_cells.h"
 #include "portage/search/search_simple.h"
 #include "portage/search/search_simple_points.h"

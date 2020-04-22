@@ -80,7 +80,7 @@ class Estimate {
   SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
-  Portage::vector<double> source_vals_;
+  Wonton::vector<double> source_vals_;
 };
 
 }

@@ -147,7 +147,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -284,7 +284,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -437,7 +437,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   auto gradients = driver.compute_source_gradient("cellvars", Portage::NOLIMITER);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
@@ -445,7 +445,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   gradients = driver.compute_source_gradient("cellvars", Portage::BARTH_JESPERSEN);
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolator);
@@ -623,7 +623,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
@@ -635,7 +635,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolator);
@@ -784,7 +784,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -940,7 +940,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -1085,7 +1085,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -1219,7 +1219,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -1374,7 +1374,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator);
@@ -1386,7 +1386,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolator);
@@ -1544,7 +1544,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -1697,7 +1697,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
 
   interpolator.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals.begin(), interpolator);
@@ -1856,7 +1856,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   interpolator1.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals1.begin(), interpolator1);
@@ -1868,7 +1868,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
 
   interpolator2.set_interpolation_variable("nodevars", &gradients);
 
-  Portage::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
+  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::NODE),
                      targetMeshWrapper.end(Wonton::Entity_kind::NODE),
                      sources_and_weights.begin(),
                      outvals2.begin(), interpolator2);

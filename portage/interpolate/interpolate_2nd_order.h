@@ -151,7 +151,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
       std::cerr << "Interpolation is available for only cells and nodes";
       std::cerr << std::endl;
     }
@@ -190,7 +190,7 @@ namespace Portage {
     T const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> const* gradients_;
+    Wonton::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -327,7 +327,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
       gradients_ = gradient_field;
@@ -476,7 +476,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> const* gradients_;
+    Wonton::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -607,7 +607,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field to use
      */
     void set_interpolation_variable(std::string const variable_name,
-                                    Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    Wonton::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
       gradients_ = gradient_field;
@@ -706,7 +706,7 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Vector<D>>* gradients_ = nullptr;
+    Wonton::vector<Vector<D>>* gradients_ = nullptr;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;

@@ -190,7 +190,7 @@ namespace Portage {
                                         &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
                                       Entity_type::PARALLEL_OWNED),
                           mesh_.end(Entity_kind::CELL,
                                     Entity_type::PARALLEL_OWNED),
@@ -201,7 +201,7 @@ namespace Portage {
         };
 
         auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
@@ -241,7 +241,7 @@ namespace Portage {
           mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
                                       Entity_type::PARALLEL_OWNED),
                           mesh_.end(Entity_kind::CELL,
                                     Entity_type::PARALLEL_OWNED),
@@ -253,7 +253,7 @@ namespace Portage {
         };
 
         auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
       //If the field type is a MESH_FIELD, then the corresponding data will
@@ -579,7 +579,7 @@ namespace Portage {
       int const nnodes = mesh_.num_entities(Entity_kind::NODE,
                                             Entity_type::ALL);
       node_neighbors_.resize(nnodes);
-      Portage::for_each(mesh_.begin(Entity_kind::NODE,
+      Wonton::for_each(mesh_.begin(Entity_kind::NODE,
                                     Entity_type::ALL),
                         mesh_.end(Entity_kind::NODE,
                                   Entity_type::ALL),

@@ -33,11 +33,11 @@ void test_estimate(EstimateType etype, basis::Type btype, WeightCenter center) {
   double const source_smoothing = 1. / nb_sides;
   double const target_smoothing = 1. / (nb_sides + 2);
 
-  Portage::vector<Point<dim>> source_points(nb_source);
-  Portage::vector<Point<dim>> target_points(nb_target);
-  Portage::vector<Point<dim>> source_extents(nb_source);
-  Portage::vector<Point<dim>> target_extents(nb_target);
-  Portage::vector<Point<dim>> extents(nb_target);
+  Wonton::vector<Point<dim>> source_points(nb_source);
+  Wonton::vector<Point<dim>> target_points(nb_target);
+  Wonton::vector<Point<dim>> source_extents(nb_source);
+  Wonton::vector<Point<dim>> target_extents(nb_target);
+  Wonton::vector<Point<dim>> extents(nb_target);
 
   // set the random engine and generator
   std::random_device device;
@@ -92,9 +92,9 @@ void test_estimate(EstimateType etype, basis::Type btype, WeightCenter center) {
 
   int const nb_kernels = (center == Gather ? nb_target : nb_source);
 
-  Portage::vector<Weight::Kernel> kernels(nb_kernels, Weight::B4);
-  Portage::vector<Weight::Geometry> geometries(nb_kernels, Weight::TENSOR);
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths
+  Wonton::vector<Weight::Kernel> kernels(nb_kernels, Weight::B4);
+  Wonton::vector<Weight::Geometry> geometries(nb_kernels, Weight::TENSOR);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths
     (nb_kernels, std::vector<std::vector<double>>(1, std::vector<double>(dim)));
 
   for (int i = 0; i < nb_kernels; i++) {
@@ -133,8 +133,8 @@ void test_estimate(EstimateType etype, basis::Type btype, WeightCenter center) {
     field_names[i] = "field" + cnums[i];
 
   for (int i = 0; i < nb_basis; i++) {
-    Portage::vector<double> source_field(nb_source);
-    Portage::vector<double> target_field(nb_target, 0.);
+    Wonton::vector<double> source_field(nb_source);
+    Wonton::vector<double> target_field(nb_target, 0.);
 
     // fill source field
     for (int k = 0; k < nb_source; k++) {

@@ -51,7 +51,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -60,7 +60,7 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   }
 
   // Create a double source data for given function
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -72,8 +72,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  Portage::vector<int> target_data_int(nb_target, 0);
-  Portage::vector<double> target_data_dbl(nb_target, 0.0);
+  Wonton::vector<int> target_data_int(nb_target, 0);
+  Wonton::vector<double> target_data_dbl(nb_target, 0.0);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
@@ -83,11 +83,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   Wonton::Point<2> const default_point(one_third, one_third);
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, one_third));
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
-  Portage::vector<Wonton::Point<2>> source_extents(1, default_point);
-  Portage::vector<Wonton::Point<2>> target_extents(nb_target, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
-  Portage::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
+  Wonton::vector<Wonton::Point<2>> source_extents(1, default_point);
+  Wonton::vector<Wonton::Point<2>> target_extents(nb_target, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
+  Wonton::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
 
   // Distribute
   Portage::MPI_Particle_Distribute<2> distributor(&executor);
@@ -139,11 +139,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   Wonton::Point<2> const default_point(one_third, one_third);
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, one_third));
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
-  Portage::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
-  Portage::vector<Wonton::Point<2>> target_extents(1, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
-  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
+  Wonton::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
+  Wonton::vector<Wonton::Point<2>> target_extents(1, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
+  Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
 
   // Source and target swarms
   Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
@@ -152,8 +152,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -171,8 +171,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
 
   // Build the target state storage
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
-  Portage::vector<int> target_data_int(nb_target);
-  Portage::vector<double> target_data_dbl(nb_target);
+  Wonton::vector<int> target_data_int(nb_target);
+  Wonton::vector<double> target_data_dbl(nb_target);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
@@ -230,7 +230,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -239,7 +239,7 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   }
 
   // Create a double source data for given function
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -251,8 +251,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   source_state.add_field("dbldata", source_data_dbl);
 
   // Build the target state storage
-  Portage::vector<int> target_data_int(nb_target, 0);
-  Portage::vector<double> target_data_dbl(nb_target, 0.0);
+  Wonton::vector<int> target_data_int(nb_target, 0);
+  Wonton::vector<double> target_data_dbl(nb_target, 0.0);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
@@ -262,11 +262,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   Wonton::Point<3> const default_point(one_third, one_third, one_third);
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, one_third));
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
-  Portage::vector<Wonton::Point<3>> source_extents(1, default_point);
-  Portage::vector<Wonton::Point<3>> target_extents(nb_target, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
-  Portage::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_target, default_lengths);
+  Wonton::vector<Wonton::Point<3>> source_extents(1, default_point);
+  Wonton::vector<Wonton::Point<3>> target_extents(nb_target, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_target, Weight::B4);
+  Wonton::vector<Weight::Geometry> geom_types(nb_target, Weight::ELLIPTIC);
 
   // Distribute
   Portage::MPI_Particle_Distribute<3> distributor(&executor);
@@ -317,11 +317,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   Wonton::Point<3> const default_point(one_third, one_third, one_third);
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, one_third));
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
-  Portage::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
-  Portage::vector<Wonton::Point<3>> target_extents(1, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
-  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, default_lengths);
+  Wonton::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
+  Wonton::vector<Wonton::Point<3>> target_extents(1, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_source, Weight::B4);
+  Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
 
   // Source and target swarms
   Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
@@ -330,8 +330,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -349,8 +349,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
 
   // Build the target state storage
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
-  Portage::vector<int> target_data_int(nb_target);
-  Portage::vector<double> target_data_dbl(nb_target);
+  Wonton::vector<int> target_data_int(nb_target);
+  Wonton::vector<double> target_data_dbl(nb_target);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
@@ -405,11 +405,11 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
   std::vector<std::vector<double>> facets {{ 0,-1, one_third}, { 1, 0, one_third},
                                            { 0, 1, one_third}, {-1, 0, one_third}};
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
-  Portage::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
-  Portage::vector<Wonton::Point<2>> target_extents(1, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
-  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
+  Wonton::vector<Wonton::Point<2>> source_extents(nb_source, default_point);
+  Wonton::vector<Wonton::Point<2>> target_extents(1, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
+  Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
   // Source and target swarms
   Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
@@ -418,8 +418,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
   SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -437,8 +437,8 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
 
   // Build the target state storage
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
-  Portage::vector<int> target_data_int(nb_target);
-  Portage::vector<double> target_data_dbl(nb_target);
+  Wonton::vector<int> target_data_int(nb_target);
+  Wonton::vector<double> target_data_dbl(nb_target);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
@@ -508,11 +508,11 @@ TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
                                            { 0, 1, 0, one_third}, {-1, 0, 0, one_third},
                                            { 0, 0,-1, one_third}, { 0, 0, 1, one_third}};
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
-  Portage::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
-  Portage::vector<Wonton::Point<3>> target_extents(1, default_point);
-  Portage::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
-  Portage::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nb_source, facets);
+  Wonton::vector<Wonton::Point<3>> source_extents(nb_source, default_point);
+  Wonton::vector<Wonton::Point<3>> target_extents(1, default_point);
+  Wonton::vector<Weight::Kernel> kernel_types(nb_source, Weight::POLYRAMP);
+  Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
   // Source and target swarms
   Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
@@ -521,8 +521,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
   SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
-  Portage::vector<int> source_data_int(nb_source);
-  Portage::vector<double> source_data_dbl(nb_source);
+  Wonton::vector<int> source_data_int(nb_source);
+  Wonton::vector<double> source_data_dbl(nb_source);
 
   // Fill the source state data with the specified profile
   for (int i = 0; i < nb_source; ++i) {
@@ -540,8 +540,8 @@ TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
 
   // Build the target state storage
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
-  Portage::vector<int> target_data_int(nb_target);
-  Portage::vector<double> target_data_dbl(nb_target);
+  Wonton::vector<int> target_data_int(nb_target);
+  Wonton::vector<double> target_data_dbl(nb_target);
 
   target_state.add_field("intdata", target_data_int);
   target_state.add_field("dbldata", target_data_dbl);
