@@ -46,6 +46,9 @@ target_link_libraries(portage_driver INTERFACE portage_accumulate)
 target_link_libraries(portage_driver INTERFACE portage_estimate)
 target_link_libraries(portage_driver INTERFACE portage_intersect)
 target_link_libraries(portage_driver INTERFACE portage_interpolate)
+if (PORTAGE_HAS_TANGRAM)
+  target_link_libraries(portage_driver INTERFACE ${TANGRAM_LIBRARIES})
+endif ()
 
 target_link_libraries(portage INTERFACE portage_driver)
 
