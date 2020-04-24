@@ -27,6 +27,11 @@ namespace Portage { namespace Meshfree {
 template<int dim>
 class SwarmState {
 public:
+  /**
+   * @brief Create an empty state.
+   *
+   */
+  SwarmState() = default;
 
   /**
    * @brief Initialize from a reference swarm.
@@ -166,6 +171,12 @@ public:
       }
     }
   }
+
+  /**
+   * @brief Destructor.
+   *
+   */
+  ~SwarmState() = default;
 
   /**
    * @brief Set a field on the swarm.
