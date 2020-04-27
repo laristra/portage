@@ -81,7 +81,6 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;cmath&gt;</code><br />
-<code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &lt;ostream&gt;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
@@ -93,9 +92,9 @@ $(function() {
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a6bd84a79d42c0511dd2d11ef57312a77"><td class="memTemplParams" colspan="2">template&lt;size_t dim&gt; </td></tr>
-<tr class="memitem:a6bd84a79d42c0511dd2d11ef57312a77"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__estimate_8cc.html#a6bd84a79d42c0511dd2d11ef57312a77">test_estimate</a> (Portage::Meshfree::EstimateType etype, <a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Portage::Meshfree::Basis::Type</a> btype, Portage::Meshfree::WeightCenter center)</td></tr>
-<tr class="separator:a6bd84a79d42c0511dd2d11ef57312a77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27cc3f14b54d3dc057d3923937e53607"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a27cc3f14b54d3dc057d3923937e53607"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__estimate_8cc.html#a27cc3f14b54d3dc057d3923937e53607">test_estimate</a> (EstimateType etype, <a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">basis::Type</a> btype, WeightCenter center)</td></tr>
+<tr class="separator:a27cc3f14b54d3dc057d3923937e53607"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aef87373b51aa511510bbca020ed826d6"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__estimate_8cc.html#aef87373b51aa511510bbca020ed826d6">TEST</a> (estimate, 1d_RUG)</td></tr>
 <tr class="separator:aef87373b51aa511510bbca020ed826d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6ef118f5b41a7fb6d078eecab41c5bf3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__estimate_8cc.html#a6ef118f5b41a7fb6d078eecab41c5bf3">TEST</a> (estimate, 2d_RUG)</td></tr>
@@ -638,30 +637,30 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a6bd84a79d42c0511dd2d11ef57312a77"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6bd84a79d42c0511dd2d11ef57312a77">&#9670;&nbsp;</a></span>test_estimate()</h2>
+<a id="a27cc3f14b54d3dc057d3923937e53607"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27cc3f14b54d3dc057d3923937e53607">&#9670;&nbsp;</a></span>test_estimate()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void test_estimate </td>
           <td>(</td>
-          <td class="paramtype">Portage::Meshfree::EstimateType&#160;</td>
+          <td class="paramtype">EstimateType&#160;</td>
           <td class="paramname"><em>etype</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Portage::Meshfree::Basis::Type</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">basis::Type</a>&#160;</td>
           <td class="paramname"><em>btype</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Portage::Meshfree::WeightCenter&#160;</td>
+          <td class="paramtype">WeightCenter&#160;</td>
           <td class="paramname"><em>center</em>&#160;</td>
         </tr>
         <tr>

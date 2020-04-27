@@ -74,15 +74,15 @@ $(function() {
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#nested-classes">Classes</a> &#124;
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
 <div class="title">driver_swarm.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-
-<p>Example driver for mapping between two swarms.  
-<a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;sys/time.h&gt;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
+<div class="textblock"><code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &lt;iterator&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
@@ -91,6 +91,7 @@ $(function() {
 <code>#include &lt;type_traits&gt;</code><br />
 <code>#include &lt;cmath&gt;</code><br />
 <code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="timer_8h_source.html">portage/support/timer.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="basis_8h_source.html">portage/support/basis.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="weight_8h_source.html">portage/support/weight.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="operator_8h_source.html">portage/support/operator.h</a>&quot;</code><br />
@@ -99,10 +100,26 @@ $(function() {
 <code>#include &quot;<a class="el" href="estimate_8h_source.html">portage/estimate/estimate.h</a>&quot;</code><br />
 </div>
 <p><a href="driver__swarm_8h_source.html">Go to the source code of this file.</a></p>
-<a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Example driver for mapping between two swarms. </p>
-<p>This should serve as a good example for how to write your own driver routine and datastructures. </p>
-</div></div><!-- contents -->
+<table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
+Classes</h2></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html">Portage::Meshfree::SwarmDriver&lt; Search, Accumulate, Estimate, dim, SourceSwarm, SourceState, TargetSwarm, TargetState &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides an interface to remap variables from one swarm to another.  <a href="classPortage_1_1Meshfree_1_1SwarmDriver.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
+Namespaces</h2></td></tr>
+<tr class="memitem:namespacePortage"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html">Portage</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacePortage_1_1Meshfree"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html">Portage::Meshfree</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a46cf6fc62ecf4e82e6a96defd7653013"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#a46cf6fc62ecf4e82e6a96defd7653013">Portage::Meshfree::SmoothingLengths</a> = <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; std::vector&lt; double &gt; &gt;&gt;</td></tr>
+<tr class="separator:a46cf6fc62ecf4e82e6a96defd7653013"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+</div><!-- contents -->
 <!--
 This file is part of the Ristra portage project.
 Please see the license file at the root of this repository, or at:

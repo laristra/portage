@@ -82,12 +82,12 @@ Functions</h2></td></tr>
 <tr class="memitem:a7028b3f637b4f3028c2e1341982612b7"><td class="memItemLeft" align="right" valign="top">std::chrono::high_resolution_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#a7028b3f637b4f3028c2e1341982612b7">now</a> ()</td></tr>
 <tr class="memdesc:a7028b3f637b4f3028c2e1341982612b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get current time.  <a href="#a7028b3f637b4f3028c2e1341982612b7">More...</a><br /></td></tr>
 <tr class="separator:a7028b3f637b4f3028c2e1341982612b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae1efdcee72b0761fef8277e0b1b89132"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#ae1efdcee72b0761fef8277e0b1b89132">elapsed</a> (std::chrono::high_resolution_clock::time_point &amp;tic, bool <a class="el" href="namespacetimer.html#ab1eaa19daaea32738478533e9dda1d13">reset</a>=false)</td></tr>
+<tr class="memitem:ae1efdcee72b0761fef8277e0b1b89132"><td class="memItemLeft" align="right" valign="top">float&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#ae1efdcee72b0761fef8277e0b1b89132">elapsed</a> (std::chrono::high_resolution_clock::time_point &amp;tic, bool <a class="el" href="namespacetimer.html#adb0e66f8e39f57779ab71d8c41dcce01">reset</a>=false)</td></tr>
 <tr class="memdesc:ae1efdcee72b0761fef8277e0b1b89132"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get elapsed time in seconds.  <a href="#ae1efdcee72b0761fef8277e0b1b89132">More...</a><br /></td></tr>
 <tr class="separator:ae1efdcee72b0761fef8277e0b1b89132"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab1eaa19daaea32738478533e9dda1d13"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#ab1eaa19daaea32738478533e9dda1d13">reset</a> (std::chrono::high_resolution_clock::time_point &amp;tic, float *cumul=nullptr)</td></tr>
-<tr class="memdesc:ab1eaa19daaea32738478533e9dda1d13"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump current time and reset it afterwards.  <a href="#ab1eaa19daaea32738478533e9dda1d13">More...</a><br /></td></tr>
-<tr class="separator:ab1eaa19daaea32738478533e9dda1d13"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adb0e66f8e39f57779ab71d8c41dcce01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacetimer.html#adb0e66f8e39f57779ab71d8c41dcce01">reset</a> (std::chrono::high_resolution_clock::time_point &amp;tic, float *cumul=nullptr)</td></tr>
+<tr class="memdesc:adb0e66f8e39f57779ab71d8c41dcce01"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dump current time and reset it afterwards.  <a href="#adb0e66f8e39f57779ab71d8c41dcce01">More...</a><br /></td></tr>
+<tr class="separator:adb0e66f8e39f57779ab71d8c41dcce01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ae1efdcee72b0761fef8277e0b1b89132"></a>
@@ -161,8 +161,8 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ab1eaa19daaea32738478533e9dda1d13"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab1eaa19daaea32738478533e9dda1d13">&#9670;&nbsp;</a></span>reset()</h2>
+<a id="adb0e66f8e39f57779ab71d8c41dcce01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adb0e66f8e39f57779ab71d8c41dcce01">&#9670;&nbsp;</a></span>reset()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -171,7 +171,7 @@ Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int timer::reset </td>
+          <td class="memname">void timer::reset </td>
           <td>(</td>
           <td class="paramtype">std::chrono::high_resolution_clock::time_point &amp;&#160;</td>
           <td class="paramname"><em>tic</em>, </td>

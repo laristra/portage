@@ -75,7 +75,6 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1Meshfree_1_1Swarm-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -88,95 +87,81 @@ $(function() {
 
 <p><code>#include &lt;<a class="el" href="swarm_8h_source.html">swarm.h</a>&gt;</code></p>
 <table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
-Public Types</h2></td></tr>
-<tr class="memitem:afb03a9be724f530f167bc572a5469de0"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#afb03a9be724f530f167bc572a5469de0">PointVecPtr</a> = shared_ptr&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; dim &gt; &gt;&gt;</td></tr>
-<tr class="separator:afb03a9be724f530f167bc572a5469de0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4bd0eb89bac624fe8b13e6356c44b486"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a4bd0eb89bac624fe8b13e6356c44b486">PointVec</a> = <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; dim &gt; &gt;</td></tr>
-<tr class="separator:a4bd0eb89bac624fe8b13e6356c44b486"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aea8cb17137f6d8b6c5a9b1891e673a5c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#aea8cb17137f6d8b6c5a9b1891e673a5c">Swarm</a> (<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#afb03a9be724f530f167bc572a5469de0">PointVecPtr</a> points)</td></tr>
-<tr class="memdesc:aea8cb17137f6d8b6c5a9b1891e673a5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">A particle has a center point and smoothing lengths in each dimension.  <a href="#aea8cb17137f6d8b6c5a9b1891e673a5c">More...</a><br /></td></tr>
-<tr class="separator:aea8cb17137f6d8b6c5a9b1891e673a5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4d20fc1635550ddd9b2e9225cdef6a1a"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a4d20fc1635550ddd9b2e9225cdef6a1a">space_dimension</a> () const</td></tr>
-<tr class="memdesc:a4d20fc1635550ddd9b2e9225cdef6a1a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Dimensionality of points.  <a href="#a4d20fc1635550ddd9b2e9225cdef6a1a">More...</a><br /></td></tr>
-<tr class="separator:a4d20fc1635550ddd9b2e9225cdef6a1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a51b01ea060cd3f6d95333f28f33c9cb7"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a51b01ea060cd3f6d95333f28f33c9cb7">Swarm</a> ()=default</td></tr>
+<tr class="memdesc:a51b01ea060cd3f6d95333f28f33c9cb7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create an empty particle field.  <a href="#a51b01ea060cd3f6d95333f28f33c9cb7">More...</a><br /></td></tr>
+<tr class="separator:a51b01ea060cd3f6d95333f28f33c9cb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a610628662ebeefbbf054759b267f765f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a610628662ebeefbbf054759b267f765f">Swarm</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Wonton::Point&lt; dim &gt;&gt; const &amp;points)</td></tr>
+<tr class="memdesc:a610628662ebeefbbf054759b267f765f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a particle field from a given list.  <a href="#a610628662ebeefbbf054759b267f765f">More...</a><br /></td></tr>
+<tr class="separator:a610628662ebeefbbf054759b267f765f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab5e3e256ad2e0d508202a5313e0f2d92"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#ab5e3e256ad2e0d508202a5313e0f2d92">Swarm</a> (int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a99754a6454a516dde710db8ca6afd615">num_particles</a>, int distribution, unsigned user_seed=0, double x_min=0.0, double x_max=0.0, double y_min=0.0, double y_max=0.0, double z_min=0.0, double z_max=0.0)</td></tr>
+<tr class="memdesc:ab5e3e256ad2e0d508202a5313e0f2d92"><td class="mdescLeft">&#160;</td><td class="mdescRight">Generate a random or uniform particle field.  <a href="#ab5e3e256ad2e0d508202a5313e0f2d92">More...</a><br /></td></tr>
+<tr class="separator:ab5e3e256ad2e0d508202a5313e0f2d92"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae06fcb5eda6be90984933028cccc16f5"><td class="memTemplParams" colspan="2">template&lt;typename Mesh &gt; </td></tr>
+<tr class="memitem:ae06fcb5eda6be90984933028cccc16f5"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#ae06fcb5eda6be90984933028cccc16f5">Swarm</a> (Mesh const &amp;mesh, Wonton::Entity_kind entity)</td></tr>
+<tr class="memdesc:ae06fcb5eda6be90984933028cccc16f5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a particle field from an arbitary mesh wrapper.  <a href="#ae06fcb5eda6be90984933028cccc16f5">More...</a><br /></td></tr>
+<tr class="separator:ae06fcb5eda6be90984933028cccc16f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0893c885e94492a42f5437ce42f4deea"><td class="memTemplParams" colspan="2">template&lt;typename Mesh &gt; </td></tr>
+<tr class="memitem:a0893c885e94492a42f5437ce42f4deea"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a0893c885e94492a42f5437ce42f4deea">Swarm</a> (std::vector&lt; Mesh *&gt; const &amp;meshes, Wonton::Entity_kind entity)</td></tr>
+<tr class="memdesc:a0893c885e94492a42f5437ce42f4deea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a particle field from a set of mesh wrappers.  <a href="#a0893c885e94492a42f5437ce42f4deea">More...</a><br /></td></tr>
+<tr class="separator:a0893c885e94492a42f5437ce42f4deea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af72c2c0b5549edfc972d36d794f363b3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#af72c2c0b5549edfc972d36d794f363b3">~Swarm</a> ()=default</td></tr>
+<tr class="memdesc:af72c2c0b5549edfc972d36d794f363b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#af72c2c0b5549edfc972d36d794f363b3">More...</a><br /></td></tr>
+<tr class="separator:af72c2c0b5549edfc972d36d794f363b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af207b28b7280ed030fe82c806c38498d"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#af207b28b7280ed030fe82c806c38498d">space_dimension</a> () const</td></tr>
+<tr class="memdesc:af207b28b7280ed030fe82c806c38498d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the dimension.  <a href="#af207b28b7280ed030fe82c806c38498d">More...</a><br /></td></tr>
+<tr class="separator:af207b28b7280ed030fe82c806c38498d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afaa2ae7efac1b9d4a3b21688c956e9b7"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#afaa2ae7efac1b9d4a3b21688c956e9b7">num_owned_particles</a> () const</td></tr>
-<tr class="memdesc:afaa2ae7efac1b9d4a3b21688c956e9b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the number of particles in the swarm owned by this processor  <a href="#afaa2ae7efac1b9d4a3b21688c956e9b7">More...</a><br /></td></tr>
+<tr class="memdesc:afaa2ae7efac1b9d4a3b21688c956e9b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get owned particles count.  <a href="#afaa2ae7efac1b9d4a3b21688c956e9b7">More...</a><br /></td></tr>
 <tr class="separator:afaa2ae7efac1b9d4a3b21688c956e9b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adc71dfb1ac54e10ede6a0480f873707c"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#adc71dfb1ac54e10ede6a0480f873707c">num_ghost_particles</a> () const</td></tr>
-<tr class="memdesc:adc71dfb1ac54e10ede6a0480f873707c"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the number of ghost (not owned by this processor) particles in the swarm.  <a href="#adc71dfb1ac54e10ede6a0480f873707c">More...</a><br /></td></tr>
+<tr class="memdesc:adc71dfb1ac54e10ede6a0480f873707c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get ghost particles count.  <a href="#adc71dfb1ac54e10ede6a0480f873707c">More...</a><br /></td></tr>
 <tr class="separator:adc71dfb1ac54e10ede6a0480f873707c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8221df075fac201262b1db2d4430bf3"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#ae8221df075fac201262b1db2d4430bf3">num_particles</a> (Entity_type etype=Entity_type::ALL) const</td></tr>
-<tr class="memdesc:ae8221df075fac201262b1db2d4430bf3"><td class="mdescLeft">&#160;</td><td class="mdescRight">return the number of particles of given type  <a href="#ae8221df075fac201262b1db2d4430bf3">More...</a><br /></td></tr>
-<tr class="separator:ae8221df075fac201262b1db2d4430bf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a19b457bcf7ad40f5eca5dc3f8bffdb40"><td class="memItemLeft" align="right" valign="top">Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a19b457bcf7ad40f5eca5dc3f8bffdb40">get_particle_coordinates</a> (const size_t index) const</td></tr>
-<tr class="memdesc:a19b457bcf7ad40f5eca5dc3f8bffdb40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the coordinates of the particle,.  <a href="#a19b457bcf7ad40f5eca5dc3f8bffdb40">More...</a><br /></td></tr>
-<tr class="separator:a19b457bcf7ad40f5eca5dc3f8bffdb40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a133de037099d0266fe8d187f5939ef9b"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a133de037099d0266fe8d187f5939ef9b">begin</a> (Entity_kind const entity=Entity_kind::PARTICLE, Entity_type const etype=Entity_type::ALL) const</td></tr>
-<tr class="memdesc:a133de037099d0266fe8d187f5939ef9b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterators on mesh entity - begin.  <a href="#a133de037099d0266fe8d187f5939ef9b">More...</a><br /></td></tr>
-<tr class="separator:a133de037099d0266fe8d187f5939ef9b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abe7b9762c0c8d49c97a936d0ebd950aa"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#abe7b9762c0c8d49c97a936d0ebd950aa">end</a> (Entity_kind const entity=Entity_kind::PARTICLE, Entity_type const etype=Entity_type::ALL) const</td></tr>
-<tr class="memdesc:abe7b9762c0c8d49c97a936d0ebd950aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Iterator on mesh entity - end.  <a href="#abe7b9762c0c8d49c97a936d0ebd950aa">More...</a><br /></td></tr>
-<tr class="separator:abe7b9762c0c8d49c97a936d0ebd950aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a77954bf97be3e06d14511c69dced5481"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a77954bf97be3e06d14511c69dced5481">extend_particle_list</a> (std::vector&lt; Point&lt; dim &gt;&gt; &amp;new_pts)</td></tr>
-<tr class="memdesc:a77954bf97be3e06d14511c69dced5481"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add new particles to swarm.  <a href="#a77954bf97be3e06d14511c69dced5481">More...</a><br /></td></tr>
-<tr class="separator:a77954bf97be3e06d14511c69dced5481"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a99754a6454a516dde710db8ca6afd615"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a99754a6454a516dde710db8ca6afd615">num_particles</a> (Wonton::Entity_type type=Wonton::ALL) const</td></tr>
+<tr class="memdesc:a99754a6454a516dde710db8ca6afd615"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get particles count.  <a href="#a99754a6454a516dde710db8ca6afd615">More...</a><br /></td></tr>
+<tr class="separator:a99754a6454a516dde710db8ca6afd615"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a403aae483284f4455a5f64a2ff48e573"><td class="memItemLeft" align="right" valign="top">Wonton::Point&lt; dim &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a403aae483284f4455a5f64a2ff48e573">get_particle_coordinates</a> (int index) const</td></tr>
+<tr class="memdesc:a403aae483284f4455a5f64a2ff48e573"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the coordinates of the particle.  <a href="#a403aae483284f4455a5f64a2ff48e573">More...</a><br /></td></tr>
+<tr class="separator:a403aae483284f4455a5f64a2ff48e573"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0c6d64b99fb8e7d0bbc84fee0d234aa5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a0c6d64b99fb8e7d0bbc84fee0d234aa5">begin</a> (Entity_kind const kind=Wonton::PARTICLE, Entity_type const type=Wonton::ALL) const</td></tr>
+<tr class="memdesc:a0c6d64b99fb8e7d0bbc84fee0d234aa5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an iterator at first element of the particle field.  <a href="#a0c6d64b99fb8e7d0bbc84fee0d234aa5">More...</a><br /></td></tr>
+<tr class="separator:a0c6d64b99fb8e7d0bbc84fee0d234aa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09f615a16a12380ccde1b9e47e55bdf3"><td class="memItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a09f615a16a12380ccde1b9e47e55bdf3">end</a> (Entity_kind const kind=Wonton::PARTICLE, Entity_type const type=Wonton::ALL) const</td></tr>
+<tr class="memdesc:a09f615a16a12380ccde1b9e47e55bdf3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get an iterator at last element of the particle field.  <a href="#a09f615a16a12380ccde1b9e47e55bdf3">More...</a><br /></td></tr>
+<tr class="separator:a09f615a16a12380ccde1b9e47e55bdf3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac26fbed93b8138d82df90cf33d7575e3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#ac26fbed93b8138d82df90cf33d7575e3">extend_particle_list</a> (std::vector&lt; Wonton::Point&lt; dim &gt;&gt; const &amp;new_pts)</td></tr>
+<tr class="memdesc:ac26fbed93b8138d82df90cf33d7575e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Extend the particle field.  <a href="#ac26fbed93b8138d82df90cf33d7575e3">More...</a><br /></td></tr>
+<tr class="separator:ac26fbed93b8138d82df90cf33d7575e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca43f1b83e4171d2336f8de8999ebbe9"><td class="memTemplParams" colspan="2">template&lt;&gt; </td></tr>
+<tr class="memitem:aca43f1b83e4171d2336f8de8999ebbe9"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#aca43f1b83e4171d2336f8de8999ebbe9">Swarm</a> (int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a99754a6454a516dde710db8ca6afd615">num_particles</a>, int distribution, unsigned user_seed, double x_min, double x_max, double, double, double, double)</td></tr>
+<tr class="separator:aca43f1b83e4171d2336f8de8999ebbe9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aba289b4ccaa4ca6eb14323946ed4a8cb"><td class="memTemplParams" colspan="2">template&lt;&gt; </td></tr>
+<tr class="memitem:aba289b4ccaa4ca6eb14323946ed4a8cb"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#aba289b4ccaa4ca6eb14323946ed4a8cb">Swarm</a> (int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a99754a6454a516dde710db8ca6afd615">num_particles</a>, int distribution, unsigned user_seed, double x_min, double x_max, double y_min, double y_max, double, double)</td></tr>
+<tr class="separator:aba289b4ccaa4ca6eb14323946ed4a8cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad1cc62e68fab789485a554859733d364"><td class="memTemplParams" colspan="2">template&lt;&gt; </td></tr>
+<tr class="memitem:ad1cc62e68fab789485a554859733d364"><td class="memTemplItemLeft" align="right" valign="top">&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#ad1cc62e68fab789485a554859733d364">Swarm</a> (int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a99754a6454a516dde710db8ca6afd615">num_particles</a>, int distribution, unsigned user_seed, double x_min, double x_max, double y_min, double y_max, double z_min, double z_max)</td></tr>
+<tr class="separator:ad1cc62e68fab789485a554859733d364"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;size_t dim&gt;<br />
+<div class="textblock"><h3>template&lt;int dim&gt;<br />
 class Portage::Meshfree::Swarm&lt; dim &gt;</h3>
 
 <p>An effective "mesh" class for a collection disconnected points (particles). </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">dim</td><td>The dimension of the problem space. </td></tr>
+    <tr><td class="paramname">dim</td><td>the dimension of the problem. </td></tr>
   </table>
   </dd>
 </dl>
-</div><h2 class="groupheader">Member Typedef Documentation</h2>
-<a id="a4bd0eb89bac624fe8b13e6356c44b486"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4bd0eb89bac624fe8b13e6356c44b486">&#9670;&nbsp;</a></span>PointVec</h2>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a51b01ea060cd3f6d95333f28f33c9cb7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51b01ea060cd3f6d95333f28f33c9cb7">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[1/8]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#a4bd0eb89bac624fe8b13e6356c44b486">PointVec</a> =  <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt;Point&lt;dim&gt; &gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="afb03a9be724f530f167bc572a5469de0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afb03a9be724f530f167bc572a5469de0">&#9670;&nbsp;</a></span>PointVecPtr</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim&gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">using <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#afb03a9be724f530f167bc572a5469de0">PointVecPtr</a> =  shared_ptr&lt;<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt;Point&lt;dim&gt; &gt;&gt;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="aea8cb17137f6d8b6c5a9b1891e673a5c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aea8cb17137f6d8b6c5a9b1891e673a5c">&#9670;&nbsp;</a></span>Swarm()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -184,9 +169,333 @@ template&lt;size_t dim&gt; </div>
         <tr>
           <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html#afb03a9be724f530f167bc572a5469de0">PointVecPtr</a>&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create an empty particle field. </p>
+
+</div>
+</div>
+<a id="a610628662ebeefbbf054759b267f765f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a610628662ebeefbbf054759b267f765f">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[2/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Wonton::Point&lt; dim &gt;&gt; const &amp;&#160;</td>
           <td class="paramname"><em>points</em></td><td>)</td>
           <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a particle field from a given list. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">points</td><td>the given list of points. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab5e3e256ad2e0d508202a5313e0f2d92"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab5e3e256ad2e0d508202a5313e0f2d92">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[3/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_particles</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>distribution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>user_seed</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_min</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_max</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_min</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_max</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>z_min</em> = <code>0.0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>z_max</em> = <code>0.0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Generate a random or uniform particle field. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">num_particles</td><td>number of points. </td></tr>
+    <tr><td class="paramname">p_min</td><td>lower bounds on points coordinates. </td></tr>
+    <tr><td class="paramname">p_max</td><td>upper bounds on points coordinates. </td></tr>
+    <tr><td class="paramname">distribution</td><td>the kind of random numbers distribution. </td></tr>
+    <tr><td class="paramname">seed</td><td>a seed used by the random number generator. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ae06fcb5eda6be90984933028cccc16f5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae06fcb5eda6be90984933028cccc16f5">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[4/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+<div class="memtemplate">
+template&lt;typename Mesh &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">Mesh const &amp;&#160;</td>
+          <td class="paramname"><em>mesh</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Wonton::Entity_kind&#160;</td>
+          <td class="paramname"><em>entity</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a particle field from an arbitary mesh wrapper. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Mesh</td><td>type of mesh wrapper. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">mesh</td><td>a mesh. </td></tr>
+    <tr><td class="paramname">entity</td><td>the entity kind. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a0893c885e94492a42f5437ce42f4deea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0893c885e94492a42f5437ce42f4deea">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[5/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+<div class="memtemplate">
+template&lt;typename Mesh &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">std::vector&lt; Mesh *&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>meshes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Wonton::Entity_kind&#160;</td>
+          <td class="paramname"><em>entity</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Create a particle field from a set of mesh wrappers. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Mesh</td><td>type of mesh wrappers. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">meshes</td><td>a set of meshes. </td></tr>
+    <tr><td class="paramname">entity</td><td>the entity kind. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="af72c2c0b5549edfc972d36d794f363b3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af72c2c0b5549edfc972d36d794f363b3">&#9670;&nbsp;</a></span>~Swarm()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::~<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Destructor. </p>
+
+</div>
+</div>
+<a id="aca43f1b83e4171d2336f8de8999ebbe9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca43f1b83e4171d2336f8de8999ebbe9">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[6/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; 1 &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_particles</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>distribution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>user_seed</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -196,25 +505,176 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>A particle has a center point and smoothing lengths in each dimension. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">points</td><td>center points of the particles </td></tr>
-    <tr><td class="paramname">extents</td><td>the widths of the particle bounding boxes in each dimension </td></tr>
-  </table>
-  </dd>
-</dl>
-
 </div>
 </div>
-<h2 class="groupheader">Member Function Documentation</h2>
-<a id="a133de037099d0266fe8d187f5939ef9b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a133de037099d0266fe8d187f5939ef9b">&#9670;&nbsp;</a></span>begin()</h2>
+<a id="aba289b4ccaa4ca6eb14323946ed4a8cb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aba289b4ccaa4ca6eb14323946ed4a8cb">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[7/8]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; 2 &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_particles</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>distribution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>user_seed</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname">&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad1cc62e68fab789485a554859733d364"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad1cc62e68fab789485a554859733d364">&#9670;&nbsp;</a></span>Swarm() <span class="overload">[8/8]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; 3 &gt;::<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a> </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_particles</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>distribution</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>user_seed</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>x_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>y_max</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>z_min</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>z_max</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a id="a0c6d64b99fb8e7d0bbc84fee0d234aa5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0c6d64b99fb8e7d0bbc84fee0d234aa5">&#9670;&nbsp;</a></span>begin()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -223,13 +683,13 @@ template&lt;size_t dim&gt; </div>
           <td class="memname"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a> <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::begin </td>
           <td>(</td>
           <td class="paramtype">Entity_kind const&#160;</td>
-          <td class="paramname"><em>entity</em> = <code>Entity_kind::PARTICLE</code>, </td>
+          <td class="paramname"><em>kind</em> = <code>Wonton::PARTICLE</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">Entity_type const&#160;</td>
-          <td class="paramname"><em>etype</em> = <code>Entity_type::ALL</code>&#160;</td>
+          <td class="paramname"><em>type</em> = <code>Wonton::ALL</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -244,17 +704,25 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Iterators on mesh entity - begin. </p>
+<p>Get an iterator at first element of the particle field. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">kind</td><td>entity kind (kept for consistency with mesh iterators) </td></tr>
+    <tr><td class="paramname">type</td><td>entity type (kept for consistency with mesh iterators) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>an iterator pointing to the first element of the particle field. </dd></dl>
 
 </div>
 </div>
-<a id="abe7b9762c0c8d49c97a936d0ebd950aa"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abe7b9762c0c8d49c97a936d0ebd950aa">&#9670;&nbsp;</a></span>end()</h2>
+<a id="a09f615a16a12380ccde1b9e47e55bdf3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09f615a16a12380ccde1b9e47e55bdf3">&#9670;&nbsp;</a></span>end()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -263,13 +731,13 @@ template&lt;size_t dim&gt; </div>
           <td class="memname"><a class="el" href="namespacePortage.html#a5798f2be664fd95e54414f8aca5e3282">counting_iterator</a> <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::end </td>
           <td>(</td>
           <td class="paramtype">Entity_kind const&#160;</td>
-          <td class="paramname"><em>entity</em> = <code>Entity_kind::PARTICLE</code>, </td>
+          <td class="paramname"><em>kind</em> = <code>Wonton::PARTICLE</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">Entity_type const&#160;</td>
-          <td class="paramname"><em>etype</em> = <code>Entity_type::ALL</code>&#160;</td>
+          <td class="paramname"><em>type</em> = <code>Wonton::ALL</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -284,17 +752,25 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Iterator on mesh entity - end. </p>
+<p>Get an iterator at last element of the particle field. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">kind</td><td>entity kind (kept for consistency with mesh iterators) </td></tr>
+    <tr><td class="paramname">type</td><td>entity type (kept for consistency with mesh iterators) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>an iterator pointing to the last element of the particle field. </dd></dl>
 
 </div>
 </div>
-<a id="a77954bf97be3e06d14511c69dced5481"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a77954bf97be3e06d14511c69dced5481">&#9670;&nbsp;</a></span>extend_particle_list()</h2>
+<a id="ac26fbed93b8138d82df90cf33d7575e3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac26fbed93b8138d82df90cf33d7575e3">&#9670;&nbsp;</a></span>extend_particle_list()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -302,7 +778,7 @@ template&lt;size_t dim&gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::extend_particle_list </td>
           <td>(</td>
-          <td class="paramtype">std::vector&lt; Point&lt; dim &gt;&gt; &amp;&#160;</td>
+          <td class="paramtype">std::vector&lt; Wonton::Point&lt; dim &gt;&gt; const &amp;&#160;</td>
           <td class="paramname"><em>new_pts</em></td><td>)</td>
           <td></td>
         </tr>
@@ -314,26 +790,25 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Add new particles to swarm. </p>
-<dl class="section return"><dt>Returns</dt><dd></dd></dl>
+<p>Extend the particle field. </p>
 
 </div>
 </div>
-<a id="a19b457bcf7ad40f5eca5dc3f8bffdb40"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a19b457bcf7ad40f5eca5dc3f8bffdb40">&#9670;&nbsp;</a></span>get_particle_coordinates()</h2>
+<a id="a403aae483284f4455a5f64a2ff48e573"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a403aae483284f4455a5f64a2ff48e573">&#9670;&nbsp;</a></span>get_particle_coordinates()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">Point&lt;dim&gt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::get_particle_coordinates </td>
+          <td class="memname">Wonton::Point&lt;dim&gt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::get_particle_coordinates </td>
           <td>(</td>
-          <td class="paramtype">const size_t&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>index</em></td><td>)</td>
           <td> const</td>
         </tr>
@@ -345,14 +820,14 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Get the coordinates of the particle,. </p>
+<p>Get the coordinates of the particle. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">index</td><td>index of particle of interest </td></tr>
+    <tr><td class="paramname">index</td><td>index of particle. </td></tr>
   </table>
   </dd>
 </dl>
-<dl class="section return"><dt>Returns</dt><dd>the particle coordinates </dd></dl>
+<dl class="section return"><dt>Returns</dt><dd>its coordinates. </dd></dl>
 
 </div>
 </div>
@@ -362,7 +837,7 @@ template&lt;size_t dim&gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -381,8 +856,8 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>return the number of ghost (not owned by this processor) particles in the swarm. </p>
-<dl class="section return"><dt>Returns</dt><dd>the number of ghost particles in the swarm that are stored at the end of the particle list i.e., between num_owned_particles and num_owned_particles+num_ghost_particle. </dd></dl>
+<p>Get ghost particles count. </p>
+<dl class="section return"><dt>Returns</dt><dd>number of ghost particles. </dd></dl>
 
 </div>
 </div>
@@ -392,7 +867,7 @@ template&lt;size_t dim&gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -411,18 +886,18 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>return the number of particles in the swarm owned by this processor </p>
-<dl class="section return"><dt>Returns</dt><dd>the number of owned particles in the swarm </dd></dl>
+<p>Get owned particles count. </p>
+<dl class="section return"><dt>Returns</dt><dd>number of owned particles. </dd></dl>
 
 </div>
 </div>
-<a id="ae8221df075fac201262b1db2d4430bf3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae8221df075fac201262b1db2d4430bf3">&#9670;&nbsp;</a></span>num_particles()</h2>
+<a id="a99754a6454a516dde710db8ca6afd615"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a99754a6454a516dde710db8ca6afd615">&#9670;&nbsp;</a></span>num_particles()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -430,8 +905,8 @@ template&lt;size_t dim&gt; </div>
         <tr>
           <td class="memname">int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::num_particles </td>
           <td>(</td>
-          <td class="paramtype">Entity_type&#160;</td>
-          <td class="paramname"><em>etype</em> = <code>Entity_type::ALL</code></td><td>)</td>
+          <td class="paramtype">Wonton::Entity_type&#160;</td>
+          <td class="paramname"><em>type</em> = <code>Wonton::ALL</code></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
@@ -442,24 +917,30 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>return the number of particles of given type </p>
-<dl class="section return"><dt>Returns</dt><dd>the number of owned + ghost particles in the swarm </dd></dl>
+<p>Get particles count. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">type</td><td>entity type (owned, ghost, all). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the particle count for the given entity type. </dd></dl>
 
 </div>
 </div>
-<a id="a4d20fc1635550ddd9b2e9225cdef6a1a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4d20fc1635550ddd9b2e9225cdef6a1a">&#9670;&nbsp;</a></span>space_dimension()</h2>
+<a id="af207b28b7280ed030fe82c806c38498d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af207b28b7280ed030fe82c806c38498d">&#9670;&nbsp;</a></span>space_dimension()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::space_dimension </td>
+          <td class="memname">int <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Portage::Meshfree::Swarm</a>&lt; dim &gt;::space_dimension </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -472,7 +953,8 @@ template&lt;size_t dim&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Dimensionality of points. </p>
+<p>Get the dimension. </p>
+<dl class="section return"><dt>Returns</dt><dd>the dimension. </dd></dl>
 
 </div>
 </div>

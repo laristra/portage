@@ -98,10 +98,10 @@ Inheritance diagram for Portage::CoreDriverBase&lt; D, SourceMesh, SourceState, 
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a54df9bba05c9a1dbabc0176247ea9b6e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a54df9bba05c9a1dbabc0176247ea9b6e">CoreDriverBase</a> ()</td></tr>
-<tr class="separator:a54df9bba05c9a1dbabc0176247ea9b6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae717c5aeba29d1237527ba3b2b9a2e45"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ae717c5aeba29d1237527ba3b2b9a2e45">~CoreDriverBase</a> ()</td></tr>
-<tr class="separator:ae717c5aeba29d1237527ba3b2b9a2e45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c9c40a763f781ecef214dcf8faf1ff0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a8c9c40a763f781ecef214dcf8faf1ff0">CoreDriverBase</a> ()=default</td></tr>
+<tr class="separator:a8c9c40a763f781ecef214dcf8faf1ff0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad07756697c45b7226c07c32fe6368263"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ad07756697c45b7226c07c32fe6368263">~CoreDriverBase</a> ()=default</td></tr>
+<tr class="separator:ad07756697c45b7226c07c32fe6368263"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1c92b2e5c7d607bbedf416f26f3adf4f"><td class="memItemLeft" align="right" valign="top">virtual Entity_kind&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a1c92b2e5c7d607bbedf416f26f3adf4f">onwhat</a> ()=0</td></tr>
 <tr class="separator:a1c92b2e5c7d607bbedf416f26f3adf4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a491cf23f88a104e5864d8a9ee06be173"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class &gt; class Search&gt; </td></tr>
@@ -115,20 +115,39 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a4d0f90e7a8e150281d40b6897818ca4a"><td class="memTemplParams" colspan="2">template&lt;template&lt; Entity_kind, class, class, class, template&lt; class, int, class, class &gt; class, class, class &gt; class Intersect&gt; </td></tr>
 <tr class="memitem:a4d0f90e7a8e150281d40b6897818ca4a"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Portage::Weights_t &gt; &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a4d0f90e7a8e150281d40b6897818ca4a">intersect_materials</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; int &gt;&gt; const &amp;intersection_candidates)</td></tr>
 <tr class="separator:a4d0f90e7a8e150281d40b6897818ca4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6e740aef17d623bac3cddc32074b6c5"><td class="memTemplParams" colspan="2">template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </td></tr>
-<tr class="memitem:ae6e740aef17d623bac3cddc32074b6c5"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ae6e740aef17d623bac3cddc32074b6c5">interpolate_mesh_var</a> (std::string srcvarname, std::string trgvarname, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;sources_and_weights, T lower_bound, T upper_bound, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter, <a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a> bnd_limiter, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type, double conservation_tol, int max_fixup_iter, <a class="el" href="classPortage_1_1PartPair.html">PartPair</a>&lt; D, ONWHAT, SourceMesh, SourceState, TargetMesh, TargetState &gt; *parts_pair=nullptr)</td></tr>
-<tr class="separator:ae6e740aef17d623bac3cddc32074b6c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac072f56b3e19947bdb665abf439d7f4d"><td class="memTemplParams" colspan="2">template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </td></tr>
-<tr class="memitem:ac072f56b3e19947bdb665abf439d7f4d"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ac072f56b3e19947bdb665abf439d7f4d">interpolate_mat_var</a> (std::string srcvarname, std::string trgvarname, std::vector&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt;&gt; const &amp;sources_and_weights_by_mat, T lower_bound, T upper_bound, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter, <a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a> bnd_limiter, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type, double conservation_tol, int max_fixup_iter)</td></tr>
-<tr class="separator:ac072f56b3e19947bdb665abf439d7f4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aca1a88677e486f814cae84cb6101f0d2"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
-<tr class="memitem:aca1a88677e486f814cae84cb6101f0d2"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#aca1a88677e486f814cae84cb6101f0d2">check_mesh_mismatch</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;source_weights)</td></tr>
-<tr class="memdesc:aca1a88677e486f814cae84cb6101f0d2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if meshes are mismatched (don't cover identical portions of space)  <a href="#aca1a88677e486f814cae84cb6101f0d2">More...</a><br /></td></tr>
-<tr class="separator:aca1a88677e486f814cae84cb6101f0d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a968313c974832ed54f05ece43b51deee"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
-<tr class="memitem:a968313c974832ed54f05ece43b51deee"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a968313c974832ed54f05ece43b51deee">set_num_tols</a> (<a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> num_tols)</td></tr>
-<tr class="memdesc:a968313c974832ed54f05ece43b51deee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set numerical tolerances for small volumes, distances, etc.  <a href="#a968313c974832ed54f05ece43b51deee">More...</a><br /></td></tr>
-<tr class="separator:a968313c974832ed54f05ece43b51deee"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae1dc06c23246f6884707091291c22633"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:ae1dc06c23246f6884707091291c22633"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ae1dc06c23246f6884707091291c22633">compute_source_gradient</a> (std::string const field_name, <a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a> limiter_type=<a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6a129ce73da39e28f090a4963952638f0f">NOLIMITER</a>, <a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a> boundary_limiter_type=<a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118fa7df68da5020422a2b128d16d534e07d4">BND_NOLIMITER</a>, int material_id=0, const <a class="el" href="classPortage_1_1Part.html">Part</a>&lt; SourceMesh, SourceState &gt; *source_part=nullptr)</td></tr>
+<tr class="memdesc:ae1dc06c23246f6884707091291c22633"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute the gradient field of the given variable on source mesh.  <a href="#ae1dc06c23246f6884707091291c22633">More...</a><br /></td></tr>
+<tr class="separator:ae1dc06c23246f6884707091291c22633"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adcab4aae4e80d7074b8c59a5ffe991e2"><td class="memTemplParams" colspan="2">template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </td></tr>
+<tr class="memitem:adcab4aae4e80d7074b8c59a5ffe991e2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#adcab4aae4e80d7074b8c59a5ffe991e2">interpolate_mesh_var</a> (std::string srcvarname, std::string trgvarname, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;sources_and_weights, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt; *gradients=nullptr)</td></tr>
+<tr class="separator:adcab4aae4e80d7074b8c59a5ffe991e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38c51344d9e177dc16a9f0d032cc0641"><td class="memTemplParams" colspan="2">template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </td></tr>
+<tr class="memitem:a38c51344d9e177dc16a9f0d032cc0641"><td class="memTemplItemLeft" align="right" valign="top">std::enable_if&lt; ONWHAT==CELL, void &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a38c51344d9e177dc16a9f0d032cc0641">interpolate_mesh_var</a> (std::string srcvarname, std::string trgvarname, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;sources_and_weights, const <a class="el" href="classPortage_1_1PartPair.html">PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt; *parts_pair, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt; *gradients=nullptr)</td></tr>
+<tr class="separator:a38c51344d9e177dc16a9f0d032cc0641"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a388404791a902f61628ca55599434e6e"><td class="memTemplParams" colspan="2">template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </td></tr>
+<tr class="memitem:a388404791a902f61628ca55599434e6e"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a388404791a902f61628ca55599434e6e">interpolate_mat_var</a> (std::string srcvarname, std::string trgvarname, std::vector&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt;&gt; const &amp;sources_and_weights_by_mat, std::vector&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt;&gt; *gradients=nullptr)</td></tr>
+<tr class="separator:a388404791a902f61628ca55599434e6e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa221463a44f840bb19c806f557076e47"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:aa221463a44f840bb19c806f557076e47"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#aa221463a44f840bb19c806f557076e47">check_mismatch</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;source_weights)</td></tr>
+<tr class="memdesc:aa221463a44f840bb19c806f557076e47"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if meshes are mismatched (don't cover identical portions of space)  <a href="#aa221463a44f840bb19c806f557076e47">More...</a><br /></td></tr>
+<tr class="separator:aa221463a44f840bb19c806f557076e47"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85f0ea15fd30eb1d0b4b22e2efbfb981"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:a85f0ea15fd30eb1d0b4b22e2efbfb981"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a85f0ea15fd30eb1d0b4b22e2efbfb981">has_mismatch</a> ()</td></tr>
+<tr class="memdesc:a85f0ea15fd30eb1d0b4b22e2efbfb981"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return if meshes are mismatched (check_mismatch must already have been called)  <a href="#a85f0ea15fd30eb1d0b4b22e2efbfb981">More...</a><br /></td></tr>
+<tr class="separator:a85f0ea15fd30eb1d0b4b22e2efbfb981"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab3b5e78e31fd2ea9e60a20b8d55e09e5"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:ab3b5e78e31fd2ea9e60a20b8d55e09e5"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ab3b5e78e31fd2ea9e60a20b8d55e09e5">fix_mismatch</a> (std::string const &amp;src_var_name, std::string const &amp;trg_var_name, double global_lower_bound=-std::numeric_limits&lt; double &gt;::max(), double global_upper_bound=std::numeric_limits&lt; double &gt;::max(), double conservation_tol=1e2 *std::numeric_limits&lt; double &gt;::epsilon(), int maxiter=5, Partial_fixup_type partial_fixup_type=Partial_fixup_type::SHIFTED_CONSERVATIVE, Empty_fixup_type empty_fixup_type=Empty_fixup_type::EXTRAPOLATE)</td></tr>
+<tr class="memdesc:ab3b5e78e31fd2ea9e60a20b8d55e09e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return if meshes are mismatched (check_mismatch must already have been called)  <a href="#ab3b5e78e31fd2ea9e60a20b8d55e09e5">More...</a><br /></td></tr>
+<tr class="separator:ab3b5e78e31fd2ea9e60a20b8d55e09e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5ebe92943c3634647d281e089b7820b"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:ad5ebe92943c3634647d281e089b7820b"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#ad5ebe92943c3634647d281e089b7820b">set_num_tols</a> (const double min_absolute_distance, const double min_absolute_volume)</td></tr>
+<tr class="memdesc:ad5ebe92943c3634647d281e089b7820b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set numerical tolerances for small distances and volumes.  <a href="#ad5ebe92943c3634647d281e089b7820b">More...</a><br /></td></tr>
+<tr class="separator:ad5ebe92943c3634647d281e089b7820b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a640f87fb9dc94b02cff5fd254380d455"><td class="memTemplParams" colspan="2">template&lt;Entity_kind ONWHAT&gt; </td></tr>
+<tr class="memitem:a640f87fb9dc94b02cff5fd254380d455"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1CoreDriverBase.html#a640f87fb9dc94b02cff5fd254380d455">set_num_tols</a> (const <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> &amp;num_tols)</td></tr>
+<tr class="memdesc:a640f87fb9dc94b02cff5fd254380d455"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set numerical tolerances for small volumes, distances, etc.  <a href="#a640f87fb9dc94b02cff5fd254380d455">More...</a><br /></td></tr>
+<tr class="separator:a640f87fb9dc94b02cff5fd254380d455"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt;<br />
@@ -149,8 +168,8 @@ class Portage::CoreDriverBase&lt; D, SourceMesh, SourceState, TargetMesh, Target
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a54df9bba05c9a1dbabc0176247ea9b6e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a54df9bba05c9a1dbabc0176247ea9b6e">&#9670;&nbsp;</a></span>CoreDriverBase()</h2>
+<a id="a8c9c40a763f781ecef214dcf8faf1ff0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8c9c40a763f781ecef214dcf8faf1ff0">&#9670;&nbsp;</a></span>CoreDriverBase()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -169,15 +188,15 @@ template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
 
 </div>
 </div>
-<a id="ae717c5aeba29d1237527ba3b2b9a2e45"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae717c5aeba29d1237527ba3b2b9a2e45">&#9670;&nbsp;</a></span>~CoreDriverBase()</h2>
+<a id="ad07756697c45b7226c07c32fe6368263"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad07756697c45b7226c07c32fe6368263">&#9670;&nbsp;</a></span>~CoreDriverBase()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -196,7 +215,7 @@ template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class 
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
+<span class="mlabels"><span class="mlabel">virtual</span><span class="mlabel">default</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -204,8 +223,8 @@ template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aca1a88677e486f814cae84cb6101f0d2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aca1a88677e486f814cae84cb6101f0d2">&#9670;&nbsp;</a></span>check_mesh_mismatch()</h2>
+<a id="aa221463a44f840bb19c806f557076e47"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa221463a44f840bb19c806f557076e47">&#9670;&nbsp;</a></span>check_mismatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -218,7 +237,7 @@ template&lt;Entity_kind ONWHAT&gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::check_mesh_mismatch </td>
+          <td class="memname">bool <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::check_mismatch </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;&#160;</td>
           <td class="paramname"><em>source_weights</em></td><td>)</td>
@@ -249,15 +268,201 @@ template&lt;Entity_kind ONWHAT&gt; </div>
 
 </div>
 </div>
-<a id="ac072f56b3e19947bdb665abf439d7f4d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac072f56b3e19947bdb665abf439d7f4d">&#9670;&nbsp;</a></span>interpolate_mat_var()</h2>
+<a id="ae1dc06c23246f6884707091291c22633"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae1dc06c23246f6884707091291c22633">&#9670;&nbsp;</a></span>compute_source_gradient()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
 <div class="memtemplate">
-template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </div>
+template&lt;Entity_kind ONWHAT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt;Vector&lt;D&gt; &gt; <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::compute_source_gradient </td>
+          <td>(</td>
+          <td class="paramtype">std::string const&#160;</td>
+          <td class="paramname"><em>field_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a>&#160;</td>
+          <td class="paramname"><em>limiter_type</em> = <code><a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6a129ce73da39e28f090a4963952638f0f">NOLIMITER</a></code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a>&#160;</td>
+          <td class="paramname"><em>boundary_limiter_type</em> = <code><a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118fa7df68da5020422a2b128d16d534e07d4">BND_NOLIMITER</a></code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>material_id</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1Part.html">Part</a>&lt; SourceMesh, SourceState &gt; *&#160;</td>
+          <td class="paramname"><em>source_part</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Compute the gradient field of the given variable on source mesh. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ONWHAT</td><td>entity kind (cell or node). </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">field_name</td><td>the variable name. </td></tr>
+    <tr><td class="paramname">limiter_type</td><td>gradient limiter to use on internal regions. </td></tr>
+    <tr><td class="paramname">boundary_limiter_type</td><td>gradient limiter to use on boundary. </td></tr>
+    <tr><td class="paramname">source_part</td><td>the source mesh part to consider if any. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="ab3b5e78e31fd2ea9e60a20b8d55e09e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab3b5e78e31fd2ea9e60a20b8d55e09e5">&#9670;&nbsp;</a></span>fix_mismatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
+<div class="memtemplate">
+template&lt;Entity_kind ONWHAT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::fix_mismatch </td>
+          <td>(</td>
+          <td class="paramtype">std::string const &amp;&#160;</td>
+          <td class="paramname"><em>src_var_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string const &amp;&#160;</td>
+          <td class="paramname"><em>trg_var_name</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>global_lower_bound</em> = <code>-std::numeric_limits&lt;double&gt;::max()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>global_upper_bound</em> = <code>std::numeric_limits&lt;double&gt;::max()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">double&#160;</td>
+          <td class="paramname"><em>conservation_tol</em> = <code>1e2*std::numeric_limits&lt;double&gt;::epsilon()</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>maxiter</em> = <code>5</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a>&#160;</td>
+          <td class="paramname"><em>partial_fixup_type</em> = <code>Partial_fixup_type::SHIFTED_CONSERVATIVE</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a>&#160;</td>
+          <td class="paramname"><em>empty_fixup_type</em> = <code>Empty_fixup_type::EXTRAPOLATE</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return if meshes are mismatched (check_mismatch must already have been called) </p>
+<dl class="section return"><dt>Returns</dt><dd>Whether the meshes are mismatched </dd></dl>
+
+</div>
+</div>
+<a id="a85f0ea15fd30eb1d0b4b22e2efbfb981"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85f0ea15fd30eb1d0b4b22e2efbfb981">&#9670;&nbsp;</a></span>has_mismatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
+<div class="memtemplate">
+template&lt;Entity_kind ONWHAT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::has_mismatch </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return if meshes are mismatched (check_mismatch must already have been called) </p>
+<dl class="section return"><dt>Returns</dt><dd>Whether the meshes are mismatched </dd></dl>
+
+</div>
+</div>
+<a id="a388404791a902f61628ca55599434e6e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a388404791a902f61628ca55599434e6e">&#9670;&nbsp;</a></span>interpolate_mat_var()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
+<div class="memtemplate">
+template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -283,50 +488,8 @@ template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, c
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>lower_bound</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>upper_bound</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a>&#160;</td>
-          <td class="paramname"><em>limiter</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a>&#160;</td>
-          <td class="paramname"><em>bnd_limiter</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a>&#160;</td>
-          <td class="paramname"><em>partial_fixup_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a>&#160;</td>
-          <td class="paramname"><em>empty_fixup_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>conservation_tol</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>max_fixup_iter</em>&#160;</td>
+          <td class="paramtype">std::vector&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt;&gt; *&#160;</td>
+          <td class="paramname"><em>gradients</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -345,30 +508,22 @@ template&lt;typename T  = double, template&lt; int, Entity_kind, class, class, c
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">srcvarname</td><td>Variable name on source mesh</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">trgvarname</td><td>Variable name on target mesh</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">lower_bound</td><td>Lower bound for variable</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">upper_bound</td><td>Upper bound for variable</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">limiter</td><td>Limiter to use for second order reconstruction</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">bnd_limiter</td><td>Boundary limiter to use for second order reconstruction</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">partial_fixup_type</td><td>Method to populate fields on partially filled target entities (cells or dual cells)</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">empty_fixup_type</td><td>Method to populate fields on empty target entities (cells or dual cells)</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">conservation_tol</td><td>Tolerance to which source and target integral quantities are to be matched</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">max_fixup_iter</td><td>Max number of iterations for global repair</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">gradients</td><td>Gradients of variable on source mesh (can be nullptr for 1st order remap) </td></tr>
   </table>
   </dd>
 </dl>
-<p>See <a class="el" href="portage_8h.html">support/portage.h</a> for options on limiter, partial_fixup_type and empty_fixup_type </p>
 
 </div>
 </div>
-<a id="ae6e740aef17d623bac3cddc32074b6c5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae6e740aef17d623bac3cddc32074b6c5">&#9670;&nbsp;</a></span>interpolate_mesh_var()</h2>
+<a id="adcab4aae4e80d7074b8c59a5ffe991e2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adcab4aae4e80d7074b8c59a5ffe991e2">&#9670;&nbsp;</a></span>interpolate_mesh_var() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
 <div class="memtemplate">
-template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </div>
+template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -394,56 +549,8 @@ template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_k
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>lower_bound</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>upper_bound</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a4cb59edee64edb5a23427c8cb2fb5be6">Limiter_type</a>&#160;</td>
-          <td class="paramname"><em>limiter</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a749d03d65d45c5468ee09f871868118f">Boundary_Limiter_type</a>&#160;</td>
-          <td class="paramname"><em>bnd_limiter</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a>&#160;</td>
-          <td class="paramname"><em>partial_fixup_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a>&#160;</td>
-          <td class="paramname"><em>empty_fixup_type</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>conservation_tol</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>max_fixup_iter</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classPortage_1_1PartPair.html">PartPair</a>&lt; D, ONWHAT, SourceMesh, SourceState, TargetMesh, TargetState &gt; *&#160;</td>
-          <td class="paramname"><em>parts_pair</em> = <code>nullptr</code>&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt; *&#160;</td>
+          <td class="paramname"><em>gradients</em> = <code>nullptr</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -470,18 +577,87 @@ template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_k
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">srcvarname</td><td>Variable name on source mesh</td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">trgvarname</td><td>Variable name on target mesh</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">lower_bound</td><td>Lower bound for variable</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">upper_bound</td><td>Upper bound for variable</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">limiter</td><td>Limiter to use for second order reconstruction</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">bnd_limiter</td><td>Boundary limiter to use for second order reconstruction</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">partial_fixup_type</td><td>Method to populate fields on partially filled target entities (cells or dual cells)</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">empty_fixup_type</td><td>Method to populate fields on empty target entities (cells or dual cells)</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">conservation_tol</td><td>Tolerance to which source and target integral quantities are to be matched</td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">max_fixup_iter</td><td>Max number of iterations for global repair</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">gradients</td><td>Gradients of variable on source mesh (can be nullptr for 1st order remap) </td></tr>
   </table>
   </dd>
 </dl>
-<p>See <a class="el" href="portage_8h.html">support/portage.h</a> for options on limiter, partial_fixup_type and empty_fixup_type </p>
+
+</div>
+</div>
+<a id="a38c51344d9e177dc16a9f0d032cc0641"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38c51344d9e177dc16a9f0d032cc0641">&#9670;&nbsp;</a></span>interpolate_mesh_var() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
+<div class="memtemplate">
+template&lt;typename T  = double, Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class, class, class, class, template&lt; class, int, class, class &gt; class, class, class, class &gt; class Interpolate&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::enable_if&lt;ONWHAT == CELL, void&gt; <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::interpolate_mesh_var </td>
+          <td>(</td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>srcvarname</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">std::string&#160;</td>
+          <td class="paramname"><em>trgvarname</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>sources_and_weights</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1PartPair.html">PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt; *&#160;</td>
+          <td class="paramname"><em>parts_pair</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Vector&lt; D &gt;&gt; *&#160;</td>
+          <td class="paramname"><em>gradients</em> = <code>nullptr</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>(Part-by-part) Interpolate a cell variable of type T residing on entity kind ONWHAT using previously computed intersection weights</p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>type of variable</td></tr>
+    <tr><td class="paramname">ONWHAT</td><td>Entity_kind that field resides on (enabled only for CELLs)</td></tr>
+    <tr><td class="paramname">Interpolate</td><td>Functor for doing the interpolate from mesh to mesh</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">srcvarname</td><td>Variable name on source mesh</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">trgvarname</td><td>Variable name on target mesh</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">parts_pair</td><td>Pair of parts between which we have to remap</td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">gradients</td><td>Gradients of variable on source mesh (can be nullptr for 1st order remap)</td></tr>
+  </table>
+  </dd>
+</dl>
+<p>Enabled only for cells using SFINAE </p>
 
 </div>
 </div>
@@ -643,8 +819,8 @@ template&lt;Entity_kind ONWHAT, template&lt; int, Entity_kind, class, class &gt;
 
 </div>
 </div>
-<a id="a968313c974832ed54f05ece43b51deee"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a968313c974832ed54f05ece43b51deee">&#9670;&nbsp;</a></span>set_num_tols()</h2>
+<a id="ad5ebe92943c3634647d281e089b7820b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5ebe92943c3634647d281e089b7820b">&#9670;&nbsp;</a></span>set_num_tols() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -659,7 +835,57 @@ template&lt;Entity_kind ONWHAT&gt; </div>
         <tr>
           <td class="memname">void <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::set_num_tols </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a>&#160;</td>
+          <td class="paramtype">const double&#160;</td>
+          <td class="paramname"><em>min_absolute_distance</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const double&#160;</td>
+          <td class="paramname"><em>min_absolute_volume</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Set numerical tolerances for small distances and volumes. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">Entity_kind</td><td>what kind of entity are we setting for</td></tr>
+    <tr><td class="paramname">min_absolute_distance</td><td>selected minimal distance</td></tr>
+    <tr><td class="paramname">min_absolute_volume</td><td>selected minimal volume </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a640f87fb9dc94b02cff5fd254380d455"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a640f87fb9dc94b02cff5fd254380d455">&#9670;&nbsp;</a></span>set_num_tols() <span class="overload">[2/2]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh, class SourceState, class TargetMesh, class TargetState, template&lt; class, int, class, class &gt; class InterfaceReconstructorType, class Matpoly_Splitter, class Matpoly_Clipper, class CoordSys&gt; </div>
+<div class="memtemplate">
+template&lt;Entity_kind ONWHAT&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void <a class="el" href="classPortage_1_1CoreDriverBase.html">Portage::CoreDriverBase</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper, CoordSys &gt;::set_num_tols </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> &amp;&#160;</td>
           <td class="paramname"><em>num_tols</em></td><td>)</td>
           <td></td>
         </tr>

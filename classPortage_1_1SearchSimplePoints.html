@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 			  crossorigin="anonymous"></script>
       <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
     <script type="text/javascript" src="smartmenu.js"></script>
-    <title>portage: Portage::SearchSimplePoints&lt; D, SourceSwarmType, TargetSwarmType &gt; Class Template Reference</title>
+    <title>portage: Portage::SearchSimplePoints&lt; dim, SourceSwarm, TargetSwarm &gt; Class Template Reference</title>
     <link href="tabs.css" rel="stylesheet" type="text/css">
       <!-- this version is too old for bootstrap, but it includes modifications
 	   from standard jquery
@@ -78,7 +78,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1SearchSimplePoints-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Portage::SearchSimplePoints&lt; D, SourceSwarmType, TargetSwarmType &gt; Class Template Reference</div>  </div>
+<div class="title">Portage::SearchSimplePoints&lt; dim, SourceSwarm, TargetSwarm &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -89,48 +89,48 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a626d67b209d0a3bad12f0de08ea6eab0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#a626d67b209d0a3bad12f0de08ea6eab0">SearchSimplePoints</a> ()=delete</td></tr>
-<tr class="memdesc:a626d67b209d0a3bad12f0de08ea6eab0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor (disabled)  <a href="#a626d67b209d0a3bad12f0de08ea6eab0">More...</a><br /></td></tr>
-<tr class="separator:a626d67b209d0a3bad12f0de08ea6eab0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ade1c2475c6f3fe187b937bab40f5dfe2"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#ade1c2475c6f3fe187b937bab40f5dfe2">SearchSimplePoints</a> (const SourceSwarmType &amp;source_swarm, const TargetSwarmType &amp;target_swarm, std::shared_ptr&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; D &gt;&gt;&gt; source_extents, std::shared_ptr&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; D &gt;&gt;&gt; target_extents, Meshfree::WeightCenter center=Meshfree::Scatter)</td></tr>
-<tr class="memdesc:ade1c2475c6f3fe187b937bab40f5dfe2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the search structure for finding neighboring points.  <a href="#ade1c2475c6f3fe187b937bab40f5dfe2">More...</a><br /></td></tr>
-<tr class="separator:ade1c2475c6f3fe187b937bab40f5dfe2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab214d678cf7fc637181b5c6c4f7e9fd4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#ab214d678cf7fc637181b5c6c4f7e9fd4">operator=</a> (const <a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> &amp;)=delete</td></tr>
-<tr class="memdesc:ab214d678cf7fc637181b5c6c4f7e9fd4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor - use default - std::transfor needs this.  <a href="#ab214d678cf7fc637181b5c6c4f7e9fd4">More...</a><br /></td></tr>
-<tr class="separator:ab214d678cf7fc637181b5c6c4f7e9fd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04ff09fdb83999f9084be93142b10f1b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#a04ff09fdb83999f9084be93142b10f1b">~SearchSimplePoints</a> ()=default</td></tr>
-<tr class="memdesc:a04ff09fdb83999f9084be93142b10f1b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#a04ff09fdb83999f9084be93142b10f1b">More...</a><br /></td></tr>
-<tr class="separator:a04ff09fdb83999f9084be93142b10f1b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adfe20529ccdae11fec794847fbd2471f"><td class="memItemLeft" align="right" valign="top">std::vector&lt; unsigned int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#adfe20529ccdae11fec794847fbd2471f">operator()</a> (const int pointId) const</td></tr>
-<tr class="memdesc:adfe20529ccdae11fec794847fbd2471f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find the source swarm points within an appropriate distance of a target point.  <a href="#adfe20529ccdae11fec794847fbd2471f">More...</a><br /></td></tr>
-<tr class="separator:adfe20529ccdae11fec794847fbd2471f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad971f2d5a66afacf6548c0b7668119d4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#ad971f2d5a66afacf6548c0b7668119d4">SearchSimplePoints</a> ()=delete</td></tr>
+<tr class="memdesc:ad971f2d5a66afacf6548c0b7668119d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor (disabled)  <a href="#ad971f2d5a66afacf6548c0b7668119d4">More...</a><br /></td></tr>
+<tr class="separator:ad971f2d5a66afacf6548c0b7668119d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dda3d97700a0fa9e8123bd6f045bb89"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#a2dda3d97700a0fa9e8123bd6f045bb89">SearchSimplePoints</a> (SourceSwarm const &amp;source_swarm, TargetSwarm const &amp;target_swarm, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Point&lt; dim &gt;&gt; const &amp;source_extents, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Point&lt; dim &gt;&gt; const &amp;target_extents, Meshfree::WeightCenter center=Meshfree::Scatter)</td></tr>
+<tr class="memdesc:a2dda3d97700a0fa9e8123bd6f045bb89"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds the search structure for finding neighboring points.  <a href="#a2dda3d97700a0fa9e8123bd6f045bb89">More...</a><br /></td></tr>
+<tr class="separator:a2dda3d97700a0fa9e8123bd6f045bb89"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af03d1e12c72fa3072306db68837219d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#af03d1e12c72fa3072306db68837219d5">operator=</a> (<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> const &amp;)=delete</td></tr>
+<tr class="memdesc:af03d1e12c72fa3072306db68837219d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor - use default - std::transfor needs this.  <a href="#af03d1e12c72fa3072306db68837219d5">More...</a><br /></td></tr>
+<tr class="separator:af03d1e12c72fa3072306db68837219d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa5765508acc7ef5463111fcc09a8ce07"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#aa5765508acc7ef5463111fcc09a8ce07">~SearchSimplePoints</a> ()=default</td></tr>
+<tr class="memdesc:aa5765508acc7ef5463111fcc09a8ce07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#aa5765508acc7ef5463111fcc09a8ce07">More...</a><br /></td></tr>
+<tr class="separator:aa5765508acc7ef5463111fcc09a8ce07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaa32e86a6061a2880cb3cd50920d430f"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchSimplePoints.html#aaa32e86a6061a2880cb3cd50920d430f">operator()</a> (int point_id) const</td></tr>
+<tr class="memdesc:aaa32e86a6061a2880cb3cd50920d430f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Find the source swarm points within an appropriate distance of a target point.  <a href="#aaa32e86a6061a2880cb3cd50920d430f">More...</a><br /></td></tr>
+<tr class="separator:aaa32e86a6061a2880cb3cd50920d430f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;int D, class SourceSwarmType, class TargetSwarmType&gt;<br />
-class Portage::SearchSimplePoints&lt; D, SourceSwarmType, TargetSwarmType &gt;</h3>
+<div class="textblock"><h3>template&lt;int dim, class SourceSwarm, class TargetSwarm&gt;<br />
+class Portage::SearchSimplePoints&lt; dim, SourceSwarm, TargetSwarm &gt;</h3>
 
 <p>A simple, crude search algorithm that does a quadratic-time search over a swarm of points. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">SourceSwarmType</td><td>The swarm type of the input swarm. </td></tr>
-    <tr><td class="paramname">TargetSwarmType</td><td>The swarm type of the output swarm. </td></tr>
+    <tr><td class="paramname">SourceSwarm</td><td>The swarm type of the input swarm. </td></tr>
+    <tr><td class="paramname">TargetSwarm</td><td>The swarm type of the output swarm. </td></tr>
   </table>
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a626d67b209d0a3bad12f0de08ea6eab0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a626d67b209d0a3bad12f0de08ea6eab0">&#9670;&nbsp;</a></span>SearchSimplePoints() <span class="overload">[1/2]</span></h2>
+<a id="ad971f2d5a66afacf6548c0b7668119d4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad971f2d5a66afacf6548c0b7668119d4">&#9670;&nbsp;</a></span>SearchSimplePoints() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
+template&lt;int dim, class SourceSwarm , class TargetSwarm &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt;::<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt;::<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -147,39 +147,39 @@ template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
 
 </div>
 </div>
-<a id="ade1c2475c6f3fe187b937bab40f5dfe2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ade1c2475c6f3fe187b937bab40f5dfe2">&#9670;&nbsp;</a></span>SearchSimplePoints() <span class="overload">[2/2]</span></h2>
+<a id="a2dda3d97700a0fa9e8123bd6f045bb89"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dda3d97700a0fa9e8123bd6f045bb89">&#9670;&nbsp;</a></span>SearchSimplePoints() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
+template&lt;int dim, class SourceSwarm , class TargetSwarm &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt;::<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt;::<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
           <td>(</td>
-          <td class="paramtype">const SourceSwarmType &amp;&#160;</td>
+          <td class="paramtype">SourceSwarm const &amp;&#160;</td>
           <td class="paramname"><em>source_swarm</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const TargetSwarmType &amp;&#160;</td>
+          <td class="paramtype">TargetSwarm const &amp;&#160;</td>
           <td class="paramname"><em>target_swarm</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; D &gt;&gt;&gt;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Point&lt; dim &gt;&gt; const &amp;&#160;</td>
           <td class="paramname"><em>source_extents</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">std::shared_ptr&lt; <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; Point&lt; D &gt;&gt;&gt;&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; Point&lt; dim &gt;&gt; const &amp;&#160;</td>
           <td class="paramname"><em>target_extents</em>, </td>
         </tr>
         <tr>
@@ -215,19 +215,19 @@ template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
 
 </div>
 </div>
-<a id="a04ff09fdb83999f9084be93142b10f1b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04ff09fdb83999f9084be93142b10f1b">&#9670;&nbsp;</a></span>~SearchSimplePoints()</h2>
+<a id="aa5765508acc7ef5463111fcc09a8ce07"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa5765508acc7ef5463111fcc09a8ce07">&#9670;&nbsp;</a></span>~SearchSimplePoints()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
+template&lt;int dim, class SourceSwarm , class TargetSwarm &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt;::~<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt;::~<a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -245,28 +245,36 @@ template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="adfe20529ccdae11fec794847fbd2471f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#adfe20529ccdae11fec794847fbd2471f">&#9670;&nbsp;</a></span>operator()()</h2>
+<a id="aaa32e86a6061a2880cb3cd50920d430f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aaa32e86a6061a2880cb3cd50920d430f">&#9670;&nbsp;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
+template&lt;int dim, class SourceSwarm , class TargetSwarm &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt; unsigned int &gt; <a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt;::operator() </td>
+          <td class="memname">std::vector&lt;int&gt; <a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt;::operator() </td>
           <td>(</td>
-          <td class="paramtype">const int&#160;</td>
-          <td class="paramname"><em>pointId</em></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>point_id</em></td><td>)</td>
           <td> const</td>
         </tr>
       </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
 </div><div class="memdoc">
 
 <p>Find the source swarm points within an appropriate distance of a target point. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">pointId</td><td>The index of the point in the target swarm for which we wish to find the candidate neighbor points in the source swarm. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">point_id</td><td>The index of the point in the target swarm for which we wish to find the candidate neighbor points in the source swarm. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">candidates</td><td>Pointer to a vector of potential candidate points in the source swarm. </td></tr>
   </table>
   </dd>
@@ -274,21 +282,21 @@ template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
 
 </div>
 </div>
-<a id="ab214d678cf7fc637181b5c6c4f7e9fd4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab214d678cf7fc637181b5c6c4f7e9fd4">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="af03d1e12c72fa3072306db68837219d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af03d1e12c72fa3072306db68837219d5">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, class SourceSwarmType , class TargetSwarmType &gt; </div>
+template&lt;int dim, class SourceSwarm , class TargetSwarm &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a>&amp; <a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt;::operator= </td>
+          <td class="memname"><a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a>&amp; <a class="el" href="classPortage_1_1SearchSimplePoints.html">Portage::SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt;::operator= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a>&lt; D, SourceSwarmType, TargetSwarmType &gt; &amp;&#160;</td>
+          <td class="paramtype"><a class="el" href="classPortage_1_1SearchSimplePoints.html">SearchSimplePoints</a>&lt; dim, SourceSwarm, TargetSwarm &gt; const &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>

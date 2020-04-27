@@ -90,6 +90,7 @@ $(function() {
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &lt;algorithm&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
+<code>#include &lt;limits&gt;</code><br />
 <code>#include &quot;wonton/support/Point.h&quot;</code><br />
 <code>#include &quot;wonton/support/Vector.h&quot;</code><br />
 <code>#include &quot;wonton/support/Matrix.h&quot;</code><br />
@@ -185,12 +186,9 @@ Variables</h2></td></tr>
 <tr class="separator:acba989cc7de9f6d1f843ca966b9e5986"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74ef27f8eba2fea918260dbe6319f705"><td class="memItemLeft" align="right" valign="top">constexpr Empty_fixup_type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html#a74ef27f8eba2fea918260dbe6319f705">Portage::DEFAULT_EMPTY_FIXUP_TYPE</a> = Empty_fixup_type::LEAVE_EMPTY</td></tr>
 <tr class="separator:a74ef27f8eba2fea918260dbe6319f705"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6971496417ff9170ca032738da2db19d"><td class="memItemLeft" align="right" valign="top">constexpr double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html#a6971496417ff9170ca032738da2db19d">Portage::DEFAULT_CONSERVATION_TOL</a> = 100*std::numeric_limits&lt;double&gt;::epsilon()</td></tr>
-<tr class="memdesc:a6971496417ff9170ca032738da2db19d"><td class="mdescLeft">&#160;</td><td class="mdescRight">default relative tolerance on aggregated field values to detect mesh mismatch  <a href="namespacePortage.html#a6971496417ff9170ca032738da2db19d">More...</a><br /></td></tr>
-<tr class="separator:a6971496417ff9170ca032738da2db19d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0ab7f41602bf5e6635e45fd9c9f56d1"><td class="memItemLeft" align="right" valign="top">constexpr int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html#aa0ab7f41602bf5e6635e45fd9c9f56d1">Portage::DEFAULT_MAX_FIXUP_ITER</a> = 5</td></tr>
-<tr class="memdesc:aa0ab7f41602bf5e6635e45fd9c9f56d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">default number of iterations for mismatch repair  <a href="namespacePortage.html#aa0ab7f41602bf5e6635e45fd9c9f56d1">More...</a><br /></td></tr>
-<tr class="separator:aa0ab7f41602bf5e6635e45fd9c9f56d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c599f3324fdd2db830f04b3967f3cbd"><td class="memTemplParams" colspan="2">template&lt;int D&gt; </td></tr>
+<tr class="memitem:a8c599f3324fdd2db830f04b3967f3cbd"><td class="memTemplItemLeft" align="right" valign="top">const NumericTolerances_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage.html#a8c599f3324fdd2db830f04b3967f3cbd">Portage::DEFAULT_NUMERIC_TOLERANCES</a></td></tr>
+<tr class="separator:a8c599f3324fdd2db830f04b3967f3cbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!--

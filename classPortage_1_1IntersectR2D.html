@@ -92,12 +92,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:aea615417550830a3de0aed224ecf05dc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#aea615417550830a3de0aed224ecf05dc">IntersectR2D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh, <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> num_tols)</td></tr>
 <tr class="memdesc:aea615417550830a3de0aed224ecf05dc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#aea615417550830a3de0aed224ecf05dc">More...</a><br /></td></tr>
 <tr class="separator:aea615417550830a3de0aed224ecf05dc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5f2aaf19045aaf892878820602f0415b"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a5f2aaf19045aaf892878820602f0415b">set_material</a> (int m)</td></tr>
-<tr class="memdesc:a5f2aaf19045aaf892878820602f0415b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#a5f2aaf19045aaf892878820602f0415b">More...</a><br /></td></tr>
-<tr class="separator:a5f2aaf19045aaf892878820602f0415b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a80ebdc713b454a587958a63daaa6eb8e"><td class="memItemLeft" align="right" valign="top">std::vector&lt; Weights_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a80ebdc713b454a587958a63daaa6eb8e">operator()</a> (const int tgt_entity, const std::vector&lt; int &gt; src_entities) const</td></tr>
-<tr class="memdesc:a80ebdc713b454a587958a63daaa6eb8e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersect control volume of a target entity with control volumes of a set of source entities.  <a href="#a80ebdc713b454a587958a63daaa6eb8e">More...</a><br /></td></tr>
-<tr class="separator:a80ebdc713b454a587958a63daaa6eb8e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dbb0db17825e781868c3531406ddc7b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a2dbb0db17825e781868c3531406ddc7b">set_material</a> (int m)</td></tr>
+<tr class="memdesc:a2dbb0db17825e781868c3531406ddc7b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#a2dbb0db17825e781868c3531406ddc7b">More...</a><br /></td></tr>
+<tr class="separator:a2dbb0db17825e781868c3531406ddc7b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adecab7293bd996f7d11ac89eb1d56d41"><td class="memItemLeft" align="right" valign="top">std::vector&lt; Weights_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#adecab7293bd996f7d11ac89eb1d56d41">operator()</a> (const int tgt_entity, std::vector&lt; int &gt; const &amp;src_entities) const</td></tr>
+<tr class="memdesc:adecab7293bd996f7d11ac89eb1d56d41"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersect control volume of a target entity with control volumes of a set of source entities.  <a href="#adecab7293bd996f7d11ac89eb1d56d41">More...</a><br /></td></tr>
+<tr class="separator:adecab7293bd996f7d11ac89eb1d56d41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a896474db896afd446c0f771b488f1c6a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a896474db896afd446c0f771b488f1c6a">IntersectR2D</a> ()=delete</td></tr>
 <tr class="separator:a896474db896afd446c0f771b488f1c6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a04882c0cb01056eb52e872ad359b6278"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1IntersectR2D.html">IntersectR2D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR2D.html#a04882c0cb01056eb52e872ad359b6278">operator=</a> (const <a class="el" href="classPortage_1_1IntersectR2D.html">IntersectR2D</a> &amp;)=delete</td></tr>
@@ -190,8 +190,8 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a80ebdc713b454a587958a63daaa6eb8e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a80ebdc713b454a587958a63daaa6eb8e">&#9670;&nbsp;</a></span>operator()()</h2>
+<a id="adecab7293bd996f7d11ac89eb1d56d41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adecab7293bd996f7d11ac89eb1d56d41">&#9670;&nbsp;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -210,7 +210,7 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::vector&lt; int &gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; int &gt; const &amp;&#160;</td>
           <td class="paramname"><em>src_entities</em>&#160;</td>
         </tr>
         <tr>
@@ -268,8 +268,8 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
 
 </div>
 </div>
-<a id="a5f2aaf19045aaf892878820602f0415b"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5f2aaf19045aaf892878820602f0415b">&#9670;&nbsp;</a></span>set_material()</h2>
+<a id="a2dbb0db17825e781868c3531406ddc7b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2dbb0db17825e781868c3531406ddc7b">&#9670;&nbsp;</a></span>set_material()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -280,7 +280,7 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int <a class="el" href="classPortage_1_1IntersectR2D.html">Portage::IntersectR2D</a>&lt; on_what, SourceMeshType, SourceStateType, TargetMeshType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_material </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1IntersectR2D.html">Portage::IntersectR2D</a>&lt; on_what, SourceMeshType, SourceStateType, TargetMeshType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_material </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>m</em></td><td>)</td>

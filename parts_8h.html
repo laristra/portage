@@ -86,24 +86,26 @@ $(function() {
 
 <p>Manages source and target sub-meshes for part-by-part remap.  
 <a href="#details">More...</a></p>
-<div class="textblock"><code>#include &lt;sys/time.h&gt;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
+<div class="textblock"><code>#include &lt;algorithm&gt;</code><br />
+<code>#include &lt;utility&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &lt;map&gt;</code><br />
 <code>#include &lt;iterator&gt;</code><br />
 <code>#include &lt;unordered_set&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
-<code>#include &lt;utility&gt;</code><br />
 <code>#include &lt;iostream&gt;</code><br />
 <code>#include &lt;type_traits&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
 <code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="fix__mismatch_8h_source.html">portage/driver/fix_mismatch.h</a>&quot;</code><br />
 </div>
 <p><a href="parts_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Part.html">Portage::Part&lt; Mesh, State &gt;</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Manages source and target sub-meshes for part-by-part remap. It detects boundaries mismatch and provides the necessary fixup for partially filled and empty cells values.  <a href="classPortage_1_1PartPair.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">

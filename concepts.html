@@ -87,7 +87,7 @@ $(function() {
 <p><a class="el" href="namespacePortage.html">Portage</a> does come with some full-featured <em>drivers</em> that can be directly used to deploy a powerful remapping capability into an application. In particular, the following drivers are provided:</p>
 <ul>
 <li><a class="el" href="classPortage_1_1MMDriver.html" title="MMDriver provides the API to mapping multi-material data from one mesh to another. ">Portage::MMDriver</a> - for single- and multi-material mesh-mesh remap.</li>
-<li>Portage::Meshfree::SwarmDriver - for particle-particle remap.</li>
+<li>Portage::swarm::SwarmDriver - for particle-particle remap.</li>
 <li><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another using particles. ">Portage::MSM_Driver</a> - for mesh-mesh remap with particles as an intermediary.</li>
 </ul>
 <p>These drivers are all used within some example applications within the <code>apps</code> directory to illustrate how the drivers can be used with a mix of components. The applications choose a particular mesh or particle swarm type, select component classes for the remapping steps along with associated settings for the remap process. The drivers, apps and the regression tests included with the apps are all fairly comprehensive and exercise all functionality of the <a class="el" href="namespacePortage.html">Portage</a> framework. Therefore, the included drivers and some of the apps can be used as-is if they meet all the needs of a particular application.</p>
@@ -182,8 +182,36 @@ $(function() {
 Multi-material remapping with interface reconstruction</div></div>
 <p> <br />
 </p>
-<p><a class="anchor" id="meshfree remap"></a> </p><h2>Particle or Meshfree Remapping</h2>
-<p><a class="el" href="namespacePortage.html">Portage</a> can estimate functions and derivatives between particle swarms (groups of particles) employing algorithmic devices similar to those of mesh-mesh remap. We say "estimate" instead of "interpolate" because in general, meshfree function estimates pass <em>near</em> the data, and not <em>through</em> it. Meshfree remap is performed in the following steps that echo those of mesh-mesh remapping:</p>
+<h2>Swept-face approximate remapping</h2>
+<p>In addition to the remap using mesh-mesh intersections, <a class="el" href="namespacePortage.html">Portage</a> offers an approximate method [1] to calculate contribution weights from the candidate source cells. This method is called swept-face method, because the mesh-mesh intersections are replaced by simple regions defined by the displacement of faces between a source mesh and a target mesh. Therefore, this method requires that both meshes have the same topology and only small nodal displacement.</p>
+<h3>Single material remap</h3>
+<div class="image">
+<img src="swept_single_small.png" alt="swept_single_small.png"/>
+<div class="caption">
+Example of two single-material swept regions</div></div>
+<p> Following four phases described earlier, namely: <b>search</b>, <b>intersect</b>, <b>interpolate</b> and <b>repair</b>, the main difference lies inside the <b>intersect</b> phase. The swept-face <b>intersect</b> algorithm can be summarized as:</p>
+<ul>
+<li>For each face <em>f</em> of a computational cell <em>c</em>, create a swept-face polygon/polyhedron and calculate its signed volume. Note that the polygon can be self-intersecting.</li>
+<li>Based on the sign of the volume, assign this volume (and higher moments) either to the cell <em>c</em> or to a neighboring cell which is sharing the face <em>f</em> with the cell <em>c</em>.</li>
+<li>In addition to contributions from the face displacement, the volume of the cell <em>c</em> itself is assigned to the cell <em>c</em>, so that the target data can be expressed as a weighted sum over all these contributions in the same way as for the default exact intersections. Therefore, the <b>interpolate</b> phase is the same as for intersection based remap.</li>
+</ul>
+<p>Thanks to the same connectivity of a source mesh and a target mesh, the <b>search</b> phase is trivial. A list of face-neighboring cells is created in this phase. <b>Repair</b> phase is the same as for the default intersection-based remap.</p>
+<h3>Multi material remap</h3>
+<div class="image">
+<img src="swept_multi_small.png" alt="swept_multi_small.png"/>
+<div class="caption">
+Example of two multi-material swept regions</div></div>
+<h6>An example of two swept regions projected into their corresponding face-cell groups for a multi-material remap</h6>
+<p>Preservation of material volumes requires more sophisticated method for the multi-material swept-face remap. To make use of interface reconstruction in source cells, swept regions are projected into corresponding cells based on their signed volumes. This is done in following steps during the <b>intersect</b> phase:</p>
+<ul>
+<li>Create a polygon/polyhedron <em>p</em> by adding a centroid of a cell <em>c</em> to a face <em>f</em>. This poly defines a face-cell group <em>fc</em>.</li>
+<li>Find a cutting plane in the direction of an effective normal of the face <em>f</em> in such a way that the volume of the poly <em>p</em> under the plane is equal to the the swept volume.</li>
+<li>Cut material polygons associated with a face-cell group <em>fc</em> with the cutting plane to get material volumes (and higher moments) which are assigned to the cell <em>c</em>. Material volumes from the cell itself have to be added to the contribution as described in the single-material case.</li>
+</ul>
+<p><br />
+</p>
+<p><a class="anchor" id="meshfree remap"></a> </p><h2>Particle or swarm Remapping</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> can estimate functions and derivatives between particle swarms (groups of particles) employing algorithmic devices similar to those of mesh-mesh remap. We say "estimate" instead of "interpolate" because in general, meshfree function estimates pass <em>near</em> the data, and not <em>through</em> it. swarm remap is performed in the following steps that echo those of mesh-mesh remapping:</p>
 <ul>
 <li><b>search</b> - find candidate source particles that will contribute to remap at each target particle.</li>
 <li><b>accumulate</b> - calculate the weight of each candidate's contribution to the remap at a given target particle.</li>
@@ -248,19 +276,61 @@ Multi-material remapping with interface reconstruction</div></div>
 </table>
 <p>The only available meshfree method for accumulate is:</p>
 <ul>
-<li>Portage::Meshfree::Accumulate - any-d accumulator that works with various weight function shapes, kernel functions, basis functions and estimator models.</li>
+<li>Portage::swarm::Accumulate - any-d accumulator that works with various weight function shapes, kernel functions, basis functions and estimator models.</li>
 </ul>
 <p>Developers may write their own Accumulate class.</p>
 <h3>Estimate</h3>
 <p>Given the list of source particles and their weighted contributions to a given target particle, along with source field data, this step actually populates the fields on the target particles. All of the heavy-lifting of the remap for particles has been done in the accumulate phase, such that this step results in a basic matrix vector multiply between the field data on source particles and the weights for the various orders of derivative.</p>
 <p>The sole available Estimate method is:</p>
 <ul>
-<li>Portage::Meshfree::Estimate - use the output of Portage::Accumulate to estimate the target field data with varying degrees of accuracy.</li>
+<li>Portage::swarm::Estimate - use the output of Portage::Accumulate to estimate the target field data with varying degrees of accuracy.</li>
 </ul>
 <p>but developers are free to substitute a different one.</p>
 <p><br />
 </p>
 <p>Note that while the meshfree interpolation can go to <em>very high order of accuracy</em> it is still <em>not strictly conservative</em> like the mesh-mesh remap. Also, meshfree remapping currently does not incorporate mechanisms for local or global bounds preservation in the interpolation. Consequently, users must be conscious of the fact that going to higher orders of interpolation carries the risk of bounds violation. Furthermore, particle remap is not currently sensitive to multi-material data fields. These difficulties will be addressed in future code releases.</p>
+<h2>Coordinate Systems</h2>
+<p><a class="el" href="namespacePortage.html">Portage</a> provides the tools to remap in different coordinate systems. Details are given in the coordinate_systems.pdf document.</p>
+<p>The coordinates used by <a class="el" href="namespacePortage.html">Portage</a> are based on ISO 80000-2:2009, and are shown here:<br />
+ </p><div class="image">
+<img src="coordinates.png" alt="coordinates.png"/>
+<div class="caption">
+physics coordinates</div></div>
+<p><br />
+This is a public domain image from Wikimedia Commons and can be found at <a href="https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png">https://commons.wikimedia.org/wiki/File:Physics_Coordinates.png.</a></p>
+<table class="doxtable">
+<tr>
+<th>variable </th><th align="left">meaning  </th></tr>
+<tr>
+<td>x </td><td align="left">the first Cartesian coordinate </td></tr>
+<tr>
+<td>y </td><td align="left">the second Cartesian coordinate </td></tr>
+<tr>
+<td>z </td><td align="left">the third Cartesian coordinate </td></tr>
+<tr>
+<td>r </td><td align="left">the distance from the origin (spherical radius) </td></tr>
+<tr>
+<td>&rho; </td><td align="left">the distance from the z axis (cylindrical radius) </td></tr>
+<tr>
+<td>&phi; </td><td align="left">the azimuthal angle (around the z axis, starting at the positive x axis) </td></tr>
+<tr>
+<td>&theta; </td><td align="left">the angle of declination (descending from the positive z axis) </td></tr>
+</table>
+<p>The available coordinate systems are</p>
+<ul>
+<li><code>CartesianCoordinates&lt;3&gt;</code>: 3D Cartesian coordinates, (x,y,z); the "basic" right-handed 3D coordinates;</li>
+<li><code>CartesianCoordinates&lt;2&gt;</code>: 2D Cartesian coordinates, (x,y); the "basic" 2D coordinates;</li>
+<li><code>CartesianCoordinates&lt;1&gt;</code>: 1D Cartesian coordinates, (x); the "basic" 1D coordinates;</li>
+<li><code>Cylindrical3DCoordinates</code>: 3D cylindrical coordinates, (&rho;, &phi;, z);</li>
+<li><code>CylindricalPolarCoordinates</code>: 2D cylindrical polar coordinates, (&rho;, &phi;); the "usual" polar coordinates;</li>
+<li><code>CylindricalAxisymmetricCoordinates</code>: 2D cylindrical axisymmetric coordinates, (&rho;,z); implicitly a 3D coordinate system, where the plane of the grid is rotated around the z axis (i.e., no variation with the azimuthal angle &phi;);</li>
+<li><code>CylindricalRadialCoordinates</code>: 1D cylindrical radial coordinates, (&rho;); implicitly a 2D coordinate system, where quantities depend only on their 2D distance from the origin &rho;, not on the azimuthal angle &phi;;</li>
+<li><code>Spherical3DCoordinates</code>: 3D spherical coordinates, (r,&theta;,&phi;);</li>
+<li><code>SphericalRadialCoordinates</code>: 1D spherical radial coordinates, (r); implicitly a 3D coordinate system, where there is no variation with either the azimuthal angle &phi; or declination angle &theta;, but only the 3D distance from the origin r.</li>
+</ul>
+<p>Additional coordinate systems can be implemented, following the model of the existing coordinate systems.</p>
+<p>It is currently assumed that both the target and source meshes are using the same coordinate system.</p>
+<p>Not all components of <a class="el" href="namespacePortage.html">Portage</a> are available with non-Cartesian coordinate systems. Look for a template for the coordinate system to be certain that a given component of <a class="el" href="namespacePortage.html">Portage</a> is designed to work with non-Cartesian coordinate systems.</p>
 <p><br />
 </p>
 <p>[1] Margolin, L.G. and Shashkov, M.J. "Second-order sign-preserving

@@ -89,12 +89,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3be1b055bb18a5af6709579939d0da46"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a3be1b055bb18a5af6709579939d0da46">IntersectR3D</a> (SourceMeshType const &amp;source_mesh, SourceStateType const &amp;source_state, TargetMeshType const &amp;target_mesh, <a class="el" href="structPortage_1_1NumericTolerances__t.html">NumericTolerances_t</a> num_tols, bool rectangular_mesh=false)</td></tr>
 <tr class="memdesc:a3be1b055bb18a5af6709579939d0da46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor WITHOUT interface reconstructor.  <a href="#a3be1b055bb18a5af6709579939d0da46">More...</a><br /></td></tr>
 <tr class="separator:a3be1b055bb18a5af6709579939d0da46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7025e18156879e3397f6eeb9726affbe"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a7025e18156879e3397f6eeb9726affbe">set_material</a> (int m)</td></tr>
-<tr class="memdesc:a7025e18156879e3397f6eeb9726affbe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#a7025e18156879e3397f6eeb9726affbe">More...</a><br /></td></tr>
-<tr class="separator:a7025e18156879e3397f6eeb9726affbe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1aef0cc719445b4ae9af1050401d8a0"><td class="memItemLeft" align="right" valign="top">std::vector&lt; Weights_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#ad1aef0cc719445b4ae9af1050401d8a0">operator()</a> (const int tgt_entity, const std::vector&lt; int &gt; src_entities) const</td></tr>
-<tr class="memdesc:ad1aef0cc719445b4ae9af1050401d8a0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersect a control volume of a target_entity with control volumes of a set of source entities.  <a href="#ad1aef0cc719445b4ae9af1050401d8a0">More...</a><br /></td></tr>
-<tr class="separator:ad1aef0cc719445b4ae9af1050401d8a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada06b493c380d04c07da9b90c52023f4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#ada06b493c380d04c07da9b90c52023f4">set_material</a> (int m)</td></tr>
+<tr class="memdesc:ada06b493c380d04c07da9b90c52023f4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the source mesh material that we have to intersect against.  <a href="#ada06b493c380d04c07da9b90c52023f4">More...</a><br /></td></tr>
+<tr class="separator:ada06b493c380d04c07da9b90c52023f4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0776df2b856f5afb29f690060b50c77"><td class="memItemLeft" align="right" valign="top">std::vector&lt; Weights_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#ad0776df2b856f5afb29f690060b50c77">operator()</a> (int tgt_entity, std::vector&lt; int &gt; const &amp;src_entities) const</td></tr>
+<tr class="memdesc:ad0776df2b856f5afb29f690060b50c77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Intersect a control volume of a target_entity with control volumes of a set of source entities.  <a href="#ad0776df2b856f5afb29f690060b50c77">More...</a><br /></td></tr>
+<tr class="separator:ad0776df2b856f5afb29f690060b50c77"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af0572cd8c2d403892b5e27e3118913fa"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#af0572cd8c2d403892b5e27e3118913fa">IntersectR3D</a> ()=delete</td></tr>
 <tr class="separator:af0572cd8c2d403892b5e27e3118913fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2088b5be3eea2558292d2d5085f3ac58"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1IntersectR3D.html">IntersectR3D</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1IntersectR3D.html#a2088b5be3eea2558292d2d5085f3ac58">operator=</a> (const <a class="el" href="classPortage_1_1IntersectR3D.html">IntersectR3D</a> &amp;)=delete</td></tr>
@@ -195,8 +195,8 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad1aef0cc719445b4ae9af1050401d8a0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1aef0cc719445b4ae9af1050401d8a0">&#9670;&nbsp;</a></span>operator()()</h2>
+<a id="ad0776df2b856f5afb29f690060b50c77"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad0776df2b856f5afb29f690060b50c77">&#9670;&nbsp;</a></span>operator()()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -209,13 +209,13 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
         <tr>
           <td class="memname">std::vector&lt;Weights_t&gt; <a class="el" href="classPortage_1_1IntersectR3D.html">Portage::IntersectR3D</a>&lt; on_what, SourceMeshType, SourceStateType, TargetMeshType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::operator() </td>
           <td>(</td>
-          <td class="paramtype">const int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>tgt_entity</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const std::vector&lt; int &gt;&#160;</td>
+          <td class="paramtype">std::vector&lt; int &gt; const &amp;&#160;</td>
           <td class="paramname"><em>src_entities</em>&#160;</td>
         </tr>
         <tr>
@@ -273,8 +273,8 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
 
 </div>
 </div>
-<a id="a7025e18156879e3397f6eeb9726affbe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7025e18156879e3397f6eeb9726affbe">&#9670;&nbsp;</a></span>set_material()</h2>
+<a id="ada06b493c380d04c07da9b90c52023f4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada06b493c380d04c07da9b90c52023f4">&#9670;&nbsp;</a></span>set_material()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -285,7 +285,7 @@ template&lt;Entity_kind on_what, class SourceMeshType , class SourceStateType , 
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int <a class="el" href="classPortage_1_1IntersectR3D.html">Portage::IntersectR3D</a>&lt; on_what, SourceMeshType, SourceStateType, TargetMeshType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_material </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1IntersectR3D.html">Portage::IntersectR3D</a>&lt; on_what, SourceMeshType, SourceStateType, TargetMeshType, InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper &gt;::set_material </td>
           <td>(</td>
           <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>m</em></td><td>)</td>

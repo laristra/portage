@@ -76,13 +76,14 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#namespaces">Namespaces</a>  </div>
+<a href="#namespaces">Namespaces</a> &#124;
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
 <div class="title">search_direct_product.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
-<p>Definition of the SearchDirectProduct class.  
+<p>Definition of the <a class="el" href="classSearchDirectProduct.html" title="Definition of the SearchDirectProduct class. ">SearchDirectProduct</a> class.  
 <a href="#details">More...</a></p>
 <div class="textblock"><code>#include &lt;cassert&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
@@ -91,25 +92,31 @@ $(function() {
 <code>#include &lt;array&gt;</code><br />
 <code>#include &lt;utility&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
-<code>#include &quot;wonton/wonton/support/Point.h&quot;</code><br />
+<code>#include &quot;wonton/support/Point.h&quot;</code><br />
 <code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
 </div>
 <p><a href="search__direct__product_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchDirectProduct.html">Portage::SearchDirectProduct&lt; D, SourceMeshType, TargetMeshType &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Definition of the <a class="el" href="classPortage_1_1SearchDirectProduct.html" title="Definition of the SearchDirectProduct class. ">SearchDirectProduct</a> class.  <a href="classPortage_1_1SearchDirectProduct.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1SearchDirectProductBase.html">Portage::SearchDirectProductBase&lt; ID_t, D, SourceMeshType, TargetMeshType &gt;</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Definition of the <a class="el" href="classPortage_1_1SearchDirectProductBase.html" title="Definition of the SearchDirectProductBase class. ">SearchDirectProductBase</a> class.  <a href="classPortage_1_1SearchDirectProductBase.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:namespacePortage"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage.html">Portage</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:afeb3126032608046a2494cdce4c3da5f"><td class="memTemplParams" colspan="2">template&lt;int D, typename SourceMeshType , typename TargetMeshType &gt; </td></tr>
+<tr class="memitem:afeb3126032608046a2494cdce4c3da5f"><td class="memTemplItemLeft" align="right" valign="top">using&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage.html#afeb3126032608046a2494cdce4c3da5f">Portage::SearchDirectProduct</a> = SearchDirectProductBase&lt; int, D, SourceMeshType, TargetMeshType &gt;</td></tr>
+<tr class="separator:afeb3126032608046a2494cdce4c3da5f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>Definition of the SearchDirectProduct class. </p>
-<p>The SearchDirectProduct mesh does the search process for meshes subject to the following assumptions:</p><ul>
+<div class="textblock"><p>Definition of the <a class="el" href="classSearchDirectProduct.html" title="Definition of the SearchDirectProduct class. ">SearchDirectProduct</a> class. </p>
+<p>The <a class="el" href="classSearchDirectProduct.html" title="Definition of the SearchDirectProduct class. ">SearchDirectProduct</a> mesh does the search process for meshes subject to the following assumptions:</p><ul>
 <li>The source mesh is a static, axis-aligned, logically-rectangular mesh, with cell widths that are allowed to vary across the mesh.</li>
 <li>The target mesh may be unstructured, but its wrapper must be able to provide an axis-aligned bounding box for any cell. </li>
 </ul>

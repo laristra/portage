@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 			  crossorigin="anonymous"></script>
       <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
     <script type="text/javascript" src="smartmenu.js"></script>
-    <title>portage: Portage::PartPair&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</title>
+    <title>portage: Portage::PartPair&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt; Class Template Reference</title>
     <link href="tabs.css" rel="stylesheet" type="text/css">
       <!-- this version is too old for bootstrap, but it includes modifications
 	   from standard jquery
@@ -78,7 +78,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1PartPair-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Portage::PartPair&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</div>  </div>
+<div class="title">Portage::PartPair&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -89,83 +89,69 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a39279b258a1a4f4d5f106361908a3895"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a39279b258a1a4f4d5f106361908a3895">PartPair</a> ()=default</td></tr>
-<tr class="memdesc:a39279b258a1a4f4d5f106361908a3895"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a default source-target mesh parts pair.  <a href="#a39279b258a1a4f4d5f106361908a3895">More...</a><br /></td></tr>
-<tr class="separator:a39279b258a1a4f4d5f106361908a3895"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a583b0ad98ece8e6e83028a4a6bdad16d"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a583b0ad98ece8e6e83028a4a6bdad16d">PartPair</a> (SourceMesh_Wrapper const &amp;source_mesh, SourceState_Wrapper const &amp;source_state, TargetMesh_Wrapper const &amp;target_mesh, TargetState_Wrapper &amp;target_state, std::vector&lt; int &gt; const &amp;source_entities, std::vector&lt; int &gt; const &amp;target_entities, Wonton::Executor_type const *executor)</td></tr>
-<tr class="memdesc:a583b0ad98ece8e6e83028a4a6bdad16d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a source-target mesh parts pair.  <a href="#a583b0ad98ece8e6e83028a4a6bdad16d">More...</a><br /></td></tr>
-<tr class="separator:a583b0ad98ece8e6e83028a4a6bdad16d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0e15739cc4d05410b4b5f8a95625f613"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a0e15739cc4d05410b4b5f8a95625f613">~PartPair</a> ()=default</td></tr>
-<tr class="memdesc:a0e15739cc4d05410b4b5f8a95625f613"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete a source-target mesh parts pair.  <a href="#a0e15739cc4d05410b4b5f8a95625f613">More...</a><br /></td></tr>
-<tr class="separator:a0e15739cc4d05410b4b5f8a95625f613"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a55154f5a7e434235192fda6f1a1c9edc"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a55154f5a7e434235192fda6f1a1c9edc">has_mismatch</a> () const</td></tr>
-<tr class="memdesc:a55154f5a7e434235192fda6f1a1c9edc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do source and target meshes have a boundary mismatch?  <a href="#a55154f5a7e434235192fda6f1a1c9edc">More...</a><br /></td></tr>
-<tr class="separator:a55154f5a7e434235192fda6f1a1c9edc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d949df7c5844abc9b90063a9a1e418a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a5d949df7c5844abc9b90063a9a1e418a">is_mismatch_tested</a> () const</td></tr>
-<tr class="memdesc:a5d949df7c5844abc9b90063a9a1e418a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is mismatch already tested?  <a href="#a5d949df7c5844abc9b90063a9a1e418a">More...</a><br /></td></tr>
-<tr class="separator:a5d949df7c5844abc9b90063a9a1e418a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a04f73f0e79ecd11fa392f2d3e1634920"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a04f73f0e79ecd11fa392f2d3e1634920">get_source_entities</a> () const</td></tr>
-<tr class="memdesc:a04f73f0e79ecd11fa392f2d3e1634920"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a reference to source entities list.  <a href="#a04f73f0e79ecd11fa392f2d3e1634920">More...</a><br /></td></tr>
-<tr class="separator:a04f73f0e79ecd11fa392f2d3e1634920"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a764c1c72ab3037eebd7ad9b423b69117"><td class="memItemLeft" align="right" valign="top">std::vector&lt; int &gt; const  &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a764c1c72ab3037eebd7ad9b423b69117">get_target_entities</a> () const</td></tr>
-<tr class="memdesc:a764c1c72ab3037eebd7ad9b423b69117"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get a reference to target entities list.  <a href="#a764c1c72ab3037eebd7ad9b423b69117">More...</a><br /></td></tr>
-<tr class="separator:a764c1c72ab3037eebd7ad9b423b69117"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14473e6718b302a5aac53b937e5ee6d9"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a14473e6718b302a5aac53b937e5ee6d9">is_source_entity</a> (int id) const</td></tr>
-<tr class="memdesc:a14473e6718b302a5aac53b937e5ee6d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a given entity is in source part list.  <a href="#a14473e6718b302a5aac53b937e5ee6d9">More...</a><br /></td></tr>
-<tr class="separator:a14473e6718b302a5aac53b937e5ee6d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a31282c196486c8a63617c8ac95d82124"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a31282c196486c8a63617c8ac95d82124">is_target_entity</a> (int id) const</td></tr>
-<tr class="memdesc:a31282c196486c8a63617c8ac95d82124"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if a given entity is in target part list.  <a href="#a31282c196486c8a63617c8ac95d82124">More...</a><br /></td></tr>
-<tr class="separator:a31282c196486c8a63617c8ac95d82124"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6eb25a95d10820f2f8610a920e0bc20e"><td class="memItemLeft" align="right" valign="top">const int &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a6eb25a95d10820f2f8610a920e0bc20e">source_part_size</a> () const</td></tr>
-<tr class="memdesc:a6eb25a95d10820f2f8610a920e0bc20e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get source part size.  <a href="#a6eb25a95d10820f2f8610a920e0bc20e">More...</a><br /></td></tr>
-<tr class="separator:a6eb25a95d10820f2f8610a920e0bc20e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9801a0fc1cdf10489b7595c8fe670a2c"><td class="memItemLeft" align="right" valign="top">const int &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a9801a0fc1cdf10489b7595c8fe670a2c">target_part_size</a> () const</td></tr>
-<tr class="memdesc:a9801a0fc1cdf10489b7595c8fe670a2c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get target part size.  <a href="#a9801a0fc1cdf10489b7595c8fe670a2c">More...</a><br /></td></tr>
-<tr class="separator:a9801a0fc1cdf10489b7595c8fe670a2c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9882ab4c6ff8a9ebfc29dc789d5ff61a"><td class="memTemplParams" colspan="2">template&lt;Entity_type entity_type = Entity_type::ALL&gt; </td></tr>
-<tr class="memitem:a9882ab4c6ff8a9ebfc29dc789d5ff61a"><td class="memTemplItemLeft" align="right" valign="top">std::vector&lt; int &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a9882ab4c6ff8a9ebfc29dc789d5ff61a">get_target_filtered_neighbors</a> (int entity) const</td></tr>
-<tr class="memdesc:a9882ab4c6ff8a9ebfc29dc789d5ff61a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve the neighbors of the given entity on target mesh.  <a href="#a9882ab4c6ff8a9ebfc29dc789d5ff61a">More...</a><br /></td></tr>
-<tr class="separator:a9882ab4c6ff8a9ebfc29dc789d5ff61a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad552720d5e9ea7eafc0f7e24bbe575ea"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#ad552720d5e9ea7eafc0f7e24bbe575ea">check_mismatch</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; entity_weights_t &gt; const &amp;source_ents_and_weights)</td></tr>
-<tr class="memdesc:ad552720d5e9ea7eafc0f7e24bbe575ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check and fix source/target boundaries mismatch.  <a href="#ad552720d5e9ea7eafc0f7e24bbe575ea">More...</a><br /></td></tr>
-<tr class="separator:ad552720d5e9ea7eafc0f7e24bbe575ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a91386a0fa43516e2c4215169782ad548"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a91386a0fa43516e2c4215169782ad548">fix_mismatch</a> (std::string src_var_name, std::string trg_var_name, double global_lower_bound=-infinity_, double global_upper_bound=infinity_, double conservation_tol=tolerance_, int maxiter=5, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type=<a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1ea91b68620275b50e4e569956bcae12669">SHIFTED_CONSERVATIVE</a>, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type=<a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dada766b6efbb49a7f24d134f8f016525c28">EXTRAPOLATE</a>) const</td></tr>
-<tr class="memdesc:a91386a0fa43516e2c4215169782ad548"><td class="mdescLeft">&#160;</td><td class="mdescRight">Repair the remapped field to account for boundary mismatch.  <a href="#a91386a0fa43516e2c4215169782ad548">More...</a><br /></td></tr>
-<tr class="separator:a91386a0fa43516e2c4215169782ad548"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3efe5b2b5bae49231e49d9dbde4fb77"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#ac3efe5b2b5bae49231e49d9dbde4fb77">fix_mismatch_meshvar</a> (std::string const &amp;src_var_name, std::string const &amp;trg_var_name, double global_lower_bound, double global_upper_bound, double conservation_tol, int maxiter, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type) const</td></tr>
-<tr class="memdesc:ac3efe5b2b5bae49231e49d9dbde4fb77"><td class="mdescLeft">&#160;</td><td class="mdescRight">Repair a remapped mesh field to account for boundary mismatch.  <a href="#ac3efe5b2b5bae49231e49d9dbde4fb77">More...</a><br /></td></tr>
-<tr class="separator:ac3efe5b2b5bae49231e49d9dbde4fb77"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8a736411264cc6f68ffd922902268a5c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a8a736411264cc6f68ffd922902268a5c">PartPair</a> ()=default</td></tr>
+<tr class="memdesc:a8a736411264cc6f68ffd922902268a5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a default source-target mesh parts pair.  <a href="#a8a736411264cc6f68ffd922902268a5c">More...</a><br /></td></tr>
+<tr class="separator:a8a736411264cc6f68ffd922902268a5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1b28a956bfa3b60964e480cc92ea5090"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a1b28a956bfa3b60964e480cc92ea5090">PartPair</a> (SourceMesh const &amp;source_mesh, SourceState &amp;source_state, TargetMesh const &amp;target_mesh, TargetState &amp;target_state, std::vector&lt; int &gt; const &amp;source_entities, std::vector&lt; int &gt; const &amp;target_entities, Wonton::Executor_type const *executor)</td></tr>
+<tr class="memdesc:a1b28a956bfa3b60964e480cc92ea5090"><td class="mdescLeft">&#160;</td><td class="mdescRight">Construct a source-target mesh parts pair.  <a href="#a1b28a956bfa3b60964e480cc92ea5090">More...</a><br /></td></tr>
+<tr class="separator:a1b28a956bfa3b60964e480cc92ea5090"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acc678806a235568c8d643d80ffaf8da4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#acc678806a235568c8d643d80ffaf8da4">~PartPair</a> ()=default</td></tr>
+<tr class="memdesc:acc678806a235568c8d643d80ffaf8da4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Delete a source-target mesh parts pair.  <a href="#acc678806a235568c8d643d80ffaf8da4">More...</a><br /></td></tr>
+<tr class="separator:acc678806a235568c8d643d80ffaf8da4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4587b678ac0a302f324587cfd518eed7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a4587b678ac0a302f324587cfd518eed7">has_mismatch</a> () const</td></tr>
+<tr class="memdesc:a4587b678ac0a302f324587cfd518eed7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do source and target meshes have a boundary mismatch?  <a href="#a4587b678ac0a302f324587cfd518eed7">More...</a><br /></td></tr>
+<tr class="separator:a4587b678ac0a302f324587cfd518eed7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a04813b66e6f935fddb6acb0b068c2d16"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a04813b66e6f935fddb6acb0b068c2d16">mismatch_tested</a> () const</td></tr>
+<tr class="memdesc:a04813b66e6f935fddb6acb0b068c2d16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is mismatch already tested?  <a href="#a04813b66e6f935fddb6acb0b068c2d16">More...</a><br /></td></tr>
+<tr class="separator:a04813b66e6f935fddb6acb0b068c2d16"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac687565541feb898eb2181b55bd53fcd"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classPortage_1_1Part.html">SourcePart</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#ac687565541feb898eb2181b55bd53fcd">source</a> () const</td></tr>
+<tr class="memdesc:ac687565541feb898eb2181b55bd53fcd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a pointer to source mesh part.  <a href="#ac687565541feb898eb2181b55bd53fcd">More...</a><br /></td></tr>
+<tr class="separator:ac687565541feb898eb2181b55bd53fcd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abae381a6c90cf0d034658184650f3f7d"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="classPortage_1_1Part.html">TargetPart</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#abae381a6c90cf0d034658184650f3f7d">target</a> () const</td></tr>
+<tr class="memdesc:abae381a6c90cf0d034658184650f3f7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieve a pointer to target mesh part.  <a href="#abae381a6c90cf0d034658184650f3f7d">More...</a><br /></td></tr>
+<tr class="separator:abae381a6c90cf0d034658184650f3f7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a528de7ed09cd9dccc9da259b3492aec2"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a528de7ed09cd9dccc9da259b3492aec2">compute_intersect_volumes</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; entity_weights_t &gt; const &amp;source_weights)</td></tr>
+<tr class="memdesc:a528de7ed09cd9dccc9da259b3492aec2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute source and target parts intersection volume.  <a href="#a528de7ed09cd9dccc9da259b3492aec2">More...</a><br /></td></tr>
+<tr class="separator:a528de7ed09cd9dccc9da259b3492aec2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1155cceacbf571b9917047f36160d86a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#a1155cceacbf571b9917047f36160d86a">check_mismatch</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; entity_weights_t &gt; const &amp;source_weights)</td></tr>
+<tr class="memdesc:a1155cceacbf571b9917047f36160d86a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check and fix source/target boundaries mismatch.  <a href="#a1155cceacbf571b9917047f36160d86a">More...</a><br /></td></tr>
+<tr class="separator:a1155cceacbf571b9917047f36160d86a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ace1134fb7d33025595c310b428075494"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#ace1134fb7d33025595c310b428075494">fix_mismatch</a> (std::string src_var_name, std::string trg_var_name, double global_lower_bound=-infinity_, double global_upper_bound=infinity_, double conservation_tol=tolerance_, int maxiter=5, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type=<a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1ea91b68620275b50e4e569956bcae12669">SHIFTED_CONSERVATIVE</a>, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type=<a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dada766b6efbb49a7f24d134f8f016525c28">EXTRAPOLATE</a>) const</td></tr>
+<tr class="memdesc:ace1134fb7d33025595c310b428075494"><td class="mdescLeft">&#160;</td><td class="mdescRight">Repair the remapped field to account for boundary mismatch.  <a href="#ace1134fb7d33025595c310b428075494">More...</a><br /></td></tr>
+<tr class="separator:ace1134fb7d33025595c310b428075494"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aac8459afd6e607ecad4156559d37e057"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1PartPair.html#aac8459afd6e607ecad4156559d37e057">fix_mismatch_meshvar</a> (std::string const &amp;src_var_name, std::string const &amp;trg_var_name, double global_lower_bound, double global_upper_bound, double conservation_tol, int maxiter, <a class="el" href="namespacePortage.html#a14733964cb2a49126b6094ce7cbdeb1e">Partial_fixup_type</a> partial_fixup_type, <a class="el" href="namespacePortage.html#a98e23e534e4657cb05de2e35f5728dad">Empty_fixup_type</a> empty_fixup_type) const</td></tr>
+<tr class="memdesc:aac8459afd6e607ecad4156559d37e057"><td class="mdescLeft">&#160;</td><td class="mdescRight">Repair a remapped mesh field to account for boundary mismatch.  <a href="#aac8459afd6e607ecad4156559d37e057">More...</a><br /></td></tr>
+<tr class="separator:aac8459afd6e607ecad4156559d37e057"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper, class SourceState_Wrapper, class TargetMesh_Wrapper = SourceMesh_Wrapper, class TargetState_Wrapper = SourceState_Wrapper&gt;<br />
-class Portage::PartPair&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</h3>
+<div class="textblock"><h3>template&lt;int D, class SourceMesh, class SourceState, class TargetMesh = SourceMesh, class TargetState = SourceState&gt;<br />
+class Portage::PartPair&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;</h3>
 
 <p>Manages source and target sub-meshes for part-by-part remap. It detects boundaries mismatch and provides the necessary fixup for partially filled and empty cells values. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">D</td><td>meshes dimension </td></tr>
-    <tr><td class="paramname">onwhat</td><td>the entity kind for remap [cell|node] </td></tr>
-    <tr><td class="paramname">SourceMesh_Wrapper</td><td>the source mesh wrapper to use </td></tr>
-    <tr><td class="paramname">SourceState_Wrapper</td><td>the source state wrapper to use </td></tr>
-    <tr><td class="paramname">TargetMesh_Wrapper</td><td>the target mesh wrapper to use </td></tr>
-    <tr><td class="paramname">TargetState_Wrapper</td><td>the target state wrapper to use </td></tr>
+    <tr><td class="paramname">D</td><td>the problem dimension. </td></tr>
+    <tr><td class="paramname">SourceMesh</td><td>the source mesh wrapper to use </td></tr>
+    <tr><td class="paramname">SourceState</td><td>the source state wrapper to use </td></tr>
+    <tr><td class="paramname">TargetMesh</td><td>the target mesh wrapper to use </td></tr>
+    <tr><td class="paramname">TargetState</td><td>the target state wrapper to use </td></tr>
   </table>
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a39279b258a1a4f4d5f106361908a3895"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a39279b258a1a4f4d5f106361908a3895">&#9670;&nbsp;</a></span>PartPair() <span class="overload">[1/2]</span></h2>
+<a id="a8a736411264cc6f68ffd922902268a5c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8a736411264cc6f68ffd922902268a5c">&#9670;&nbsp;</a></span>PartPair() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -182,39 +168,39 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a583b0ad98ece8e6e83028a4a6bdad16d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a583b0ad98ece8e6e83028a4a6bdad16d">&#9670;&nbsp;</a></span>PartPair() <span class="overload">[2/2]</span></h2>
+<a id="a1b28a956bfa3b60964e480cc92ea5090"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1b28a956bfa3b60964e480cc92ea5090">&#9670;&nbsp;</a></span>PartPair() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
           <td>(</td>
-          <td class="paramtype">SourceMesh_Wrapper const &amp;&#160;</td>
+          <td class="paramtype">SourceMesh const &amp;&#160;</td>
           <td class="paramname"><em>source_mesh</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">SourceState_Wrapper const &amp;&#160;</td>
+          <td class="paramtype">SourceState &amp;&#160;</td>
           <td class="paramname"><em>source_state</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">TargetMesh_Wrapper const &amp;&#160;</td>
+          <td class="paramtype">TargetMesh const &amp;&#160;</td>
           <td class="paramname"><em>target_mesh</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">TargetState_Wrapper &amp;&#160;</td>
+          <td class="paramtype">TargetState &amp;&#160;</td>
           <td class="paramname"><em>target_state</em>, </td>
         </tr>
         <tr>
@@ -264,19 +250,19 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a0e15739cc4d05410b4b5f8a95625f613"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0e15739cc4d05410b4b5f8a95625f613">&#9670;&nbsp;</a></span>~PartPair()</h2>
+<a id="acc678806a235568c8d643d80ffaf8da4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#acc678806a235568c8d643d80ffaf8da4">&#9670;&nbsp;</a></span>~PartPair()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::~<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::~<a class="el" href="classPortage_1_1PartPair.html">PartPair</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -294,22 +280,22 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad552720d5e9ea7eafc0f7e24bbe575ea"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad552720d5e9ea7eafc0f7e24bbe575ea">&#9670;&nbsp;</a></span>check_mismatch()</h2>
+<a id="a1155cceacbf571b9917047f36160d86a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1155cceacbf571b9917047f36160d86a">&#9670;&nbsp;</a></span>check_mismatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::check_mismatch </td>
+          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::check_mismatch </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; entity_weights_t &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>source_ents_and_weights</em></td><td>)</td>
+          <td class="paramname"><em>source_weights</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -337,19 +323,56 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a91386a0fa43516e2c4215169782ad548"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a91386a0fa43516e2c4215169782ad548">&#9670;&nbsp;</a></span>fix_mismatch()</h2>
+<a id="a528de7ed09cd9dccc9da259b3492aec2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a528de7ed09cd9dccc9da259b3492aec2">&#9670;&nbsp;</a></span>compute_intersect_volumes()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::fix_mismatch </td>
+          <td class="memname">double <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::compute_intersect_volumes </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; entity_weights_t &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>source_weights</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Compute source and target parts intersection volume. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">source_weights</td><td>candidate source cells and their intersection moments. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>the total intersection volume. </dd></dl>
+
+</div>
+</div>
+<a id="ace1134fb7d33025595c310b428075494"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ace1134fb7d33025595c310b428075494">&#9670;&nbsp;</a></span>fix_mismatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::fix_mismatch </td>
           <td>(</td>
           <td class="paramtype">std::string&#160;</td>
           <td class="paramname"><em>src_var_name</em>, </td>
@@ -430,19 +453,19 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="ac3efe5b2b5bae49231e49d9dbde4fb77"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac3efe5b2b5bae49231e49d9dbde4fb77">&#9670;&nbsp;</a></span>fix_mismatch_meshvar()</h2>
+<a id="aac8459afd6e607ecad4156559d37e057"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aac8459afd6e607ecad4156559d37e057">&#9670;&nbsp;</a></span>fix_mismatch_meshvar()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::fix_mismatch_meshvar </td>
+          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::fix_mismatch_meshvar </td>
           <td>(</td>
           <td class="paramtype">std::string const &amp;&#160;</td>
           <td class="paramname"><em>src_var_name</em>, </td>
@@ -520,124 +543,19 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a04f73f0e79ecd11fa392f2d3e1634920"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a04f73f0e79ecd11fa392f2d3e1634920">&#9670;&nbsp;</a></span>get_source_entities()</h2>
+<a id="a4587b678ac0a302f324587cfd518eed7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4587b678ac0a302f324587cfd518eed7">&#9670;&nbsp;</a></span>has_mismatch()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;int&gt; const&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::get_source_entities </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Get a reference to source entities list. </p>
-<dl class="section return"><dt>Returns</dt><dd>a reference to source entities list. </dd></dl>
-
-</div>
-</div>
-<a id="a764c1c72ab3037eebd7ad9b423b69117"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a764c1c72ab3037eebd7ad9b423b69117">&#9670;&nbsp;</a></span>get_target_entities()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;int&gt; const&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::get_target_entities </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Get a reference to target entities list. </p>
-<dl class="section return"><dt>Returns</dt><dd>a reference to source entities list. </dd></dl>
-
-</div>
-</div>
-<a id="a9882ab4c6ff8a9ebfc29dc789d5ff61a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9882ab4c6ff8a9ebfc29dc789d5ff61a">&#9670;&nbsp;</a></span>get_target_filtered_neighbors()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
-<div class="memtemplate">
-template&lt;Entity_type entity_type = Entity_type::ALL&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::vector&lt;int&gt; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::get_target_filtered_neighbors </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>entity</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Retrieve the neighbors of the given entity on target mesh. </p>
-<dl class="tparams"><dt>Template Parameters</dt><dd>
-  <table class="tparams">
-    <tr><td class="paramname">entity_type</td><td>the entity type [ALL|PARALLEL_OWNED] </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">entity</td><td>the given entity </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>filtered the filtered neighboring entities list. </dd></dl>
-
-</div>
-</div>
-<a id="a55154f5a7e434235192fda6f1a1c9edc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a55154f5a7e434235192fda6f1a1c9edc">&#9670;&nbsp;</a></span>has_mismatch()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::has_mismatch </td>
+          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::has_mismatch </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -655,19 +573,19 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a5d949df7c5844abc9b90063a9a1e418a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5d949df7c5844abc9b90063a9a1e418a">&#9670;&nbsp;</a></span>is_mismatch_tested()</h2>
+<a id="a04813b66e6f935fddb6acb0b068c2d16"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a04813b66e6f935fddb6acb0b068c2d16">&#9670;&nbsp;</a></span>mismatch_tested()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::is_mismatch_tested </td>
+          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::mismatch_tested </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -685,93 +603,19 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 
 </div>
 </div>
-<a id="a14473e6718b302a5aac53b937e5ee6d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14473e6718b302a5aac53b937e5ee6d9">&#9670;&nbsp;</a></span>is_source_entity()</h2>
+<a id="ac687565541feb898eb2181b55bd53fcd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac687565541feb898eb2181b55bd53fcd">&#9670;&nbsp;</a></span>source()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::is_source_entity </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>id</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Check if a given entity is in source part list. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">id</td><td>entity ID </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>true if so, false otherwise. </dd></dl>
-
-</div>
-</div>
-<a id="a31282c196486c8a63617c8ac95d82124"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a31282c196486c8a63617c8ac95d82124">&#9670;&nbsp;</a></span>is_target_entity()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">bool <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::is_target_entity </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>id</em></td><td>)</td>
-          <td> const</td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Check if a given entity is in target part list. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">id</td><td>entity ID </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>true if so, false otherwise. </dd></dl>
-
-</div>
-</div>
-<a id="a6eb25a95d10820f2f8610a920e0bc20e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6eb25a95d10820f2f8610a920e0bc20e">&#9670;&nbsp;</a></span>source_part_size()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">const int&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::source_part_size </td>
+          <td class="memname">const <a class="el" href="classPortage_1_1Part.html">SourcePart</a>&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::source </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -784,24 +628,24 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 </table>
 </div><div class="memdoc">
 
-<p>Get source part size. </p>
-<dl class="section return"><dt>Returns</dt><dd>source entities list size </dd></dl>
+<p>Retrieve a pointer to source mesh part. </p>
+<dl class="section return"><dt>Returns</dt><dd>a pointer to source mesh part </dd></dl>
 
 </div>
 </div>
-<a id="a9801a0fc1cdf10489b7595c8fe670a2c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9801a0fc1cdf10489b7595c8fe670a2c">&#9670;&nbsp;</a></span>target_part_size()</h2>
+<a id="abae381a6c90cf0d034658184650f3f7d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abae381a6c90cf0d034658184650f3f7d">&#9670;&nbsp;</a></span>target()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;int D, class SourceMesh , class SourceState , class TargetMesh  = SourceMesh, class TargetState  = SourceState&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">const int&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::target_part_size </td>
+          <td class="memname">const <a class="el" href="classPortage_1_1Part.html">TargetPart</a>&amp; <a class="el" href="classPortage_1_1PartPair.html">Portage::PartPair</a>&lt; D, SourceMesh, SourceState, TargetMesh, TargetState &gt;::target </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -814,8 +658,8 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 </table>
 </div><div class="memdoc">
 
-<p>Get target part size. </p>
-<dl class="section return"><dt>Returns</dt><dd>target entities list size </dd></dl>
+<p>Retrieve a pointer to target mesh part. </p>
+<dl class="section return"><dt>Returns</dt><dd>a pointer to target mesh part </dd></dl>
 
 </div>
 </div>

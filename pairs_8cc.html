@@ -75,18 +75,17 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#namespaces">Namespaces</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#namespaces">Namespaces</a>  </div>
   <div class="headertitle">
 <div class="title">pairs.cc File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;pairs.hh&quot;</code><br />
-<code>#include &lt;climits&gt;</code><br />
-<code>#include &lt;math.h&gt;</code><br />
-<code>#include &lt;assert.h&gt;</code><br />
-<code>#include &lt;algorithm&gt;</code><br />
+<div class="textblock"><code>#include &lt;cmath&gt;</code><br />
+<code>#include &lt;cassert&gt;</code><br />
+<code>#include &lt;list&gt;</code><br />
 <code>#include &lt;limits&gt;</code><br />
+<code>#include &lt;vector&gt;</code><br />
+<code>#include &quot;pairs.hh&quot;</code><br />
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
@@ -96,22 +95,6 @@ Namespaces</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacePortage_1_1Meshfree_1_1Pairs"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html">Portage::Meshfree::Pairs</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-</table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:aa03d5c510746dbe81fb0cc83b6b962c3"><td class="memItemLeft" align="right" valign="top">vpile&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html#aa03d5c510746dbe81fb0cc83b6b962c3">Portage::Meshfree::Pairs::PairsMinMax</a> (const vpile &amp;y, const vpile &amp;h)</td></tr>
-<tr class="memdesc:aa03d5c510746dbe81fb0cc83b6b962c3"><td class="mdescLeft">&#160;</td><td class="mdescRight">find bounding box of all the y-boxes, variable h  <a href="namespacePortage_1_1Meshfree_1_1Pairs.html#aa03d5c510746dbe81fb0cc83b6b962c3">More...</a><br /></td></tr>
-<tr class="separator:aa03d5c510746dbe81fb0cc83b6b962c3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e559eec862c6598d5eddfa7b431dc7e"><td class="memItemLeft" align="right" valign="top">vpile&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html#a9e559eec862c6598d5eddfa7b431dc7e">Portage::Meshfree::Pairs::PairsMinMax</a> (const vpile &amp;c, const pile &amp;h)</td></tr>
-<tr class="memdesc:a9e559eec862c6598d5eddfa7b431dc7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">find bounding box of all the y-boxes  <a href="namespacePortage_1_1Meshfree_1_1Pairs.html#a9e559eec862c6598d5eddfa7b431dc7e">More...</a><br /></td></tr>
-<tr class="separator:a9e559eec862c6598d5eddfa7b431dc7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8510784e1ae6f61298ebbba3dec7e158"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html#a8510784e1ae6f61298ebbba3dec7e158">Portage::Meshfree::Pairs::PairsIntegize</a> (const size_t &amp;dim, const pile &amp;value, const vpile &amp;minmax, const pile &amp;delta, const vulong &amp;sizes, vulong &amp;ivalue)</td></tr>
-<tr class="memdesc:a8510784e1ae6f61298ebbba3dec7e158"><td class="mdescLeft">&#160;</td><td class="mdescRight">convert real coordinates scaled to unit box to integers in [0,ulong_max]  <a href="namespacePortage_1_1Meshfree_1_1Pairs.html#a8510784e1ae6f61298ebbba3dec7e158">More...</a><br /></td></tr>
-<tr class="separator:a8510784e1ae6f61298ebbba3dec7e158"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae6bbdabc2117e17ea63339b6c9ab97b5"><td class="memItemLeft" align="right" valign="top">ulong&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html#ae6bbdabc2117e17ea63339b6c9ab97b5">Portage::Meshfree::Pairs::cellindex</a> (const size_t &amp;dim, const vulong &amp;strides, const vulong &amp;indices)</td></tr>
-<tr class="separator:ae6bbdabc2117e17ea63339b6c9ab97b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a66d01647eeda3fd634eec7e01b3476ab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html#a66d01647eeda3fd634eec7e01b3476ab">Portage::Meshfree::Pairs::cellindices</a> (const size_t &amp;dim, const vulong &amp;strides, const ulong &amp;index, vulong &amp;indices)</td></tr>
-<tr class="separator:a66d01647eeda3fd634eec7e01b3476ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!--

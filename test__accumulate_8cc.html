@@ -81,23 +81,23 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;cmath&gt;</code><br />
-<code>#include &lt;memory&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
+<code>#include &lt;<a class="el" href="driver__swarm_8h_source.html">portage/driver/driver_swarm.h</a>&gt;</code><br />
 <code>#include &quot;gtest/gtest.h&quot;</code><br />
-<code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="swarm_8h_source.html">portage/swarm/swarm.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="accumulate_8h_source.html">portage/accumulate/accumulate.h</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="test__operator__data_8h_source.html">portage/support/test_operator_data.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="portage_8h_source.html">portage/support/portage.h</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="operator__references_8h_source.html">portage/support/operator_references.h</a>&quot;</code><br />
 <code>#include &quot;wonton/support/Point.h&quot;</code><br />
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:a7247b0f1f1ea4cde17616eeab78b4469"><td class="memTemplParams" colspan="2">template&lt;size_t dim&gt; </td></tr>
-<tr class="memitem:a7247b0f1f1ea4cde17616eeab78b4469"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#a7247b0f1f1ea4cde17616eeab78b4469">test_accumulate</a> (Portage::Meshfree::EstimateType etype, <a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Portage::Meshfree::Basis::Type</a> btype, Portage::Meshfree::WeightCenter center)</td></tr>
-<tr class="separator:a7247b0f1f1ea4cde17616eeab78b4469"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4397de25a1955ae1c52544f16b0fc6d9"><td class="memTemplParams" colspan="2">template&lt;Portage::Meshfree::Basis::Type btype, Portage::Meshfree::Operator::Type opertype, Portage::Meshfree::Operator::Domain domain&gt; </td></tr>
-<tr class="memitem:a4397de25a1955ae1c52544f16b0fc6d9"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#a4397de25a1955ae1c52544f16b0fc6d9">test_operator</a> (Portage::Meshfree::WeightCenter center)</td></tr>
-<tr class="separator:a4397de25a1955ae1c52544f16b0fc6d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60ad2a50028004092626c7d534623a6c"><td class="memTemplParams" colspan="2">template&lt;int dim&gt; </td></tr>
+<tr class="memitem:a60ad2a50028004092626c7d534623a6c"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#a60ad2a50028004092626c7d534623a6c">test_accumulate</a> (EstimateType etype, <a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">basis::Type</a> btype, WeightCenter center)</td></tr>
+<tr class="separator:a60ad2a50028004092626c7d534623a6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca6dd882dd9a2238e244dc3da59880ef"><td class="memTemplParams" colspan="2">template&lt;basis::Type btype, oper::Type opertype, oper::Domain domain&gt; </td></tr>
+<tr class="memitem:aca6dd882dd9a2238e244dc3da59880ef"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#aca6dd882dd9a2238e244dc3da59880ef">test_operator</a> (WeightCenter center)</td></tr>
+<tr class="separator:aca6dd882dd9a2238e244dc3da59880ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a35ecaec6c8931a1c39ee43800d3b2c3c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#a35ecaec6c8931a1c39ee43800d3b2c3c">TEST</a> (accumulate, 1d_KUG)</td></tr>
 <tr class="separator:a35ecaec6c8931a1c39ee43800d3b2c3c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c073997eeef5285f3c7aad0d48ada0c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="test__accumulate_8cc.html#a5c073997eeef5285f3c7aad0d48ada0c">TEST</a> (accumulate, 2d_KUG)</td></tr>
@@ -1300,30 +1300,30 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a7247b0f1f1ea4cde17616eeab78b4469"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7247b0f1f1ea4cde17616eeab78b4469">&#9670;&nbsp;</a></span>test_accumulate()</h2>
+<a id="a60ad2a50028004092626c7d534623a6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a60ad2a50028004092626c7d534623a6c">&#9670;&nbsp;</a></span>test_accumulate()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;size_t dim&gt; </div>
+template&lt;int dim&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void test_accumulate </td>
           <td>(</td>
-          <td class="paramtype">Portage::Meshfree::EstimateType&#160;</td>
+          <td class="paramtype">EstimateType&#160;</td>
           <td class="paramname"><em>etype</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Portage::Meshfree::Basis::Type</a>&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">basis::Type</a>&#160;</td>
           <td class="paramname"><em>btype</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Portage::Meshfree::WeightCenter&#160;</td>
+          <td class="paramtype">WeightCenter&#160;</td>
           <td class="paramname"><em>center</em>&#160;</td>
         </tr>
         <tr>
@@ -1336,18 +1336,18 @@ template&lt;size_t dim&gt; </div>
 
 </div>
 </div>
-<a id="a4397de25a1955ae1c52544f16b0fc6d9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4397de25a1955ae1c52544f16b0fc6d9">&#9670;&nbsp;</a></span>test_operator()</h2>
+<a id="aca6dd882dd9a2238e244dc3da59880ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aca6dd882dd9a2238e244dc3da59880ef">&#9670;&nbsp;</a></span>test_operator()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;Portage::Meshfree::Basis::Type btype, Portage::Meshfree::Operator::Type opertype, Portage::Meshfree::Operator::Domain domain&gt; </div>
+template&lt;basis::Type btype, oper::Type opertype, oper::Domain domain&gt; </div>
       <table class="memname">
         <tr>
           <td class="memname">void test_operator </td>
           <td>(</td>
-          <td class="paramtype">Portage::Meshfree::WeightCenter&#160;</td>
+          <td class="paramtype">WeightCenter&#160;</td>
           <td class="paramname"><em>center</em></td><td>)</td>
           <td></td>
         </tr>

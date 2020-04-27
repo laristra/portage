@@ -86,9 +86,13 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0a6ae902a16d415fa5a8d98c6f234ad9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MismatchFixer.html#a0a6ae902a16d415fa5a8d98c6f234ad9">MismatchFixer</a> (SourceMesh_Wrapper const &amp;source_mesh, SourceState_Wrapper const &amp;source_state, TargetMesh_Wrapper const &amp;target_mesh, TargetState_Wrapper &amp;target_state, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;source_ents_and_weights, Wonton::Executor_type const *executor)</td></tr>
-<tr class="separator:a0a6ae902a16d415fa5a8d98c6f234ad9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a10bbc1849164fcbf6236e420d1a562ae"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MismatchFixer.html#a10bbc1849164fcbf6236e420d1a562ae">MismatchFixer</a> (SourceMesh_Wrapper const &amp;source_mesh, SourceState_Wrapper const &amp;source_state, TargetMesh_Wrapper const &amp;target_mesh, TargetState_Wrapper &amp;target_state, Wonton::Executor_type const *executor, bool global_check=true)</td></tr>
+<tr class="separator:a10bbc1849164fcbf6236e420d1a562ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ae8c5629c28de79e521513f067568f7"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MismatchFixer.html#a3ae8c5629c28de79e521513f067568f7">check_mismatch</a> (<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;source_ents_and_weights)</td></tr>
+<tr class="memdesc:a3ae8c5629c28de79e521513f067568f7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Compute (and cache) whether the mesh domains are mismatched.  <a href="#a3ae8c5629c28de79e521513f067568f7">More...</a><br /></td></tr>
+<tr class="separator:a3ae8c5629c28de79e521513f067568f7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8ea7259d36aa8f8ed5482e088590d07f"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MismatchFixer.html#a8ea7259d36aa8f8ed5482e088590d07f">has_mismatch</a> () const</td></tr>
+<tr class="memdesc:a8ea7259d36aa8f8ed5482e088590d07f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return whether the mesh domains are mismatched (must be called after check_mismatch)  <a href="#a8ea7259d36aa8f8ed5482e088590d07f">More...</a><br /></td></tr>
 <tr class="separator:a8ea7259d36aa8f8ed5482e088590d07f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a37b245fde20ee9a2746a65e134a9cb5a"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MismatchFixer.html#a37b245fde20ee9a2746a65e134a9cb5a">fix_mismatch</a> (std::string const &amp;src_var_name, std::string const &amp;trg_var_name, double global_lower_bound=-std::numeric_limits&lt; double &gt;::max(), double global_upper_bound=std::numeric_limits&lt; double &gt;::max(), double conservation_tol=1e2 *std::numeric_limits&lt; double &gt;::epsilon(), int maxiter=5, Partial_fixup_type partial_fixup_type=Partial_fixup_type::SHIFTED_CONSERVATIVE, Empty_fixup_type empty_fixup_type=Empty_fixup_type::EXTRAPOLATE)</td></tr>
 <tr class="memdesc:a37b245fde20ee9a2746a65e134a9cb5a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Repair the remapped field to account for boundary mismatch.  <a href="#a37b245fde20ee9a2746a65e134a9cb5a">More...</a><br /></td></tr>
@@ -98,8 +102,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a54f91cb71012b66caf7f8e8092e33692"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0a6ae902a16d415fa5a8d98c6f234ad9"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0a6ae902a16d415fa5a8d98c6f234ad9">&#9670;&nbsp;</a></span>MismatchFixer()</h2>
+<a id="a10bbc1849164fcbf6236e420d1a562ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a10bbc1849164fcbf6236e420d1a562ae">&#9670;&nbsp;</a></span>MismatchFixer()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -136,14 +140,14 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;&#160;</td>
-          <td class="paramname"><em>source_ents_and_weights</em>, </td>
+          <td class="paramtype">Wonton::Executor_type const *&#160;</td>
+          <td class="paramname"><em>executor</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Wonton::Executor_type const *&#160;</td>
-          <td class="paramname"><em>executor</em>&#160;</td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>global_check</em> = <code>true</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -161,6 +165,43 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="a3ae8c5629c28de79e521513f067568f7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ae8c5629c28de79e521513f067568f7">&#9670;&nbsp;</a></span>check_mismatch()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper , class TargetState_Wrapper &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool <a class="el" href="classPortage_1_1MismatchFixer.html">Portage::MismatchFixer</a>&lt; D, onwhat, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::check_mismatch </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Weights_t &gt;&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>source_ents_and_weights</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Compute (and cache) whether the mesh domains are mismatched. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">sources_and_weights</td><td>Intersection sources and moments (vols, centroids) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>whether the mesh domains are mismatched </dd></dl>
+
+</div>
+</div>
 <a id="a37b245fde20ee9a2746a65e134a9cb5a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a37b245fde20ee9a2746a65e134a9cb5a">&#9670;&nbsp;</a></span>fix_mismatch()</h2>
 
@@ -352,6 +393,9 @@ template&lt;int D, Entity_kind onwhat, class SourceMesh_Wrapper , class SourceSt
   </tr>
 </table>
 </div><div class="memdoc">
+
+<p>Return whether the mesh domains are mismatched (must be called after check_mismatch) </p>
+<dl class="section return"><dt>Returns</dt><dd>whether the mesh domains are mismatched </dd></dl>
 
 </div>
 </div>

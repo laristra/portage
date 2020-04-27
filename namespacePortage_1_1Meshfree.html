@@ -77,7 +77,7 @@ $(function() {
   <div class="summary">
 <a href="#namespaces">Namespaces</a> &#124;
 <a href="#nested-classes">Classes</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#typedef-members">Typedefs</a>  </div>
   <div class="headertitle">
 <div class="title">Portage::Meshfree Namespace Reference</div>  </div>
 </div><!--header-->
@@ -85,11 +85,13 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
-<tr class="memitem:namespacePortage_1_1Meshfree_1_1Basis"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html">Basis</a></td></tr>
+<tr class="memitem:namespacePortage_1_1Meshfree_1_1basis"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html">basis</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:namespacePortage_1_1Meshfree_1_1Operator"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html">Operator</a></td></tr>
+<tr class="memitem:namespacePortage_1_1Meshfree_1_1oper"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html">oper</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacePortage_1_1Meshfree_1_1Pairs"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Pairs.html">Pairs</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:namespacePortage_1_1Meshfree_1_1reference"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1reference.html">reference</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:namespacePortage_1_1Meshfree_1_1Weight"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html">Weight</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -99,416 +101,30 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An effective "mesh" class for a collection disconnected points (particles).  <a href="classPortage_1_1Meshfree_1_1Swarm.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1SwarmDriver.html">SwarmDriver</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides an interface to remap variables from one swarm to another.  <a href="classPortage_1_1Meshfree_1_1SwarmDriver.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html">SwarmState</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Holds state data for particle Swarms.  <a href="classPortage_1_1Meshfree_1_1SwarmState.html#details">More...</a><br /></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Particle field state class.  <a href="classPortage_1_1Meshfree_1_1SwarmState.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
-<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
-Functions</h2></td></tr>
-<tr class="memitem:ac4956b46786be6abc2fb4b484503789a"><td class="memItemLeft" align="right" valign="top">unsigned long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#ac4956b46786be6abc2fb4b484503789a">get_seed</a> ()</td></tr>
-<tr class="separator:ac4956b46786be6abc2fb4b484503789a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9a89c1552070404f633d8e9450686ec"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt; 1 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#ac9a89c1552070404f633d8e9450686ec">SwarmFactory</a> (double xmin, double xmax, unsigned int nparticles, unsigned int distribution, unsigned int rand_seed=0)</td></tr>
-<tr class="separator:ac9a89c1552070404f633d8e9450686ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae9ffc98412899ac646c1eac580bcf240"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt; 2 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#ae9ffc98412899ac646c1eac580bcf240">SwarmFactory</a> (double xmin, double ymin, double xmax, double ymax, unsigned int nparticles, unsigned int distribution, unsigned int rand_seed=0)</td></tr>
-<tr class="separator:ae9ffc98412899ac646c1eac580bcf240"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba85410e75b4bd589adfbae94d978b6d"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt; 3 &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#aba85410e75b4bd589adfbae94d978b6d">SwarmFactory</a> (double xmin, double ymin, double zmin, double xmax, double ymax, double zmax, unsigned int nparticles, unsigned int distribution, unsigned int rand_seed=0)</td></tr>
-<tr class="separator:aba85410e75b4bd589adfbae94d978b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acef89a06d90d22a735ccf9de7312b178"><td class="memTemplParams" colspan="2">template&lt;size_t dim, class MeshWrapper &gt; </td></tr>
-<tr class="memitem:acef89a06d90d22a735ccf9de7312b178"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#acef89a06d90d22a735ccf9de7312b178">SwarmFactory</a> (MeshWrapper &amp;wrapper, Portage::Entity_kind entity)</td></tr>
-<tr class="memdesc:acef89a06d90d22a735ccf9de7312b178"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html" title="An effective &quot;mesh&quot; class for a collection disconnected points (particles). ">Swarm</a> from an arbitary mesh wrapper.  dim Spatial dimension  MeshWrapper class representing a mesh wrapper.  <a href="#acef89a06d90d22a735ccf9de7312b178">More...</a><br /></td></tr>
-<tr class="separator:acef89a06d90d22a735ccf9de7312b178"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae09a37170c50331b02c22927d1f9ae8a"><td class="memTemplParams" colspan="2">template&lt;size_t dim, class MeshWrapper &gt; </td></tr>
-<tr class="memitem:ae09a37170c50331b02c22927d1f9ae8a"><td class="memTemplItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#ae09a37170c50331b02c22927d1f9ae8a">SwarmFactory</a> (std::vector&lt; MeshWrapper *&gt; wrappers, Portage::Entity_kind entity)</td></tr>
-<tr class="memdesc:ae09a37170c50331b02c22927d1f9ae8a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html" title="An effective &quot;mesh&quot; class for a collection disconnected points (particles). ">Swarm</a> from an set of arbitary mesh wrappers. This factory is useful for mapping from several meshes at once, e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.  dim Spatial dimension  MeshWrapper class representing a mesh wrapper.  <a href="#ae09a37170c50331b02c22927d1f9ae8a">More...</a><br /></td></tr>
-<tr class="separator:ae09a37170c50331b02c22927d1f9ae8a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a014b442e659e9c80bd1b2c3e78a9a354"><td class="memTemplParams" colspan="2">template&lt;size_t dim, class StateWrapper &gt; </td></tr>
-<tr class="memitem:a014b442e659e9c80bd1b2c3e78a9a354"><td class="memTemplItemLeft" align="right" valign="top">shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html">SwarmState</a>&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#a014b442e659e9c80bd1b2c3e78a9a354">SwarmStateFactory</a> (const StateWrapper &amp;state, const Portage::Entity_kind entity)</td></tr>
-<tr class="memdesc:a014b442e659e9c80bd1b2c3e78a9a354"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html" title="Holds state data for particle Swarms. ">SwarmState</a> factory, given a mesh state wrapper. Only does double fields. Copies fields from mesh state wrapper to a swarm state wrapper of the same size.  <a href="#a014b442e659e9c80bd1b2c3e78a9a354">More...</a><br /></td></tr>
-<tr class="separator:a014b442e659e9c80bd1b2c3e78a9a354"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20688919f65c2249db1e539d2dda2b40"><td class="memTemplParams" colspan="2">template&lt;size_t dim, class StateWrapper &gt; </td></tr>
-<tr class="memitem:a20688919f65c2249db1e539d2dda2b40"><td class="memTemplItemLeft" align="right" valign="top">shared_ptr&lt; <a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html">SwarmState</a>&lt; dim &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#a20688919f65c2249db1e539d2dda2b40">SwarmStateFactory</a> (const std::vector&lt; StateWrapper *&gt; states, const Portage::Entity_kind entity)</td></tr>
-<tr class="memdesc:a20688919f65c2249db1e539d2dda2b40"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html" title="Holds state data for particle Swarms. ">SwarmState</a> factory, given a set of mesh state wrappers. Only does double fields. Copies fields from mesh state wrappers to a swarm state wrapper of the total size. This factory is useful for mapping from several meshes at once, e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.  <a href="#a20688919f65c2249db1e539d2dda2b40">More...</a><br /></td></tr>
-<tr class="separator:a20688919f65c2249db1e539d2dda2b40"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a46cf6fc62ecf4e82e6a96defd7653013"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacePortage_1_1Meshfree.html#a46cf6fc62ecf4e82e6a96defd7653013">SmoothingLengths</a> = <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; std::vector&lt; double &gt; &gt;&gt;</td></tr>
+<tr class="separator:a46cf6fc62ecf4e82e6a96defd7653013"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
-<h2 class="groupheader">Function Documentation</h2>
-<a id="ac4956b46786be6abc2fb4b484503789a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac4956b46786be6abc2fb4b484503789a">&#9670;&nbsp;</a></span>get_seed()</h2>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a46cf6fc62ecf4e82e6a96defd7653013"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a46cf6fc62ecf4e82e6a96defd7653013">&#9670;&nbsp;</a></span>SmoothingLengths</h2>
 
 <div class="memitem">
 <div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned long Portage::Meshfree::get_seed </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ac9a89c1552070404f633d8e9450686ec"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac9a89c1552070404f633d8e9450686ec">&#9670;&nbsp;</a></span>SwarmFactory() <span class="overload">[1/5]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt;1&gt; &gt; Portage::Meshfree::SwarmFactory </td>
-          <td>(</td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>nparticles</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>distribution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>rand_seed</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ae9ffc98412899ac646c1eac580bcf240"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae9ffc98412899ac646c1eac580bcf240">&#9670;&nbsp;</a></span>SwarmFactory() <span class="overload">[2/5]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt;2&gt; &gt; Portage::Meshfree::SwarmFactory </td>
-          <td>(</td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>ymin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>ymax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>nparticles</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>distribution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>rand_seed</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aba85410e75b4bd589adfbae94d978b6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aba85410e75b4bd589adfbae94d978b6d">&#9670;&nbsp;</a></span>SwarmFactory() <span class="overload">[3/5]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt;3&gt; &gt; Portage::Meshfree::SwarmFactory </td>
-          <td>(</td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>ymin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>zmin</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>xmax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>ymax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">double&#160;</td>
-          <td class="paramname"><em>zmax</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>nparticles</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>distribution</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">unsigned int&#160;</td>
-          <td class="paramname"><em>rand_seed</em> = <code>0</code>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="acef89a06d90d22a735ccf9de7312b178"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acef89a06d90d22a735ccf9de7312b178">&#9670;&nbsp;</a></span>SwarmFactory() <span class="overload">[4/5]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim, class MeshWrapper &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt;dim&gt; &gt; Portage::Meshfree::SwarmFactory </td>
-          <td>(</td>
-          <td class="paramtype">MeshWrapper &amp;&#160;</td>
-          <td class="paramname"><em>wrapper</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Portage::Entity_kind&#160;</td>
-          <td class="paramname"><em>entity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
+          <td class="memname">using <a class="el" href="namespacePortage_1_1Meshfree.html#a46cf6fc62ecf4e82e6a96defd7653013">Portage::Meshfree::SmoothingLengths</a> = typedef <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt;std::vector&lt;std::vector&lt;double&gt; &gt;&gt;</td>
         </tr>
       </table>
 </div><div class="memdoc">
-
-<p>Create a <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html" title="An effective &quot;mesh&quot; class for a collection disconnected points (particles). ">Swarm</a> from an arbitary mesh wrapper.  dim Spatial dimension  MeshWrapper class representing a mesh wrapper. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">wrapper</td><td>Input mesh wrapper </td></tr>
-    <tr><td class="paramname">entity</td><td>Where the data is located in the cell </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="ae09a37170c50331b02c22927d1f9ae8a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae09a37170c50331b02c22927d1f9ae8a">&#9670;&nbsp;</a></span>SwarmFactory() <span class="overload">[5/5]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim, class MeshWrapper &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">std::shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html">Swarm</a>&lt;dim&gt; &gt; Portage::Meshfree::SwarmFactory </td>
-          <td>(</td>
-          <td class="paramtype">std::vector&lt; MeshWrapper *&gt;&#160;</td>
-          <td class="paramname"><em>wrappers</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Portage::Entity_kind&#160;</td>
-          <td class="paramname"><em>entity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Create a <a class="el" href="classPortage_1_1Meshfree_1_1Swarm.html" title="An effective &quot;mesh&quot; class for a collection disconnected points (particles). ">Swarm</a> from an set of arbitary mesh wrappers. This factory is useful for mapping from several meshes at once, e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, to obtain statistical properties like average, confidence bounds, and uncertaintities, for example.  dim Spatial dimension  MeshWrapper class representing a mesh wrapper. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">wrappers</td><td>Input mesh wrappers </td></tr>
-    <tr><td class="paramname">entity</td><td>Where the data is located in the cell </td></tr>
-  </table>
-  </dd>
-</dl>
-
-</div>
-</div>
-<a id="a014b442e659e9c80bd1b2c3e78a9a354"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a014b442e659e9c80bd1b2c3e78a9a354">&#9670;&nbsp;</a></span>SwarmStateFactory() <span class="overload">[1/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim, class StateWrapper &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html">SwarmState</a>&lt;dim&gt; &gt; Portage::Meshfree::SwarmStateFactory </td>
-          <td>(</td>
-          <td class="paramtype">const StateWrapper &amp;&#160;</td>
-          <td class="paramname"><em>state</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const Portage::Entity_kind&#160;</td>
-          <td class="paramname"><em>entity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html" title="Holds state data for particle Swarms. ">SwarmState</a> factory, given a mesh state wrapper. Only does double fields. Copies fields from mesh state wrapper to a swarm state wrapper of the same size. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">state</td><td>the field data on the mesh </td></tr>
-    <tr><td class="paramname">entity</td><td>entity on which to get data (e.g. CELL, NODE, etc.) </td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>shared pointer to the resultant swarm state </dd></dl>
-
-</div>
-</div>
-<a id="a20688919f65c2249db1e539d2dda2b40"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20688919f65c2249db1e539d2dda2b40">&#9670;&nbsp;</a></span>SwarmStateFactory() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;size_t dim, class StateWrapper &gt; </div>
-      <table class="memname">
-        <tr>
-          <td class="memname">shared_ptr&lt;<a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html">SwarmState</a>&lt;dim&gt; &gt; Portage::Meshfree::SwarmStateFactory </td>
-          <td>(</td>
-          <td class="paramtype">const std::vector&lt; StateWrapper *&gt;&#160;</td>
-          <td class="paramname"><em>states</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const Portage::Entity_kind&#160;</td>
-          <td class="paramname"><em>entity</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p><a class="el" href="classPortage_1_1Meshfree_1_1SwarmState.html" title="Holds state data for particle Swarms. ">SwarmState</a> factory, given a set of mesh state wrappers. Only does double fields. Copies fields from mesh state wrappers to a swarm state wrapper of the total size. This factory is useful for mapping from several meshes at once, e.g. for analysis of multiple times, or multiple simulations at the same set of spatial points, to obtain statistical properties like average, confidence bounds, and uncertaintities, for example. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">states</td><td>the field data on the meshes </td></tr>
-    <tr><td class="paramname">entity</td><td>entity on which to get data (e.g. CELL, NODE, etc.)</td></tr>
-  </table>
-  </dd>
-</dl>
-<p>All fields must exist in all states. In each state, all fields must have same size. </p>
 
 </div>
 </div>

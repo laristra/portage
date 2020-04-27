@@ -24,7 +24,7 @@ Please see the license file at the root of this repository, or at:
 			  crossorigin="anonymous"></script>
       <!-- <script src="//code.jquery.com/jquery-3.3.1.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
     <script type="text/javascript" src="smartmenu.js"></script>
-    <title>portage: Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</title>
+    <title>portage: Portage::MSM_Driver&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</title>
     <link href="tabs.css" rel="stylesheet" type="text/css">
       <!-- this version is too old for bootstrap, but it includes modifications
 	   from standard jquery
@@ -78,7 +78,7 @@ $(function() {
 <a href="#pub-methods">Public Member Functions</a> &#124;
 <a href="classPortage_1_1MSM__Driver-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</div>  </div>
+<div class="title">Portage::MSM_Driver&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; Class Template Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -89,40 +89,40 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a415af87e3ce5eb26a63902d853bc2fa0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a415af87e3ce5eb26a63902d853bc2fa0">MSM_Driver</a> (SourceMesh_Wrapper const &amp;sourceMesh, SourceState_Wrapper const &amp;sourceState, TargetMesh_Wrapper const &amp;targetMesh, TargetState_Wrapper &amp;targetState, double smoothing_factor=1.25, double boundary_factor=0.5, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Meshfree::Weight::Geometry</a> geometry=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698a940579ff3befc5bc6d833fb613142547">Meshfree::Weight::TENSOR</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Meshfree::Weight::Kernel</a> kernel=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfa3b330d055256c39f3061e2056b462c43">Meshfree::Weight::B4</a>, Meshfree::WeightCenter center=Meshfree::Gather, std::string part_field=&quot;NONE&quot;, double part_tolerance=std::numeric_limits&lt; double &gt;::infinity())</td></tr>
-<tr class="memdesc:a415af87e3ce5eb26a63902d853bc2fa0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for running the interpolation driver.  <a href="#a415af87e3ce5eb26a63902d853bc2fa0">More...</a><br /></td></tr>
-<tr class="separator:a415af87e3ce5eb26a63902d853bc2fa0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a918473ad1a257db73ccc81a919bd2000"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a918473ad1a257db73ccc81a919bd2000">MSM_Driver</a> (const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;)=delete</td></tr>
-<tr class="memdesc:a918473ad1a257db73ccc81a919bd2000"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor (disabled)  <a href="#a918473ad1a257db73ccc81a919bd2000">More...</a><br /></td></tr>
-<tr class="separator:a918473ad1a257db73ccc81a919bd2000"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad30fea228e4b6c16c4a2009359b40cf4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#ad30fea228e4b6c16c4a2009359b40cf4">operator=</a> (const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;)=delete</td></tr>
-<tr class="memdesc:ad30fea228e4b6c16c4a2009359b40cf4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled)  <a href="#ad30fea228e4b6c16c4a2009359b40cf4">More...</a><br /></td></tr>
-<tr class="separator:ad30fea228e4b6c16c4a2009359b40cf4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae1775e6a00414412d7113dc56b060cf"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#aae1775e6a00414412d7113dc56b060cf">~MSM_Driver</a> ()</td></tr>
-<tr class="memdesc:aae1775e6a00414412d7113dc56b060cf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#aae1775e6a00414412d7113dc56b060cf">More...</a><br /></td></tr>
-<tr class="separator:aae1775e6a00414412d7113dc56b060cf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1d2c3ea9c654efcf3b10ed217f5a6f3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#ad1d2c3ea9c654efcf3b10ed217f5a6f3">set_remap_var_names</a> (std::vector&lt; std::string &gt; const &amp;remap_var_names)</td></tr>
-<tr class="memdesc:ad1d2c3ea9c654efcf3b10ed217f5a6f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the names of the variables to be interpolated.  <a href="#ad1d2c3ea9c654efcf3b10ed217f5a6f3">More...</a><br /></td></tr>
-<tr class="separator:ad1d2c3ea9c654efcf3b10ed217f5a6f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af23543eee0412df5155f07461be4c098"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#af23543eee0412df5155f07461be4c098">set_remap_var_names</a> (std::vector&lt; std::string &gt; const &amp;<a class="el" href="classPortage_1_1MSM__Driver.html#a44e31b6d7984e80db0684bf8c0d941c7">source_remap_var_names</a>, std::vector&lt; std::string &gt; const &amp;<a class="el" href="classPortage_1_1MSM__Driver.html#aa14440c36830246213eadb0be1eede6a">target_remap_var_names</a>, Meshfree::EstimateType const &amp;estimator_type=Meshfree::LocalRegression, <a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Meshfree::Basis::Type</a> const &amp;basis_type=<a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9fa9170930d9a44add4a4ed5af4a6963427">Meshfree::Basis::Unitary</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a4958635b5cac93184b44883472eb2a2e">Meshfree::Operator::Type</a> operator_spec=<a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a4958635b5cac93184b44883472eb2a2ea56994425054440486bca31e2b6bd190e">Meshfree::Operator::LastOperator</a>, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; <a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a0915189e7bca3de8a7e3e7bec35b1d88">Meshfree::Operator::Domain</a> &gt; operator_domains=<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; <a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a0915189e7bca3de8a7e3e7bec35b1d88">Meshfree::Operator::Domain</a> &gt;(0), <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Point&lt; Dim &gt;&gt;&gt; const &amp;operator_data=<a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt; std::vector&lt; Point&lt; Dim &gt;&gt;&gt;(0, std::vector&lt; Point&lt; Dim &gt;&gt;(0)))</td></tr>
-<tr class="memdesc:af23543eee0412df5155f07461be4c098"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the names of the variables to be interpolated.  <a href="#af23543eee0412df5155f07461be4c098">More...</a><br /></td></tr>
-<tr class="separator:af23543eee0412df5155f07461be4c098"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a44e31b6d7984e80db0684bf8c0d941c7"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a44e31b6d7984e80db0684bf8c0d941c7">source_remap_var_names</a> () const</td></tr>
-<tr class="memdesc:a44e31b6d7984e80db0684bf8c0d941c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the names of the variables to be remapped from the source mesh.  <a href="#a44e31b6d7984e80db0684bf8c0d941c7">More...</a><br /></td></tr>
-<tr class="separator:a44e31b6d7984e80db0684bf8c0d941c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa14440c36830246213eadb0be1eede6a"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#aa14440c36830246213eadb0be1eede6a">target_remap_var_names</a> () const</td></tr>
-<tr class="memdesc:aa14440c36830246213eadb0be1eede6a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the names of the variables to be remapped to the target mesh.  <a href="#aa14440c36830246213eadb0be1eede6a">More...</a><br /></td></tr>
-<tr class="separator:aa14440c36830246213eadb0be1eede6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a728705201ec6fa9fce80250ab94c0256"><td class="memItemLeft" align="right" valign="top">unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a728705201ec6fa9fce80250ab94c0256">dim</a> () const</td></tr>
-<tr class="memdesc:a728705201ec6fa9fce80250ab94c0256"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the dimensionality of the meshes.  <a href="#a728705201ec6fa9fce80250ab94c0256">More...</a><br /></td></tr>
-<tr class="separator:a728705201ec6fa9fce80250ab94c0256"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a445a7378ec125a82afafad4dfcb38ec3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a445a7378ec125a82afafad4dfcb38ec3">run</a> (Wonton::Executor_type const *executor=nullptr)</td></tr>
-<tr class="memdesc:a445a7378ec125a82afafad4dfcb38ec3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Execute the remapping process.  <a href="#a445a7378ec125a82afafad4dfcb38ec3">More...</a><br /></td></tr>
-<tr class="separator:a445a7378ec125a82afafad4dfcb38ec3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0006b243cfd12b5005e034ef85dfa0ef"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a0006b243cfd12b5005e034ef85dfa0ef">MSM_Driver</a> (SourceMesh_Wrapper const &amp;source_mesh, SourceState_Wrapper const &amp;source_state, TargetMesh_Wrapper const &amp;target_mesh, TargetState_Wrapper &amp;target_state, double smoothing_factor=1.25, double boundary_factor=0.5, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698">Meshfree::Weight::Geometry</a> geometry=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#ab1a6f49c8ccca52acf6ec2d1a3310698a940579ff3befc5bc6d833fb613142547">Meshfree::Weight::TENSOR</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bf">Meshfree::Weight::Kernel</a> kernel=<a class="el" href="namespacePortage_1_1Meshfree_1_1Weight.html#a49c91436c868f91f1bb82ca674b497bfa3b330d055256c39f3061e2056b462c43">Meshfree::Weight::B4</a>, Meshfree::WeightCenter center=Meshfree::Gather, std::string part_field=&quot;NONE&quot;, double part_tolerance=std::numeric_limits&lt; double &gt;::infinity())</td></tr>
+<tr class="memdesc:a0006b243cfd12b5005e034ef85dfa0ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor for running the interpolation driver.  <a href="#a0006b243cfd12b5005e034ef85dfa0ef">More...</a><br /></td></tr>
+<tr class="separator:a0006b243cfd12b5005e034ef85dfa0ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a003b07fef01e84052017317e2fe46095"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a003b07fef01e84052017317e2fe46095">MSM_Driver</a> (const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;)=delete</td></tr>
+<tr class="memdesc:a003b07fef01e84052017317e2fe46095"><td class="mdescLeft">&#160;</td><td class="mdescRight">Copy constructor (disabled)  <a href="#a003b07fef01e84052017317e2fe46095">More...</a><br /></td></tr>
+<tr class="separator:a003b07fef01e84052017317e2fe46095"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c4a51953ceef32b22f9b8895c2b33c1"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a2c4a51953ceef32b22f9b8895c2b33c1">operator=</a> (const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> &amp;)=delete</td></tr>
+<tr class="memdesc:a2c4a51953ceef32b22f9b8895c2b33c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Assignment operator (disabled)  <a href="#a2c4a51953ceef32b22f9b8895c2b33c1">More...</a><br /></td></tr>
+<tr class="separator:a2c4a51953ceef32b22f9b8895c2b33c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ad5a5bd9b7576428a32e27fb16fd7b0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a3ad5a5bd9b7576428a32e27fb16fd7b0">~MSM_Driver</a> ()=default</td></tr>
+<tr class="memdesc:a3ad5a5bd9b7576428a32e27fb16fd7b0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Destructor.  <a href="#a3ad5a5bd9b7576428a32e27fb16fd7b0">More...</a><br /></td></tr>
+<tr class="separator:a3ad5a5bd9b7576428a32e27fb16fd7b0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae33ce4a65ebf3e9182913e6943d1bb1f"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#ae33ce4a65ebf3e9182913e6943d1bb1f">set_remap_var_names</a> (std::vector&lt; std::string &gt; const &amp;remap_var_names)</td></tr>
+<tr class="memdesc:ae33ce4a65ebf3e9182913e6943d1bb1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the names of the variables to be interpolated.  <a href="#ae33ce4a65ebf3e9182913e6943d1bb1f">More...</a><br /></td></tr>
+<tr class="separator:ae33ce4a65ebf3e9182913e6943d1bb1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2e7df29b9c58138e55b2f71aaa3a4d06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a2e7df29b9c58138e55b2f71aaa3a4d06">set_remap_var_names</a> (std::vector&lt; std::string &gt; const &amp;<a class="el" href="classPortage_1_1MSM__Driver.html#a1092d9062a006a8f9e696f3c6f567995">source_vars</a>, std::vector&lt; std::string &gt; const &amp;<a class="el" href="classPortage_1_1MSM__Driver.html#a7687b18b425e967ebafaf923be3011ec">target_vars</a>, Meshfree::EstimateType const &amp;estimator_type=Meshfree::LocalRegression, <a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">Meshfree::basis::Type</a> const &amp;basis_type=<a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602baa7cfa565295cd391a2e0ea1617883833e">Meshfree::basis::Unitary</a>, <a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#a33ebc12023da29d54e245a4031d21984">Meshfree::oper::Type</a> operator_spec=<a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#a33ebc12023da29d54e245a4031d21984aa6d8697ca4e7018cbbfcc0d08395bc85">Meshfree::oper::LastOperator</a>, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; <a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#afca7272e34862082c9a8e4f134c09abe">Meshfree::oper::Domain</a> &gt; const &amp;operator_domains={}, <a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Point&lt; dim &gt;&gt;&gt; const &amp;operator_data={})</td></tr>
+<tr class="memdesc:a2e7df29b9c58138e55b2f71aaa3a4d06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Specify the names of the variables to be interpolated.  <a href="#a2e7df29b9c58138e55b2f71aaa3a4d06">More...</a><br /></td></tr>
+<tr class="separator:a2e7df29b9c58138e55b2f71aaa3a4d06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1092d9062a006a8f9e696f3c6f567995"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a1092d9062a006a8f9e696f3c6f567995">source_vars</a> () const</td></tr>
+<tr class="memdesc:a1092d9062a006a8f9e696f3c6f567995"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the names of the variables to be remapped from the source mesh.  <a href="#a1092d9062a006a8f9e696f3c6f567995">More...</a><br /></td></tr>
+<tr class="separator:a1092d9062a006a8f9e696f3c6f567995"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7687b18b425e967ebafaf923be3011ec"><td class="memItemLeft" align="right" valign="top">std::vector&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#a7687b18b425e967ebafaf923be3011ec">target_vars</a> () const</td></tr>
+<tr class="memdesc:a7687b18b425e967ebafaf923be3011ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the names of the variables to be remapped to the target mesh.  <a href="#a7687b18b425e967ebafaf923be3011ec">More...</a><br /></td></tr>
+<tr class="separator:a7687b18b425e967ebafaf923be3011ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:add6702b1f602b6404f21348fd4f32884"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#add6702b1f602b6404f21348fd4f32884">dimension</a> () const</td></tr>
+<tr class="memdesc:add6702b1f602b6404f21348fd4f32884"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the dimensionality of the meshes.  <a href="#add6702b1f602b6404f21348fd4f32884">More...</a><br /></td></tr>
+<tr class="separator:add6702b1f602b6404f21348fd4f32884"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad170aea8918fdffa501b9874eeece1b4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classPortage_1_1MSM__Driver.html#ad170aea8918fdffa501b9874eeece1b4">run</a> (Wonton::Executor_type const *executor=nullptr)</td></tr>
+<tr class="memdesc:ad170aea8918fdffa501b9874eeece1b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Execute the remapping process.  <a href="#ad170aea8918fdffa501b9874eeece1b4">More...</a><br /></td></tr>
+<tr class="separator:ad170aea8918fdffa501b9874eeece1b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><h3>template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper, class SourceState_Wrapper, class TargetMesh_Wrapper = SourceMesh_Wrapper, class TargetState_Wrapper = SourceState_Wrapper&gt;<br />
-class Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</h3>
+<div class="textblock"><h3>template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper, class SourceState_Wrapper, class TargetMesh_Wrapper = SourceMesh_Wrapper, class TargetState_Wrapper = SourceState_Wrapper&gt;<br />
+class Portage::MSM_Driver&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;</h3>
 
 <p><a class="el" href="classPortage_1_1MSM__Driver.html" title="MSM_Driver provides the API to mapping from one mesh to another using particles. ">MSM_Driver</a> provides the API to mapping from one mesh to another using particles. </p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
@@ -139,40 +139,40 @@ class Portage::MSM_Driver&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrap
   </dd>
 </dl>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a415af87e3ce5eb26a63902d853bc2fa0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a415af87e3ce5eb26a63902d853bc2fa0">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[1/2]</span></h2>
+<a id="a0006b243cfd12b5005e034ef85dfa0ef"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0006b243cfd12b5005e034ef85dfa0ef">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
           <td>(</td>
           <td class="paramtype">SourceMesh_Wrapper const &amp;&#160;</td>
-          <td class="paramname"><em>sourceMesh</em>, </td>
+          <td class="paramname"><em>source_mesh</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">SourceState_Wrapper const &amp;&#160;</td>
-          <td class="paramname"><em>sourceState</em>, </td>
+          <td class="paramname"><em>source_state</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">TargetMesh_Wrapper const &amp;&#160;</td>
-          <td class="paramname"><em>targetMesh</em>, </td>
+          <td class="paramname"><em>target_mesh</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">TargetState_Wrapper &amp;&#160;</td>
-          <td class="paramname"><em>targetState</em>, </td>
+          <td class="paramname"><em>target_state</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -232,10 +232,10 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 <p>Constructor for running the interpolation driver. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">sourceMesh</td><td>A <code>SourceMesh_Wrapper</code> to the source mesh. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">sourceState</td><td>A <code>SourceState_Wrapperfor</code> the data that lives on the source mesh. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">targetMesh</td><td>A <code>TargetMesh_Wrapper</code> to the target mesh. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">targetState</td><td>A <code>TargetState_Wrapper</code> for the data that will be mapped to the target mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source_mesh</td><td>A <code>SourceMesh_Wrapper</code> to the source mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source_state</td><td>A <code>SourceState_Wrapperfor</code> the data that lives on the source mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">target_mesh</td><td>A <code>TargetMesh_Wrapper</code> to the target mesh. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">target_state</td><td>A <code>TargetState_Wrapper</code> for the data that will be mapped to the target mesh. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">smoothing_factor</td><td>multiplies cell sizes to get smoothing lengths </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">boundary_factor</td><td>with faceted weights only, multiplies center-to-face distance on boundary to get smoothing length </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">geometry</td><td>weight function geometric configuration </td></tr>
@@ -249,21 +249,21 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="a918473ad1a257db73ccc81a919bd2000"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a918473ad1a257db73ccc81a919bd2000">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[2/2]</span></h2>
+<a id="a003b07fef01e84052017317e2fe46095"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a003b07fef01e84052017317e2fe46095">&#9670;&nbsp;</a></span>MSM_Driver() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -279,19 +279,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="aae1775e6a00414412d7113dc56b060cf"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aae1775e6a00414412d7113dc56b060cf">&#9670;&nbsp;</a></span>~MSM_Driver()</h2>
+<a id="a3ad5a5bd9b7576428a32e27fb16fd7b0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ad5a5bd9b7576428a32e27fb16fd7b0">&#9670;&nbsp;</a></span>~MSM_Driver()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::~<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
+          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::~<a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a> </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -299,7 +299,7 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
       </table>
   </td>
   <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+<span class="mlabels"><span class="mlabel">default</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -309,19 +309,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a728705201ec6fa9fce80250ab94c0256"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a728705201ec6fa9fce80250ab94c0256">&#9670;&nbsp;</a></span>dim()</h2>
+<a id="add6702b1f602b6404f21348fd4f32884"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#add6702b1f602b6404f21348fd4f32884">&#9670;&nbsp;</a></span>dimension()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">unsigned int <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::dim </td>
+          <td class="memname">int <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::dimension </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -339,21 +339,21 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="ad30fea228e4b6c16c4a2009359b40cf4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad30fea228e4b6c16c4a2009359b40cf4">&#9670;&nbsp;</a></span>operator=()</h2>
+<a id="a2c4a51953ceef32b22f9b8895c2b33c1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2c4a51953ceef32b22f9b8895c2b33c1">&#9670;&nbsp;</a></span>operator=()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&amp; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::operator= </td>
+          <td class="memname"><a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&amp; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::operator= </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; &amp;&#160;</td>
+          <td class="paramtype">const <a class="el" href="classPortage_1_1MSM__Driver.html">MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt; &amp;&#160;</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
@@ -369,19 +369,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="a445a7378ec125a82afafad4dfcb38ec3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a445a7378ec125a82afafad4dfcb38ec3">&#9670;&nbsp;</a></span>run()</h2>
+<a id="ad170aea8918fdffa501b9874eeece1b4"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad170aea8918fdffa501b9874eeece1b4">&#9670;&nbsp;</a></span>run()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::run </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::run </td>
           <td>(</td>
           <td class="paramtype">Wonton::Executor_type const *&#160;</td>
           <td class="paramname"><em>executor</em> = <code>nullptr</code></td><td>)</td>
@@ -399,19 +399,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="ad1d2c3ea9c654efcf3b10ed217f5a6f3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1d2c3ea9c654efcf3b10ed217f5a6f3">&#9670;&nbsp;</a></span>set_remap_var_names() <span class="overload">[1/2]</span></h2>
+<a id="ae33ce4a65ebf3e9182913e6943d1bb1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae33ce4a65ebf3e9182913e6943d1bb1f">&#9670;&nbsp;</a></span>set_remap_var_names() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::set_remap_var_names </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::set_remap_var_names </td>
           <td>(</td>
           <td class="paramtype">std::vector&lt; std::string &gt; const &amp;&#160;</td>
           <td class="paramname"><em>remap_var_names</em></td><td>)</td>
@@ -435,28 +435,28 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="af23543eee0412df5155f07461be4c098"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af23543eee0412df5155f07461be4c098">&#9670;&nbsp;</a></span>set_remap_var_names() <span class="overload">[2/2]</span></h2>
+<a id="a2e7df29b9c58138e55b2f71aaa3a4d06"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2e7df29b9c58138e55b2f71aaa3a4d06">&#9670;&nbsp;</a></span>set_remap_var_names() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::set_remap_var_names </td>
+          <td class="memname">void <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::set_remap_var_names </td>
           <td>(</td>
           <td class="paramtype">std::vector&lt; std::string &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>source_remap_var_names</em>, </td>
+          <td class="paramname"><em>source_vars</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">std::vector&lt; std::string &gt; const &amp;&#160;</td>
-          <td class="paramname"><em>target_remap_var_names</em>, </td>
+          <td class="paramname"><em>target_vars</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -467,26 +467,26 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9f">Meshfree::Basis::Type</a> const &amp;&#160;</td>
-          <td class="paramname"><em>basis_type</em> = <code><a class="el" href="namespacePortage_1_1Meshfree_1_1Basis.html#af35405ecd80b02f21475c64237ca8b9fa9170930d9a44add4a4ed5af4a6963427">Meshfree::Basis::Unitary</a></code>, </td>
+          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602ba">Meshfree::basis::Type</a> const &amp;&#160;</td>
+          <td class="paramname"><em>basis_type</em> = <code><a class="el" href="namespacePortage_1_1Meshfree_1_1basis.html#a00f336f9350ca55f3ad8e8c986b602baa7cfa565295cd391a2e0ea1617883833e">Meshfree::basis::Unitary</a></code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a4958635b5cac93184b44883472eb2a2e">Meshfree::Operator::Type</a>&#160;</td>
-          <td class="paramname"><em>operator_spec</em> = <code><a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a4958635b5cac93184b44883472eb2a2ea56994425054440486bca31e2b6bd190e">Meshfree::Operator::LastOperator</a></code>, </td>
+          <td class="paramtype"><a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#a33ebc12023da29d54e245a4031d21984">Meshfree::oper::Type</a>&#160;</td>
+          <td class="paramname"><em>operator_spec</em> = <code><a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#a33ebc12023da29d54e245a4031d21984aa6d8697ca4e7018cbbfcc0d08395bc85">Meshfree::oper::LastOperator</a></code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; <a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a0915189e7bca3de8a7e3e7bec35b1d88">Meshfree::Operator::Domain</a> &gt;&#160;</td>
-          <td class="paramname"><em>operator_domains</em> = <code><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt;<a class="el" href="namespacePortage_1_1Meshfree_1_1Operator.html#a0915189e7bca3de8a7e3e7bec35b1d88">Meshfree::Operator::Domain</a>&gt;(0)</code>, </td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; <a class="el" href="namespacePortage_1_1Meshfree_1_1oper.html#afca7272e34862082c9a8e4f134c09abe">Meshfree::oper::Domain</a> &gt; const &amp;&#160;</td>
+          <td class="paramname"><em>operator_domains</em> = <code>{}</code>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Point&lt; Dim &gt;&gt;&gt; const &amp;&#160;</td>
-          <td class="paramname"><em>operator_data</em> = <code><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">vector</a>&lt;std::vector&lt;Point&lt;Dim&gt;&gt;&gt;(0,std::vector&lt;Point&lt;Dim&gt;&gt;(0))</code>&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacePortage.html#ad86a06a9372f05948709ca73e058981d">Portage::vector</a>&lt; std::vector&lt; Point&lt; dim &gt;&gt;&gt; const &amp;&#160;</td>
+          <td class="paramname"><em>operator_data</em> = <code>{}</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -504,8 +504,8 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 <p>Specify the names of the variables to be interpolated. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">source_remap_var_names</td><td>A list of the variables names of the variables to interpolate from the source mesh. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">target_remap_var_names</td><td>A list of the variables names of the variables to interpolate to the target mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">source_vars</td><td>A list of the variables names of the variables to interpolate from the source mesh. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">target_vars</td><td>A list of the variables names of the variables to interpolate to the target mesh. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">estimator_type</td><td>What type of estimator to apply in particle stage </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">basis_type</td><td>what regression basis to use </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">operator_spec</td><td>what type of operator to use in regression, if any </td></tr>
@@ -517,19 +517,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="a44e31b6d7984e80db0684bf8c0d941c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a44e31b6d7984e80db0684bf8c0d941c7">&#9670;&nbsp;</a></span>source_remap_var_names()</h2>
+<a id="a1092d9062a006a8f9e696f3c6f567995"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1092d9062a006a8f9e696f3c6f567995">&#9670;&nbsp;</a></span>source_vars()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;std::string&gt; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::source_remap_var_names </td>
+          <td class="memname">std::vector&lt;std::string&gt; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::source_vars </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
@@ -547,19 +547,19 @@ template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_
 
 </div>
 </div>
-<a id="aa14440c36830246213eadb0be1eede6a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa14440c36830246213eadb0be1eede6a">&#9670;&nbsp;</a></span>target_remap_var_names()</h2>
+<a id="a7687b18b425e967ebafaf923be3011ec"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7687b18b425e967ebafaf923be3011ec">&#9670;&nbsp;</a></span>target_vars()</h2>
 
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;template&lt; int, class, class &gt; class Search, template&lt; size_t, class, class &gt; class Accumulate, template&lt; size_t, class &gt; class Estimate, int Dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
+template&lt;template&lt; int, class, class &gt; class Search, template&lt; int, class, class &gt; class Accumulate, template&lt; int, class &gt; class Estimate, int dim, class SourceMesh_Wrapper , class SourceState_Wrapper , class TargetMesh_Wrapper  = SourceMesh_Wrapper, class TargetState_Wrapper  = SourceState_Wrapper&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::vector&lt;std::string&gt; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, Dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::target_remap_var_names </td>
+          <td class="memname">std::vector&lt;std::string&gt; <a class="el" href="classPortage_1_1MSM__Driver.html">Portage::MSM_Driver</a>&lt; Search, Accumulate, Estimate, dim, SourceMesh_Wrapper, SourceState_Wrapper, TargetMesh_Wrapper, TargetState_Wrapper &gt;::target_vars </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td> const</td>
