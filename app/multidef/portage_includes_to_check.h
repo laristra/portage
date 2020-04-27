@@ -42,7 +42,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_nth_order.h"
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#include "portage/intersect/intersectClipper.h"
+#include "portage/intersect/intersect_clipper.h"
 #include "portage/intersect/intersect_polys_r2d.h"
 #include "portage/intersect/intersect_polys_r3d.h"
 #include "portage/intersect/intersect_r2d.h"

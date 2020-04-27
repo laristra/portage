@@ -75,11 +75,21 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
   }
 
   // check for convexity of target polygon
-  for (int i = 0; i < size2; ++i)
-    if (r2d_orient(verts2[i], verts2[(i+1)%size2],
-                   verts2[(i+2)%size2]) < num_tols.polygon_convexity_eps)
-      trg_convex = false;
+  for (int i = 0; i < size2; ++i) {
+    //Compute distance from target_poly[(i+1)%size2] 
+    //to segment (target_poly[i], target_poly[(i+2)%size2])
+    int ifv = i, imv = (i+1)%size2, isv = (i+2)%size2;
+    Wonton::Vector<2> normal( target_poly[isv][1] - target_poly[ifv][1], 
+                     -target_poly[isv][0] + target_poly[ifv][0]);
+    normal.normalize();
+    Wonton::Vector<2> fv2mv = target_poly[imv] - target_poly[ifv];
+    double dst = Wonton::dot(fv2mv, normal);
 
+    if (dst <= -num_tols.min_absolute_distance) {
+      trg_convex = false;
+      break;
+    }
+  }
   // case 1:  target_poly is convex
   // can simply use faces of target_poly as clip planes
   if (trg_convex) {
@@ -105,11 +115,21 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
   } else {  // case 2:  target_poly is non-convex
 
     // check for convexity of source polygon
-    for (int i = 0; i < size1; ++i)
-      if (r2d_orient(verts1[i], verts1[(i+1)%size1],
-                     verts1[(i+2)%size1]) < num_tols.polygon_convexity_eps)
-        src_convex = false;
+    for (int i = 0; i < size1; ++i) {
+      //Compute distance from source_poly[(i+1)%size1] 
+      //to segment (source_poly[i], source_poly[(i+2)%size1])
+      int ifv = i, imv = (i+1)%size1, isv = (i+2)%size1;
+      Wonton::Vector<2> normal( source_poly[isv][1] - source_poly[ifv][1], 
+                       -source_poly[isv][0] + source_poly[ifv][0]);
+      normal.normalize();
+      Wonton::Vector<2> fv2mv = source_poly[imv] - source_poly[ifv];
+      double dst = Wonton::dot(fv2mv, normal);
 
+      if (dst <= -num_tols.min_absolute_distance) {
+        src_convex = false;
+        break;
+      }
+    }
     // if source polygon is convex while target polygon is non-convex,
     // call the routine with the polygons reversed
 

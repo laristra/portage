@@ -1,133 +1,170 @@
+/*
+This file is part of the Ristra portage project.
+Please see the license file at the root of this repository, or at:
+    https://github.com/laristra/portage/blob/master/LICENSE
+*/
+
 #include <vector>
 #include <string>
 #include <cassert>
 #include <fstream>
 #include <cstdlib>
-#include <cmath>
 #include <sstream>
 #include <iostream>
+#include <stdexcept>
+#include <cmath>
 
+namespace {
+// numerical tolerance
 const double epsilon = 1.e-12;
 
-// from https://stackoverflow.com/questions/1120140/how-can-i-read-and-parse-csv-files-in-c
-std::vector<std::string> getLineAndSplit(std::istream& stream)
-{
-    std::vector<std::string>   result;
-    std::string                line;
-    std::getline(stream, line);
-    if (line.empty()) return result;
+/**
+ * @brief Parsed data.
+ */
+class Data {
+public:
+  void add(std::string const& x, std::string const& y, std::string const& v) {
+    coords.emplace_back(std::vector<double>{std::stod(x), std::stod(y)});
+    values.emplace_back(std::stod(v));
+    if (not dim)
+      dim = 2;
+  }
 
-    std::stringstream          lineStream(line, std::ios_base::in);
-    std::string                field;
+  void add(std::string const& x, std::string const& y,
+           std::string const& z, std::string const& v) {
+    coords.emplace_back(std::vector<double>{std::stod(x), std::stod(y), std::stod(z)});
+    values.emplace_back(std::stod(v));
+    if (not dim)
+      dim = 3;
+  }
 
-    while(std::getline(lineStream,field, ','))
-    {
-        result.push_back(field);
-    }
-    // This checks for a trailing comma with no data after it.
-    if (!lineStream && field.empty())
-    {
-        // If there was a trailing comma then add an empty element.
-        result.push_back("");
-    }
+  int size() const { return values.size(); }
+
+  std::vector<std::vector<double>> coords {};
+  std::vector<double> values {};
+  int dim = 0;
+};
+
+/**
+ * @brief Parse a single line of a csv file.
+ *
+ * @param file: input file
+ * @return a list of field values
+ */
+std::vector<std::string> parse_line(std::ifstream& file) {
+
+  std::vector<std::string> result;
+  std::string line;
+  std::string field;
+  std::stringstream buffer;
+
+  std::getline(file, line);
+  if (line.empty())
     return result;
+
+  //std::stringstream buffer(line, std::ios_base::in);
+  buffer << line;
+
+  while (std::getline(buffer, field, ',')) {
+    result.emplace_back(field);
+  }
+  // check for a trailing comma with no data after it.
+  if (not buffer and field.empty())
+    result.emplace_back("");
+  return result;
 }
 
-int main(int narg, char** argv) {
-  if (narg < 3) {
-    std::cout << "not enough arguments\n";
-    exit(5);
-  }
+/**
+ * @brief Parse the file and retrieve field values.
+ *
+ * @param file
+ * @return
+ */
+Data parse(const char* path) {
 
-  std::string goldfile, testfile;
-  goldfile = std::string(argv[1]);
-  testfile = std::string(argv[2]);
+  assert(path != nullptr);
+  std::ifstream file(path);
+  assert(file.good());
 
-  std::vector<std::vector<double>> goldcoords(0), testcoords(0);
-  std::vector<double> goldvalues(0), testvalues(0);
-  
-  std::ifstream goldin, testin;
-  goldin.open(goldfile);
-  testin.open(testfile);
+  Data data;
+  bool stop = false;
+  parse_line(file); // skip file header
 
-  int ncol = 0;
-  bool goon=true;
-  getLineAndSplit(goldin); // skip gold header
-  while (goon) {
-    std::vector<std::string> values = getLineAndSplit(goldin);
-    if (values.empty()) { // EOF
-      goon = false;
-    } else if (values.size() == 3) { // NORMAL
-      if (ncol == 0) ncol = 3;
-      std::vector<double> newcoord = {stod(values[0]), stod(values[1])};
-      goldcoords.push_back(newcoord);
-      goldvalues.push_back(stod(values[2]));
-    } else if (values.size() == 4) { // NORMAL
-      if (ncol == 0) ncol = 4;
-      std::vector<double> newcoord = {stod(values[0]), stod(values[1]), stod(values[2])};
-      goldcoords.push_back(newcoord);
-      goldvalues.push_back(stod(values[3]));
-    }
-    if (values.size() != ncol and ncol > 0 and goon) { // wrong number of columns
-      std::cout << "uneven columns in gold file\n";
-      std::exit(1);
+  while (not stop) {
+    auto cols = parse_line(file);
+    int nb_col = cols.size();
+
+    switch (nb_col) {
+      case 0: stop = true; break;
+      case 3: data.add(cols[0], cols[1], cols[2]); break;
+      case 4: data.add(cols[0], cols[1], cols[2], cols[3]); break;
+      default: throw std::runtime_error("uneven columns in file");
     }
   }
-  int ncolgold = ncol;
+  return data;
+}
 
-  ncol = 0;
-  goon = true;
-  getLineAndSplit(testin); // skip test header
-  while (goon) {
-    std::vector<std::string> values = getLineAndSplit(testin);
-    if (values.empty()) { // EOF
-      goon = false;
-    } else if (values.size() == 3) { // NORMAL
-      if (ncol == 0) ncol = 3;
-      std::vector<double> newcoord = {stod(values[0]), stod(values[1])};
-      testcoords.push_back(newcoord);
-      testvalues.push_back(stod(values[2]));
-    } else if (values.size() == 4) { // NORMAL
-      if (ncol == 0) ncol = 4;
-      std::vector<double> newcoord = {stod(values[0]), stod(values[1]), stod(values[2])};
-      testcoords.push_back(newcoord);
-      testvalues.push_back(stod(values[3]));
+/**
+ * @brief Check if two real scalars are equal.
+ *
+ * @param u: first scalar
+ * @param v: second scalar
+ * @return true if equal.
+ */
+bool equals(double const& u, double const& v) { return std::fabs(u - v) < epsilon; }
+
+} // end anonymous namespace
+
+/**
+ * @brief Main method.
+ *
+ * @param argc: number of arguments.
+ * @param argv: array of arguments.
+ * @return status code, 0 if ok.
+ */
+int main(int argc, char* argv[]) {
+
+  if (argc < 3) {
+    std::cerr << "Error: not enough arguments" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  auto const gold = parse(argv[1]);
+  auto const test = parse(argv[2]);
+
+  if (gold.size() != test.size()) {
+    std::cerr << "Error: mismatched data sizes" << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  int const dim = gold.dim;
+  int const nb_particles = gold.size();
+
+  for (int i = 0; i < nb_particles; i++) {
+    bool coords_match = true;
+    for (int j = 0; j < dim; ++j)
+      coords_match &= equals(gold.coords[i][j], test.coords[i][j]);
+
+    if (not coords_match) {
+      std::cerr << "Error: mismatched coordinates at line " << i << std::endl;
+      std::cerr << "\tgold: [";
+      for (int j = 0; j < dim; ++j)
+        std::cerr << gold.coords[i][j] << (j < dim - 1 ? ", " : "");
+
+      std::cerr << "], test: [";
+      for (int j = 0; j < dim; ++j)
+        std::cerr << test.coords[i][j] << (j < dim - 1 ? ", " : "");
+      std::cerr << "]." << std::endl;
+
+      return EXIT_FAILURE;
     }
-    if (values.size() != ncol and ncol > 0 and goon) { // wrong number of columns
-      std::cout << "uneven columns in test file\n";
-      std::exit(1);
+
+    if (not equals(gold.values[i], test.values[i])) {
+      std::cerr << "Error: mismatched values at line " << i << std::endl;
+      std::cerr << "\tgold: " << gold.values[i] <<", test: " << test.values[i] << std::endl;
+      return EXIT_FAILURE;
     }
   }
 
-  if (goldcoords.size() != testcoords.size() or 
-      goldcoords.size() != goldvalues.size() or 
-      testcoords.size() != testvalues.size() or 
-      ncol != ncolgold) 
-  {
-    std::cout << "length of gold and test data not equal\n";
-    std::exit(3);
-  }
-
-  bool isgood = true;
-  for (size_t i=0; i<goldcoords.size(); i++) {
-    bool isgood0, isgood1, isgood2=true, isgood3;
-    isgood0 = fabs(goldcoords[i][0] - testcoords[i][0]) < epsilon;
-    isgood1 = fabs(goldcoords[i][1] - testcoords[i][1]) < epsilon;
-    if (ncol == 4) {
-      isgood2 = fabs(goldcoords[i][2] - testcoords[i][2]) < epsilon;
-    }
-    isgood3 = fabs(goldvalues[i] - testvalues[i]) < epsilon;
-    isgood = isgood0 and isgood1 and isgood2 and isgood3;
-    if (not isgood0 or not isgood1 or not isgood2) {
-      std::cout << "coordinates disagree: at line " << i << std::endl;
-    }
-    if (not isgood3) {
-      std::cout << "values disagree at line " << i << std::endl;
-    }
-    isgood = isgood and isgood1 and isgood2;
-  }
-
-  if (isgood) {
-    std::cout << "files agree" << std::endl;
-  }
+  return EXIT_SUCCESS;
 }

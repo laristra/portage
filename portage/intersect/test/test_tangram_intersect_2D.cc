@@ -51,24 +51,27 @@ TEST(TANGRAM_2D, test_matpoly_create) {
 
   // Initialization from ccw ordered vertices
   square_matpoly.initialize(square_points, dst_tol);
+  int const num_square_points = square_points.size();
+  int const num_square_faces = square_faces.size();
 
   // Verify coordinates
   const std::vector<Wonton::Point2>& matpoly_points = square_matpoly.points();
-  ASSERT_EQ(square_points.size(), square_matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < square_points.size(); ivrt++)
+
+  ASSERT_EQ(num_square_points, square_matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_square_points; ivrt++)
     ASSERT_TRUE(approxEq(square_points[ivrt], matpoly_points[ivrt], 1.0e-15));
 
   // Verify faces
-  ASSERT_EQ(square_faces.size(), square_matpoly.num_faces());
-  for (int iface = 0; iface < square_faces.size(); iface++) {
+  ASSERT_EQ(num_square_faces, square_matpoly.num_faces());
+  for (int iface = 0; iface < num_square_faces; iface++) {
     const std::vector<int>& face_vertices = square_matpoly.face_vertices(iface);
-    ASSERT_EQ(2, face_vertices.size());
+    ASSERT_EQ(unsigned(2), face_vertices.size());
     ASSERT_EQ(square_faces[iface][0], face_vertices[0]);
     ASSERT_EQ(square_faces[iface][1], face_vertices[1]);
   }
 
   // Verify centroids
-  for (int iface = 0; iface < square_faces.size(); iface++)
+  for (int iface = 0; iface < num_square_faces; iface++)
     ASSERT_TRUE(approxEq(face_centroids[iface],
                          square_matpoly.face_centroid(iface), 1.0e-15));
 }
@@ -98,7 +101,8 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   // unfortunately we seem to need to use portage points only in intersection
   // so we need to convert from Tangram points to Portage points
   std::vector<Wonton::Point<2>> source_points;
-  for (auto p : _source_points) source_points.push_back(Wonton::Point<2>(p));
+  for (auto const& p : _source_points)
+    source_points.emplace_back(p);
 
   // create a simple mesh with a single cell
   Wonton::Simple_Mesh mesh(xl, yl, xh, yh, 1, 1);
@@ -111,8 +115,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_unit_cells) {
   meshWrapper.cell_get_coordinates(0, &target_points);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // actually intersect
   std::vector<double> moments =
@@ -150,7 +153,8 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   // unfortunately we seem to need to use portage points only in intersection
   // so we need to convert from Tangram points to Portage points
   std::vector<Wonton::Point<2>> source_points;
-  for (auto p : _source_points) source_points.push_back(Wonton::Point<2>(p));
+  for (auto const& p : _source_points)
+    source_points.emplace_back(p);
 
   // create a simple mesh with a single cell
   Wonton::Simple_Mesh mesh(xl + xoffset, yl + yoffset, xh + xoffset,
@@ -164,8 +168,7 @@ TEST(TANGRAM_2D, test_matpoly_intersect_non_coincident) {
   meshWrapper.cell_get_coordinates(0, &target_points);
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // actually intersect
   std::vector<double> moments =

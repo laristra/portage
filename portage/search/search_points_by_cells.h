@@ -19,18 +19,20 @@ Please see the license file at the root of this repository, or at:
 #include "lretypes.hh"
 #include "pairs.hh"
 
+using Wonton::Point;
+
 namespace Portage {
 
   /*!
   @class SearchPointsByCells "search_points_by_cells.h"
   @brief A simple, crude search algorithm that does a linear-time search
   over a swarm of points.
-  @tparam SourceSwarmType The swarm type of the input swarm.
-  @tparam TargetSwarmType The swarm type of the output swarm.
+  @tparam SourceSwarm The swarm type of the input swarm.
+  @tparam TargetSwarm The swarm type of the output swarm.
    */
-template <int D, class SourceSwarmType, class TargetSwarmType>
+template <int dim, class SourceSwarm, class TargetSwarm>
 class SearchPointsByCells {
-  public:
+public:
 
   //! Default constructor (disabled)
   SearchPointsByCells() = delete;
@@ -46,75 +48,78 @@ class SearchPointsByCells {
     Constructor for search structure for finding points from a source
     swarm that are near points in the target swarm.
   */
-  SearchPointsByCells(
-      const SourceSwarmType & source_swarm,
-      const TargetSwarmType & target_swarm,
-      std::shared_ptr<vector<Point<D>>> source_extents,
-      std::shared_ptr<vector<Point<D>>> target_extents,
-      Meshfree::WeightCenter center=Meshfree::Scatter)
-      : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
-        sourceExtents_(source_extents), targetExtents_(target_extents),
-        pair_finder_(NULL), center_(center)
-  {
+  SearchPointsByCells(SourceSwarm const& source_swarm,
+                      TargetSwarm const& target_swarm,
+                      Portage::vector<Point<dim>> const& source_extents,
+                      Portage::vector<Point<dim>> const& target_extents,
+                      Meshfree::WeightCenter center = Meshfree::Scatter)
+    : source_swarm_(source_swarm),
+      target_swarm_(target_swarm),
+      source_extents_(source_extents),
+      target_extents_(target_extents),
+      center_(center) {
+
+    using namespace Meshfree;
+
+    int const nb_source = source_swarm_.num_particles();
+    int const nb_target = target_swarm_.num_particles();
+    bool const do_scatter = (center == Scatter);
+
+#ifdef DEBUG
     // check sizes
-    if (center == Meshfree::Scatter) {
-      assert(sourceSwarm_.num_particles() == sourceExtents_->size());
-    } else if (center == Meshfree::Gather) {
-      assert(targetSwarm_.num_particles() == targetExtents_->size());
+    if (do_scatter) {
+      assert(unsigned(nb_source) == source_extents_.size());
+    } else {
+      assert(unsigned(nb_target) == target_extents_.size());
     }
+#endif
 
     // transpose geometry data to lre namespace structures
-    Meshfree::Pairs::vpile source_vp(D, sourceSwarm_.num_particles());
-    Meshfree::Pairs::vpile target_vp(D, targetSwarm_.num_particles());
-    Meshfree::Pairs::vpile source_extents_vp(D, sourceSwarm_.num_particles());
-    Meshfree::Pairs::vpile target_extents_vp(D, targetSwarm_.num_particles());
-    for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
-      Point<D> pt = sourceSwarm_.get_particle_coordinates(i);
-      for (size_t m=0; m<D; m++) {
-	source_vp[m][i] = pt[m];
-      }
-    }
-    for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
-      Point<D> pt = targetSwarm_.get_particle_coordinates(i);
-      for (size_t m=0; m<D; m++) {
-	target_vp[m][i] = pt[m];
-      }
-    }
-    if (center == Meshfree::Scatter) {
-      for (size_t i=0; i<sourceSwarm_.num_particles(); i++ ) {
-	for (size_t m=0; m<D; m++) {
-	  Point<D> pt = (*sourceExtents_)[i];
-	  source_extents_vp[m][i] = pt[m];
-	  (*sourceExtents_)[i] = pt;
-	}
-      }
-    } else if (center_ == Meshfree::Gather) {
-      for (size_t i=0; i<targetSwarm_.num_particles(); i++ ) {
-	for (size_t m=0; m<D; m++) {
-	  Point<D> pt = (*targetExtents_)[i];
-	  target_extents_vp[m][i] = pt[m];
-	  (*targetExtents_)[i] = pt;
-	}
+    Pairs::vpile source_vp(dim, nb_source);
+    Pairs::vpile target_vp(dim, nb_target);
+    Pairs::vpile extents_vp(dim, do_scatter ? nb_source : nb_target);
+
+    for (int i = 0; i < nb_source; i++ ) {
+      auto p = source_swarm_.get_particle_coordinates(i);
+      for (int m = 0; m < dim; m++) {
+        source_vp[m][i] = p[m];
       }
     }
 
-    // h on source
-    if (center_ == Meshfree::Scatter) {
-      pair_finder_ = std::make_shared<Meshfree::Pairs::CellPairFinder>(
-          source_vp, target_vp, source_extents_vp, true);
-
-    // h on target
-    } else if (center_ == Meshfree::Gather) {
-      pair_finder_ = std::make_shared<Meshfree::Pairs::CellPairFinder>(
-          source_vp, target_vp, target_extents_vp, false);
+    for (int i = 0; i < nb_target; i++ ) {
+      auto p = target_swarm_.get_particle_coordinates(i);
+      for (int m = 0; m < dim; m++) {
+        target_vp[m][i] = p[m];
+      }
     }
-  } // SearchPointsByCells::SearchPointsByCells
+
+    if (do_scatter) {
+      for (int i = 0; i < nb_source; i++ ) {
+        for (int m = 0; m < dim; m++) {
+          Point<dim> p = source_extents_[i];
+          extents_vp[m][i] = p[m];
+          source_extents_[i] = p;
+        }
+      }
+    } else if (center_ == Gather) {
+      for (int i = 0; i < nb_target; i++ ) {
+        for (int m = 0; m < dim; m++) {
+          Point<dim> p = target_extents_[i];
+          extents_vp[m][i] = p[m];
+          target_extents_[i] = p;
+        }
+      }
+    }
+    // h on source for scatter, on target for gather
+    pair_finder_ = std::make_shared<Pairs::CellPairFinder>(source_vp, target_vp,
+                                                           extents_vp, do_scatter);
+  }
 
   //! Copy constructor - use default - std::transform needs this
-  //  SearchPointsByCells(const SearchPointsByCells &) = delete;
+  SearchPointsByCells(SearchPointsByCells const&) = default;
 
   //! Assignment operator (disabled)
-  SearchPointsByCells & operator = (const SearchPointsByCells &) = delete;
+  SearchPointsByCells & operator = (SearchPointsByCells const&) = delete;
 
   //! Destructor
   ~SearchPointsByCells() = default;
@@ -128,31 +133,21 @@ class SearchPointsByCells {
     @param[in,out] candidates Pointer to a vector of potential candidate
     points in the source swarm.
   */
-  std::vector<unsigned int> operator() (const int pointId) const;
+  std::vector<int> operator() (int pointId) const {
+    auto result = pair_finder_->find(pointId);
+    return std::vector<int>(result.begin(), result.end());
+  }
 
-  private:
-
+private:
   // Aggregate data members
-  const SourceSwarmType & sourceSwarm_;
-  const TargetSwarmType & targetSwarm_;
-  std::shared_ptr<vector<Point<D>>> sourceExtents_;
-  std::shared_ptr<vector<Point<D>>> targetExtents_;
-  std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;
-  Meshfree::WeightCenter center_;
+  SourceSwarm const& source_swarm_;
+  TargetSwarm const& target_swarm_;
+  Portage::vector<Point<dim>> source_extents_;
+  Portage::vector<Point<dim>> target_extents_;
+  std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;  // unavoidable
+  Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
 }; // class SearchPointsByCells
-
-
-template<int D, class SourceSwarmType, class TargetSwarmType>
-std::vector<unsigned int>
-SearchPointsByCells<D, SourceSwarmType, TargetSwarmType>::
-operator() (const int pointId) const {
-
-  auto result = pair_finder_->find(pointId);
-  return std::vector<unsigned int>(result.begin(), result.end());
-
-} // SearchPointsByCells::operator()
-
 
 } // namespace Portage
 

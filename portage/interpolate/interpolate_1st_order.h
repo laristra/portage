@@ -118,10 +118,10 @@ class Interpolate_1stOrder {
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      interface_reconstructor_(ir) {}
 #endif
 
   /*!
@@ -269,10 +269,10 @@ class Interpolate_1stOrder<
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
       num_tols_(num_tols),
+      interface_reconstructor_(ir),
       parts_(parts) {}
 #endif
   /*!
@@ -334,6 +334,7 @@ class Interpolate_1stOrder<
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
   }  // set_interpolation_variable
 
+
   /*!
     @brief Functor to do the actual interpolation.
     @param[in] sources_and_weights A pair of two vectors.
@@ -361,14 +362,13 @@ class Interpolate_1stOrder<
 
     T val(0.0);
     double wtsum0 = 0.0;
-    double vol = target_mesh_.cell_volume(targetCellID);
 
     int nsummed = 0;
     if (field_type_ == Field_type::MESH_FIELD) {
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+        if (fabs(pair_weights[0]) < num_tols_.min_absolute_volume)
           continue;  // skip small intersections
         val += source_vals_[srccell] * pair_weights[0];
         wtsum0 += pair_weights[0];
@@ -378,7 +378,7 @@ class Interpolate_1stOrder<
       for (auto const& wt : sources_and_weights) {
         int srccell = wt.entityID;
         std::vector<double> pair_weights = wt.weights;
-        if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+        if (fabs(pair_weights[0]) < num_tols_.min_absolute_volume)
           continue;  // skip small intersections
         int matcell = source_state_.cell_index_in_material(srccell, matid_);
         val += source_vals_[matcell] * pair_weights[0];  // 1st order
@@ -467,10 +467,10 @@ class Interpolate_1stOrder<
       source_mesh_(source_mesh),
       target_mesh_(target_mesh),
       source_state_(source_state),
-      interface_reconstructor_(ir),
       interp_var_name_("VariableNameNotSet"),
       source_vals_(nullptr),
-      num_tols_(num_tols) {}
+      num_tols_(num_tols),
+      interface_reconstructor_(ir) {}
 #endif
 
   /*!
@@ -530,6 +530,7 @@ class Interpolate_1stOrder<
     }
   }  // set_interpolation_variable
 
+
   /*!
     @brief Functor to do the actual interpolation.
     @param[in] sources_and_weights A pair of two vectors.
@@ -557,7 +558,6 @@ class Interpolate_1stOrder<
     // contribution of the source node (dual cell) is its field value
     // weighted by its "weight" (in this case, the 0th
     // moment/area/volume of its intersection with the target dual cell)
-    double vol = target_mesh_.dual_cell_volume(targetNodeID);
 
     T val(0.0);
     double wtsum0 = 0.0;
@@ -565,7 +565,7 @@ class Interpolate_1stOrder<
     for (auto const& wt : sources_and_weights) {
       int srcnode = wt.entityID;
       std::vector<double> pair_weights = wt.weights;
-      if (pair_weights[0]/vol < num_tols_.min_relative_volume)
+      if (fabs(pair_weights[0]) < num_tols_.min_absolute_volume)
         continue;  // skip small intersections
       val += source_vals_[srcnode] * pair_weights[0];  // 1st order
       wtsum0 += pair_weights[0];

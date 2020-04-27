@@ -288,7 +288,8 @@ public:
 
       if (parts[i].has_mismatch())
         parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-        Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+        Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps,
+        Portage::DEFAULT_NUMERIC_TOLERANCES<2>.max_num_fixup_iter,
         partial_fixup, empty_fixup);
         
       }

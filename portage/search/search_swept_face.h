@@ -207,7 +207,8 @@ public:
     std::vector<int> alt_candidates;
     targetMesh_.cell_get_face_adj_cells(entityId, Entity_type::ALL, &alt_candidates);
     assert(candidates.size() == alt_candidates.size());
-    for (int icc = 0; icc < candidates.size(); icc++)
+    int const num_candidates = candidates.size();
+    for (int icc = 0; icc < num_candidates; icc++)
       assert(candidates[icc] == alt_candidates[icc]);
 #endif  
 

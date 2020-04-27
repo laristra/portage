@@ -99,9 +99,8 @@ class IntersectR3D {
   /// \return vector of Weights_t structure containing moments of intersection
   ///
 
-  std::vector<Weights_t>
-  operator() (const int tgt_entity, const std::vector<int> src_entities) const {
-    std::cerr << "IntersectR3D not implemented for entity type" << std::endl;
+  std::vector<Weights_t> operator() (int tgt_entity, std::vector<int> const& src_entities) const {
+    throw std::runtime_error("not implemented for this entity type");
   }
 
 
@@ -115,13 +114,12 @@ class IntersectR3D {
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  bool rectangular_mesh_;
-  int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
+  bool rectangular_mesh_ = false;
+  int matid_ = -1;
+  NumericTolerances_t num_tols_ {};
 };
 
 
@@ -182,7 +180,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   ///
 
   std::vector<Weights_t> operator() (const int tgt_cell,
-                                     const std::vector<int> src_cells) const {
+                                     const std::vector<int>& src_cells) const {
 
     std::vector<std::array<Point<3>, 4>> target_tet_coords;
 
@@ -233,8 +231,8 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             cellmatpoly.get_matpolys(matid_);
 
         this_wt.weights.resize(4,0.0);
-        for (int j = 0; j < matpolys.size(); j++) {
-          facetedpoly_t srcpoly = get_faceted_matpoly(matpolys[j]);
+        for (const auto& matpoly : matpolys) {
+          facetedpoly_t srcpoly = get_faceted_matpoly(matpoly);
 
           std::vector<double> momvec = intersect_polys_r3d(srcpoly,
                                           target_tet_coords, num_tols_);
@@ -252,7 +250,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                                             num_tols_);
 #endif
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
+      if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -270,13 +268,12 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  bool rectangular_mesh_;
-  int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
+  bool rectangular_mesh_ = false;
+  int matid_ = -1;
+  NumericTolerances_t num_tols_ {};
 };
 
 
@@ -338,7 +335,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   ///
 
   std::vector<Weights_t> operator() (const int tgt_node,
-                                     const std::vector<int> src_nodes) const {
+                                     const std::vector<int>& src_nodes) const {
 
     // for debug
     Point<3> tgtxyz;
@@ -370,7 +367,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                                             num_tols_);
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
-      if (this_wt.weights.size() && this_wt.weights[0] > 0.0)
+      if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
         ninserted++;
     }
 
@@ -388,13 +385,12 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
   SourceMeshType const & sourceMeshWrapper;
   SourceStateType const & sourceStateWrapper;
   TargetMeshType const & targetMeshWrapper;
-  bool rectangular_mesh_;
-  int matid_ = -1;
-  NumericTolerances_t num_tols_;
-
 #ifdef HAVE_TANGRAM
   std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
+  bool rectangular_mesh_ = false;
+  int matid_ = -1;
+  NumericTolerances_t num_tols_ {};
 };  // class IntersectR3D
 
 

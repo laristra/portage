@@ -25,6 +25,7 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 #include <string>
+#include <limits>
 
 #endif
 
@@ -147,57 +148,53 @@ inline std::string to_string(Empty_fixup_type empty_fixup_type) {
       "INVALID EMPTY FIXUP TYPE";
 }
 
-/// default relative tolerance on aggregated field values to detect mesh mismatch
-constexpr double DEFAULT_CONSERVATION_TOL = 100*std::numeric_limits<double>::epsilon();
-
-/// default number of iterations for mismatch repair
-constexpr int DEFAULT_MAX_FIXUP_ITER = 5;
-
 /// Intersection and other tolerances to handle tiny values
 struct NumericTolerances_t {
-    // Flag if the tolerances were set. If user is setting his own
-    // tolerances, he needs to set this flaq to true, otherwise the
-    // tolerances will be owerwriten in a driver to defaults.
-    bool   tolerances_set                   = false;
-
-    // r2d_orient polygon convexity check - if a cross product of
-    // any two successive vertex positions is smaller that this value
-    // the polygon is marked as not convex.
-    double polygon_convexity_eps            = error_value_;
+    // Flag if custom tolerances were used. If user is setting his own
+    // tolerances, this flaq need to be set to true.
+    bool   user_tolerances;
 
     // Check wheather the volume returned by r2d reduce is positive
     // (or slightly negative). If the volume is smaller, we throw an
     // error.
-    double minimal_intersection_volume      = error_value_;
+    double minimal_intersection_volume;
 
-    // Relative distance tolerance for a bounding box check.
-    double intersect_bb_relative_distance   = error_value_;
+    // Distance tolerance: two points within that distance from each
+    // other are considered coincident. Used for bounding box check
+    // in Portage intersect and passed to Tangram in multi-material runs
+    double min_absolute_distance;
 
-    // Intersection elements with a relative volume smaller than
-    // this value are skipped in interpolate.
-    double min_relative_volume              = error_value_;
+    // Volume tolerance: intersections and material polytopes with
+    // the volume below this tolerance are ignored. In multi-material
+    // runs this tolerance is passed to Tangram. Target multi-material 
+    // cells will not contain any material with volume below tolerance,
+    // interface reconstruction results on the source mesh will not
+    // contain material polytopes for materials with volume below this
+    // tolerance.
+    double min_absolute_volume;
 
-    // Minimal polytope volume for swept regions
-    double min_absolute_volume              = error_value_;
+    // Default relative tolerance on aggregated field values to detect
+    // mesh mismatch
+    double relative_conservation_eps;
 
-    // Check that the relative volume of a material we are adding to
-    // a cell is not miniscule. If the relative volume is smaller
-    // that this value, the material is not added to the cell.
-    double driver_relative_min_mat_vol      = error_value_;
+    // Default number of iterations for mismatch repair
+    int max_num_fixup_iter;
+};
 
-    void use_default()
-    {
-        tolerances_set                  =   true;
-        polygon_convexity_eps           =  1e-14;
-        minimal_intersection_volume     = -1e-14;
-        intersect_bb_relative_distance  =  1e-12;
-        min_relative_volume             =  1e-12;
-        min_absolute_volume             =  1e-12;
-        driver_relative_min_mat_vol     =  1e-10;
-    }
-
-    private:
-        double error_value_ = 1e5;
+// Default values for tolerances
+template <int D>
+const NumericTolerances_t DEFAULT_NUMERIC_TOLERANCES = {
+  false,                                           //user_tolerances
+  -1.0e-14,                                        //minimal_intersection_volume
+  sqrt(D)*std::numeric_limits<double>::epsilon(),  //min_absolute_distance: for two points
+  // to be distinct, we need at least one coordinate to differ by machine epsilon or more.
+  // In the worst case, when difference along all coordinate axes is the same, it corresponds to
+  // the distance of sqrt(D)*machine_epsilon or more. Because we use distance criterion in 
+  // order to not introduce a direction bias, we have to impose the worst case tolerance even 
+  // though some points that are closer can technically be distinguished.
+  std::numeric_limits<double>::epsilon(),          //min_absolute_volume
+  100*std::numeric_limits<double>::epsilon(),      //relative_conservation_eps
+  5                                                //max_num_fixup_iter
 };
 
 // Iterators and transforms that depend on Thrust vs. std

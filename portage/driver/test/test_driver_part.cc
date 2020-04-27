@@ -406,8 +406,9 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
     // this block won't run since no mismatch, but make sure syntactically correct
     if (parts[i].has_mismatch())
-      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound, 
-      Portage::DEFAULT_CONSERVATION_TOL, Portage::DEFAULT_MAX_FIXUP_ITER,
+      parts[i].fix_mismatch("density", "density", lower_bound, upper_bound,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps,
+      Portage::DEFAULT_NUMERIC_TOLERANCES<2>.max_num_fixup_iter,
       Portage::DEFAULT_PARTIAL_FIXUP_TYPE, Portage::DEFAULT_EMPTY_FIXUP_TYPE);
   }
 
@@ -419,9 +420,9 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       auto obtained = remapped[c];
       auto centroid = target_mesh->cell_centroid(c);
       auto const& x = centroid[0];
-      auto const& y = centroid[1];
       auto expected = (x < x_max ? coef * x : coef * (x - x_max));
       #if DEBUG_PART_BY_PART
+        auto const& y = centroid[1];
         std::printf("target[%02d]: x: %7.3f, y: %7.3f"
                     ", remapped: %7.3f, expected: %7.3f\n",
                     c, x, y, obtained, expected);

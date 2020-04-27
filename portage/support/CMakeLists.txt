@@ -14,8 +14,9 @@ set(support_HEADERS
     weight.h
     basis.h
     operator.h
-    test_operator_data.h
+    operator_references.h
     faceted_setup.h
+    timer.h
     PARENT_SCOPE
 )
 

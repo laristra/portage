@@ -30,7 +30,9 @@
 #include "portage/support/portage.h"
 
 #include "portage/search/search_kdtree.h"
+#include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
+#include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 #include "wonton/state/flat/flat_state_mm_wrapper.h"
@@ -130,13 +132,15 @@ class UberDriver {
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
-              std::vector<std::string> source_vars_to_remap,
+              std::vector<std::string> const& source_vars_to_remap,
               Wonton::Executor_type const *executor = nullptr,
               std::string *errmsg = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
-        source_vars_to_remap_(source_vars_to_remap),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         dim_(source_mesh.space_dimension()),
+        source_vars_to_remap_(source_vars_to_remap),
         executor_(executor) {
 
     assert(source_mesh.space_dimension() == target_mesh.space_dimension());
@@ -180,8 +184,10 @@ class UberDriver {
               TargetState& target_state,
               Wonton::Executor_type const *executor = nullptr,
               std::string *errmsg = nullptr)
-      : source_mesh_(source_mesh), source_state_(source_state),
-        target_mesh_(target_mesh), target_state_(target_state),
+      : source_mesh_(source_mesh),
+        target_mesh_(target_mesh),
+        source_state_(source_state),
+        target_state_(target_state),
         dim_(source_mesh.space_dimension()),
         executor_(executor) {
 
@@ -224,10 +230,10 @@ class UberDriver {
   UberDriver & operator = (const UberDriver &) = delete;
 
   /// Enable move semantics
-  UberDriver(UberDriver &&) = default;
+  UberDriver(UberDriver&&) noexcept = default;
 
   /// Destructor
-  ~UberDriver() {}
+  ~UberDriver() = default;
 
   /// Is this a distributed (multi-rank) run?
 
@@ -322,14 +328,42 @@ class UberDriver {
   }
 
 
+
+  /*!
+    @brief Set numerical tolerances for small distances and volumes
+    in core driver
+
+    @tparam Entity_kind  what kind of entity are we setting for
+
+    @param min_absolute_distance selected minimal distance
+
+    @param min_absolute_volume selected minimal volume
+  */
+  void set_num_tols(const double min_absolute_distance, 
+                    const double min_absolute_volume) {   
+    for (Entity_kind onwhat : entity_kinds_) {
+      switch (onwhat) {
+        case CELL:
+          core_driver_serial_[CELL]->template set_num_tols<CELL>(
+            min_absolute_distance, min_absolute_volume); break;
+        case NODE:
+          core_driver_serial_[NODE]->template set_num_tols<NODE>(
+            min_absolute_distance, min_absolute_volume); break;
+        default:
+          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+          
+      }
+    }
+  }
+  
   /*!
     @brief set numerical tolerances in core driver
 
-     @tparam Entity_kind  what kind of entity are we setting for
+    @tparam Entity_kind  what kind of entity are we setting for
 
-     @tparam num_tols     struct of selected numerical tolerances
+    @param num_tols     struct of selected numerical tolerances
   */
-  void set_num_tols(NumericTolerances_t num_tols) {   
+  void set_num_tols(const NumericTolerances_t& num_tols) {   
     for (Entity_kind onwhat : entity_kinds_) {
       switch (onwhat) {
         case CELL:
@@ -342,7 +376,6 @@ class UberDriver {
       }
     }
   }
-  
 
   /*!
     @brief search for candidate source entities whose control volumes
@@ -405,15 +438,21 @@ class UberDriver {
 
 #ifdef HAVE_TANGRAM
   /*!
-    @brief set tolerances and options for interface reconstructor driver  
-    @param tols The vector of tolerances for each moment during reconstruction
-    @param all_convex Should be set to false if the source mesh contains 
-    non-convex cells.  
+    @brief set options for interface reconstructor driver
+    @param all_convex Should be set to false if the source mesh contains
+    non-convex cells.
+    @param tols The vector of tolerances for each moment during reconstruction.
+    By default, the values are chosen based on tolerances specified for Portage
+    in NumericTolerances_t struct. If both the tolerances for Portage and for
+    Tangram are explicitly set by a user, they need to make sure that selected
+    values are synced. If only the tolerances for Tangram are set by a user,
+    then values in Portage's NumericTolerances_t are set based on the tols
+    argument.
   */
-  void set_interface_reconstructor_options(std::vector<Tangram::IterativeMethodTolerances_t> &tols, 
-                                 bool all_convex) {
-    core_driver_serial_[CELL]->set_interface_reconstructor_options(tols,
-                                                                   all_convex);
+  void set_interface_reconstructor_options(bool all_convex,
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
+                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+    core_driver_serial_[CELL]->set_interface_reconstructor_options(all_convex, tols);
   }
 
 #endif
@@ -494,8 +533,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
 
     interpolate<T, ONWHAT, Interpolate>(srcvarname, srcvarname,
                                         lower_bound, upper_bound,
@@ -548,8 +587,8 @@ class UberDriver {
                    Boundary_Limiter_type bnd_limiter = DEFAULT_BND_LIMITER,
                    Partial_fixup_type partial_fixup_type = DEFAULT_PARTIAL_FIXUP_TYPE,
                    Empty_fixup_type empty_fixup_type = DEFAULT_EMPTY_FIXUP_TYPE,
-                   double conservation_tol = DEFAULT_CONSERVATION_TOL,
-                   int max_fixup_iter = DEFAULT_MAX_FIXUP_ITER) {
+                   double conservation_tol = DEFAULT_NUMERIC_TOLERANCES<D>.relative_conservation_eps,
+                   int max_fixup_iter = DEFAULT_NUMERIC_TOLERANCES<D>.max_num_fixup_iter) {
     
     assert(source_state_.get_entity(srcvarname) == ONWHAT);
     assert(mesh_intersection_completed_[ONWHAT]);
@@ -738,7 +777,7 @@ class UberDriver {
       return;
     }
 
-#if HAVE_TANGRAM
+#ifdef HAVE_TANGRAM
     auto & driver = core_driver_serial_[CELL];
 
     using Interpolator = Interpolate<D, CELL,
@@ -774,33 +813,30 @@ class UberDriver {
  private:
 
   // Inputs specified by calling app
-  Wonton::Executor_type const *executor_;
   SourceMesh const& source_mesh_;
   TargetMesh const& target_mesh_;
   SourceState const& source_state_;
   TargetState& target_state_;
-  unsigned int dim_;
-
+  int dim_ = 0;
 
   // Component variables
   bool distributed_ = false;  // default is serial
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
-
+  Wonton::Executor_type const *executor_;
 #ifdef PORTAGE_ENABLE_MPI
+  int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
-  std::vector<std::string> source_vars_to_remap_;
-  std::vector<Entity_kind> entity_kinds_;
-  std::vector<Field_type> field_types_;
+  std::vector<std::string> source_vars_to_remap_ {};
+  std::vector<Entity_kind> entity_kinds_ {};
+  std::vector<Field_type> field_types_ {};
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;
 
   // Track what steps are completed
-  std::map<Entity_kind, bool> search_completed_;
-  std::map<Entity_kind, bool> mesh_intersection_completed_;
+  std::map<Entity_kind, bool> search_completed_ {};
+  std::map<Entity_kind, bool> mesh_intersection_completed_ {};
   bool mat_intersection_completed_ = false;
 
   // Pointers to core drivers designed to work on a particular
@@ -808,7 +844,7 @@ class UberDriver {
   // parallel runs where the distribution via flat mesh/state has already
   // occurred.
 
-  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_;
+  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_ {};
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -823,7 +859,7 @@ class UberDriver {
   //   ||                        ||     for each target entity
   //   ||                        ||           ||
   //   \/                        \/           \/
-  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_;
+  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_ {};
 
   // Weights of intersection b/w target CELLS and source material polygons
   // Each intersection is between a target cell and material polygon in
@@ -838,7 +874,7 @@ class UberDriver {
   //   ||               ||     each target entity
   //   ||               ||           ||
   //   \/               \/           \/
-  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_;
+  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
 
   /*!
     @brief Instantiate core drivers that abstract away whether we

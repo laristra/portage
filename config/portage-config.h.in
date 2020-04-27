@@ -19,12 +19,19 @@ Please see the license file at the root of this repository, or at:
 
 // Is PORTAGE compiled with MPI
 
-#cmakedefine PORTAGE_ENABLE_MPI
+#cmakedefine PORTAGE_ENABLE_MPI 
 
 // Is PORTAGE compiled with Thrust
 
 #cmakedefine PORTAGE_ENABLE_THRUST
 
+// Is Portage compiled with TANGRAM support
+
+#cmakedefine HAVE_TANGRAM
+
+// Is PORTAGE linked with Jali
+
+#cmakedefine HAVE_JALI
 
 #endif  // PORTAGE_CONFIG_H_
 

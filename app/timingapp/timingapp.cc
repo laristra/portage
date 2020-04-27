@@ -5,6 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include <sys/time.h>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -107,12 +108,12 @@ int print_usage() {
   std::cout << "--scaling (default = strong)\n";
   std::cout << " specify the scaling study type [strong|weak]\n\n";
 #endif
-  return 0;
+  return EXIT_SUCCESS;
 }
 //////////////////////////////////////////////////////////////////////
 
 
-int create_meshes(int const dim, int const n_source, int const n_target,
+void create_meshes(int const dim, int const n_source, int const n_target,
                   bool const conformal_meshes,
                   bool const reverse_source_ranks,
                   bool const weak_scale,
@@ -126,7 +127,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
 
   // The mesh factory and mesh setup
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   if (dim == 2) {
@@ -152,7 +153,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
     // The following decomposition assumes that the number of ranks
     // is a power of two.
 
-    int logn = log2(1.0f*numpe) + 0.01f;
+    int logn = static_cast<int>(std::log2(1.0f * float(numpe)) + 0.01f);
     int dimx = 1 << (logn / 3 + (logn % 3 >= 1));
     int dimy = 1 << (logn / 3 + (logn % 3 >= 2));
     int dimz = 1 << (logn / 3);
@@ -167,7 +168,7 @@ int create_meshes(int const dim, int const n_source, int const n_target,
     MPI_Comm_create(MPI_COMM_WORLD, local_group, &local_comm);
     Jali::MeshFactory mf_local(local_comm);
 
-    mf_local.included_entities({Jali::Entity_kind::ALL_KIND});
+    mf_local.included_entities(Jali::Entity_kind::ALL_KIND);
     mf_local.boundary_ghosts_requested(false);
     mf_local.num_ghost_layers_distmesh(1);
 
@@ -182,9 +183,9 @@ int create_meshes(int const dim, int const n_source, int const n_target,
     int source_y = (rrank / dimx) % dimy;
     int source_z = rrank / (dimx * dimy);
 
-    int n_source_localx = n_source / (weak_scale ? 1 : dimx);;
-    int n_source_localy = n_source / (weak_scale ? 1 : dimy);;
-    int n_source_localz = n_source / (weak_scale ? 1 : dimz);;
+    int n_source_localx = n_source / (weak_scale ? 1 : dimx);
+    int n_source_localy = n_source / (weak_scale ? 1 : dimy);
+    int n_source_localz = n_source / (weak_scale ? 1 : dimz);
 
     *sourceMesh = mf_local(source_stepx*source_x, source_stepy*source_y,
                            source_stepz*source_z, source_stepx*(source_x+1),
@@ -236,7 +237,9 @@ int main(int argc, char** argv) {
 
   int interp_order = 1;
   int poly_order = 0;
+#if !ENABLE_TIMINGS
   bool dump_output = true;
+#endif
   bool reverse_source_ranks = false;
   bool weak_scale = false;
   Jali::Entity_kind entityKind = Jali::Entity_kind::CELL;
@@ -251,9 +254,9 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
-    std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
-    std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
+    std::size_t keyword_end = arg.find_first_of('=');
+    std::string keyword = arg.substr(keyword_beg, keyword_end - keyword_beg);
+    std::string valueword = arg.substr(keyword_end + 1, len - (keyword_end + 1));
 
     if (keyword == "entity_kind") {
       if (valueword == "cell" || valueword == "CELL")
@@ -262,8 +265,8 @@ int main(int argc, char** argv) {
         entityKind = Jali::Entity_kind::NODE;
       else {
         std::cerr <<
-            "Only node and cell based remapping supported at this time" <<
-            std::endl;
+                  "Only node and cell based remapping supported at this time" <<
+                  std::endl;
         exit(-1);
       }
     } else if (keyword == "dim") {
@@ -284,11 +287,13 @@ int main(int argc, char** argv) {
       assert(interp_order > 0 && interp_order < 3);
     } else if (keyword == "field_order") {
       poly_order = stoi(valueword);
-      assert(poly_order >=0 && poly_order < 3);
-    } else if (keyword == "output_results")
-      dump_output = (valueword == "y");
+      assert(poly_order >= 0 && poly_order < 3);
+#if !ENABLE_TIMINGS
+      } else if (keyword == "output_results")
+        dump_output = (valueword == "y");
+#endif
 #if ENABLE_TIMINGS
-    else if (keyword == "only_threads"){
+    } else if (keyword == "only_threads"){
       only_threads = (numpe == 1 and valueword == "y");
     } else if (keyword == "scaling") {
       assert(valueword == "strong" or valueword == "weak");
@@ -345,12 +350,13 @@ int main(int argc, char** argv) {
   Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
 
   const int nsrccells = sourceMeshWrapper.num_owned_cells() +
-      sourceMeshWrapper.num_ghost_cells();
-  const int ntarcells = targetMeshWrapper.num_owned_cells();
-
+                        sourceMeshWrapper.num_ghost_cells();
   const int nsrcnodes = sourceMeshWrapper.num_owned_nodes() +
-      sourceMeshWrapper.num_ghost_nodes();
+                        sourceMeshWrapper.num_ghost_nodes();
+#if !ENABLE_TIMINGS
+  const int ntarcells = targetMeshWrapper.num_owned_cells();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
+#endif
 
   // Native jali state managers for source and target
   std::shared_ptr<Jali::State> sourceState(Jali::State::create(sourceMesh));
@@ -364,17 +370,17 @@ int main(int argc, char** argv) {
     sourceData.resize(nsrccells);
 
     if (poly_order == 0) {
-      for (unsigned int c = 0; c < nsrccells; ++c)
+      for (int c = 0; c < nsrccells; ++c)
         sourceData[c] = const_val;
     } else if (poly_order == 1) {
-      for (unsigned int c = 0; c < nsrccells; ++c) {
+      for (int c = 0; c < nsrccells; ++c) {
         JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
         sourceData[c] = cen[0]+cen[1];
         if (dim == 3)
           sourceData[c] += cen[2];
       }
     } else {  // quadratic function
-      for (unsigned int c = 0; c < nsrccells; ++c) {
+      for (int c = 0; c < nsrccells; ++c) {
         JaliGeometry::Point cen = sourceMesh->cell_centroid(c);
         sourceData[c] = cen[0]*cen[0]+cen[1]*cen[1];
         if (dim == 3)
@@ -391,7 +397,7 @@ int main(int argc, char** argv) {
                                                 Jali::Entity_type::ALL, 0.0);
 
     // Register the variable name and interpolation order with the driver
-    remap_fields.push_back("celldata");
+    remap_fields.emplace_back("celldata");
 
   } else {
     sourceData.resize(nsrcnodes);
@@ -436,7 +442,7 @@ int main(int argc, char** argv) {
 
 
     // Register the variable name and remap order with the driver
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("nodedata");
 
   }
 

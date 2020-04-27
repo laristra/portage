@@ -105,9 +105,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -120,8 +121,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // compute gradient field to pass to the interpolator
   using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
@@ -164,6 +164,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_2D) {
 /// limiting in 2D
 
 TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
+
   // Create simple meshes
 
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
@@ -242,9 +243,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -257,8 +259,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_2D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // compute gradient field to pass to the interpolator
   using Driver = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
@@ -396,9 +397,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -411,8 +413,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BJ_Limiter_2D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // Create Interpolation object
 
@@ -579,9 +580,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
                                            &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -594,8 +596,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Non_Lin_BJ_Limiter_ZG_Bnd_Limiter_2D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // Create Interpolation object
 
@@ -742,9 +743,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -757,8 +759,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // Create Interpolation object
 
@@ -898,9 +899,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -913,8 +915,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<2>;
 
   // Create Interpolation object
 
@@ -1044,9 +1045,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -1059,8 +1060,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Const_BND_NOLIMITER_3D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation object
 
@@ -1179,9 +1179,9 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
-
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -1194,8 +1194,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation object
 
@@ -1332,9 +1331,10 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -1347,8 +1347,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_BJ_Limiter_3D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation object
 
@@ -1502,9 +1501,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -1517,8 +1517,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Const_BND_NOLIMITER_3D) {
    // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation object
 
@@ -1653,9 +1652,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
                                         &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
+    int const num_intersect_cells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_cells);
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    for (int i = 0; i < num_intersect_cells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -1668,8 +1668,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_Lin_BND_NOLIMITER_3D) {
   // Now do it the Portage way
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation object
 
@@ -1809,9 +1808,10 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
                                         source_dualcell_coords,
                                         &xnodes, &xweights);
 
+    int const num_intersect_nodes = xnodes.size();
+    std::vector<Portage::Weights_t> wtsvec(num_intersect_nodes);
 
-    std::vector<Portage::Weights_t> wtsvec(xnodes.size());
-    for (int i = 0; i < xnodes.size(); ++i) {
+    for (int i = 0; i < num_intersect_nodes; ++i) {
       wtsvec[i].entityID = xnodes[i];
       wtsvec[i].weights = xweights[i];
     }
@@ -1819,8 +1819,7 @@ TEST(Interpolate_2nd_Order, Node_Ctr_BJ_Limiter_3D) {
   }
 
   // use default tolerances
-  Portage::NumericTolerances_t num_tols;
-  num_tols.use_default();
+  Portage::NumericTolerances_t num_tols = Portage::DEFAULT_NUMERIC_TOLERANCES<3>;
 
   // Create Interpolation objects - one with no limiter and one with limiter
 

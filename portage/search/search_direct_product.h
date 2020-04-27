@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include "wonton/wonton/support/Point.h"
+#include "wonton/support/Point.h"
 #include "portage/support/portage.h"
 
 /*!
@@ -27,19 +27,24 @@
 namespace Portage {
 
 /*!
-  @class SearchDirectProduct "search_direct_product.h"
-  @brief Definition of the SearchDirectProduct class.
+  @class SearchDirectProductBase "search_direct_product.h"
+  @brief Definition of the SearchDirectProductBase class.
 
-  The SearchDirectProduct mesh does the search process for meshes subject to
-  the following assumptions:
+  The SearchDirectProductBase mesh does the search process for meshes subject
+  to the following assumptions:
   - The source mesh is a static, axis-aligned, logically-rectangular mesh, with
     cell widths that are allowed to vary across the mesh.
   - The target mesh may be unstructured, but its wrapper must be able to
     provide an axis-aligned bounding box for any cell.
+
+  Unlike most searches, SearchDirectProductBase is additionally tempated on the
+  ID type (e.g., global vs local IDs).  Many applications will use a typedef
+  that specialized to a specific ID type.
 */
 
-template <int D, typename SourceMeshType, typename TargetMeshType>
-class SearchDirectProduct {
+template <
+    typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
+class SearchDirectProductBase {
 
  public:
 
@@ -47,18 +52,19 @@ class SearchDirectProduct {
   // Constructors and destructors
 
   //! Default constructor (disabled)
-  SearchDirectProduct() = delete;
+  SearchDirectProductBase() = delete;
 
   /*!
     @brief Constructor with meshes.
     @param[in] source_mesh The source mesh wrapper.
     @param[in] target_mesh The target mesh wrapper.
   */
-  SearchDirectProduct(const SourceMeshType& source_mesh,
-                      const TargetMeshType& target_mesh);
+  SearchDirectProductBase(const SourceMeshType& source_mesh,
+                          const TargetMeshType& target_mesh);
 
   //! Assignment operator (disabled)
-  SearchDirectProduct & operator = (const SearchDirectProduct&) = delete;
+  SearchDirectProductBase & operator= (const SearchDirectProductBase&) =
+    delete;
 
   // ==========================================================================
   // Callable operation
@@ -71,7 +77,7 @@ class SearchDirectProduct {
     cells on the source mesh.  Returns the list of overlapping source mesh
     cells.
   */
-  std::vector<int> operator() (const int tgt_cell) const;
+  std::vector<ID_t> operator() (const int tgt_cell) const;
 
  private:
 
@@ -80,13 +86,13 @@ class SearchDirectProduct {
 
   //! Loop over each dimension recursively and fill the list
   void fill_list_by_dim(
-    std::vector<int> &list,
+    std::vector<ID_t> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const;
 
   //! List cells given index bounds in each dimension
-  std::vector<int> list_cells(
+  std::vector<ID_t> list_cells(
         const std::array<int,D>& ilo, const std::array<int,D>& ihi) const;
 
   // ==========================================================================
@@ -95,7 +101,26 @@ class SearchDirectProduct {
   const SourceMeshType& sourceMesh_;
   const TargetMeshType& targetMesh_;
 
-};  // class SearchDirectProduct
+};  // class SearchDirectProductBase
+
+
+// ============================================================================
+// Typedef
+
+/*!
+  @class SearchDirectProduct "search_direct_product.h"
+  @brief Definition of the SearchDirectProduct class.
+
+  The SearchDirectProduct mesh does the search process for meshes subject to
+  the following assumptions:
+  - The source mesh is a static, axis-aligned, logically-rectangular mesh, with
+    cell widths that are allowed to vary across the mesh.
+  - The target mesh may be unstructured, but its wrapper must be able to
+    provide an axis-aligned bounding box for any cell.
+*/
+template<int D, typename SourceMeshType, typename TargetMeshType>
+using SearchDirectProduct =
+  SearchDirectProductBase<int, D, SourceMeshType, TargetMeshType>;
 
 
 // ============================================================================
@@ -103,8 +128,10 @@ class SearchDirectProduct {
 
 // ____________________________________________________________________________
 // Constructor with meshes.
-template <int D, typename SourceMeshType, typename TargetMeshType>
-SearchDirectProduct<D,SourceMeshType,TargetMeshType>::SearchDirectProduct(
+template <
+    typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
+SearchDirectProductBase<ID_t,D,SourceMeshType,TargetMeshType>::
+    SearchDirectProductBase(
     const SourceMeshType& source_mesh, const TargetMeshType& target_mesh)
     : sourceMesh_(source_mesh), targetMesh_(target_mesh) {
 }
@@ -113,10 +140,11 @@ SearchDirectProduct<D,SourceMeshType,TargetMeshType>::SearchDirectProduct(
 // Callable
 
 // Search for source cells that intersect a given target cell.
-template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int> 
-    SearchDirectProduct<D, SourceMeshType, TargetMeshType>::operator() (
-    const int tgt_cell) const {
+template <
+    typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
+std::vector<ID_t> 
+    SearchDirectProductBase<ID_t,D, SourceMeshType, TargetMeshType>::
+    operator() ( const int tgt_cell) const {
 
   // Tolerance for floating-point round-off
   const auto EPSILON = 10. * std::numeric_limits<double>::epsilon();
@@ -140,7 +168,7 @@ std::vector<int>
     assert(tlo[d] < thi[d]);
     assert(sglo[d] < sghi[d]);
     if (tlo[d] >= sghi[d] || thi[d] <= sglo[d])
-      return std::move(std::vector<int>());
+      return std::vector<ID_t>();
   }
 
   // find which source cells overlap target cell, in each dimension
@@ -167,12 +195,12 @@ std::vector<int>
     auto itrhi = std::lower_bound(itrlo, saxis_end, thi[d],
                                   is_point_below);
     ihi[d] = itrhi - saxis_begin;
-    ihi[d] = std::min(ihi[d], sourceMesh_.axis_num_cells(d));
+    ihi[d] = std::min(ihi[d], sourceMesh_.num_axis_cells(d));
     assert(ihi[d] > ilo[d]);
   }  // for d
 
   // Generate list of cells from lower and upper bounds, return list
-  return(std::move(list_cells(ilo, ihi)));
+  return list_cells(ilo, ihi);
 
 }  // operator()
 
@@ -181,9 +209,11 @@ std::vector<int>
 // Private support methods
 
 // Loop over each dimension recursively and fill the list
-template<int D, typename SourceMeshType, typename TargetMeshType>
-void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
-    std::vector<int> &list,
+template<
+    typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
+void SearchDirectProductBase<ID_t,D,SourceMeshType,TargetMeshType>::
+    fill_list_by_dim(
+    std::vector<ID_t> &list,
     const int d, const int idx_start, const std::array<int,D> &step_size,
     const std::array<int,D> &ilo, const std::array<int,D> &ihi,
     std::array<int,D> &indices) const {
@@ -200,9 +230,11 @@ void SearchDirectProduct<D,SourceMeshType,TargetMeshType>::fill_list_by_dim(
 
 
 // List cells given index bounds in each dimension
-template <int D, typename SourceMeshType, typename TargetMeshType>
-std::vector<int>
-    SearchDirectProduct<D, SourceMeshType, TargetMeshType>::list_cells(
+template <
+    typename ID_t, int D, typename SourceMeshType, typename TargetMeshType>
+std::vector<ID_t>
+    SearchDirectProductBase<ID_t,D, SourceMeshType, TargetMeshType>::
+    list_cells(
     const std::array<int,D>& ilo, const std::array<int,D>& ihi) const {
 
   // Compute step sizes for recursion
@@ -214,13 +246,13 @@ std::vector<int>
 
   // Declare the list of cells to be returned
   int list_size = stepsize[D-1] * (ihi[D-1] - ilo[D-1]);
-  std::vector<int> list(list_size);
+  std::vector<ID_t> list(list_size);
 
   // Recurse across dimensions
   std::array<int,D> indices;
   fill_list_by_dim(list, D-1, 0, stepsize, ilo, ihi, indices);
 
-  return(std::move(list));
+  return list;
 
 } // list_cells
 

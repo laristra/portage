@@ -129,9 +129,9 @@ int main(int argc, char** argv) {
     return 0;
   }
 
-  example_num = atoi(argv[1]);
-  n_source = atoi(argv[2]);
-  n_target = atoi(argv[3]);
+  example_num = std::atoi(argv[1]);
+  n_source = std::atoi(argv[2]);
+  n_target = std::atoi(argv[3]);
 
   // Even though Simple_Mesh is serial only, we still need to initialize MPI
   // for other Portage code.
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
     auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
 
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
+    remap_fields.emplace_back("celldata");
 
     if (example.order == 1) {
       Portage::MMDriver<
@@ -345,7 +345,7 @@ int main(int argc, char** argv) {
     auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
 
     std::vector<std::string> remap_fields;
-    remap_fields.push_back("nodedata");
+    remap_fields.emplace_back("nodedata");
 
     if (example.order == 1) {
       Portage::MMDriver<
@@ -374,7 +374,6 @@ int main(int argc, char** argv) {
     }
 
     double toterr(0.0);
-    double stdval, err;
     Point<3> nnodexyz;
     for (int i(0); i < ntarnodes; ++i) {
       targetMeshWrapper.node_get_coordinates(i, &nnodexyz);

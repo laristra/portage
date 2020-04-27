@@ -45,7 +45,7 @@ using ::testing::Values;
 
 class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
  public:
-  template<size_t Dim>
+  template<int Dim>
   void checkWeight(const Geometry geo, const Kernel kernel) {
 
     //    srand(time(NULL));
@@ -54,7 +54,7 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
       x[d] = ((double) rand()) / RAND_MAX;
 
     static double nominal_h = .2;
-    array<double, Dim> h;
+    std::array<double, Dim> h {};
     for (int d = 0; d < Dim; d++)
       h[d] = nominal_h;
 
@@ -139,7 +139,7 @@ class WeightTest : public TestWithParam<tuple<Geometry, Kernel>> {
         for (size_t d = 0; d < Dim; d++)
           s += v[d] * v[d] / (2 * h[d] * 2 * h[d]);
         s = sqrt(s);
-        outside = (s > 1.0) ? true : false;
+        outside = (s > 1.0);
       } else if (geo == TENSOR or geo == FACETED) {
         for (size_t d = 0; d < Dim; d++)
           if (fabs(v[d]) > 2 * h[d])
