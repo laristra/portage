@@ -393,6 +393,7 @@ public:
   void set_interface_reconstructor_options(bool all_convex,
                                            const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
     assert(remap_kind_[CELL]);
+    assert(have_multi_material_fields_);
     driver_cell_->set_interface_reconstructor_options(all_convex, tols);
   }
 
