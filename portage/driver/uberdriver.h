@@ -193,7 +193,6 @@ public:
     }
 
     // Make the core drivers for each entity kind
-    
     instantiate_core_drivers();
   }
 
@@ -292,9 +291,9 @@ public:
   */
   void set_num_tols(double min_absolute_distance, double min_absolute_volume) {
     if (remap_kind_[CELL])
-      driver_cell_->template set_num_tols(min_absolute_distance, min_absolute_volume);
+      driver_cell_->set_num_tols(min_absolute_distance, min_absolute_volume);
     if (remap_kind_[NODE])
-      driver_node_->template set_num_tols(min_absolute_distance, min_absolute_volume);
+      driver_node_->set_num_tols(min_absolute_distance, min_absolute_volume);
   }
   
   /*!
@@ -305,8 +304,8 @@ public:
     @param num_tols     struct of selected numerical tolerances
   */
   void set_num_tols(const NumericTolerances_t& num_tols) {
-    if (remap_kind_[CELL]) driver_cell_->template set_num_tols(num_tols);
-    if (remap_kind_[NODE]) driver_node_->template set_num_tols(num_tols);
+    if (remap_kind_[CELL]) driver_cell_->set_num_tols(num_tols);
+    if (remap_kind_[NODE]) driver_node_->set_num_tols(num_tols);
   }
 
   /*!
@@ -360,7 +359,7 @@ public:
         // Check the mesh mismatch once, to make sure the mismatch is cached
         // prior to interpolation with fixup. This is the correct place to automatically do the
         // check because it reqires the intersection weights which were just computed.
-        driver_cell_->template check_mismatch(weights);
+        driver_cell_->check_mismatch(weights);
         mesh_intersection_completed_[CELL] = true;
         return weights;
       }
@@ -369,7 +368,7 @@ public:
         // Check the mesh mismatch once, to make sure the mismatch is cached
         // prior to interpolation with fixup. This is the correct place to automatically do the
         // check because it reqires the intersection weights which were just computed.
-        driver_node_->template check_mismatch(weights);
+        driver_node_->check_mismatch(weights);
         mesh_intersection_completed_[NODE] = true;
         return weights;
       } break;
@@ -634,7 +633,7 @@ public:
       case CELL: {
         if (Interpolator::order == 2) {
           auto gradients =
-            driver_cell_->template compute_source_gradient(srcvarname, limiter, bnd_limiter);
+            driver_cell_->compute_source_gradient(srcvarname, limiter, bnd_limiter);
 
           driver_cell_->template interpolate_mesh_var<T, Interpolate>(
             srcvarname, trgvarname, sources_and_weights_in, &gradients
@@ -645,17 +644,17 @@ public:
           );
         }
 
-        if (driver_cell_->template has_mismatch()) {
-          driver_cell_->template fix_mismatch(srcvarname, trgvarname,
-                                              lower_bound, upper_bound,
-                                              conservation_tol, max_fixup_iter,
-                                              partial_fixup_type, empty_fixup_type);
+        if (driver_cell_->has_mismatch()) {
+          driver_cell_->fix_mismatch(srcvarname, trgvarname,
+                                     lower_bound, upper_bound,
+                                     conservation_tol, max_fixup_iter,
+                                     partial_fixup_type, empty_fixup_type);
         }
       } break;
       case NODE: {
         if (Interpolator::order == 2) {
           auto gradients =
-            driver_node_->template compute_source_gradient(srcvarname, limiter, bnd_limiter);
+            driver_node_->compute_source_gradient(srcvarname, limiter, bnd_limiter);
 
           driver_node_->template interpolate_mesh_var<T, Interpolate>(
             srcvarname, trgvarname, sources_and_weights_in, &gradients
@@ -666,11 +665,11 @@ public:
           );
         }
 
-        if (driver_node_->template has_mismatch()) {
-          driver_node_->template fix_mismatch(srcvarname, trgvarname,
-                                              lower_bound, upper_bound,
-                                              conservation_tol, max_fixup_iter,
-                                              partial_fixup_type, empty_fixup_type);
+        if (driver_node_->has_mismatch()) {
+          driver_node_->fix_mismatch(srcvarname, trgvarname,
+                                     lower_bound, upper_bound,
+                                     conservation_tol, max_fixup_iter,
+                                     partial_fixup_type, empty_fixup_type);
         }
       } break;
       default: break;
@@ -744,8 +743,8 @@ public:
     if (Interpolator::order == 2) {
       std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
-        gradients[i] = driver_cell_->template compute_source_gradient(srcvarname, limiter,
-                                                                      bnd_limiter, i);
+        gradients[i] = driver_cell_->compute_source_gradient(srcvarname, limiter,
+                                                             bnd_limiter, i);
       }
       driver_cell_->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in, &gradients
