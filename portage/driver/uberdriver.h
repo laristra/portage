@@ -95,17 +95,16 @@ template <int D,
           class CoordSys = Wonton::DefaultCoordSys
           >
 class UberDriver {
- public:
-
   // A couple of shorthand notations
-  using NodeDriver = CoreDriver<D, Wonton::NODE, SourceMesh, SourceState,
-                                TargetMesh, TargetState, InterfaceReconstructorType,
-                                Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+  using NodeRemapper = CoreDriver<D, Wonton::NODE, SourceMesh, SourceState,
+                                  TargetMesh, TargetState, InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-  using CellDriver = CoreDriver<D, Wonton::CELL, SourceMesh, SourceState,
-                                TargetMesh, TargetState, InterfaceReconstructorType,
-                                Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+  using CellRemapper = CoreDriver<D, Wonton::CELL, SourceMesh, SourceState,
+                                  TargetMesh, TargetState, InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
+public:
   /*!
     @brief Constructor for the remap driver.
     @param[in] source_mesh A @c  wrapper to the source mesh.
@@ -791,10 +790,8 @@ class UberDriver {
   // entity kind on native mesh/state. These work for serial runs, or
   // parallel runs where the distribution via flat mesh/state has already
   // occurred.
-  std::unique_ptr<NodeDriver> driver_node_ {};
-  std::unique_ptr<CellDriver> driver_cell_ {};
-
-  //std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_ {};
+  std::unique_ptr<NodeRemapper> driver_node_ {};
+  std::unique_ptr<CellRemapper> driver_cell_ {};
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -838,17 +835,17 @@ class UberDriver {
     if (remap_kind_[NODE]) {
       search_completed_[NODE] = false;
       mesh_intersection_completed_[NODE] = false;
-      auto driver_node = new NodeDriver(source_mesh_, source_state_,
-                                        target_mesh_, target_state_, executor);
-      driver_node_ = std::unique_ptr<NodeDriver>(driver_node);
+      auto driver_node = new NodeRemapper(source_mesh_, source_state_,
+                                          target_mesh_, target_state_, executor);
+      driver_node_ = std::unique_ptr<NodeRemapper>(driver_node);
     }
 
     if (remap_kind_[CELL]) {
       search_completed_[CELL] = false;
       mesh_intersection_completed_[CELL] = false;
-      auto driver_cell = new CellDriver(source_mesh_, source_state_,
-                                        target_mesh_, target_state_, executor);
-      driver_cell_ = std::unique_ptr<CellDriver>(driver_cell);
+      auto driver_cell = new CellRemapper(source_mesh_, source_state_,
+                                          target_mesh_, target_state_, executor);
+      driver_cell_ = std::unique_ptr<CellRemapper>(driver_cell);
     }
   }  // UberDriver::instantiate_core_drivers
 
