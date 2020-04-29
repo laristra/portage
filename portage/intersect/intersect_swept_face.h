@@ -398,6 +398,16 @@ namespace Portage {
       int const cell_id,
       int const face_group_id,
       double const swept_volume) const {
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      if (swept_volume < vol_tol) {
+        throw std::runtime_error("Volume taken out of the face group shold NOT be below the volume tolerance used during interface reconstruction!");
+      }
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
@@ -410,12 +420,6 @@ namespace Portage {
       assert(cface_id != nfaces);
 #endif
 
-      //Retrieve tolerance used by the interface reconstructor
-      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
-        interface_reconstructor->iterative_methods_tolerances();
-      double dst_tol = ims_tols[0].arg_eps;
-      double vol_tol = ims_tols[0].fun_eps;
-
       //Create a MatPoly for the cell
       Tangram::MatPoly<2> cell_mp;
       Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
@@ -423,18 +427,20 @@ namespace Portage {
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<2>> face_group_polys;
       Tangram::Plane_t<2> cutting_plane;
+      //Normals to MatPoly faces always point outward, so we have to reverse them
+      //in order to clip the corresponding face group
       cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+        -cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
 
       //Find the cutting distance for the given swept volume
       Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
         cutting_plane.normal, ims_tols[0], true);
 
-      cds.set_target_volume(std::fabs(swept_volume));
+      cds.set_target_volume(swept_volume);
       std::vector<double> cds_res = cds();
 
       //Check if we had enough volume in the face group
-      if (cds_res[1] < std::fabs(swept_volume) - vol_tol) {
+      if (cds_res[1] < swept_volume - vol_tol) {
         throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
       }
 
@@ -451,11 +457,6 @@ namespace Portage {
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
-
-      //Weights need to be subtracted from a cell for negative swept regions
-      if(swept_volume < 0.0)
-         for(double& moment : moments)
-            moment *= -1;
 
       return moments;
     }
@@ -590,8 +591,15 @@ namespace Portage {
             swept_moments.emplace_back(source_id, moments);
 #ifdef HAVE_TANGRAM
           } else if (source_cell_mat) {
-            swept_moments.emplace_back(source_id, 
-              compute_face_group_moments(source_id, edges[i], moments[0]));
+            //The volume we take out of the source cell's face group should be positive
+            double clip_volume = -moments[0];
+            //Update the moments with values only for the material with material_id_
+            //contained in the face group
+            moments = compute_face_group_moments(source_id, edges[i], clip_volume);
+            //The weights in this case should be negative, so we reverse the sign
+            for(double& moment : moments) moment *= -1;
+
+            swept_moments.emplace_back(source_id, moments);
           }
 #endif            
         } else {
@@ -634,8 +642,9 @@ namespace Portage {
             //Skip if the neighboring cell doesn't contain material_id_
             if (!adj_cell_mat)
               continue;
-            
-            //Compute and append moments for the neighbor
+
+            //Compute moments only for the material with material_id_
+            //contained in the face group of the neighboring cell
             swept_moments.emplace_back(neigh, 
               compute_face_group_moments(neigh, edges[i], moments[0]));
           }
@@ -893,6 +902,16 @@ namespace Portage {
       int const cell_id,
       int const face_group_id,
       double const swept_volume) const {
+
+      //Retrieve tolerance used by the interface reconstructor
+      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
+        interface_reconstructor->iterative_methods_tolerances();
+      double dst_tol = ims_tols[0].arg_eps;
+      double vol_tol = ims_tols[0].fun_eps;
+
+      if (swept_volume < vol_tol) {
+        throw std::runtime_error("Volume taken out of the face group shold NOT be below the volume tolerance used during interface reconstruction!");
+      }
       
       std::vector<int> cfaces, cfdirs;
       source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
@@ -905,12 +924,6 @@ namespace Portage {
       assert(cface_id != nfaces);
 #endif
 
-      //Retrieve tolerance used by the interface reconstructor
-      const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
-        interface_reconstructor->iterative_methods_tolerances();
-      double dst_tol = ims_tols[0].arg_eps;
-      double vol_tol = ims_tols[0].fun_eps;
-
       //Create a MatPoly for the cell
       Tangram::MatPoly<3> cell_mp;
       Tangram::cell_get_matpoly(source_mesh_, cell_id, &cell_mp, dst_tol);
@@ -918,18 +931,20 @@ namespace Portage {
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<3>> face_group_polys;
       Tangram::Plane_t<3> cutting_plane;
+      //Normals to MatPoly faces always point outward, so we have to reverse them
+      //in order to clip the corresponding face group
       cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+        -cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
 
       //Find the cutting distance for the given swept volume
       Tangram::CuttingDistanceSolver<3, Matpoly_Clipper> cds(face_group_polys,
         cutting_plane.normal, ims_tols[0], true);
 
-      cds.set_target_volume(std::fabs(swept_volume));
+      cds.set_target_volume(swept_volume);
       std::vector<double> cds_res = cds();
 
       //Check if we had enough volume in the face group
-      if (cds_res[1] < std::fabs(swept_volume) - vol_tol) {
+      if (cds_res[1] < swept_volume - vol_tol) {
         throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
       }
 
@@ -946,10 +961,6 @@ namespace Portage {
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
-
-      if(swept_volume < 0.0)
-         for(double& moment : moments)
-            moment *= -1;
 
       return moments;
     }
@@ -1155,7 +1166,7 @@ namespace Portage {
           // just skip if the swept region is almost flat.
           // it may occur when the cell is shifted only in one direction.
           continue;
-        } else if (moments[0] < 0.) {
+        } else if (moments[0] < 0.0) {
           // if the computed swept region volume is negative then assign its
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
@@ -1165,8 +1176,15 @@ namespace Portage {
             swept_moments.emplace_back(source_id, moments);
 #ifdef HAVE_TANGRAM
           } else if (source_cell_mat) {
-            swept_moments.emplace_back(source_id, 
-              compute_face_group_moments(source_id, faces[i], moments[0]));
+            //The volume we take out of the source cell's face group should be positive
+            double clip_volume = -moments[0];
+            //Update the moments with values only for the material with material_id_
+            //contained in the face group
+            moments = compute_face_group_moments(source_id, faces[i], clip_volume);
+            //The weights in this case should be negative, so we reverse the sign
+            for(double& moment : moments) moment *= -1;
+
+            swept_moments.emplace_back(source_id, moments);            
           }
 #endif              
         } else {
@@ -1205,7 +1223,8 @@ namespace Portage {
             if (!adj_cell_mat)
               continue;
             
-            //Compute and append moments for the neighbor
+            //Compute moments only for the material with material_id_
+            //contained in the face group of the neighboring cell
             swept_moments.emplace_back(neigh, 
               compute_face_group_moments(neigh, faces[i], moments[0]));
           }
