@@ -98,6 +98,12 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
+       cinch_add_unit(test_driver_swept_single_mat
+       SOURCES test/test_driver_swept_single_mat.cc
+       LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES} ${XMOF2D_LIBRARIES}
+       POLICY MPI
+       THREADS 1)
+
      endif (TANGRAM_FOUND AND XMOF2D_FOUND)
 
      if (TANGRAM_FOUND)

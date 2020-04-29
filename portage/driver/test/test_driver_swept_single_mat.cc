@@ -4,6 +4,9 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+// this should be included prior to the use of Portage macros
+#include "portage/support/portage.h"
+#include "portage/driver/coredriver.h"
 
 #include <iostream>
 #include <memory>
