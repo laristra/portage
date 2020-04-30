@@ -361,7 +361,7 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   // useful constants
   double const p_min = 0.0;
   double const p_max = 1.0;
-  using Wonton::Entity_kind::CELL;
+  using Wonton::CELL;
 
   // IMPORTANT: we need to set the right tangram options even in single material
   // since we explicitly use MatPoly_clipper in face_group_moments.
@@ -459,8 +459,8 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
 
 TEST(SweptFaceRemap, MassConservationConstantField2D) {
 
-  using Wonton::Entity_kind::CELL;
-  using Wonton::Entity_type::ALL;
+  using Wonton::CELL;
+  using Wonton::ALL;
 
   // IMPORTANT: we need to set the right tangram options even in single material
   // since we explicitly use MatPoly_clipper in face_group_moments.
@@ -523,8 +523,8 @@ TEST(SweptFaceRemap, MassConservationConstantField2D) {
 
 TEST(SweptFaceRemap, MassConservationConstantField3D) {
 
-  using Wonton::Entity_kind::CELL;
-  using Wonton::Entity_type::ALL;
+  using Wonton::CELL;
+  using Wonton::ALL;
 
   // IMPORTANT: we need to set the right tangram options even in single material
   // since we explicitly use MatPoly_clipper in face_group_moments.
