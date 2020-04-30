@@ -56,12 +56,9 @@
 
 namespace Portage {
 
-
-
 using Wonton::CELL;
 using Wonton::NODE;
-using Wonton::Flat_Mesh_Wrapper;
-using Wonton::Flat_State_Wrapper;
+
 
 /*!
   @class UberDriver "driver.h"
@@ -98,24 +95,16 @@ template <int D,
           class CoordSys = Wonton::DefaultCoordSys
           >
 class UberDriver {
- public:
-
   // A couple of shorthand notations
-  
-  using SerialDriverType =
-      CoreDriverBase<D, SourceMesh, SourceState,
-                     TargetMesh, TargetState,
-                     InterfaceReconstructorType,
-                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
-  
-  // NOTE: Unused
-  using ParallelDriverType =
-      CoreDriverBase<D, Flat_Mesh_Wrapper<>,
-                     Flat_State_Wrapper<Flat_Mesh_Wrapper<>>,
-                     TargetMesh, TargetState,
-                     InterfaceReconstructorType,
-                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
-  
+  using NodeRemapper = CoreDriver<D, Wonton::NODE, SourceMesh, SourceState,
+                                  TargetMesh, TargetState, InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+  using CellRemapper = CoreDriver<D, Wonton::CELL, SourceMesh, SourceState,
+                                  TargetMesh, TargetState, InterfaceReconstructorType,
+                                  Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+public:
   /*!
     @brief Constructor for the remap driver.
     @param[in] source_mesh A @c  wrapper to the source mesh.
@@ -133,8 +122,7 @@ class UberDriver {
               TargetMesh const& target_mesh,
               TargetState& target_state,
               std::vector<std::string> const& source_vars_to_remap,
-              Wonton::Executor_type const *executor = nullptr,
-              std::string *errmsg = nullptr)
+              Wonton::Executor_type const *executor = nullptr)
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
@@ -147,18 +135,12 @@ class UberDriver {
 
     // Record all the field types we are remapping and all the kinds
     // of entities we are remapping on
-
-    entity_kinds_.clear();
     for (auto const& source_varname : source_vars_to_remap_) {
       Entity_kind onwhat = source_state_.get_entity(source_varname);
-      if (std::find(entity_kinds_.begin(), entity_kinds_.end(), onwhat) ==
-          entity_kinds_.end())
-        entity_kinds_.push_back(onwhat);
-
+      remap_kind_[onwhat] = true;
       Field_type fieldtype = source_state_.field_type(onwhat, source_varname);
-      if (std::find(field_types_.begin(), field_types_.end(), fieldtype) ==
-          field_types_.end())
-        field_types_.push_back(fieldtype);
+      if (not contains(field_types_, fieldtype))
+        field_types_.emplace_back(fieldtype);
 
       if (fieldtype == Field_type::MULTIMATERIAL_FIELD)
         have_multi_material_fields_ = true;
@@ -182,8 +164,7 @@ class UberDriver {
               SourceState const& source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
-              Wonton::Executor_type const *executor = nullptr,
-              std::string *errmsg = nullptr)
+              Wonton::Executor_type const *executor = nullptr)
       : source_mesh_(source_mesh),
         target_mesh_(target_mesh),
         source_state_(source_state),
@@ -195,30 +176,23 @@ class UberDriver {
 
     // if the variables to remap were not listed, assume all variables are
     // to be remapped
-    if (source_vars_to_remap_.size() == 0)
+    if (source_vars_to_remap_.empty())
       source_vars_to_remap_ = source_state_.names();
 
     // Record all the field types we are remapping and all the kinds
     // of entities we are remapping on
-
-    entity_kinds_.clear();
     for (auto const& source_varname : source_vars_to_remap_) {
       Entity_kind onwhat = source_state_.get_entity(source_varname);
-      if (std::find(entity_kinds_.begin(), entity_kinds_.end(), onwhat) ==
-          entity_kinds_.end())
-        entity_kinds_.push_back(onwhat);
-
+      remap_kind_[onwhat] = true;
       Field_type fieldtype = source_state_.field_type(onwhat, source_varname);
-      if (std::find(field_types_.begin(), field_types_.end(), fieldtype) ==
-          field_types_.end())
-        field_types_.push_back(fieldtype);
+      if (not contains(field_types_, fieldtype))
+        field_types_.emplace_back(fieldtype);
 
       if (fieldtype == Field_type::MULTIMATERIAL_FIELD)
         have_multi_material_fields_ = true;
     }
 
     // Make the core drivers for each entity kind
-    
     instantiate_core_drivers();
   }
 
@@ -260,8 +234,7 @@ class UberDriver {
     geometry)
   */
   
-  bool source_needs_redistribution(Wonton::Executor_type const *executor =
-                                   nullptr) {
+  bool source_needs_redistribution(Wonton::Executor_type const *executor = nullptr) {
     // for now if it is a distributed run, we always "redistribute"
     // even if that means copying the data into the flat mesh/state
     // but not moving data around. Eventually, we will determine if
@@ -289,42 +262,19 @@ class UberDriver {
               class, class> class Intersect
     >
   void compute_interpolation_weights() {
+    if (remap_kind_[CELL]) {
+      auto const& candidates = search<CELL, Search>();
+      source_weights_[CELL] = intersect_meshes<CELL, Intersect>(candidates);
 
-    Portage::vector<std::vector<int>> intersection_candidates;
-    
-    for (Entity_kind onwhat : entity_kinds_) {
-      switch (onwhat) {
-        case CELL: {
-          // find intersection candidates
-          intersection_candidates = search<CELL, Search>();
-
-          // Compute moments of intersection
-          source_weights_[onwhat] =
-              intersect_meshes<CELL, Intersect>(intersection_candidates);
-
-          if (have_multi_material_fields_) {
-            mat_intersection_completed_ = true;
-            
-            source_weights_by_mat_ =
-                intersect_materials<Intersect>(intersection_candidates);
-          }
-          break;
-        }
-        case NODE: {
-          // find intersection candidates
-          intersection_candidates = search<NODE, Search>();
-
-          // Compute moments of intersection
-          source_weights_[onwhat] =
-              intersect_meshes<NODE, Intersect>(intersection_candidates);
-
-          break;
-        }
-        default:
-          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
+      if (have_multi_material_fields_) {
+        source_weights_by_mat_ = intersect_materials<Intersect>(candidates);
       }
     }
 
+    if (remap_kind_[NODE]) {
+      auto const& candidates = search<NODE, Search>();
+      source_weights_[NODE] = intersect_meshes<NODE, Intersect>(candidates);
+    }
   }
 
 
@@ -339,21 +289,11 @@ class UberDriver {
 
     @param min_absolute_volume selected minimal volume
   */
-  void set_num_tols(const double min_absolute_distance, 
-                    const double min_absolute_volume) {   
-    for (Entity_kind onwhat : entity_kinds_) {
-      switch (onwhat) {
-        case CELL:
-          core_driver_serial_[CELL]->template set_num_tols<CELL>(
-            min_absolute_distance, min_absolute_volume); break;
-        case NODE:
-          core_driver_serial_[NODE]->template set_num_tols<NODE>(
-            min_absolute_distance, min_absolute_volume); break;
-        default:
-          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-          
-      }
-    }
+  void set_num_tols(double min_absolute_distance, double min_absolute_volume) {
+    if (remap_kind_[CELL])
+      driver_cell_->set_num_tols(min_absolute_distance, min_absolute_volume);
+    if (remap_kind_[NODE])
+      driver_node_->set_num_tols(min_absolute_distance, min_absolute_volume);
   }
   
   /*!
@@ -363,18 +303,9 @@ class UberDriver {
 
     @param num_tols     struct of selected numerical tolerances
   */
-  void set_num_tols(const NumericTolerances_t& num_tols) {   
-    for (Entity_kind onwhat : entity_kinds_) {
-      switch (onwhat) {
-        case CELL:
-          core_driver_serial_[CELL]->template set_num_tols<CELL>(num_tols); break;
-        case NODE:
-          core_driver_serial_[NODE]->template set_num_tols<NODE>(num_tols); break;
-        default:
-          std::cerr << "Cannot remap on " << to_string(onwhat) << "\n";
-          
-      }
-    }
+  void set_num_tols(const NumericTolerances_t& num_tols) {
+    if (remap_kind_[CELL]) driver_cell_->set_num_tols(num_tols);
+    if (remap_kind_[NODE]) driver_node_->set_num_tols(num_tols);
   }
 
   /*!
@@ -392,13 +323,13 @@ class UberDriver {
     Entity_kind ONWHAT,
     template <int, Entity_kind, class, class> class Search
     >
-  Portage::vector<std::vector<int>>                         // return type
-  search() {
-
+  Portage::vector<std::vector<int>> search() {
     search_completed_[ONWHAT] = true;
-
-    return core_driver_serial_[ONWHAT]->template search<ONWHAT, Search>();
-
+    switch (ONWHAT) {
+      case CELL: return driver_cell_->template search<Search>();
+      case NODE: return driver_node_->template search<Search>();
+      default: throw std::runtime_error("unsupported field type");
+    }
   }
 
 
@@ -422,18 +353,27 @@ class UberDriver {
     >
   Portage::vector<std::vector<Portage::Weights_t>>         // return type
   intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
-
-
-    const auto& weights = core_driver_serial_[ONWHAT]->template intersect_meshes<ONWHAT, Intersect>(candidates);
-    
-    // Check the mesh mismatch once, to make sure the mismatch is cached
-    // prior to interpolation with fixup. This is the correct place to automatically do the
-    // check because it reqires the intersection weights which were just computed.
-    core_driver_serial_[ONWHAT]->template check_mismatch<ONWHAT>(weights);
-    
-    mesh_intersection_completed_[ONWHAT] = true;
-    
-    return weights;
+    switch (ONWHAT) {
+      case CELL: {
+        auto const& weights = driver_cell_->template intersect_meshes<Intersect>(candidates);
+        // Check the mesh mismatch once, to make sure the mismatch is cached
+        // prior to interpolation with fixup. This is the correct place to automatically do the
+        // check because it reqires the intersection weights which were just computed.
+        driver_cell_->check_mismatch(weights);
+        mesh_intersection_completed_[CELL] = true;
+        return weights;
+      }
+      case NODE: {
+        auto const& weights = driver_node_->template intersect_meshes<Intersect>(candidates);
+        // Check the mesh mismatch once, to make sure the mismatch is cached
+        // prior to interpolation with fixup. This is the correct place to automatically do the
+        // check because it reqires the intersection weights which were just computed.
+        driver_node_->check_mismatch(weights);
+        mesh_intersection_completed_[NODE] = true;
+        return weights;
+      } break;
+      default: throw std::runtime_error("unsupported field type");
+    }
   }
 
 #ifdef HAVE_TANGRAM
@@ -450,9 +390,10 @@ class UberDriver {
     argument.
   */
   void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
-    core_driver_serial_[CELL]->set_interface_reconstructor_options(all_convex, tols);
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
+    assert(remap_kind_[CELL]);
+    assert(have_multi_material_fields_);
+    driver_cell_->set_interface_reconstructor_options(all_convex, tols);
   }
 
 #endif
@@ -479,11 +420,9 @@ class UberDriver {
     >
   std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
   intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
-
+    assert(remap_kind_[CELL]);
     mat_intersection_completed_ = true;
-
-    return core_driver_serial_[CELL]->template intersect_materials<Intersect>(candidates);
-
+    return driver_cell_->template intersect_materials<Intersect>(candidates);
   }
   
  
@@ -593,15 +532,11 @@ class UberDriver {
     assert(source_state_.get_entity(srcvarname) == ONWHAT);
     assert(mesh_intersection_completed_[ONWHAT]);
 
-    if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
-                  srcvarname) == source_vars_to_remap_.end()) {
-      std::cerr << "Cannot remap source variable " << srcvarname <<
-          " - not specified in initial variable list in the constructor \n";
-      return;
+    if (not contains(source_vars_to_remap_, srcvarname)) {
+      throw std::runtime_error(srcvarname + " not in field variables list");
     }
 
-    if (source_state_.field_type(ONWHAT, srcvarname) ==
-        Field_type::MULTIMATERIAL_FIELD) {
+    if (source_state_.field_type(ONWHAT, srcvarname) == Field_type::MULTIMATERIAL_FIELD) {
 
 #ifdef HAVE_TANGRAM
       assert(mat_intersection_completed_);
@@ -682,15 +617,9 @@ class UberDriver {
                             int max_fixup_iter) {
 
     assert(source_state_.get_entity(srcvarname) == ONWHAT);
-
-    if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
-                  srcvarname) == source_vars_to_remap_.end()) {
-      std::cerr << "Cannot remap source variable " << srcvarname <<
-          " - not specified in initial variable list in the constructor \n";
-      return;
+    if (not contains(source_vars_to_remap_, srcvarname)) {
+      throw std::runtime_error(srcvarname + " not in field variables list");
     }
-
-    auto & driver = core_driver_serial_[ONWHAT];
 
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
@@ -700,24 +629,51 @@ class UberDriver {
                                      Matpoly_Splitter, Matpoly_Clipper,
                                      CoordSys>;
 
-    if (Interpolator::order == 2) {
-      auto gradients = driver->template compute_source_gradient<ONWHAT>(srcvarname,
-                                                                        limiter,
-                                                                        bnd_limiter);
+    switch (ONWHAT) {
+      case CELL: {
+        if (Interpolator::order == 2) {
+          auto gradients =
+            driver_cell_->compute_source_gradient(srcvarname, limiter, bnd_limiter);
 
-      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in, &gradients
-      );
-    } else {
-      driver->template interpolate_mesh_var<T, ONWHAT, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_in
-      );
+          driver_cell_->template interpolate_mesh_var<T, Interpolate>(
+            srcvarname, trgvarname, sources_and_weights_in, &gradients
+          );
+        } else {
+          driver_cell_->template interpolate_mesh_var<T, Interpolate>(
+            srcvarname, trgvarname, sources_and_weights_in
+          );
+        }
+
+        if (driver_cell_->has_mismatch()) {
+          driver_cell_->fix_mismatch(srcvarname, trgvarname,
+                                     lower_bound, upper_bound,
+                                     conservation_tol, max_fixup_iter,
+                                     partial_fixup_type, empty_fixup_type);
+        }
+      } break;
+      case NODE: {
+        if (Interpolator::order == 2) {
+          auto gradients =
+            driver_node_->compute_source_gradient(srcvarname, limiter, bnd_limiter);
+
+          driver_node_->template interpolate_mesh_var<T, Interpolate>(
+            srcvarname, trgvarname, sources_and_weights_in, &gradients
+          );
+        } else {
+          driver_node_->template interpolate_mesh_var<T, Interpolate>(
+            srcvarname, trgvarname, sources_and_weights_in
+          );
+        }
+
+        if (driver_node_->has_mismatch()) {
+          driver_node_->fix_mismatch(srcvarname, trgvarname,
+                                     lower_bound, upper_bound,
+                                     conservation_tol, max_fixup_iter,
+                                     partial_fixup_type, empty_fixup_type);
+        }
+      } break;
+      default: break;
     }
-    
-    if (driver->template has_mismatch<ONWHAT>())
-      driver->template fix_mismatch<ONWHAT>(srcvarname, trgvarname, lower_bound, upper_bound, conservation_tol, 
-        max_fixup_iter, partial_fixup_type, empty_fixup_type);
-
   }
 
   /*!
@@ -760,33 +716,26 @@ class UberDriver {
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
                            std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
-                           T lower_bound, T upper_bound,
+                           T/* unused */, T/* unused */,
                            Limiter_type limiter,
                            Boundary_Limiter_type bnd_limiter,
-                           Partial_fixup_type partial_fixup_type,
-                           Empty_fixup_type empty_fixup_type,
-                           double conservation_tol,
-                           int max_fixup_iter) {
+                           Partial_fixup_type/* unused */,
+                           Empty_fixup_type/* unused */,
+                           double/* unused */,
+                           int/* unused */) {
 
     assert(source_state_.get_entity(srcvarname) == CELL);
 
-    if (std::find(source_vars_to_remap_.begin(), source_vars_to_remap_.end(),
-                  srcvarname) == source_vars_to_remap_.end()) {
-      std::cerr << "Cannot remap source variable " << srcvarname <<
-          " - not specified in initial variable list in the constructor \n";
-      return;
+    if (not contains(source_vars_to_remap_, srcvarname)) {
+      throw std::runtime_error(srcvarname + " not in field variables list");
     }
 
 #ifdef HAVE_TANGRAM
-    auto & driver = core_driver_serial_[CELL];
-
     using Interpolator = Interpolate<D, CELL,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
-                                     T,
-                                     InterfaceReconstructorType,
-                                     Matpoly_Splitter, Matpoly_Clipper,
-                                     CoordSys>;
+                                     T, InterfaceReconstructorType,
+                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
     int const nb_mats = source_state_.num_materials();
     assert(nb_mats > 0);
@@ -794,16 +743,14 @@ class UberDriver {
     if (Interpolator::order == 2) {
       std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
-        gradients[i] = driver->template compute_source_gradient<CELL>(srcvarname,
-                                                                      limiter,
-                                                                      bnd_limiter, i);
+        gradients[i] = driver_cell_->compute_source_gradient(srcvarname, limiter,
+                                                             bnd_limiter, i);
       }
-      driver->template interpolate_mat_var<T, Interpolate>(
-        srcvarname, trgvarname, sources_and_weights_by_mat_in,
-        &gradients
+      driver_cell_->template interpolate_mat_var<T, Interpolate>(
+        srcvarname, trgvarname, sources_and_weights_by_mat_in, &gradients
       );
     } else {
-      driver->template interpolate_mat_var<T, Interpolate>(
+      driver_cell_->template interpolate_mat_var<T, Interpolate>(
         srcvarname, trgvarname, sources_and_weights_by_mat_in
       );
     }
@@ -828,8 +775,8 @@ class UberDriver {
 #endif
 
   std::vector<std::string> source_vars_to_remap_ {};
-  std::vector<Entity_kind> entity_kinds_ {};
   std::vector<Field_type> field_types_ {};
+  std::map<Entity_kind, bool> remap_kind_ {{CELL, false}, {NODE, false}};
 
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;
@@ -843,8 +790,8 @@ class UberDriver {
   // entity kind on native mesh/state. These work for serial runs, or
   // parallel runs where the distribution via flat mesh/state has already
   // occurred.
-
-  std::map<Entity_kind, std::unique_ptr<SerialDriverType>> core_driver_serial_ {};
+  std::unique_ptr<NodeRemapper> driver_node_ {};
+  std::unique_ptr<CellRemapper> driver_cell_ {};
 
   // Weights of intersection b/w target entities and source entities
   // Each intersection is between the control volume (cell, dual cell)
@@ -883,28 +830,23 @@ class UberDriver {
     executor  An executor encoding parallel run parameters (if its parallel executor)
   */
 
-  void instantiate_core_drivers(Wonton::Executor_type const *executor =
-                               nullptr) {
-    std::string message;
+  void instantiate_core_drivers(Wonton::Executor_type const *executor = nullptr) {
 
-    for (auto const& onwhat : entity_kinds_) {
-      search_completed_[onwhat] = false;
-      mesh_intersection_completed_[onwhat] = false;
+    if (remap_kind_[NODE]) {
+      search_completed_[NODE] = false;
+      mesh_intersection_completed_[NODE] = false;
+      auto driver_node = new NodeRemapper(source_mesh_, source_state_,
+                                          target_mesh_, target_state_, executor);
+      driver_node_ = std::unique_ptr<NodeRemapper>(driver_node);
     }
-    
-    // Default is serial run (if MPI is not enabled or the
-    // communicator is not defined or the number of processors is 1)
 
-    for (Entity_kind onwhat : entity_kinds_)
-      core_driver_serial_[onwhat] =
-          make_core_driver<D, SourceMesh, SourceState,
-                           TargetMesh, TargetState,
-                           InterfaceReconstructorType,
-                           Matpoly_Splitter, Matpoly_Clipper, CoordSys
-                           >(onwhat,
-                             source_mesh_, source_state_,
-                             target_mesh_, target_state_, executor_);
-    
+    if (remap_kind_[CELL]) {
+      search_completed_[CELL] = false;
+      mesh_intersection_completed_[CELL] = false;
+      auto driver_cell = new CellRemapper(source_mesh_, source_state_,
+                                          target_mesh_, target_state_, executor);
+      driver_cell_ = std::unique_ptr<CellRemapper>(driver_cell);
+    }
   }  // UberDriver::instantiate_core_drivers
 
 };  // UberDriver

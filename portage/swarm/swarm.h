@@ -36,6 +36,12 @@ class Swarm {
 public:
 
   /**
+   * @brief Create an empty particle field.
+   *
+   */
+  Swarm() = default;
+
+  /**
    * @brief Create a particle field from a given list.
    *
    * @param points: the given list of points.
@@ -91,6 +97,12 @@ public:
    */
   template<typename Mesh>
   Swarm(std::vector<Mesh*> const& meshes, Wonton::Entity_kind entity);
+
+  /**
+   * @brief Destructor.
+   *
+   */
+  ~Swarm() = default;
 
   /**
    * @brief Get the dimension.
@@ -176,7 +188,7 @@ public:
 
 private:
   /** the centers of the particles */
-  Portage::vector<Wonton::Point<dim>> points_;
+  Portage::vector<Wonton::Point<dim>> points_ {};
 
   /** the number of owned particles in the swarm */
   int num_local_points_ = 0;
