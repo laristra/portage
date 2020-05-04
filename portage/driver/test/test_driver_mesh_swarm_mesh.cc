@@ -40,8 +40,10 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace {
-
-double TOL = 1e-6;
+// avoid long namespaces
+using namespace Portage::Meshfree;
+// default numerical tolerance
+double const epsilon = 1e-6;
 
 // This is a set of integration tests based off of main.cc.  There
 // will be at least one test corresponding to each case found in
@@ -50,294 +52,292 @@ double TOL = 1e-6;
 // 2D/3D coincident and non-coincident remaps should be derived from
 // this.
 class MSMDriverTest : public ::testing::Test {
- protected:
-  // Source and target meshes
-  std::shared_ptr<Wonton::Simple_Mesh> sourceMesh;
-  std::shared_ptr<Wonton::Simple_Mesh> targetMesh;
-  
-  // Wrappers for interfacing with the underlying mesh data structures
-  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper;
-  Wonton::Simple_Mesh_Wrapper targetMeshWrapper;
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sourceStateWrapper;
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper;
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> targetStateWrapper2;
-  
-  // Operator domains and data
-  Portage::vector<Portage::Meshfree::Operator::Domain> domains_;
+public:
+  /**
+   * @brief Driver test constructor
+   *
+   * @param source: a shared pointer to the source mesh
+   * @param target: a shared pointer to the target mesh
+   */
+  MSMDriverTest(std::shared_ptr<Wonton::Simple_Mesh> source,
+                std::shared_ptr<Wonton::Simple_Mesh> target)
+    : source_mesh(source), target_mesh(target),
+      source_mesh_wrapper(*source_mesh),
+      target_mesh_wrapper(*target_mesh),
+      source_state(source_mesh_wrapper),
+      target_state_one(target_mesh_wrapper),
+      target_state_two(target_mesh_wrapper) {}
 
-  //  This is the basic test method to be called for each unit test. It will work
-  //  for 2-D and 3-D, coincident and non-coincident cell-centered remaps.
+  /**
+   * @brief Test main method.
+   *
+   * @tparam Intersect
+   * @tparam Interpolate
+   * @tparam SwarmSearch
+   * @tparam dim
+   * @param compute_initial_field
+   * @param smoothing_factor
+   * @param basis
+   * @param center
+   * @param op
+   * @param faceted
+   */
   template <
-    template<Portage::Entity_kind, class, class, class,
-    template<class, int, class, class> class,
-    class, class> class Intersect,
-    template<int, Portage::Entity_kind, class, class, class, class, class,
-    template<class, int, class, class> class,
-    class, class, class> class Interpolate,
+    template<Wonton::Entity_kind,
+      class, class, class,
+      template<class, int, class, class> class,
+      class, class> class Intersect,
+    template<int, Wonton::Entity_kind,
+      class, class, class, class, class,
+      template<class, int, class, class> class,
+      class, class, class> class Interpolate,
     template <int, class, class> class SwarmSearch,
-    int Dimension = 3
+    int dim = 3
   >
-  void unitTest(double compute_initial_field(Portage::Point<Dimension> centroid),
-                double smoothing_factor, Portage::Meshfree::Basis::Type basis, 
-		Portage::Meshfree::WeightCenter center=Portage::Meshfree::Gather, 
-		Portage::Meshfree::Operator::Type oper8or=Portage::Meshfree::Operator::LastOperator,
-		bool faceted=false)
-  {
+  void unitTest(double compute_initial_field(Wonton::Point<dim> const& centroid),
+                double smoothing_factor,
+                basis::Type basis,
+                WeightCenter center = Gather,
+                oper::Type op = oper::LastOperator,
+                bool faceted = false) {
     // check dimension - no 1D
-    assert(Dimension > 1);
+    assert(dim > 1);
+
+    using Field = Wonton::StateVectorUni<>;
+
+    using MeshRemap = Portage::MMDriver<Portage::SearchKDTree,
+                                       Intersect, Interpolate, dim,
+                                       Wonton::Simple_Mesh_Wrapper,
+                                       Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>;
+
+    using SwarmRemap = Portage::MSM_Driver<SwarmSearch, Accumulate, Estimate, dim,
+                                           Wonton::Simple_Mesh_Wrapper,
+                                           Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>;
+
+    int const nb_source_cells = source_mesh_wrapper.num_owned_cells();
+    int const nb_source_nodes = source_mesh_wrapper.num_owned_nodes();
+    int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
+    int const nb_target_nodes = target_mesh_wrapper.num_owned_nodes();
 
     //  Fill the source state data with the specified profile
-    const int nsrccells = sourceMeshWrapper.num_owned_cells();
-    std::vector<double> sourceData(nsrccells);
-    const int nsrcnodes = sourceMeshWrapper.num_owned_nodes();
-    std::vector<double> sourceDataNode(nsrcnodes);
+    std::vector<double> cell_data(nb_source_cells);
+    std::vector<double> node_data(nb_source_nodes);
 
     // Create the source data for given function
-    Wonton::Flat_Mesh_Wrapper<double> sourceFlatMesh;
-    sourceFlatMesh.initialize(sourceMeshWrapper);
+    Wonton::Flat_Mesh_Wrapper<double> source_flat_mesh;
+    source_flat_mesh.initialize(source_mesh_wrapper);
   
-    for (unsigned int c = 0; c < nsrccells; ++c) {
-      Portage::Point<Dimension> cen;
-      sourceFlatMesh.cell_centroid(c, &cen);
-      sourceData[c] = compute_initial_field(cen);
+    for (int i = 0; i < nb_source_cells; ++i) {
+      Wonton::Point<dim> cen;
+      source_flat_mesh.cell_centroid(i, &cen);
+      cell_data[i] = compute_initial_field(cen);
     }
-    
-    sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"celldata", Portage::Entity_kind::CELL, sourceData)
-    );
 
-    for (unsigned int c = 0; c < nsrcnodes; ++c) {
-      Portage::Point<Dimension> cen;
-      sourceFlatMesh.node_get_coordinates(c, &cen);
-      sourceDataNode[c] = compute_initial_field(cen);
+    for (int i = 0; i < nb_source_nodes; ++i) {
+      Wonton::Point<dim> cen;
+      source_flat_mesh.node_get_coordinates(i, &cen);
+      node_data[i] = compute_initial_field(cen);
     }
-    sourceStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nodedata", Portage::Entity_kind::NODE, sourceDataNode));
+
+    source_state.add(std::make_shared<Field>("celldata", Wonton::CELL, cell_data));
+    source_state.add(std::make_shared<Field>("nodedata", Wonton::NODE, node_data));
 
     // Build the target state storage
-    const int ntarcells = targetMeshWrapper.num_owned_cells();
-    const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-    std::vector<double> targetData(ntarcells), targetData2(ntarcells);
-    std::vector<double> targetDataNode(ntarnodes), targetData2Node(ntarnodes);
-    
-    targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"celldata", Portage::Entity_kind::CELL, targetData));
-    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"celldata", Portage::Entity_kind::CELL, targetData2));
-    targetStateWrapper.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nodedata", Portage::Entity_kind::NODE, targetDataNode));
-    targetStateWrapper2.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nodedata", Portage::Entity_kind::NODE, targetData2Node));
+    std::vector<double> target_data[4];
+    target_data[0].resize(nb_target_cells);
+    target_data[1].resize(nb_target_cells);
+    target_data[2].resize(nb_target_nodes);
+    target_data[3].resize(nb_target_nodes);
+
+    target_state_one.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[0]));
+    target_state_two.add(std::make_shared<Field>("celldata", Wonton::CELL, target_data[1]));
+    target_state_one.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[2]));
+    target_state_two.add(std::make_shared<Field>("nodedata", Wonton::NODE, target_data[3]));
 
     // Make list of field names
-    std::vector<std::string> remap_fields;
-    remap_fields.push_back("celldata");
-    if (not faceted) {
-      remap_fields.push_back("nodedata");
-    }
+    std::vector<std::string> remap_fields = { "celldata" };
+    if (not faceted)
+      remap_fields.emplace_back("nodedata");
 
     //  Build the mesh-mesh driver data for this mesh type
-    Portage::MMDriver<Portage::SearchKDTree,
-    Intersect,
-    Interpolate,
-    Dimension,
-    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
-    Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-    mmdriver(sourceMeshWrapper, sourceStateWrapper,
-             targetMeshWrapper, targetStateWrapper);
-    mmdriver.set_remap_var_names(remap_fields);
-    mmdriver.run();  // run in serial (executor argument defaults to nullptr)
+    MeshRemap mesh_remap(source_mesh_wrapper, source_state,
+                         target_mesh_wrapper, target_state_one);
+    mesh_remap.set_remap_var_names(remap_fields);
+    mesh_remap.run();  // run in serial (executor argument defaults to nullptr)
 
     // Set up the operator information if needed
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
+    Portage::vector<std::vector<Wonton::Point<dim>>> data;
     std::vector<double> exact;
-    Portage::Meshfree::Operator::Domain domain_types[3]=
-      {Portage::Meshfree::Operator::Interval,
-       Portage::Meshfree::Operator::Quadrilateral,
-       Portage::Meshfree::Operator::Hexahedron};
-    if (oper8or == Portage::Meshfree::Operator::VolumeIntegral) {
-      int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL, 
-                                              Portage::Entity_type::ALL);
-      domains_.resize(numcells);
-      data.resize(numcells);
-      exact.resize(numcells);  // each element is resized automatically
-      for (int c=0; c<numcells; c++) {
-	// get integration domains
-        domains_[c] = domain_types[Dimension-1];
-        std::vector<Portage::Point<Dimension>> cellverts;
-        targetMesh->cell_get_coordinates(c, &cellverts);
-        data[c] = cellverts;
+    oper::Domain domain_types[3] = {oper::Interval,
+                                    oper::Quadrilateral,
+                                    oper::Hexahedron };
 
-	// get exact value of integral
-	std::vector<std::vector<double>> result;
-	Portage::Meshfree::Operator::apply<Dimension>
-          ( Portage::Meshfree::Operator::VolumeIntegral, 
-            basis, domain_types[Dimension-1], data[c], result);
-	if (Dimension==2) {
-	  if (basis==Portage::Meshfree::Basis::Linear) 
-	    exact[c] = result[1][0]+result[2][0];
-	  if (basis==Portage::Meshfree::Basis::Quadratic) 
-	    exact[c] = 2.*result[3][0]+result[4][0]+2.*result[5][0];
-	}
-	if (Dimension==3) {
-	  if (basis==Portage::Meshfree::Basis::Linear) 
-	    exact[c] = result[1][0]+result[2][0]+result[3][0];
-	  if (basis==Portage::Meshfree::Basis::Quadratic) 
-	    exact[c] = 2.*result[4][0]+result[5][0]+result[6][0]+
-	               2.*result[7][0]+result[8][0]+2.*result[9][0];
-	}
+    if (op == oper::VolumeIntegral) {
+      int ncells = target_mesh->num_entities(Wonton::CELL,Wonton::ALL);
+      domains_.resize(ncells);
+      data.resize(ncells);
+      exact.resize(ncells);  // each element is resized automatically
+
+      for (int i = 0; i < ncells; i++) {
+
+        std::vector<Wonton::Point<dim>> vertices;
+        std::vector<std::vector<double>> result;
+
+	      // get integration domains
+        domains_[i] = domain_types[dim - 1];
+        target_mesh->cell_get_coordinates(i, &vertices);
+        data[i] = vertices;
+
+        // get exact value of integral
+        oper::apply<dim>(oper::VolumeIntegral, basis,
+                         domain_types[dim-1], data[i], result);
+        if (dim == 2) {
+          switch (basis) {
+            case basis::Linear:
+              exact[i] = result[1][0] + result[2][0]; break;
+            case basis::Quadratic:
+              exact[i] = 2. * result[3][0] + result[4][0] + 2. * result[5][0]; break;
+            default:
+              break;
+          }
+        } else if (dim == 3) {
+          switch (basis) {
+            case basis::Linear:
+              exact[i] = result[1][0] + result[2][0] + result[3][0]; break;
+            case basis::Quadratic:
+              exact[i] = 2. * result[4][0] + result[5][0] + result[6][0]
+                       + 2. * result[7][0] + result[8][0] + 2. * result[9][0]; break;
+            default:
+              break;
+          }
+        }
       }
     }
 
     //  Build the mesh-swarm-mesh driver data for this mesh type
-    using MSM_Driver_Type =
-    Portage::MSM_Driver<
-      SwarmSearch,
-      Portage::Meshfree::Accumulate,
-      Portage::Meshfree::Estimate,
-      Dimension,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>,
-      Wonton::Simple_Mesh_Wrapper, Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>
-      >;
+    SwarmRemap swarm_remap(source_mesh_wrapper, source_state,
+                           target_mesh_wrapper, target_state_two,
+                           smoothing_factor, smoothing_factor,
+                           faceted ? Weight::FACETED : Weight::TENSOR,
+                           faceted ? Weight::POLYRAMP : Weight::B4, center);
 
-    MSM_Driver_Type *msmdriver_ptr;
+    auto estimator = (op == oper::VolumeIntegral ? OperatorRegression
+                                                 : LocalRegression);
 
-    if (faceted) {
-      msmdriver_ptr = new MSM_Driver_Type
-        (sourceMeshWrapper, sourceStateWrapper,
-         targetMeshWrapper, targetStateWrapper2,
-         smoothing_factor, 
-         smoothing_factor, 
-         Portage::Meshfree::Weight::FACETED, 
-         Portage::Meshfree::Weight::POLYRAMP, 
-         center, 
-         std::string("NONE"), 
-         std::numeric_limits<double>::infinity());
-    } else {
-      msmdriver_ptr = new MSM_Driver_Type
-        (sourceMeshWrapper, sourceStateWrapper,
-         targetMeshWrapper, targetStateWrapper2,
-         smoothing_factor, 
-         smoothing_factor, 
-         Portage::Meshfree::Weight::TENSOR, 
-         Portage::Meshfree::Weight::B4, 
-         center);
-    }
-    MSM_Driver_Type &msmdriver(*msmdriver_ptr);
-    
-    Portage::Meshfree::EstimateType estimator=
-      Portage::Meshfree::LocalRegression;
-    if (oper8or == Portage::Meshfree::Operator::VolumeIntegral) 
-      estimator = Portage::Meshfree::OperatorRegression;
-
-    msmdriver.set_remap_var_names(remap_fields, remap_fields, 
-                                  estimator, 
-                                  basis,
-                                  oper8or,
-                                  domains_,
-                                  data);
-
-    msmdriver.run();  // run in serial (executor argument defaults to nullptr)
+    swarm_remap.set_remap_var_names(remap_fields, remap_fields, estimator,
+                                    basis, op, domains_, data);
+    swarm_remap.run();
 
     // Check the answer
-    double stdval, err;
     double toterr = 0.;
+#ifdef ENABLE_DEBUG
+    auto& cell_field1 = target_state_one.get<Field>("celldata")->get_data();
+    auto& node_field1 = target_state_one.get<Field>("nodedata")->get_data();
+#endif
+    auto& cell_field2 = target_state_two.get<Field>("celldata")->get_data();
+    auto& node_field2 = target_state_two.get<Field>("nodedata")->get_data();
 
-    auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
-    auto& cellvecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper2.get("celldata"))->get_data();
-    auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
-    auto& nodevecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper2.get("nodedata"))->get_data();
+    Wonton::Flat_Mesh_Wrapper<double> target_flat_mesh;
+    target_flat_mesh.initialize(target_mesh_wrapper);
 
-    Wonton::Flat_Mesh_Wrapper<double> targetFlatMesh;
-    targetFlatMesh.initialize(targetMeshWrapper);
-  
-    if (oper8or != Portage::Meshfree::Operator::VolumeIntegral) {
+    if (op != oper::VolumeIntegral) {
+      for (int i = 0; i < nb_target_cells; ++i) {
+        Wonton::Point<dim> c;
+        target_flat_mesh.cell_centroid(i, &c);
+        double const value = compute_initial_field(c);
+        double const swarm_error = cell_field2[i] - value;
 
-      for (int c = 0; c < ntarcells; ++c) {
-	Portage::Point<Dimension> ccen;
-	targetFlatMesh.cell_centroid(c, &ccen);
-	double value = compute_initial_field(ccen);
-	double merror, serror;
-	merror = cellvecout[c] - value;
-	serror = cellvecout2[c] - value;
-	//  dump diagnostics for each cell
-	if (Dimension == 2) {
-	  std::printf("Cell=% 4d Centroid=(% 5.3lf,% 5.3lf)", c,
-		      ccen[0], ccen[1]);
-	} else if (Dimension == 3) {
-	  std::printf("Cell=% 4d Centroid=(% 5.3lf,% 5.3lf,% 5.3lf)", c,
-		      ccen[0], ccen[1], ccen[2]);
-	}
-	std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
-		    value, cellvecout[c], merror, cellvecout2[c], serror);
-	toterr = std::max(toterr, std::fabs(serror));
+        #if ENABLE_DEBUG
+          double const mesh_error  = cell_field1[i] - value;
+          //  dump diagnostics for each cell
+          switch (dim) {
+            case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
+            case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
+            default: break;
+          }
+
+          std::printf(" value: %10.6lf,", value);
+          std::printf(" mesh: %10.6lf error: %lf", cell_field1[i], mesh_error);
+          std::printf(" swarm: %10.6lf error: %lf\n", cell_field2[i], swarm_error);
+        #endif
+        toterr = std::max(toterr, std::abs(swarm_error));
       }
 
-      std::printf("\n\nLinf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
-      ASSERT_LT(toterr, TOL);
+      #if ENABLE_DEBUG
+        std::printf("\n\nL^inf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
+      #endif
+      ASSERT_LT(toterr, epsilon);
 
       if (not faceted) {
         toterr = 0.;
-        for (int n = 0; n < ntarnodes; ++n) {
-          Portage::Point<Dimension> node;
-          targetFlatMesh.node_get_coordinates(n, &node);
-          double value = compute_initial_field(node);
-          double merror, serror;
-          merror = nodevecout[n] - value;
-          serror = nodevecout2[n] - value;
-          //  dump diagnostics for each node
-          if (Dimension == 2) {
-            std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf)", n,
-                        node[0], node[1]);
-          } else if (Dimension == 3) {
-            std::printf("Node=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", n,
-                        node[0], node[1], node[2]);
-          }
-          std::printf(" Val=% 10.6lf MM=% 10.6lf Err=% 10.6lf MSM=% 10.6lf Err=% lf\n",
-                      value, nodevecout[n], merror, nodevecout2[n], serror);
-          toterr = std::max(toterr, std::fabs(serror));
+        for (int i = 0; i < nb_target_nodes; ++i) {
+          Wonton::Point<dim> p;
+          target_flat_mesh.node_get_coordinates(i, &p);
+          double const value = compute_initial_field(p);
+          double const swarm_error = node_field2[i] - value;
+
+          #if ENABLE_DEBUG
+            double const mesh_error  = node_field1[i] - value;
+
+            //  dump diagnostics for each node
+            switch (dim) {
+              case 2: std::printf("node: %4d coord: (%5.3lf, %5.3lf)", i, p[0], p[1]); break;
+              case 3: std::printf("node: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, p[0], p[1], p[2]); break;
+              default: break;
+            }
+
+            std::printf(" value: %10.6lf,", value);
+            std::printf(" mesh: %10.6lf error: %lf", node_field1[i], mesh_error);
+            std::printf(" swarm: %10.6lf error: %lf\n", node_field2[i], swarm_error);
+          #endif
+          toterr = std::max(toterr, std::abs(swarm_error));
         }
 
-        std::printf("\n\nLinf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
-        ASSERT_LT(toterr, TOL);
+        #if ENABLE_DEBUG
+          std::printf("\n\nL^inf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
+        #endif
+        ASSERT_LT(toterr, epsilon);
       }
-
     } else {
 
-      for (int c = 0; c < ntarcells; ++c) {
-	Portage::Point<Dimension> ccen;
-	targetFlatMesh.cell_centroid(c, &ccen);
-	double serror;
-	serror = cellvecout2[c] - exact[c];
-	if (Dimension == 2) {
-	  std::printf("Centroid=% 4d Coords=(% 5.3lf,% 5.3lf)", c,
-		      ccen[0], ccen[1]);
-	} else if (Dimension == 3) {
-	  std::printf("Centroid=% 4d Coords=(% 5.3lf,% 5.3lf,% 5.3lf)", c,
-		      ccen[0], ccen[1], ccen[2]);
-	}
-	std::printf(" Exact=% 10.6lf MSM=% 10.6lf Err=% 10.6lf\n",
-		    exact[c], cellvecout2[c], serror);
-	toterr = std::max(toterr, std::fabs(serror));
+      for (int i = 0; i < nb_target_cells; ++i) {
+        Wonton::Point<dim> c;
+        target_flat_mesh.cell_centroid(i, &c);
+        double const error = cell_field2[i] - exact[i];
+
+        #if ENABLE_DEBUG
+          switch (dim) {
+            case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
+            case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
+            default: break;
+          }
+          std::printf(" exact: %10.6lf,", exact[i]);
+          std::printf(" swarm: %10.6lf error: %10.6lf\n", cell_field2[i], error);
+        #endif
+        toterr = std::max(toterr, std::abs(error));
       }
 
-      std::printf("\n\nLinf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
-      ASSERT_LT(toterr, TOL);
-
+      #if ENABLE_DEBUG
+        std::printf("\n\nL^inf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
+      #endif
+      ASSERT_LT(toterr, epsilon);
     }
-
-    delete msmdriver_ptr;
   }
 
-  // Constructor for Driver test
-  MSMDriverTest(std::shared_ptr<Wonton::Simple_Mesh> s,
-                std::shared_ptr<Wonton::Simple_Mesh> t) :
-    sourceMesh(s), targetMesh(t),
-    sourceMeshWrapper(*sourceMesh), targetMeshWrapper(*targetMesh),
-    sourceStateWrapper(sourceMeshWrapper), targetStateWrapper(targetMeshWrapper),
-    targetStateWrapper2(targetMeshWrapper)
-  {}
+protected:
+  // Source and target meshes
+  std::shared_ptr<Wonton::Simple_Mesh> source_mesh;
+  std::shared_ptr<Wonton::Simple_Mesh> target_mesh;
 
+  // Wrappers for interfacing with the underlying mesh data structures
+  Wonton::Simple_Mesh_Wrapper source_mesh_wrapper;
+  Wonton::Simple_Mesh_Wrapper target_mesh_wrapper;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> source_state;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_one;
+  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
+
+  // Operator domains and data
+  Portage::vector<oper::Domain> domains_;
 };
 
 // Class which constructs a pair of simple 2-D meshes, target
@@ -359,22 +359,24 @@ struct MSMDriverTest3D : MSMDriverTest {
 
 // Methods for computing initial field values
 
-double compute_linear_field_2d(Portage::Point<2> centroid) {
-  return centroid[0]+centroid[1];
+double compute_linear_field_2d(Wonton::Point<2> const& centroid) {
+  return centroid[0] + centroid[1];
 }
-double compute_quadratic_field_2d(Portage::Point<2> centroid) {
-  return centroid[0]*centroid[0] + centroid[1]*centroid[1] +
-      centroid[0]*centroid[1];
+
+double compute_quadratic_field_2d(Wonton::Point<2> const& centroid) {
+  return centroid[0] * centroid[0] +
+         centroid[1] * centroid[1] +
+         centroid[0] * centroid[1];
 }
 
 // Methods for computing initial field values
-double compute_linear_field_3d(Portage::Point<3> centroid) {
-  return centroid[0]+centroid[1]+centroid[2];
+double compute_linear_field_3d(Wonton::Point<3> const& centroid) {
+  return centroid[0] + centroid[1] + centroid[2];
 }
-double compute_quadratic_field_3d(Portage::Point<3> centroid) {
-  return centroid[0]*centroid[0] + centroid[1]*centroid[1] +
-      centroid[2]*centroid[2] + centroid[0]*centroid[1] +
-      centroid[1]*centroid[2] + centroid[2]*centroid[0];
+double compute_quadratic_field_3d(Wonton::Point<3> const& centroid) {
+  return centroid[0] * centroid[0] + centroid[1] * centroid[1] +
+         centroid[2] * centroid[2] + centroid[0] * centroid[1] +
+         centroid[1] * centroid[2] + centroid[2] * centroid[0];
 }
 
 // Test cases: these are constructed by calling TEST_F with the name
@@ -388,54 +390,54 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinear) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear);
+    (&compute_linear_field_2d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadratic) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear, 
-     Portage::Meshfree::Scatter);
+    (&compute_linear_field_2d, .75, basis::Linear,
+     Scatter);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Scatter);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Scatter);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Gather, Portage::Meshfree::Operator::LastOperator, true);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Gather, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Scatter, Portage::Meshfree::Operator::LastOperator, true);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Scatter, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_linear_field_2d, .75, Portage::Meshfree::Basis::Linear, 
-     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+    (&compute_linear_field_2d, .75, basis::Linear,
+     Gather, oper::VolumeIntegral);
 }
 
 
@@ -443,8 +445,8 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
   unitTest<Portage::IntersectR2D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
-    (&compute_quadratic_field_2d, .75, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+    (&compute_quadratic_field_2d, .75, basis::Quadratic,
+     Gather, oper::VolumeIntegral);
 }
 
 
@@ -452,54 +454,54 @@ TEST_F(MSMDriverTest3D, 3D1stOrderLinear) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Portage::Meshfree::Basis::Linear);
+    (&compute_linear_field_3d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadratic) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Portage::Meshfree::Basis::Linear, 
-     Portage::Meshfree::Scatter);
+    (&compute_linear_field_3d, .75, basis::Linear,
+     Scatter);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Scatter);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
+     Scatter);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Gather, Portage::Meshfree::Operator::LastOperator, true);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
+     Gather, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_quadratic_field_3d, 1.5, Portage::Meshfree::Basis::Quadratic, 
-     Portage::Meshfree::Scatter, Portage::Meshfree::Operator::LastOperator, true);
+    (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
+     Scatter, oper::LastOperator, true);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {
   unitTest<Portage::IntersectR3D,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
-    (&compute_linear_field_3d, .75, Portage::Meshfree::Basis::Linear, 
-     Portage::Meshfree::Gather, Portage::Meshfree::Operator::VolumeIntegral);
+    (&compute_linear_field_3d, .75, basis::Linear,
+     Gather, oper::VolumeIntegral);
 }
 
 

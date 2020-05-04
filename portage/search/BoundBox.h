@@ -185,8 +185,8 @@ namespace Portage {
             if(magdir[i] == 0) {
                 if(orig[i] < box.getMin(i) || orig[i] > box.getMax(i)) return false;
             } else {
-                register const double dMin = (box.getMin(i)-orig[i])/magdir[i];
-                register const double dMax = (box.getMax(i)-orig[i])/magdir[i];
+                const double dMin = (box.getMin(i)-orig[i])/magdir[i];
+                const double dMax = (box.getMax(i)-orig[i])/magdir[i];
                 if(dMax < dMin) {
                     if(b < dMax || a > dMin) return false;
                     if(a < dMax) a = dMax;

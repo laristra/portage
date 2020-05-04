@@ -158,8 +158,6 @@ int main(int argc, char** argv) {
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
   Wonton::Jali_Mesh_Wrapper trgmesh_wrapper(*trgmesh);
 
-  int nnodes_src = srcmesh_wrapper.num_owned_nodes() + srcmesh_wrapper.num_ghost_nodes();
-
   // -- states
   std::shared_ptr<Jali::State> srcstate = Jali::State::create(srcmesh);
   std::shared_ptr<Jali::State> trgstate = Jali::State::create(trgmesh);

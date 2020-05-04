@@ -17,124 +17,104 @@
 #include "portage/support/portage.h"
 
 // wonton includes
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 #include "wonton/support/Point.h"
 
 TEST(SwarmState, basic) {
-  using std::make_shared;
+//  using std::make_shared;
   using Portage::Meshfree::SwarmState;
+  using namespace Portage::Meshfree;
 
-  const size_t npoints = 10;
-  std::vector<Wonton::Point<3>> points(npoints);
+  // set up a random swarm
+  std::random_device device;
+  std::mt19937 engine { device() };
+  std::uniform_real_distribution<double> generator(0.0, 1.0);
 
-  // set up swarm
-  double h = 0.01;
-  srand(time(NULL));
-  for (int i = 0; i < npoints; i++) {
-    points[i] = Wonton::Point<3>(
-        (static_cast<double>(rand()) / RAND_MAX),
-        (static_cast<double>(rand()) / RAND_MAX),
-        (static_cast<double>(rand()) / RAND_MAX));
+  int const num_points = 10;
+  Portage::vector<Wonton::Point<3>> points(num_points);
+
+  for (int i = 0; i < num_points; i++) {
+    // point coordinates are not always initialized in order
+    // so enforce random number picking sequence
+    double const noise[] = { generator(engine),
+                             generator(engine),
+                             generator(engine) };
+
+    points[i] = Wonton::Point<3>(noise[0], noise[1], noise[2]);
   }
-  auto p_ptr = std::make_shared<Portage::vector<Wonton::Point<3>>>(points);
-  auto swarm = Portage::Meshfree::Swarm<3>(p_ptr);
 
   // create state
+  Swarm<3> swarm(points);
   SwarmState<3> state(swarm);
-  ASSERT_EQ(state.get_size(), npoints);
+  ASSERT_EQ(state.get_size(), num_points);
 
   // create state fields
-  SwarmState<3>::DblVecPtr dbl_field1 =
-      make_shared<SwarmState<3>::DblVec>(npoints, 0.);
-  SwarmState<3>::DblVecPtr dbl_field2 =
-      make_shared<SwarmState<3>::DblVec>(npoints, 0.);
-  SwarmState<3>::DblVecPtr bad_dbl_field =
-      make_shared<SwarmState<3>::DblVec>(npoints+5, 0.);
-  SwarmState<3>::IntVecPtr int_field1 =
-      make_shared<SwarmState<3>::IntVec>(npoints, 0.);
-  SwarmState<3>::IntVecPtr int_field2 =
-      make_shared<SwarmState<3>::IntVec>(npoints, 0.);
-  SwarmState<3>::IntVecPtr bad_int_field =
-      make_shared<SwarmState<3>::IntVec>(npoints+5, 0.);
+  Portage::vector<double> dbl_field1(num_points, 0.);
+  Portage::vector<double> dbl_field2(num_points, 0.);
+  Portage::vector<int>    int_field1(num_points, 0.);
+  Portage::vector<int>    int_field2(num_points, 0.);
+  std::vector<double>     dbl_field3(num_points, 0.);
+  std::vector<int>        int_field3(num_points, 0.);
 
   // fill in fields
-  for (size_t i=0; i < npoints; i++) {
-    (*dbl_field1)[i] = i+.1;
-    (*dbl_field2)[i] = i+.01;
-    (*int_field1)[i] = i+10;
-    (*int_field2)[i] = i+100;
+  for (int i = 0; i < num_points; i++) {
+    dbl_field1[i] = i + 0.10;
+    dbl_field2[i] = i + 0.01;
+    int_field1[i] = i + 10;
+    int_field2[i] = i + 100;
   }
+
+  std::copy(dbl_field1.begin(), dbl_field1.end(), dbl_field3.begin());
+  std::copy(int_field1.begin(), int_field1.end(), int_field3.begin());
 
   // add the fields to the state
   state.add_field("d1", dbl_field1);
   state.add_field("d2", dbl_field2);
   state.add_field("i1", int_field1);
   state.add_field("i2", int_field2);
+  state.add_field("d3", dbl_field3);
+  state.add_field("i3", int_field3);
 
   // check that fields are correct
-  SwarmState<3>::DblVecPtr d1p, d2p;
-  SwarmState<3>::IntVecPtr i1p, i2p;
-  state.get_field("d1", d1p);
-  state.get_field("d2", d2p);
-  state.get_field("i1", i1p);
-  state.get_field("i2", i2p);
-  for (size_t i=0; i < npoints; i++) {
-    ASSERT_EQ((*d1p)[i], (*dbl_field1)[i]);
-    ASSERT_EQ((*d2p)[i], (*dbl_field2)[i]);
-    ASSERT_EQ((*i1p)[i], (*int_field1)[i]);
-    ASSERT_EQ((*i2p)[i], (*int_field2)[i]);
+  int i3[num_points];
+  double d3[num_points];
+
+  auto d1 = state.get_field_dbl("d1");
+  auto d2 = state.get_field_dbl("d2");
+  auto i1 = state.get_field_int("i1");
+  auto i2 = state.get_field_int("i2");
+  state.copy_field("d3", d3);
+  state.copy_field("i3", i3);
+
+  for (int i = 0; i < num_points; i++) {
+    ASSERT_EQ(i1[i], int_field1[i]);
+    ASSERT_EQ(i2[i], int_field2[i]);
+    ASSERT_EQ(i3[i], i1[i]);
+    ASSERT_DOUBLE_EQ(d1[i], dbl_field1[i]);
+    ASSERT_DOUBLE_EQ(d2[i], dbl_field2[i]);
+    ASSERT_DOUBLE_EQ(d3[i], d1[i]);
   }
 
   // check names lists are correct
-  std::vector<std::string>
-      dnames = state.field_names_double();
-  std::vector<std::string>
-      inames = state.field_names_int();
-  ASSERT_EQ(dnames.size(), 2);
+  auto dnames = state.get_field_names<double>();
+  auto inames = state.get_field_names<int>();
+  ASSERT_EQ(dnames.size(), unsigned(3));
   ASSERT_EQ(dnames[0], "d1");
   ASSERT_EQ(dnames[1], "d2");
-  ASSERT_EQ(inames.size(), 2);
+  ASSERT_EQ(dnames[2], "d3");
+  ASSERT_EQ(inames.size(), unsigned(3));
   ASSERT_EQ(inames[0], "i1");
   ASSERT_EQ(inames[1], "i2");
-
-  // check failure on adding field twice
-  try {
-    state.add_field("d1", dbl_field1);
-    ASSERT_FALSE(true);
-  } catch (std::exception err) {
-    ASSERT_TRUE(true);
-  }
-  try {
-    state.add_field("i1", int_field1);
-    ASSERT_FALSE(true);
-  } catch (std::exception err) {
-    ASSERT_TRUE(true);
-  }
-
-  // check failure on adding bad fields
-  try {
-    state.add_field("bad", bad_dbl_field);
-    ASSERT_FALSE(true);
-  } catch (...) {
-    ASSERT_TRUE(true);
-  }
-  try {
-    state.add_field("bad", bad_int_field);
-    ASSERT_FALSE(true);
-  } catch (...) {
-    ASSERT_TRUE(true);
-  }
+  ASSERT_EQ(inames[2], "i3");
 
   // check creation by size alone
-  SwarmState<3> state2(npoints);
+  SwarmState<3> state2(num_points);
   state2.add_field("d1", dbl_field1);
-  SwarmState<3>::DblVecPtr d1p2;
-  state2.get_field("d1", d1p2);
-  ASSERT_EQ(d1p2->size(), npoints);
+  auto d1p2 = state2.get_field_dbl("d1");
+  ASSERT_EQ(d1p2.size(), unsigned(num_points));
 }
 
 
@@ -142,75 +122,52 @@ TEST(SwarmState, basic) {
   @brief Unit test for constructor with Simple_State_Wrapper in 3D using cells
 */
 TEST(SwarmState, Simple_State_Wrapper) {
-  std::shared_ptr<Wonton::Simple_Mesh> mesh_ptr =
-    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
-  Wonton::Simple_Mesh &mesh(*mesh_ptr);
+
+  using namespace Portage::Meshfree;
+
+  Wonton::Simple_Mesh mesh(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 2, 2, 2);
   Wonton::Simple_Mesh_Wrapper mesh_wrapper(mesh);
+  Wonton::Simple_State mesh_state(std::make_shared<Wonton::Simple_Mesh>(mesh));
 
-  Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> sstate(mesh_wrapper);
-  int ncells = mesh_wrapper.num_owned_cells();
-  int nnodes = mesh_wrapper.num_owned_nodes();
-  std::vector<double> &cfield1 = *new std::vector<double>(ncells);
-  std::vector<double> &nfield1 = *new std::vector<double>(nnodes);
-  for (int i=0; i < ncells; i++) {
-    cfield1[i] = 1.;
-  }
-  for (int i=0; i < nnodes; i++) {
-    nfield1[i] = 2.;
-  }
+  int nb_cells = mesh_wrapper.num_owned_cells();
+  int nb_nodes = mesh_wrapper.num_owned_nodes();
+  std::vector<double> cell_field(nb_cells, 1.);
+  std::vector<double> node_field(nb_nodes, 2.);
 
-  sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"cf1", Portage::Entity_kind::CELL, cfield1)
-    );
-  sstate.add(std::make_shared<Wonton::StateVectorUni<>>(
-    	"nf1", Portage::Entity_kind::NODE, nfield1)
-    );
+  mesh_state.add("cf1", Wonton::CELL, cell_field.data());
+  mesh_state.add("nf1", Wonton::NODE, node_field.data());
+  Wonton::Simple_State_Wrapper state_wrapper(mesh_state);
 
-
-  // create swarm state from mesh state wrapper for cells
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
-      Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-        (sstate, Portage::Entity_kind::CELL);
-    Portage::Meshfree::SwarmState<3> &state(*state_ptr);
+    SwarmState<3> state(state_wrapper, Wonton::CELL);
 
-    // test size
-    ASSERT_EQ(state.get_size(), ncells);
+    auto intnames = state.get_field_names<int>();
+    auto dblnames = state.get_field_names<double>();
 
-    // check data fields
-    std::vector<std::string> intnames = state.field_names_int();
-    ASSERT_EQ(intnames.size(), 0);
-    std::vector<std::string> dblnames = state.field_names_double();
-    ASSERT_EQ(dblnames.size(), 1);
+    ASSERT_EQ(state.get_size(), nb_cells);
+    ASSERT_EQ(intnames.size(), unsigned(0));
+    ASSERT_EQ(dblnames.size(), unsigned(1));
     ASSERT_EQ(dblnames[0], "cf1");
-    Portage::Meshfree::SwarmState<3>::DblVecPtr field;
-    state.get_field("cf1", field);
-    for (int i=0; i < ncells; i++) {
-      ASSERT_EQ((*field)[i], 1.0);
-    }
+
+    auto field = state.get_field_dbl("cf1");
+    for (int i = 0; i < nb_cells; i++)
+      ASSERT_EQ(field[i], 1.0);
   }
 
-  // create swarm state from mesh state wrapper for nodes
   {
-    std::shared_ptr<Portage::Meshfree::SwarmState<3>> state_ptr =
-       Portage::Meshfree::SwarmStateFactory<3,Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper>>
-      (sstate, Portage::Entity_kind::NODE);
-    Portage::Meshfree::SwarmState<3> &state(*state_ptr);
+    SwarmState<3> state(state_wrapper, Wonton::NODE);
 
-    // test size
-    ASSERT_EQ(state.get_size(), nnodes);
+    auto intnames = state.get_field_names<int>();
+    auto dblnames = state.get_field_names<double>();
 
-    // check data fields
-    std::vector<std::string> intnames = state.field_names_int();
-    ASSERT_EQ(intnames.size(), 0);
-    auto dblnames = state.field_names_double();
-    ASSERT_EQ(dblnames.size(), 1);
+    ASSERT_EQ(state.get_size(), nb_nodes);
+    ASSERT_EQ(intnames.size(), unsigned(0));
+    ASSERT_EQ(dblnames.size(), unsigned(1));
     ASSERT_EQ(dblnames[0], "nf1");
-    Portage::Meshfree::SwarmState<3>::DblVecPtr field;
-    state.get_field("nf1", field);
-    for (int i=0; i < nnodes; i++) {
-      ASSERT_EQ((*field)[i], 2.0);
-    }
+
+    auto field = state.get_field_dbl("nf1");
+    for (int i=0; i < nb_nodes; i++)
+      ASSERT_EQ(field[i], 2.0);
   }
 }
 

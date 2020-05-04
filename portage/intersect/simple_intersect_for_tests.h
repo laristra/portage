@@ -16,7 +16,6 @@ void bounding_box(std::vector<Wonton::Point<D>> coords,
                   Wonton::Point<D> *pmin, Wonton::Point<D> *pmax) {
   *pmin = coords[0];
   *pmax = coords[0];
-  int np = coords.size();
   for (auto pcoord : coords) {
     for (int d = 0; d < D; d++) {
       if (pcoord[d] < (*pmin)[d])

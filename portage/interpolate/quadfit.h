@@ -56,9 +56,12 @@ class Limited_Quadfit {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Boundary_Limiter_type Boundary_Limiter_type) :
-      mesh_(mesh), state_(state),
-      var_name_(var_name), limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
+                   Boundary_Limiter_type Boundary_Limiter_type)
+    : mesh_(mesh),
+      state_(state),
+      var_name_(var_name),
+      limtype_(limiter_type),
+      bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
 
@@ -77,7 +80,7 @@ class Limited_Quadfit {
 
   /// Destructor
 
-  ~Limited_Quadfit() {}
+  ~Limited_Quadfit() = default;
 
   /// Functor - not implemented for all types - see specialization for
   /// cells, nodes
@@ -87,12 +90,12 @@ class Limited_Quadfit {
   }
 
  private:
-  Limiter_type limtype_;
-  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
-  double const *vals_;
+  double const* vals_;
+  Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
 };
 
 
@@ -120,9 +123,12 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type,
-                   Boundary_Limiter_type Boundary_Limiter_type) :
-      mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
+                   Boundary_Limiter_type Boundary_Limiter_type)
+    : mesh_(mesh),
+      state_(state),
+      var_name_(var_name),
+      limtype_(limiter_type),
+      bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::CELL, var_name, &vals_);
@@ -151,19 +157,19 @@ class Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType> {
 
   /// Destructor
 
-  ~Limited_Quadfit() {}
+  ~Limited_Quadfit() = default;
 
   /// Functor
 
   Vector<D*(D+3)/2> operator()(int cellid);
 
  private:
-  Limiter_type limtype_;
-  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
   double const *vals_;
+  Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   std::vector<std::vector<int>> cell_neighbors_;
 };
 
@@ -222,17 +228,15 @@ Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int cons
     double maxval = vals_[cellid];
 
     int nnbr = nbrids.size();
-    for (int i = 0; i < nnbr; ++i) {
-      minval = std::min(cellvalues[i], minval);
-      maxval = std::max(cellvalues[i], maxval);
+    for (int ic = 0; ic < nnbr; ++ic) {
+      minval = std::min(cellvalues[ic], minval);
+      maxval = std::max(cellvalues[ic], maxval);
     }
 
     // Find the min and max of the reconstructed function in the cell
     // Since the reconstruction is linear, this will occur at one of
     // the nodes of the cell. So find the values of the reconstructed
     // function at the nodes of the cell
-
-    int dim = mesh_.space_dimension();
 
     double cellcenval = vals_[cellid];
     std::vector<Point<D>> cellcoords;
@@ -242,12 +246,13 @@ Limited_Quadfit<D, Entity_kind::CELL, MeshType, StateType>::operator() (int cons
       Vector<D> vec = coord-cellcenters[0];
       //Vector<D*(D+3)/2> dvec;
       for (int j = 0; j < D; ++j) {
-	dvec[j] = vec[j];
-	// Add the quadratic terms
-	for (int k = 0; k < j; ++k) {
-	  dvec[j+k+D-1] = dvec[k]*dvec[j];
-	}
+        dvec[j] = vec[j];
+        // Add the quadratic terms
+        for (int k = 0; k < j; ++k) {
+          dvec[j+k+D-1] = dvec[k]*dvec[j];
+        }
       }
+
       double diff = dot(qfit, dvec);
       double extremeval = (diff > 0.0) ? maxval : minval;
       double phi_new = (diff == 0.0) ? 1 : (extremeval-cellcenval)/diff;
@@ -287,9 +292,12 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
   Limited_Quadfit(MeshType const & mesh, StateType const & state,
                    std::string const var_name,
                    Limiter_type limiter_type, 
-                   Boundary_Limiter_type Boundary_Limiter_type) :
-      mesh_(mesh), state_(state), var_name_(var_name),
-      limtype_(limiter_type), bnd_limtype_(Boundary_Limiter_type) {
+                   Boundary_Limiter_type Boundary_Limiter_type)
+    : mesh_(mesh),
+      state_(state),
+      var_name_(var_name),
+      limtype_(limiter_type),
+      bnd_limtype_(Boundary_Limiter_type) {
 
     // Extract the field data from the statemanager
     state.mesh_get_data(Entity_kind::NODE, var_name, &vals_);
@@ -318,20 +326,19 @@ class Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType> {
 
   /// Destructor
 
-  ~Limited_Quadfit() {}
+  ~Limited_Quadfit() = default;
 
   /// Functor
 
   Vector<D*(D+3)/2> operator()(int nodeid);
 
  private:
-
-  Limiter_type limtype_;
-  Boundary_Limiter_type bnd_limtype_;
   MeshType const & mesh_;
   StateType const & state_;
   std::string var_name_;
   double const *vals_;
+  Limiter_type limtype_;
+  Boundary_Limiter_type bnd_limtype_;
   std::vector<std::vector<int>> node_neighbors_;
 };
 
@@ -361,8 +368,6 @@ Limited_Quadfit<D, Entity_kind::NODE, MeshType, StateType>::operator() (int cons
   }
 
   std::vector<int> const & nbrids = node_neighbors_[nodeid];
-  int j = 1;
-
   std::vector<Point<D>> nodecoords(nbrids.size()+1);
   std::vector<double> nodevalues(nbrids.size()+1);
 

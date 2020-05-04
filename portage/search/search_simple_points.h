@@ -23,12 +23,12 @@ namespace Portage {
   @class SearchSimplePoints "search_simple_points.h"
   @brief A simple, crude search algorithm that does a quadratic-time search
   over a swarm of points.
-  @tparam SourceSwarmType The swarm type of the input swarm.
-  @tparam TargetSwarmType The swarm type of the output swarm.
+  @tparam SourceSwarm The swarm type of the input swarm.
+  @tparam TargetSwarm The swarm type of the output swarm.
    */
-template <int D, class SourceSwarmType, class TargetSwarmType>
+template<int dim, class SourceSwarm, class TargetSwarm>
 class SearchSimplePoints {
-  public:
+public:
 
   //! Default constructor (disabled)
   SearchSimplePoints() = delete;
@@ -45,25 +45,23 @@ class SearchSimplePoints {
     swarm that are near points in the target swarm.
   */
   SearchSimplePoints(
-      const SourceSwarmType & source_swarm,
-      const TargetSwarmType & target_swarm,
-      std::shared_ptr<vector<Point<D>>> source_extents,
-      std::shared_ptr<vector<Point<D>>> target_extents,
-      Meshfree::WeightCenter center=Meshfree::Scatter)
-      : sourceSwarm_(source_swarm), targetSwarm_(target_swarm),
-        sourceExtents_(source_extents), targetExtents_(target_extents),
+    SourceSwarm const& source_swarm,
+    TargetSwarm const& target_swarm,
+    Portage::vector<Point<dim>> const& source_extents,
+    Portage::vector<Point<dim>> const& target_extents,
+    Meshfree::WeightCenter center = Meshfree::Scatter)
+      : source_swarm_(source_swarm),
+        target_swarm_(target_swarm),
+        source_extents_(source_extents),
+        target_extents_(target_extents),
         center_(center)
-  {
-
-    // currently no structure, just save the swarms and extents
-
-  } // SearchSimplePoints::SearchSimplePoints
+  {} // SearchSimplePoints::SearchSimplePoints
 
   //! Copy constructor - use default - std::transfor needs this
   //  SearchSimplePoints(const SearchSimplePoints &) = delete;
 
   //! Assignment operator (disabled)
-  SearchSimplePoints & operator = (const SearchSimplePoints &) = delete;
+  SearchSimplePoints& operator = (SearchSimplePoints const&) = delete;
 
   //! Destructor
   ~SearchSimplePoints() = default;
@@ -71,64 +69,56 @@ class SearchSimplePoints {
   /*!
     @brief Find the source swarm points within an appropriate distance
     of a target point.
-    @param[in] pointId The index of the point in the target swarm for
+    @param[in] point_id The index of the point in the target swarm for
     which we wish to find the candidate neighbor points in the source
     swarm.
     @param[in,out] candidates Pointer to a vector of potential candidate
     points in the source swarm.
   */
-  std::vector<unsigned int> operator() (const int pointId) const;
+  std::vector<int> operator() (int point_id) const {
 
-  private:
+    std::vector<int> candidates;
 
-  // Aggregate data members
-  const SourceSwarmType & sourceSwarm_;
-  const TargetSwarmType & targetSwarm_;
-  std::shared_ptr<vector<Point<D>>> sourceExtents_;
-  std::shared_ptr<vector<Point<D>>> targetExtents_;
-  Meshfree::WeightCenter center_;
+    // find coordinates of target point
+    Point<dim> target_coord = target_swarm_.get_particle_coordinates(point_id);
 
-}; // class SearchSimplePoints
+    // now see which source points are within an appropriate distance
+    // of the target point
+    // do a naive linear search
+    int const nb_points = source_swarm_.num_particles(Wonton::ALL);
+    for (int i = 0; i < nb_points; ++i) {
+      Point<dim> source_coord = source_swarm_.get_particle_coordinates(i);
+      bool contained = true;
+      Point<dim> source_point_extent = source_extents_[i];
+      Point<dim> target_point_extent = target_extents_[point_id];
 
-
-template<int D, class SourceSwarmType, class TargetSwarmType>
-std::vector<unsigned int>
-SearchSimplePoints<D, SourceSwarmType, TargetSwarmType>::
-operator() (const int pointId) const {
-
-  using std::abs;
-  std::vector<unsigned int> candidates;
-
-  // find coordinates of target point
-  Point<D> tpcoord = targetSwarm_.get_particle_coordinates(pointId);
-
-  // now see which source points are within an appropriate distance
-  // of the target point
-  // do a naive linear search
-  const int numPoints = sourceSwarm_.num_particles(Entity_type::ALL);
-  for (int p = 0; p < numPoints; ++p) {
-    Point<D> spcoord = sourceSwarm_.get_particle_coordinates(p);
-    bool contained = true;
-    Point<D> spt=(*sourceExtents_)[p];
-    Point<D> tpt=(*targetExtents_)[pointId];
-    for (int d = 0; d < D; ++d) {
-      double maxdist;
-      if (center_ == Meshfree::Scatter) {
-        maxdist = 2.*spt[d];
-      } else if (center_ == Meshfree::Gather) {
-        maxdist = 2.*tpt[d];
+      for (int d = 0; d < dim; ++d) {
+        double maxdist = 0.;
+        if (center_ == Meshfree::Scatter) {
+          maxdist = 2. * source_point_extent[d];
+        } else if (center_ == Meshfree::Gather) {
+          maxdist = 2. * target_point_extent[d];
+        }
+        contained &= (std::abs(target_coord[d] - source_coord[d]) < maxdist);
+        if (!contained)
+          break;
       }
-      contained = contained && (abs(tpcoord[d] - spcoord[d]) < maxdist);
-      if (!contained) break;
+      if (contained)
+        candidates.push_back(i);
     }
-    if (contained) {
-      candidates.push_back(p);
-    }
+
+    return candidates;
   }
 
-  return candidates;
-}  // SearchSimplePoints::operator()
+private:
+  // Aggregate data members
+  SourceSwarm const& source_swarm_;
+  TargetSwarm const& target_swarm_;
+  Portage::vector<Point<dim>> const& source_extents_;
+  Portage::vector<Point<dim>> const& target_extents_;
+  Meshfree::WeightCenter center_ = Meshfree::Scatter;
 
+}; // class SearchSimplePoints
 
 }  // namespace Portage
 

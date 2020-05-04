@@ -420,9 +420,9 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
       auto obtained = remapped[c];
       auto centroid = target_mesh->cell_centroid(c);
       auto const& x = centroid[0];
-      auto const& y = centroid[1];
       auto expected = (x < x_max ? coef * x : coef * (x - x_max));
       #if DEBUG_PART_BY_PART
+        auto const& y = centroid[1];
         std::printf("target[%02d]: x: %7.3f, y: %7.3f"
                     ", remapped: %7.3f, expected: %7.3f\n",
                     c, x, y, obtained, expected);

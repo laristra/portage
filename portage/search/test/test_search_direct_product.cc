@@ -69,14 +69,14 @@ TEST(search_direct_product, DPtoDP1D_64) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
     std::array<int,D> indices = {i};
     int id = tgt_wrapper.indices_to_cellid(indices);
     const std::vector<int64_t> candidates = search(id);
-    ASSERT_EQ(candidates.size(), 2);
+    ASSERT_EQ(candidates.size(), unsigned(2));
     int n = 0;
     for (int i2 = i; i2 < i+2; ++i2) {
-      ASSERT_TRUE(n < candidates.size());
+      ASSERT_TRUE(unsigned(n) < candidates.size());
       std::array<int,D> candidate = {i2};
       int64_t c_id = src_wrapper.indices_to_cellid(candidate);
       ASSERT_EQ(candidates[n], c_id);
@@ -120,14 +120,14 @@ TEST(search_direct_product, DPtoDP1D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
     std::array<int,D> indices = {i};
     int id = tgt_wrapper.indices_to_cellid(indices);
     const std::vector<int> candidates = search(id);
-    ASSERT_EQ(candidates.size(), 2);
+    ASSERT_EQ(candidates.size(), unsigned(2));
     int n = 0;
     for (int i2 = i; i2 < i+2; ++i2) {
-      ASSERT_TRUE(n < candidates.size());
+      ASSERT_TRUE(unsigned(n) < candidates.size());
       std::array<int,D> candidate = {i2};
       int c_id = src_wrapper.indices_to_cellid(candidate);
       ASSERT_EQ(candidates[n], c_id);
@@ -191,16 +191,16 @@ TEST(search_direct_product, DPtoDP2D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
-    for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int j = 0; j < tgt_wrapper.num_axis_cells(1); ++j) {
+    for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
       std::array<int,D> indices = {i,j};
       int id = tgt_wrapper.indices_to_cellid(indices);
       const std::vector<int> candidates = search(id);
-      ASSERT_EQ(candidates.size(), 4);
+      ASSERT_EQ(candidates.size(), unsigned(4));
       int n = 0;
       for (int j2 = j; j2 < j+2; ++j2) {
         for (int i2 = i; i2 < i+2; ++i2) {
-          ASSERT_TRUE(n < candidates.size());
+          ASSERT_TRUE(unsigned(n) < candidates.size());
           std::array<int,D> candidate = {i2,j2};
           int c_id = src_wrapper.indices_to_cellid(candidate);
           ASSERT_EQ(candidates[n], c_id);
@@ -334,18 +334,18 @@ TEST(search_direct_product, DPtoDP3D) {
     Wonton::Direct_Product_Mesh_Wrapper<D>> search(src_wrapper, tgt_wrapper);
 
   // Verify overlaps
-  for (int k = 0; k < tgt_wrapper.axis_num_cells(2); ++k) {
-    for (int j = 0; j < tgt_wrapper.axis_num_cells(1); ++j) {
-      for (int i = 0; i < tgt_wrapper.axis_num_cells(0); ++i) {
+  for (int k = 0; k < tgt_wrapper.num_axis_cells(2); ++k) {
+    for (int j = 0; j < tgt_wrapper.num_axis_cells(1); ++j) {
+      for (int i = 0; i < tgt_wrapper.num_axis_cells(0); ++i) {
         std::array<int,D> indices = {i,j,k};
         int id = tgt_wrapper.indices_to_cellid(indices);
         const std::vector<int> candidates = search(id);
-        ASSERT_EQ(candidates.size(), 8);
+        ASSERT_EQ(candidates.size(), unsigned(8));
         int n = 0;
         for (int k2 = k; k2 < k+2; ++k2) {
           for (int j2 = j; j2 < j+2; ++j2) {
             for (int i2 = i; i2 < i+2; ++i2) {
-              ASSERT_TRUE(n < candidates.size());
+              ASSERT_TRUE(unsigned(n) < candidates.size());
               std::array<int,D> candidate = {i2,j2,k2};
               int c_id = src_wrapper.indices_to_cellid(candidate);
               ASSERT_EQ(candidates[n], c_id);
@@ -424,7 +424,7 @@ TEST(search_direct_product, DPtoAR2D) {
     int id = n;
     const std::vector<int> candidates = search(id);
     // Build the expected candidates list
-    std::array<int,D> indices;
+    std::array<int,D> indices {};
     if (n <= 2) {
       for (int d = 0; d < D; ++d)
         indices[d] = (n >> d) % 2;
@@ -437,7 +437,8 @@ TEST(search_direct_product, DPtoAR2D) {
     const std::vector<int> expected = {src_wrapper.indices_to_cellid(indices)};
     // Verify
     ASSERT_EQ(candidates.size(), expected.size());
-    for (int c = 0; c < candidates.size(); ++c) {
+    int const num_candidates = candidates.size();
+    for (int c = 0; c < num_candidates; ++c) {
       ASSERT_EQ(candidates[c], expected[c]);
     }
   }

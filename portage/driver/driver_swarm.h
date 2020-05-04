@@ -1,13 +1,10 @@
 /*
-This file is part of the Ristra portage project.
-Please see the license file at the root of this repository, or at:
-    https://github.com/laristra/portage/blob/master/LICENSE
-*/
-
+ * This file is part of the Ristra portage project.
+ * Please see the license file at the root of this repository, or at:
+ *  https://github.com/laristra/portage/blob/master/LICENSE
+ */
 #ifndef SRC_DRIVER_SWARM_H_
 #define SRC_DRIVER_SWARM_H_
-
-#include <sys/time.h>
 
 #include <algorithm>
 #include <vector>
@@ -19,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 
 #include "portage/support/portage.h"
-
+#include "portage/support/timer.h"
 #include "portage/support/basis.h"
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
@@ -28,209 +25,198 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 
 #ifdef PORTAGE_ENABLE_MPI
-#include "portage/distributed/mpi_particle_distribute.h"
+  #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
-/*!
-  @file driver_swarm.h
-  @brief Example driver for mapping between two swarms.
+namespace Portage { namespace Meshfree {
+  // avoid very long type names.
+  using SmoothingLengths = Portage::vector<std::vector<std::vector<double>>>;
 
-  This should serve as a good example for how to write your own driver routine
-  and datastructures.
-*/
-
-namespace Portage {
-namespace Meshfree {
-
-/*!
-  @class Driver "driver_swarm.h"
-  @brief Driver provides the API to remap variablesfrom one swarm to another.
-  @tparam SourceSwarm A lightweight wrapper to a specific input Swarm
-  implementation that provides certain functionality.
-  @tparam SourceState A lightweight wrapper to a specific input state
-  manager implementation that provides certain functionality.
-  @tparam TargetSwarm A lightweight wrapper to a specific target Swarm
-  implementation that provides certain functionality.
-  @tparam TargetState A lightweight wrapper to a specific target state
-  manager implementation that provides certain functionality.
-*/
+/**
+ * @brief Provides an interface to remap variables from one swarm to another.
+ *
+ * @tparam Search: the particle search type to use.
+ * @tparam Accumulate: the particle accumulate type to use.
+ * @tparam Estimate: the particle estimate type to use.
+ * @tparam dim: spatial dimension of the problem.
+ * @tparam SourceSwarm: the wrapper type of the input source swarm.
+ * @tparam SourceState: the wrapper type of the input source state.
+ * @tparam TargetSwarm: the wrapper type of the input target swarm.
+ * @tparam TargetState: the wrapper type of the input target state.
+ */
 template <template <int, class, class> class Search,
-          template <size_t, class, class> class Accumulate,
-          template<size_t, class> class Estimate,
-          int Dim,
-          class SourceSwarm,
-          class SourceState,
+          template <int, class, class> class Accumulate,
+          template<int, class> class Estimate,
+          int dim,
+          class SourceSwarm, class SourceState,
           class TargetSwarm = SourceSwarm,
           class TargetState = SourceState>
 class SwarmDriver {
-
- public:
-  /*!
-    @brief Constructor for running the Swarm driver where the kernel_type and
-    support geometry are the same for every particle
-
-    @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
-    @param[in] sourceState A @c SourceState for the data that lives on
-    the source swarm.
-    @param[in] targetSwarm A @c TargetSwarm to the target swarm.
-    @param[in,out] targetState A @c TargetState for the data that will
-    be mapped to the target swarm.
-    @param[in] smoothing_lengths Vector of smoothing lengths for each
-    target particle - the three levels of vectors allow for a
-    polygonal/polyhedral shaped support around each target particle and
-    a vector of smoothing lengths for each facet of the
-    polygonal/polyhedral support
-    @param[in] kernel_type The type of weight function kernel (B4, SQUARE, etc)
-    to use
-    @param[in] geom_type The geometry of the support (ELLIPTIC, TENSOR,
-    FACETED) to use
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
-
-    @c smoothing_lengths must have the size of @c SourceSwarm if center is @c Scatter and
-    of @c TargetSwarm if center is @c Gather.
-  */
-  SwarmDriver(SourceSwarm& sourceSwarm,
-              SourceState& sourceState,
-              TargetSwarm const& targetSwarm,
-              TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              Weight::Kernel const kernel_type=Weight::B4,
-              Weight::Geometry const support_geom_type=Weight::ELLIPTIC,
+public:
+  /**
+   * @brief Constructor using a unique kernel_type and support geometry for all particles.
+   *
+   * @param source_swarm: a reference to the source swarm
+   * @param source_state: a reference to the source state
+   * @param target_swarm: a reference to the target swarm
+   * @param target_state: a reference to the target state
+   * @param smoothing_lengths: a vector of smoothing lengths for each
+   *                           target particle - the three levels of vectors
+   *                           allow for a polygonal/polyhedral shaped support
+   *                           around each target particle and a vector of
+   *                           smoothing lengths for each facet of the
+   *                           polygonal/polyhedral support.
+   * @param kernel_types: types of weight kernels (B4, SQUARE, etc) to use.
+   * @param geom_types: geometry of the supports (ELLIPTIC, TENSOR, FACETED)
+   *                    of the weight functions to use.
+   * @param center: specify whether gather-form or scatter-form weights are used.
+   *
+   * NOTE: 'smoothing_lengths' must have the size of 'source_swarm' if 'scatter'
+   *       and that of 'target_swarm' if 'gather'.
+   */
+  SwarmDriver(SourceSwarm& source_swarm,
+              SourceState& source_state,
+              TargetSwarm const& target_swarm,
+              TargetState& target_state,
+              SmoothingLengths const& smoothing_lengths,
+              Weight::Kernel const kernel_type = Weight::B4,
+              Weight::Geometry const support_geom_type = Weight::ELLIPTIC,
               WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-        smoothing_lengths_(smoothing_lengths) 
-  {
+      : source_swarm_(source_swarm),
+        target_swarm_(target_swarm),
+        source_state_(source_state),
+        target_state_(target_state),
+        smoothing_lengths_(smoothing_lengths) {
 
-    assert(Dim == sourceSwarm.space_dimension());
-    assert(Dim == targetSwarm.space_dimension());
-
+    assert(dim == source_swarm.space_dimension());
+    assert(dim == target_swarm.space_dimension());
     weight_center_ = center;
-
     check_sizes_and_set_types(center, kernel_type, support_geom_type);
-
     set_extents_from_smoothing_lengths();
   }
 
-  /*!
-    @brief Constructor for running the Swarm driver with search extents computed inline.
-    *
-    * This is used for any weights except faceted. 
-    *
-    @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
-    @param[in] sourceState A @c SourceState for the data that lives on
-    the source swarm.
-    @param[in] targetSwarm A @c TargetSwarm to the target swarm.
-    @param[in,out] targetState A @c TargetState for the data that will
-    be mapped to the target swarm.
-    @param[in] smoothing_lengths Vector of smoothing lengths for each
-    target particle - the three levels of vectors allow for a
-    polygonal/polyhedral shaped support around each target particle and
-    a vector of smoothing lengths for each facet of the
-    polygonal/polyhedral support
-    @param[in] kernel_types The types of weight function kernels (B4, SQUARE,
-    etc) to use
-    @param[in] geom_types The geometry of the supports (ELLIPTIC, TENSOR,
-    FACETED) of the weight functions to use
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
+  /**
+   * @brief Constructor with search extents computed inline.
+   *
+   *  This is used for any weights except faceted.
+   *
+   * @param source_swarm: a reference to the source swarm
+   * @param source_state: a reference to the source state
+   * @param target_swarm: a reference to the target swarm
+   * @param target_state: a reference to the target state
+   * @param smoothing_lengths: a vector of smoothing lengths for each
+   *                           target particle - the three levels of vectors
+   *                           allow for a polygonal/polyhedral shaped support
+   *                           around each target particle and a vector of
+   *                           smoothing lengths for each facet of the
+   *                           polygonal/polyhedral support.
+   * @param kernel_types: types of weight kernels (B4, SQUARE, etc) to use.
+   * @param geom_types: geometry of the supports (ELLIPTIC, TENSOR, FACETED)
+   *                    of the weight functions to use.
+   * @param center: specify whether gather-form or scatter-form weights are used.
+   *
+   * NOTE: 'smoothing_lengths' must have the size of 'source_swarm' if 'scatter'
+   *       and that of 'target_swarm' if 'gather'.
+   */
+  SwarmDriver(SourceSwarm& source_swarm,
+              SourceState& source_state,
+              TargetSwarm const& target_swarm,
+              TargetState& target_state,
+              SmoothingLengths const& smoothing_lengths,
+              Portage::vector<Weight::Kernel> const& kernel_types,
+              Portage::vector<Weight::Geometry> const& geom_types,
+              WeightCenter const center = Gather)
+      : source_swarm_(source_swarm),
+        target_swarm_(target_swarm),
+        source_state_(source_state),
+        target_state_(target_state),
+        smoothing_lengths_(smoothing_lengths),
+        kernel_types_(kernel_types),
+        geom_types_(geom_types) {
 
-    @c smoothing_lengths, @code kernel_types, and @geom_types  
-    must have the size of @c SourceSwarm if @ center is @c Scatter and
-    of @c TargetSwarm if @ center is @c Gather.
-  */
-  SwarmDriver(SourceSwarm& sourceSwarm,
-              SourceState& sourceState,
-              TargetSwarm const& targetSwarm,
-              TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Weight::Kernel> const &kernel_types,
-              vector<Weight::Geometry> const &geom_types,
-              WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-    kernel_types_(kernel_types),
-    geom_types_(geom_types),
-    smoothing_lengths_(smoothing_lengths) 
-  {
-    assert(Dim == sourceSwarm.space_dimension());
-    assert(Dim == targetSwarm.space_dimension());
-
+    assert(dim == source_swarm.space_dimension());
+    assert(dim == target_swarm.space_dimension());
     weight_center_ = center;
-
     check_sizes(center);
-
     set_extents_from_smoothing_lengths();
   }
 
-  /*!
-    @brief Constructor for running the Swarm driver with search extents specified.
-    *
-    * This is used for faceted weights, which will be uniformly used throughout 
-    * the swarm specified by @c center. Kernel and geometry type are set internally.
-    *
-    @param[in] sourceSwarm A @c SourceSwarm to the source swarm.
-    @param[in] sourceState A @c SourceState for the data that lives on
-    the source swarm.
-    @param[in] targetSwarm A @c TargetSwarm to the target swarm.
-    @param[in,out] targetState A @c TargetState for the data that will
-    be mapped to the target swarm.
-    @param[in] smoothing_lengths Vector of smoothing lengths for each
-    target particle - the three levels of vectors allow for a
-    polygonal/polyhedral shaped support around each target particle and
-    a vector of smoothing lengths for each facet of the
-    polygonal/polyhedral support
-    @param[in] sourceExtents extents for source swarm
-    @param[in] targetExtents extents for target swarm
-    by the value of @c center
-    @param[in] center Specification of whether gather-form or scatter-form 
-    weights are used. 
-  */
-  SwarmDriver(SourceSwarm& sourceSwarm,
-              SourceState& sourceState,
-              TargetSwarm const& targetSwarm,
-              TargetState& targetState,
-              vector<std::vector<std::vector<double>>> const& smoothing_lengths,
-              vector<Point<Dim>> const &sourceExtents,
-              vector<Point<Dim>> const &targetExtents,
-              WeightCenter const center=Gather)
-      : source_swarm_(sourceSwarm), source_state_(sourceState),
-        target_swarm_(targetSwarm), target_state_(targetState),
-        smoothing_lengths_(smoothing_lengths)
- {
-   assert(Dim == sourceSwarm.space_dimension());
-   assert(Dim == targetSwarm.space_dimension());
-
+  /**
+   * @brief Constructor with search extents specified.
+   *
+   * This is used for faceted weights, which will be uniformly used throughout
+   * the swarm specified by center. Kernel and geometry type are set internally.
+   *
+   * @param source_swarm: a reference to the source swarm
+   * @param source_state: a reference to the source state
+   * @param target_swarm: a reference to the target swarm
+   * @param target_state: a reference to the target state
+   * @param smoothing_lengths: a vector of smoothing lengths for each
+   *                           target particle - the three levels of vectors
+   *                           allow for a polygonal/polyhedral shaped support
+   *                           around each target particle and a vector of
+   *                           smoothing lengths for each facet of the
+   *                           polygonal/polyhedral support.
+   * @param source_extents: extents for source swarm
+   * @param target_extents: extents for target swarm
+   * @param center: specify whether gather-form or scatter-form weights are used.
+   *
+   * NOTE: 'smoothing_lengths' must have the size of 'source_swarm' if 'scatter'
+   *       and that of 'target_swarm' if 'gather'.
+   */
+  SwarmDriver(SourceSwarm& source_swarm,
+              SourceState& source_state,
+              TargetSwarm const& target_swarm,
+              TargetState& target_state,
+              SmoothingLengths const& smoothing_lengths,
+              Portage::vector<Point<dim>> const& source_extents,
+              Portage::vector<Point<dim>> const& target_extents,
+              WeightCenter const center = Gather)
+      : source_swarm_(source_swarm),
+        target_swarm_(target_swarm),
+        source_state_(source_state),
+        target_state_(target_state),
+        smoothing_lengths_(smoothing_lengths) {
+    
+   assert(dim == source_swarm.space_dimension());
+   assert(dim == target_swarm.space_dimension());
    weight_center_ = center;
 
-   size_t tsize, ssize, swarm_size;
-   tsize = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   ssize = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   if (weight_center_ == Gather) {
-     swarm_size = tsize;
-     assert(targetExtents.size() == tsize);
-   } else if (weight_center_ == Scatter) {
-     swarm_size = ssize;
-     assert(sourceExtents.size() == ssize);
+   int const swarm_size = get_swarm_size();
+
+#ifdef DEBUG
+   int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+   int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+
+   switch (weight_center_) {
+     case Gather:  assert(target_extents.size() == unsigned(nb_target)); break;
+     case Scatter: assert(source_extents.size() == unsigned(nb_source)); break;
+     default: throw std::runtime_error("invalid weight center type");
    }
 
-   assert(smoothing_lengths.size() == swarm_size);
-   kernel_types_ = vector<Weight::Kernel>(swarm_size, Weight::POLYRAMP);
-   geom_types_ = vector<Weight::Geometry>(swarm_size, Weight::FACETED);
+   assert(smoothing_lengths.size() == unsigned(swarm_size));
+#endif
 
-   sourceExtents_ = std::make_shared<vector<Point<Dim>>>(sourceExtents);
-   targetExtents_ = std::make_shared<vector<Point<Dim>>>(targetExtents);
+    kernel_types_.resize(swarm_size, Weight::POLYRAMP);
+    geom_types_.resize(swarm_size, Weight::FACETED);
+    source_extents_ = source_extents;
+    target_extents_ = target_extents;
   }
 
-  /// Copy constructor (disabled)
-  SwarmDriver(const SwarmDriver &) = delete;
+  /**
+   * @brief Disabled copy constructor
+   */
+  SwarmDriver(const SwarmDriver&) = delete;
 
-  /// Assignment operator (disabled)
-  SwarmDriver & operator = (const SwarmDriver &) = delete;
+  /**
+   * @brief Disabled assignment operator
+   */
+  SwarmDriver& operator = (const SwarmDriver &) = delete;
 
-  /// Destructor
-  ~SwarmDriver() {}
+  /**
+   * @brief Destructor
+   */
+  ~SwarmDriver() = default;
 
   /*!
     @brief Specify the names of the variables to be interpolated
@@ -238,488 +224,418 @@ class SwarmDriver {
     interpolate from the source swarm to the target swarm.  This variable must
     exist in both swarms' state manager
   */
-  void set_remap_var_names(std::vector<std::string> const &remap_var_names) {
+  void set_remap_var_names(std::vector<std::string> const& remap_var_names) {
     // remap variable names same in source and target swarm
     set_remap_var_names(remap_var_names, remap_var_names);
   }
 
-  /*!
-    @brief Specify the names of the variables to be interpolated
-    @param[in] source_remap_var_names A list of the variables names of the
-    variables to interpolate from the source swarm.
-    @param[in] target_remap_var_names  A list of the variables names of the
-    variables to interpolate to the target swarm.
-    @param[in] estimator_type Estimator to be used to remap variables
-    (KernelDensity, LocalRegression)
-    @param[in] basis   Order of the basis used to remap variables
-    (UNITARY, LINEAR, QUADRATIC)
-    @param[in] operator_spec Operator specification
-  */
-  void set_remap_var_names(
-      std::vector<std::string> const &source_remap_var_names,
-      std::vector<std::string> const &target_remap_var_names,
-      EstimateType const estimator_type = LocalRegression,
-      Basis::Type const basis_type = Basis::Unitary,
-      Operator::Type const operator_spec = Operator::LastOperator,
-      Portage::vector<Operator::Domain> const &operator_domains = vector<Operator::Domain>(0),
-      Portage::vector<std::vector<Point<Dim>>> const &operator_data=
-      vector<std::vector<Point<Dim>>>(0,std::vector<Point<Dim>>(0)), 
-      std::string part_field="NONE", double part_tolerance=0., 
-      Portage::vector<std::vector<std::vector<double>>> part_smoothing=
-      Portage::vector<std::vector<std::vector<double>>>(0) )
-  {
-    assert(source_remap_var_names.size() == target_remap_var_names.size());
+  /**
+   * @brief Specify the names of the variables to be interpolated.
+   *
+   * @param source_vars: a list of source swarm variables names.
+   * @param target_vars: a list of target swarm variables names.
+   * @param estimator_type: estimator to be used (KernelDensity, LocalRegression).
+   * @param basis_type: order of the basis used (UNITARY, LINEAR, QUADRATIC).
+   * @param operator_spec: operator specification.
+   * @param operator_domains: operator domains.
+   * @param operator_data: operator data.
+   * @param part_field: name of the field for part-by-particle.
+   * @param part_tolerance: tolerance threshold for part-by-particle.
+   * @param part_smoothing: smoothing lengths matrix for part-by-particle.
+   */
+  void set_remap_var_names(std::vector<std::string> const& source_vars,
+                           std::vector<std::string> const& target_vars,
+                           EstimateType const estimator_type = LocalRegression,
+                           basis::Type const basis_type = basis::Unitary,
+                           oper::Type const operator_spec = oper::LastOperator,
+                           Portage::vector<oper::Domain> const& operator_domains = {},
+                           Portage::vector<std::vector<Point<dim>>> const& operator_data = {},
+                           std::string part_field = "NONE",
+                           double part_tolerance = 0.0,
+                           SmoothingLengths const& part_smoothing = {}) {
 
-    int nvars = source_remap_var_names.size();
-    source_remap_var_names_ = source_remap_var_names;
-    target_remap_var_names_ = target_remap_var_names;
-    estimator_type_ = estimator_type;
-    basis_type_ = basis_type;
-    operator_spec_ = operator_spec;
+    assert(source_vars.size() == target_vars.size());
+    // variables names
+    source_vars_ = source_vars;
+    target_vars_ = target_vars;
+
+    // estimator and operator
+    estimator_type_   = estimator_type;
+    basis_type_       = basis_type;
+    operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
-    operator_data_ = operator_data;
-    if (operator_spec_ != Operator::LastOperator) {
-      assert(operator_domains_.size() == target_swarm_.num_owned_particles());
-      assert(operator_data_.size() == target_swarm_.num_owned_particles());
+    operator_data_    = operator_data;
+#ifdef DEBUG
+    if (operator_spec_ != oper::LastOperator) {
+      unsigned const num_target_particles = target_swarm_.num_owned_particles();
+      assert(operator_domains_.size() == num_target_particles);
+      assert(operator_data_.size() == num_target_particles);
     }
-    part_field_ = part_field;
+#endif
+    // part-by-particle
+    part_field_     = part_field;
     part_tolerance_ = part_tolerance;
     part_smoothing_ = part_smoothing;
   }
 
+  /**
+   * @brief Get all source swarm variables names.
+   *
+   * @return a list of source variables names.
+   */
+  std::vector<std::string> source_vars() const { return source_vars_; }
 
-  /*!
-    @brief Get the names of the variables to be remapped from the
-    source swarm.
-    @return A vector of variable names to be remapped.
-  */
-  std::vector<std::string> source_remap_var_names() const {
-    return source_remap_var_names_;
-  }
+  /**
+   * @brief Get all target swarm variables names.
+   *
+   * @return a list of target variables names.
+   */
+  std::vector<std::string> target_vars() const { return target_vars_; }
 
-  /*!
-    @brief Get the names of the variables to be remapped to the
-    target swarm.
-    @return A vector of variable names to be remapped.
-  */
-  std::vector<std::string> target_remap_var_names() const {
-    return target_remap_var_names_;
-  }
+  /**
+   * @brief Perform the remap.
+   *
+   * @param executor: the executor type: serial or parallel.
+   * @param report_time: specify if saving timings or not.
+   */
+  void run(Wonton::Executor_type const* executor = nullptr, bool report_time = true) {
 
-  void remap(std::vector<std::string> const &src_varnames,
-             std::vector<std::string> const &trg_varnames,
-             Wonton::Executor_type const *executor=nullptr,
-             bool report_time = true);
-
-  /*!
-    @brief Execute the remapping process
-  */
-  void run(Wonton::Executor_type const *executor = nullptr,
-           bool report_time=true) {
-
-    bool distributed = false;
-    int comm_rank = 0;
+    int rank   = 0;
     int nprocs = 1;
-    
-    // Will be null if it's a parallel executor
-    auto serialexecutor = dynamic_cast<Wonton::SerialExecutor_type const *>(executor);
-    
+    bool distributed = false;
+
 #ifdef PORTAGE_ENABLE_MPI
-    MPI_Comm mycomm = MPI_COMM_NULL;
-    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
+    MPI_Comm comm = MPI_COMM_NULL;
+    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const*>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
-      mycomm = mpiexecutor->mpicomm;
-      MPI_Comm_rank(mycomm, &comm_rank);
-      MPI_Comm_size(mycomm, &nprocs);
-      if (nprocs > 1)
-        distributed = true;
+      comm = mpiexecutor->mpicomm;
+      MPI_Comm_rank(comm, &rank);
+      MPI_Comm_size(comm, &nprocs);
+      distributed = nprocs > 1;
     }
 #endif
 
-    if (comm_rank == 0)
-      std::cout << "in SwarmDriver::run()...\n";
+    if (rank == 0)
+      std::cout << "in SwarmDriver::run() ... " << std::endl;
 
-    int numTargetPts = target_swarm_.num_owned_particles();
-    std::cout << "Number of target particles in target swarm on rank "
-              << comm_rank << ": "
-              << numTargetPts << std::endl;
+    // useful aliases
+    using Searcher = Search<dim, SourceSwarm, TargetSwarm>;
+    using Accumulator = Accumulate<dim, SourceSwarm, TargetSwarm>;
+    using Estimator = Estimate<dim, SourceState>;
 
-    int nvars = source_remap_var_names_.size();
+    int nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+    int nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+    int nb_fields = source_vars_.size();
 
-    // Collect all variables and remap them
-    std::vector<std::string> source_var_names;
-    std::vector<std::string> target_var_names;
-    for (int i = 0; i < nvars; ++i) {
-      source_var_names.emplace_back(source_remap_var_names_[i]);
-      target_var_names.emplace_back(target_remap_var_names_[i]);
+    float tot_seconds = 0.0, tot_seconds_dist = 0.0,
+      tot_seconds_srch = 0.0, tot_seconds_xsect = 0.0,
+      tot_seconds_interp = 0.0;
+    //struct timeval begin_timeval, end_timeval, diff_timeval;
+    auto tic = timer::now();
+
+    //DISTRIBUTE
+    // This step would change the input source swarm and its state
+    // if after distribution it receives particles from other
+    // ranks.
+    // For the scatter scheme, the smoothing_lengths will also
+    // be changed.
+#ifdef PORTAGE_ENABLE_MPI
+    if (distributed) {
+      MPI_Particle_Distribute<dim> distributor(mpiexecutor);
+      //For scatter scheme, the smoothing_lengths_, kernel_types_
+      //and geom_types_  are also communicated and changed for the
+      //source swarm.
+      distributor.distribute(source_swarm_, source_state_,
+                             target_swarm_, target_state_,
+                             smoothing_lengths_, source_extents_, target_extents_,
+                             kernel_types_, geom_types_, weight_center_);
+
+      tot_seconds_dist = timer::elapsed(tic, true);
+    }
+#endif
+
+    // SEARCH
+    Portage::vector<std::vector<int>> candidates(nb_target);
+
+    // Get an instance of the desired search algorithm type which is expected
+    // to be a functor with an operator() of the right form
+    Searcher search(source_swarm_, target_swarm_,
+                    source_extents_, target_extents_, weight_center_);
+
+    Portage::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+                       target_swarm_.end(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+                       candidates.begin(), search);
+
+    tot_seconds_srch = timer::elapsed(tic);
+
+    // In case of faceted, scatter, and parts, obtain part assignments on target particles.
+    // Eliminate neighbors that aren't in the same part.
+    // It is assumed that the faceted weight function will be non-zero only on the
+    // source cell it came from, which is achieved by using a smoothing factor of 1/2.
+    // It is also assumed no target point will appear in more than one source cell.
+    if (geom_types_[0] == Weight::FACETED and weight_center_ == Scatter and part_field_!="NONE") {
+
+
+      // make storage for target part assignments
+      nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+      nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+
+      // get source part assignments
+      auto source_field_part = source_state_.get_field_dbl(part_field_);
+      std::vector<double> target_field_part(nb_target);
+
+      // create accumulator to evaluate weight function on source cells
+      Portage::vector<Weight::Kernel> step_kern(nb_source, Weight::STEP);
+      Accumulator accumulator(source_swarm_, target_swarm_,
+                              estimator_type_, weight_center_,
+                              step_kern, geom_types_, part_smoothing_, basis_type_,
+                              operator_spec_, operator_domains_, operator_data_);
+
+      // loop over target points and set part assignments
+
+      for (int i = 0; i < nb_target; i++) {
+        std::vector<int> possibles = candidates[i];
+        for (auto&& neighbor : possibles) {
+          double weight = accumulator.weight(i, neighbor);
+          if (weight > 0.) {
+            double part_val = source_field_part[neighbor];
+            target_field_part[i] = part_val;
+#undef DEBUG_HERE
+#ifdef DEBUG_HERE
+            if (dim == 2) {
+              auto p1 = source_swarm_.get_particle_coordinates(nbr);
+              auto p2 = target_swarm_.get_particle_coordinates(i);
+              double h = part_smoothing_[neighbor][0][2];
+
+              std::cout << "i=" << i << " " << " neighbor=" << neighbor << " ";
+              std::cout << std::abs(p2[0]-p1[0])/h <<", "<< std::abs(p2[1]-p1[1])/h;
+              std::cout << " w= "<< weight <<" part= "<< part_val << std::endl;
+            }
+#endif
+#undef DEBUG_HERE
+          }
+        }
+      }
+
+      // loop over target points and dismiss neighbors that aren't in the same part
+      for (int i = 0; i < nb_target; i++) {
+        std::vector<int> new_candidates;
+        std::vector<int> possibles = candidates[i];
+        for (auto&& neighbor : possibles) {
+          if (std::abs(target_field_part[i] - source_field_part[neighbor]) < part_tolerance_) {
+            new_candidates.emplace_back(neighbor);
+          }
+        }
+        candidates[i] = new_candidates;
+      }
     }
 
-    remap(source_var_names, target_var_names, executor, report_time);
+    // ACCUMULATE (build moment matrix, calculate shape functions)
+    // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
+    tic = timer::now();
+
+    // Get an instance of the desired accumulate algorithm type which is
+    // expected to be a functor with an operator() of the right form
+    Accumulator accumulate(source_swarm_, target_swarm_,
+                           estimator_type_, weight_center_, kernel_types_,
+                           geom_types_, smoothing_lengths_, basis_type_,
+                           operator_spec_, operator_domains_, operator_data_);
+
+    Portage::vector<std::vector<Weights_t>> source_points_and_multipliers(nb_target);
+
+    // For each particle in the target swarm get the shape functions
+    // (multipliers for source particle values)
+    Portage::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+                       target_swarm_.end(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+                       candidates.begin(), source_points_and_multipliers.begin(),
+                       accumulate);
+
+    tot_seconds_xsect = timer::elapsed(tic, true);
+
+    // ESTIMATE (one variable at a time)
+    nb_fields = source_vars_.size();
+    if (rank == 0)
+      std::cout << "number of variables to remap is " << nb_fields << std::endl;
+
+    // Get an instance of the desired interpolate algorithm type
+    Estimator estimator(source_state_);
+
+    for (int i = 0; i < nb_fields; ++i) {
+      //amh: ?? add back accuracy output statement??
+      if (rank == 0)
+        std::cout << "Remap "<< source_vars_[i] <<" to "<< target_vars_[i] << std::endl;
+
+      estimator.set_variable(source_vars_[i]);
+
+      // This populates targetField with the values returned by the
+      // remapper operator
+
+      // ***************** NOTE NOTE NOTE NOTE ********************
+      // THE CURRENT SWARM_STATE DOES NOT HAVE AN OPERATOR TO RETURN
+      // A RAW POINTER TO THE DATA. INSTEAD IT RETURNS THIS REQUIRES
+      // A SPECIFIC TYPE OF THE SWARM_STATE CLASS. THIS IS A BAD
+      // IDEA BECAUSE IT FORCES ALL OTHER SWARM_STATE CLASSES TO
+      // HAVE THIS SAME DEFINITION. IT ALSO LEADS TO THE UGLY USAGE
+      // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
+      // TO USE THRUST
+
+      // TODO: perform a deep-copy back to target state
+      auto& target_data = target_state_.get_field(target_vars_[i]);
+      Portage::pointer<double> target_field(target_data.data());
+
+      Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
+                         target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
+                         source_points_and_multipliers.begin(),
+                         target_field, estimator);
+
+      tot_seconds_interp = timer::elapsed(tic, true);
+      tot_seconds = tot_seconds_dist + tot_seconds_srch +
+                    tot_seconds_xsect + tot_seconds_interp;
+
+      if (report_time) {
+        std::cout << "Swarm Transform Time Rank " << rank << " (s): " << tot_seconds << std::endl;
+        std::cout << "  Swarm Distribution Time Rank " << rank << " (s): " << tot_seconds_dist << std::endl;
+        std::cout << "  Swarm Search Time Rank " << rank << " (s): " << tot_seconds_srch << std::endl;
+        std::cout << "  Swarm Accumulate Time Rank " << rank << " (s): " << tot_seconds_xsect << std::endl;
+        std::cout << "  Swarm Estimate Time Rank " << rank << " (s): " << tot_seconds_interp << std::endl;
+
+        // put out neighbor statistics
+        int nnbrmax = 0;
+        int nnbrmin = nb_target;
+        int nnbravg = 0;
+        int nnbrsum = 0;
+        double nnbrsdev = 0;
+
+        for (int j=0; j < nb_target; j++) {
+          int n = 0;
+          std::vector<Weights_t> wts = source_points_and_multipliers[j];
+          for (auto&& wt : wts) {
+            if (std::abs(wt.weights[0]) > 0.0)
+              n++;
+          }
+          if (n > nnbrmax) nnbrmax = n;
+          if (n < nnbrmin) nnbrmin = n;
+          nnbrsum += n;
+        }
+        nnbravg = nnbrsum / nb_target;
+
+        for (int j=0; j < nb_target; j++) {
+          int n = 0;
+          std::vector<Weights_t> wts = source_points_and_multipliers[j];
+          for (auto&& wt : wts) {
+            if (std::abs(wt.weights[0]) > 0.0)
+              n++;
+          }
+          nnbrsdev += std::pow(n - nnbravg, 2);
+        }
+        nnbrsdev = std::sqrt(nnbrsdev / nb_target);
+
+        std::cout << "Max number of neighbors: " << nnbrmax << std::endl;
+        std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
+        std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
+        std::cout << "Std Dev for number of neighbors: " << nnbrsdev << std::endl;
+      }
+    }
 
   }  // run
 
-  private:
+protected:
+  /**
+   * @brief Get swarm size according to weight center type.
+   *
+   * @return the number of particles of the swarm.
+   */
+  int get_swarm_size() const {
+    return (weight_center_ == Scatter
+      ? source_swarm_.num_particles(Wonton::PARALLEL_OWNED)
+      : target_swarm_.num_particles(Wonton::PARALLEL_OWNED));
+  }
+
+  /**
+   * @brief Check sizes according to weight center type.
+   *
+   * @param weight_center: weight center type.
+   */
+  void check_sizes(WeightCenter const weight_center) {
+#ifdef DEBUG
+    unsigned const swarm_size = get_swarm_size();
+    assert(smoothing_lengths_.size() == swarm_size);
+    assert(kernel_types_.size() == swarm_size);
+    assert(geom_types_.size() == swarm_size);
+#endif
+  }
+
+  /**
+   * @brief Check sizes according to weight center, set kernel and geometry.
+   *
+   * @param weight_center: weight center type.
+   * @param kernel_type: kernel type
+   * @param support_geom_type: support geometry type.
+   */
+  void check_sizes_and_set_types(WeightCenter const weight_center,
+                                 Weight::Kernel const kernel_type,
+                                 Weight::Geometry const support_geom_type) {
+    int const swarm_size = get_swarm_size();
+    assert(smoothing_lengths_.size() == unsigned(swarm_size));
+    kernel_types_.resize(swarm_size, kernel_type);
+    geom_types_.resize(swarm_size, support_geom_type);
+  }
+
+  /**
+   * @brief Setup search boxes around source and target points
+   *        for non-faceted weights.
+   */
+  void set_extents_from_smoothing_lengths() {
+    if (weight_center_ == Gather) {
+      int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+      assert(smoothing_lengths_.size() == unsigned(nb_target));
+      target_extents_.resize(nb_target);
+
+      for (int i = 0; i < nb_target; i++) {
+        if (geom_types_[i] == Weight::FACETED) {
+          throw std::runtime_error("FACETED geometry is not available here");
+        }
+        std::vector<std::vector<double>> temp = smoothing_lengths_[i];
+        target_extents_[i] = Point<dim>(temp[0]);
+      }
+    } else if (weight_center_ == Scatter) {
+      int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
+      assert(smoothing_lengths_.size() == unsigned(nb_source));
+      source_extents_.resize(nb_source);
+
+      for (int i = 0; i < nb_source; i++) {
+        if (geom_types_[i] == Weight::FACETED) {
+          throw std::runtime_error("FACETED geometry is not available here");
+        }
+        std::vector<std::vector<double>> temp = smoothing_lengths_[i];
+        source_extents_[i] = Point<dim>(temp[0]);
+      }
+    }
+  }
+
+private:
   SourceSwarm& source_swarm_;
   TargetSwarm const& target_swarm_;
   SourceState& source_state_;
   TargetState& target_state_;
-  std::vector<std::string> source_remap_var_names_;
-  std::vector<std::string> target_remap_var_names_;
+  std::vector<std::string> source_vars_ {};
+  std::vector<std::string> target_vars_ {};
   WeightCenter weight_center_ = Gather;
-  vector<std::vector<std::vector<double>>> smoothing_lengths_;
-  vector<Weight::Kernel> kernel_types_;
-  vector<Weight::Geometry> geom_types_;
-  std::shared_ptr<vector<Point<Dim>>> sourceExtents_;
-  std::shared_ptr<vector<Point<Dim>>> targetExtents_;
-  EstimateType estimator_type_;
-  Basis::Type basis_type_;
-  Operator::Type operator_spec_;
-  Portage::vector<Operator::Domain> operator_domains_;
-  Portage::vector<std::vector<Point<Dim>>> operator_data_;
-  std::string part_field_;
-  double part_tolerance_;
-  Portage::vector<std::vector<std::vector<double>>> part_smoothing_;
-
- void check_sizes_and_set_types(WeightCenter const weight_center, 
-                                Weight::Kernel const kernel_type, 
-                                Weight::Geometry const support_geom_type) 
- {
-   size_t swarm_size;
-   if (weight_center_ == Gather) {
-     swarm_size = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   } else if (weight_center_ == Scatter) {
-     swarm_size = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   }
-   assert(smoothing_lengths_.size() == swarm_size);
-   kernel_types_ = vector<Weight::Kernel>(swarm_size, kernel_type);
-   geom_types_ = vector<Weight::Geometry>(swarm_size, support_geom_type);
- }
-
- void check_sizes(WeightCenter const weight_center) 
- {
-   size_t swarm_size;
-   if (weight_center_ == Gather) {
-     swarm_size = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   } else if (weight_center_ == Scatter) {
-     swarm_size = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-   }
-   assert(smoothing_lengths_.size() == swarm_size);
-   assert(kernel_types_.size() == swarm_size);
-   assert(geom_types_.size() == swarm_size);
- }
-
- // setup search boxes around source and target points for non-faceted weights
- void set_extents_from_smoothing_lengths(){
-   if (weight_center_ == Gather) {
-     int numTargetPts = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-     assert(smoothing_lengths_.size() == numTargetPts);
-     targetExtents_ = std::make_shared<vector<Point<Dim>>>(numTargetPts);
-     for (int i = 0; i < numTargetPts; i++) {
-       if (geom_types_[i] == Weight::FACETED) {
-         throw std::runtime_error("FACETED geometry is not available here");
-       }
-       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       Point<Dim> pt(vv[0]); 
-       (*targetExtents_)[i]=pt;
-     }
-   } else if (weight_center_ == Scatter) {
-     int numSourcePts = source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-     assert(smoothing_lengths_.size() == numSourcePts);
-     sourceExtents_ = std::make_shared<vector<Point<Dim>>>(numSourcePts);
-     for (int i = 0; i < numSourcePts; i++) {
-       if (geom_types_[i] == Weight::FACETED) {
-         throw std::runtime_error("FACETED geometry is not available here");
-       }
-       std::vector<std::vector<double>> vv=smoothing_lengths_[i];
-       Point<Dim> pt(vv[0]); 
-       (*sourceExtents_)[i]=pt;
-     }
-   }
- }
+  SmoothingLengths smoothing_lengths_ {};
+  Portage::vector<Weight::Kernel> kernel_types_ {};
+  Portage::vector<Weight::Geometry> geom_types_ {};
+  Portage::vector<Point<dim>> source_extents_ {};
+  Portage::vector<Point<dim>> target_extents_ {};
+  EstimateType estimator_type_ {};
+  basis::Type basis_type_ {};
+  oper::Type operator_spec_ {};
+  Portage::vector<oper::Domain> operator_domains_ {};
+  Portage::vector<std::vector<Point<dim>>> operator_data_ {};
+  std::string part_field_ = "";
+  double part_tolerance_ = 0.0;
+  Portage::vector<std::vector<std::vector<double>>> part_smoothing_ {};
 };  // class SwarmDriver
 
-template <template <int, class, class> class Search,
-          template <size_t, class, class> class Accumulate,
-          template<size_t, class> class Estimate,
-          int Dim,
-          class SourceSwarm,
-          class SourceState,
-          class TargetSwarm,
-          class TargetState>
-void SwarmDriver<Search,
-                 Accumulate,
-                 Estimate,
-                 Dim,
-                 SourceSwarm,
-                 SourceState,
-                 TargetSwarm,
-                 TargetState>::
-remap(std::vector<std::string> const &src_varnames,
-      std::vector<std::string> const &trg_varnames,
-      Wonton::Executor_type const *executor,
-      bool report_time)
-{
-
-  bool distributed = false;
-  int comm_rank = 0;
-  int nprocs = 0;
-  
-#ifdef PORTAGE_ENABLE_MPI
-    MPI_Comm mycomm = MPI_COMM_NULL;
-    auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
-    if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
-      mycomm = mpiexecutor->mpicomm;
-      MPI_Comm_rank(mycomm, &comm_rank);
-      MPI_Comm_size(mycomm, &nprocs);
-      if (nprocs > 1)
-        distributed = true;
-    }
-#endif
-
-  int numTargetPts = target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-
-  int nvars = source_remap_var_names_.size();
-
-  float tot_seconds = 0.0, tot_seconds_dist = 0.0,
-        tot_seconds_srch = 0.0, tot_seconds_xsect = 0.0,
-        tot_seconds_interp = 0.0;
-  struct timeval begin_timeval, end_timeval, diff_timeval;
-
-  //DISTRIBUTE
-  // This step would change the input source swarm and its state
-  // if after distribution it receives particles from other
-  // ranks.
-  // For the scatter scheme, the smoothing_lengths will also
-  // be changed.
-#ifdef PORTAGE_ENABLE_MPI
-  if (distributed) {
-    gettimeofday(&begin_timeval, 0);
-    MPI_Particle_Distribute<Dim> distributor(mpiexecutor);
-
-    //For scatter scheme, the smoothing_lengths_, kernel_types_
-    //and geom_types_  are also communicated and changed for the
-    //source swarm.
-    distributor.distribute(source_swarm_, source_state_,
-                           target_swarm_, target_state_,
-                           smoothing_lengths_, *sourceExtents_, *targetExtents_,
-                           kernel_types_, geom_types_, weight_center_);
-    gettimeofday(&end_timeval, 0);
-    timersub(&end_timeval, &begin_timeval, &diff_timeval);
-    tot_seconds_dist = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-  }
-#endif
-
-  // SEARCH
-  Portage::vector<std::vector<unsigned int>> candidates(numTargetPts);
-
-  // Get an instance of the desired search algorithm type which is expected
-  // to be a functor with an operator() of the right form
-
-  gettimeofday(&begin_timeval, 0);
-
-  const Search<Dim, SourceSwarm, TargetSwarm>
-      searchfunctor(source_swarm_, target_swarm_,
-                    sourceExtents_, targetExtents_,
-                    weight_center_);
-
-  Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                     target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                     candidates.begin(), searchfunctor);
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_srch = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // In case of faceted, scatter, and parts, obtain part assignments on target particles.
-  // Eliminate neighbors that aren't in the same part.
-  // It is assumed that the faceted weight function will be non-zero only on the 
-  // source cell it came from, which is achieved by using a smoothing factor of 1/2.
-  // It is also assumed no target point will appear in more than one source cell.
-  if (geom_types_[0]==Weight::FACETED and weight_center_==Scatter and part_field_!="NONE") {
-    // get source part assignments
-    shared_ptr<vector<double>> sfpart_ptr;
-    source_state_.get_field(part_field_, sfpart_ptr);
-    Portage::vector<double> &sfpart(*sfpart_ptr);
-
-    // make storage for target part assignments
-    size_t ns=source_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-    size_t nt=target_swarm_.num_particles(Entity_type::PARALLEL_OWNED);
-
-    // create accumulator to evaluate weight function on source cells
-    vector<Weight::Kernel> step_kern(ns, Weight::STEP);
-    Accumulate<Dim, SourceSwarm, TargetSwarm>
-      accumulator(source_swarm_, target_swarm_,
-                  estimator_type_, weight_center_,
-                  step_kern, geom_types_, part_smoothing_,
-                  basis_type_,
-                  operator_spec_, operator_domains_, operator_data_);
-
-    // loop over target points and set part assignments
-    std::vector<double> tfpart(nt);
-    for (size_t i=0; i<nt; i++) {
-      std::vector<unsigned int> possibles = candidates[i];
-      for (size_t j=0; j<possibles.size(); j++) {
-        double weight = accumulator.weight(i, possibles[j]);
-        if (weight > 0.) {
-	  double part_val = sfpart[possibles[j]];
-	  tfpart[i] = part_val;
-#undef DEBUG_HERE
-#ifdef DEBUG_HERE
-          if (Dim==2) {
-            Wonton::Point<Dim> p1,p2;
-            size_t nbr=possibles[j];
-            p1=source_swarm_.get_particle_coordinates(nbr);
-            p2=target_swarm_.get_particle_coordinates(i);
-            double h=part_smoothing_[nbr][0][2];
-            std::cout << "i=" << i<<" "<<" nbr="<<nbr<<
-              " "<< fabs(p2[0]-p1[0])/h<<","<<fabs(p2[1]-p1[1])/h<<
-              " w="<<weight<<" part="<<part_val<<std::endl;
-          }
-#endif
-#undef DEBUG_HERE
-        }
-      }
-    }
-
-    // loop over target points and dismiss neighbors that aren't in the same part
-    for (size_t i=0; i<nt; i++) {
-      std::vector<unsigned int> new_candidates;
-      std::vector<unsigned int> possibles = candidates[i];
-      for (size_t j=0; j<possibles.size(); j++) {
-        if (fabs(tfpart[i]-sfpart[possibles[j]]) < part_tolerance_) {
-	  new_candidates.push_back(possibles[j]);
-        }
-      }
-      candidates[i] = new_candidates;
-    }
-  }
-
-  // ACCUMULATE (build moment matrix, calculate shape functions)
-  // EQUIVALENT TO INTERSECT IN MESH-MESH REMAP
-
-  gettimeofday(&begin_timeval, 0);
-
-  // Get an instance of the desired accumulate algorithm type which is
-  // expected to be a functor with an operator() of the right form
-
-  Accumulate<Dim, SourceSwarm, TargetSwarm>
-    accumulateFunctor(source_swarm_, target_swarm_,
-                      estimator_type_, weight_center_,
-                      kernel_types_, geom_types_, smoothing_lengths_,
-                      basis_type_,
-                      operator_spec_, operator_domains_, operator_data_);
-
-  Portage::vector<std::vector<Weights_t>> source_pts_and_mults(numTargetPts);
-
-  // For each particle in the target swarm get the shape functions
-  // (multipliers for source particle values)
-
-  Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                     target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                     candidates.begin(),
-                     source_pts_and_mults.begin(),
-                     accumulateFunctor);
-
-  gettimeofday(&end_timeval, 0);
-  timersub(&end_timeval, &begin_timeval, &diff_timeval);
-  tot_seconds_xsect = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-  // ESTIMATE (one variable at a time)
-
-  gettimeofday(&begin_timeval, 0);
-
-  nvars = src_varnames.size();
-  if (comm_rank == 0)
-    std::cout << "number of variables to remap is " << nvars <<
-        std::endl;
-
-  // Get an instance of the desired interpolate algorithm type
-  Estimate<Dim, SourceState> estimateFunctor(source_state_);
-
-  for (int i = 0; i < nvars; ++i) {
-    //amh: ?? add back accuracy output statement??
-    if (comm_rank == 0) std::cout << "Remapping swarm variable " <<
-                            src_varnames[i] <<
-                            " to variable " << trg_varnames[i] <<
-                            std::endl;
-
-    estimateFunctor.set_variable(src_varnames[i]);
-
-    // This populates targetField with the values returned by the
-    // remapper operator
-
-    // ***************** NOTE NOTE NOTE NOTE ********************
-    // THE CURRENT SWARM_STATE DOES NOT HAVE AN OPERATOR TO RETURN
-    // A RAW POINTER TO THE DATA. INSTEAD IT RETURNS THIS REQUIRES
-    // A SPECIFIC TYPE OF THE SWARM_STATE CLASS. THIS IS A BAD
-    // IDEA BECAUSE IT FORCES ALL OTHER SWARM_STATE CLASSES TO
-    // HAVE THIS SAME DEFINITION. IT ALSO LEADS TO THE UGLY USAGE
-    // WE SEE BELOW BECAUSE WE NEED A PORTAGE POINTER TO BE ABLE
-    // TO USE THRUST
-
-    typename SwarmState<Dim>::DblVecPtr target_field_shared_ptr;
-
-    target_state_.get_field(trg_varnames[i], target_field_shared_ptr);
-    Portage::pointer<double> target_field(&((*target_field_shared_ptr)[0]));
-
-    Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                       target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
-                       source_pts_and_mults.begin(),
-                       target_field, estimateFunctor);
-
-    gettimeofday(&end_timeval, 0);
-    timersub(&end_timeval, &begin_timeval, &diff_timeval);
-    tot_seconds_interp = diff_timeval.tv_sec + 1.0E-6*diff_timeval.tv_usec;
-
-    tot_seconds = tot_seconds_dist + tot_seconds_srch +
-                  tot_seconds_xsect + tot_seconds_interp;
-
-    if (report_time) {
-      std::cout << "Swarm Transform Time Rank " << comm_rank << " (s): " <<
-        tot_seconds << std::endl;
-      std::cout << "  Swarm Distribution Time Rank " << comm_rank << " (s): " <<
-        tot_seconds_dist << std::endl;
-      std::cout << "  Swarm Search Time Rank " << comm_rank << " (s): " <<
-        tot_seconds_srch << std::endl;
-      std::cout << "  Swarm Accumulate Time Rank " << comm_rank << " (s): " <<
-        tot_seconds_xsect << std::endl;
-      std::cout << "  Swarm Estimate Time Rank " << comm_rank << " (s): " <<
-        tot_seconds_interp << std::endl;
-
-      // put out neighbor statistics
-      int nnbrmax=0, nnbrmin=numTargetPts, nnbravg=0, nnbrsum=0;
-      double nnbrsdev=0;
-      for (int i=0; i<numTargetPts; i++) {
-        int n=0;
-        std::vector<Weights_t> wts=source_pts_and_mults[i];
-        for (int j=0; j<wts.size(); j++) {
-          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
-        }
-        if (n > nnbrmax) nnbrmax = n;
-        if (n < nnbrmin) nnbrmin = n;
-        nnbrsum += n;
-      }
-      nnbravg = nnbrsum / numTargetPts;
-      for (int i=0; i<numTargetPts; i++) {
-        int n=0;
-        std::vector<Weights_t> wts=source_pts_and_mults[i];
-        for (int j=0; j<wts.size(); j++) {
-          if (std::fabs(wts[j].weights[0]) > 0.0) n++;
-        }
-        nnbrsdev += (n-nnbravg)*(n-nnbravg);
-      }
-      nnbrsdev = std::sqrt(nnbrsdev/numTargetPts);
-      std::cout << "Max number of neighbors: " << nnbrmax << std::endl;
-      std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
-      std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
-      std::cout << "Std Dev for number of neighbors: " << nnbrsdev << std::endl;
-    }
-  }
-
-}//remap
-
-
-}  // namespace Meshfree
-}  // namespace Portage
+}}  // namespace Portage::Meshfree
 
 #endif  // SRC_DRIVER_SWARM_H_

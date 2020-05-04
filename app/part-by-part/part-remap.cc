@@ -770,7 +770,7 @@ int main(int argc, char* argv[]) {
 
   // load both distributed meshes
   Jali::MeshFactory mesh_factory(comm);
-  mesh_factory.included_entities({Jali::Entity_kind::ALL_KIND});
+  mesh_factory.included_entities(Jali::Entity_kind::ALL_KIND);
   mesh_factory.partitioner(Jali::Partitioner_type::METIS);
 
   source_mesh  = mesh_factory(params.source);
@@ -790,13 +790,12 @@ int main(int argc, char* argv[]) {
   // ensure that source and target mesh have the same dimension,
   // and that it corresponds to the one specified by the user.
   assert(source_mesh->space_dimension() == target_mesh->space_dimension());
-  assert(params.dimension == source_mesh->space_dimension());
+  assert(unsigned(params.dimension) == source_mesh->space_dimension());
 
   // retrieve mesh resolutions
   // nb: only consider owned cells for source mesh to avoid errors.
   long const nb_source_cells = source_mesh_wrapper.num_owned_cells();
   long const nb_target_cells = target_mesh_wrapper.num_owned_cells();
-  int const nb_fields = params.fields.size();
 
   MPI_Barrier(comm);
 
@@ -923,9 +922,9 @@ int main(int argc, char* argv[]) {
           " source: %*ld cells \e[32m(%5.2f %%)\e[0m,"
           " target: %*ld cells \e[32m(%5.2f %%)\e[0m ]\n",
           source_digits, total_source_part[i],
-          100. * static_cast<double>(total_source_part[i]) / total_source_cells,
+          100. * double(total_source_part[i]) / double(total_source_cells),
           target_digits, total_target_part[i],
-          100. * static_cast<double>(total_target_part[i]) / total_target_cells
+          100. * double(total_target_part[i]) / double(total_target_cells)
         );
       }
       std::printf("\n");

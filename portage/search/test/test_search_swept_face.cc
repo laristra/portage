@@ -32,8 +32,9 @@ TEST(search_swept_face_2D, cell) {
   std::vector<int> candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  int num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
   
   //Test candidates for a boundary cell
@@ -42,8 +43,9 @@ TEST(search_swept_face_2D, cell) {
   candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 
   //Test candidates for a corner cell
@@ -52,8 +54,9 @@ TEST(search_swept_face_2D, cell) {
   candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 }  // TEST(search_swept_face2, cell)
 
@@ -74,8 +77,9 @@ TEST(search_swept_face_3D, cell) {
   std::vector<int> candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  int num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 
   //Test candidates for a boundary cell
@@ -84,8 +88,9 @@ TEST(search_swept_face_3D, cell) {
   candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 
   //Test candidates for another boundary cell
@@ -94,8 +99,9 @@ TEST(search_swept_face_3D, cell) {
   candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 
   //Test candidates for a corner cell
@@ -104,8 +110,9 @@ TEST(search_swept_face_3D, cell) {
   candidates = search(tcellID);
   ASSERT_EQ(expected_candidates.size(), candidates.size());
   // candidates might not be in order, so sort them
-  std::sort(candidates.begin(), candidates.end());  
-  for (int icc = 0; icc < expected_candidates.size(); icc++)
+  std::sort(candidates.begin(), candidates.end());
+  num_expected_candidates = expected_candidates.size();
+  for (int icc = 0; icc < num_expected_candidates; icc++)
     ASSERT_EQ(expected_candidates[icc], candidates[icc]);
 
 }  // TEST(search_swept_face3, cell)

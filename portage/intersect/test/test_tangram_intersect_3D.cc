@@ -51,24 +51,27 @@ TEST(TANGRAM_3D, test_matpoly_create) {
 
   // Initialization
   prism_matpoly.initialize(prism_points, prism_faces, dst_tol);
+  int const num_prism_points = prism_points.size();
+  int const num_prism_faces = prism_faces.size();
 
   // Verify coordinates
   const std::vector<Wonton::Point<3>>& matpoly_points = prism_matpoly.points();
-  ASSERT_EQ(prism_points.size(), prism_matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < prism_points.size(); ivrt++)
+  ASSERT_EQ(num_prism_points, prism_matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_prism_points; ivrt++)
     ASSERT_TRUE(approxEq(prism_points[ivrt], matpoly_points[ivrt], 1.0e-15));
 
   // Verify faces
-  ASSERT_EQ(prism_faces.size(), prism_matpoly.num_faces());
-  for (int iface = 0; iface < prism_faces.size(); iface++) {
-    const std::vector<int>& face_vertices = prism_matpoly.face_vertices(iface);
+  ASSERT_EQ(num_prism_faces, prism_matpoly.num_faces());
+  for (int iface = 0; iface < num_prism_faces; iface++) {
+    auto const& face_vertices = prism_matpoly.face_vertices(iface);
     ASSERT_EQ(prism_faces[iface].size(), face_vertices.size());
-    for (int ivrt = 0; ivrt < prism_faces[iface].size(); ivrt++)
+    int const num_faces_vertices = prism_faces[iface].size();
+    for (int ivrt = 0; ivrt < num_faces_vertices; ivrt++)
       ASSERT_EQ(prism_faces[iface][ivrt], face_vertices[ivrt]);
   }
 
   // Verify centroids
-  for (int iface = 0; iface < prism_faces.size(); iface++)
+  for (int iface = 0; iface < num_prism_faces; iface++)
     ASSERT_TRUE(approxEq(face_centroids[iface],
                          prism_matpoly.face_centroid(iface), 1.0e-15));
 
@@ -93,20 +96,22 @@ TEST(TANGRAM_3D, test_matpoly_create) {
 
   // Verify facetization
   // Verify node coordinates
-  const std::vector<Wonton::Point<3>>& faceted_matpoly_points =
-      faceted_prism_matpoly.points();
-  ASSERT_EQ(faceted_prism_points.size(), faceted_prism_matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < faceted_prism_points.size(); ivrt++)
+  auto const& faceted_matpoly_points = faceted_prism_matpoly.points();
+  int const num_faceted_prism_points = faceted_prism_points.size();
+  int const num_faceted_prism_faces  = faceted_prism_faces.size();
+
+  ASSERT_EQ(num_faceted_prism_points, faceted_prism_matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_faceted_prism_points; ivrt++)
     ASSERT_TRUE(approxEq(faceted_prism_points[ivrt],
                          faceted_matpoly_points[ivrt], 1.0e-15));
 
   // Verify facets
-  ASSERT_EQ(faceted_prism_faces.size(), faceted_prism_matpoly.num_faces());
-  for (int iface = 0; iface < faceted_prism_faces.size(); iface++) {
-    const std::vector<int>& face_vertices =
-        faceted_prism_matpoly.face_vertices(iface);
+  ASSERT_EQ(num_faceted_prism_faces, faceted_prism_matpoly.num_faces());
+  for (int iface = 0; iface < num_faceted_prism_faces; iface++) {
+    auto const& face_vertices = faceted_prism_matpoly.face_vertices(iface);
     ASSERT_EQ(faceted_prism_faces[iface].size(), face_vertices.size());
-    for (int ivrt = 0; ivrt < faceted_prism_faces[iface].size(); ivrt++)
+    int const num_face_vertices = faceted_prism_faces[iface].size();
+    for (int ivrt = 0; ivrt < num_face_vertices; ivrt++)
       ASSERT_EQ(faceted_prism_faces[iface][ivrt], face_vertices[ivrt]);
   }
 
@@ -142,7 +147,8 @@ TEST(TANGRAM_3D, test_matpoly_create) {
   ncv_prism_matpoly.initialize(ncv_prism_points, ncv_prism_faces, dst_tol);
 
   // Verify centroids
-  for (int iface = 0; iface < ncv_prism_faces.size(); iface++)
+  int const num_ncv_prism_faces = ncv_prism_faces.size();
+  for (int iface = 0; iface < num_ncv_prism_faces; iface++)
     ASSERT_TRUE(approxEq(ncv_prism_face_centroids[iface],
                          ncv_prism_matpoly.face_centroid(iface), 1.0e-15));
 }
@@ -174,23 +180,27 @@ TEST(TANGRAM_3D, test_matpoly_cube) {
   matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // Verify coordinates
-  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
-  ASSERT_EQ(cube_points.size(), matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < cube_points.size(); ivrt++)
+  auto const& matpoly_points = matpoly.points();
+  int const num_cube_points  = cube_points.size();
+  int const num_cube_faces   = cube_faces.size();
+
+  ASSERT_EQ(num_cube_points, matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_cube_points; ivrt++)
     for (int j = 0; j < 3; j++)
       ASSERT_NEAR(cube_points[ivrt][j], matpoly_points[ivrt][j], 1.0e-15);
 
   // Verify faces
-  ASSERT_EQ(cube_faces.size(), matpoly.num_faces());
-  for (int iface = 0; iface < cube_faces.size(); iface++) {
-    const std::vector<int>& face_vertices = matpoly.face_vertices(iface);
+  ASSERT_EQ(num_cube_faces, matpoly.num_faces());
+  for (int iface = 0; iface < num_cube_faces; iface++) {
+    auto const& face_vertices = matpoly.face_vertices(iface);
     ASSERT_EQ(cube_faces[iface].size(), face_vertices.size());
-    for (int ivrt = 0; ivrt < cube_faces[iface].size(); ivrt++)
+    int const num_face_vertices = cube_faces[iface].size();
+    for (int ivrt = 0; ivrt < num_face_vertices; ivrt++)
       ASSERT_EQ(cube_faces[iface][ivrt], face_vertices[ivrt]);
   }
 
   // Verify centroids
-  for (int iface = 0; iface < cube_faces.size(); iface++)
+  for (int iface = 0; iface < num_cube_faces; iface++)
     ASSERT_TRUE(
         approxEq(face_centroids[iface], matpoly.face_centroid(iface), 1.0e-15));
 }
@@ -223,19 +233,22 @@ TEST(TANGRAM_3D, test_matpoly_faceted_cube_by_hand) {
   matpoly.initialize(faceted_cube_points, faceted_cube_faces, dst_tol);
 
   // Verify coordinates
-  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
-  ASSERT_EQ(faceted_cube_points.size(), matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < faceted_cube_points.size(); ivrt++)
+  auto const& matpoly_points = matpoly.points();
+  int const num_faceted_cube_points = faceted_cube_points.size();
+  int const num_faceted_cube_faces  = faceted_cube_faces.size();
+
+  ASSERT_EQ(num_faceted_cube_points, matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_faceted_cube_points; ivrt++)
     for (int j = 0; j < 3; j++)
-      ASSERT_NEAR(faceted_cube_points[ivrt][j], matpoly_points[ivrt][j],
-                  1.0e-15);
+      ASSERT_NEAR(faceted_cube_points[ivrt][j], matpoly_points[ivrt][j], 1.0e-15);
 
   // Verify faces
-  ASSERT_EQ(faceted_cube_faces.size(), matpoly.num_faces());
-  for (int iface = 0; iface < faceted_cube_faces.size(); iface++) {
-    const std::vector<int>& face_vertices = matpoly.face_vertices(iface);
+  ASSERT_EQ(num_faceted_cube_faces, matpoly.num_faces());
+  for (int iface = 0; iface < num_faceted_cube_faces; iface++) {
+    auto const& face_vertices = matpoly.face_vertices(iface);
     ASSERT_EQ(faceted_cube_faces[iface].size(), face_vertices.size());
-    for (int ivrt = 0; ivrt < faceted_cube_faces[iface].size(); ivrt++)
+    int const num_face_vertices = faceted_cube_faces[iface].size();
+    for (int ivrt = 0; ivrt < num_face_vertices; ivrt++)
       ASSERT_EQ(faceted_cube_faces[iface][ivrt], face_vertices[ivrt]);
   }
 }
@@ -268,25 +281,28 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   matpoly.initialize(cube_points, cube_faces, dst_tol);
 
   // Verify coordinates
-  const std::vector<Wonton::Point<3>>& matpoly_points = matpoly.points();
-  ASSERT_EQ(cube_points.size(), matpoly.num_vertices());
-  for (int ivrt = 0; ivrt < cube_points.size(); ivrt++)
+  auto const& matpoly_points = matpoly.points();
+  int const num_cube_points = cube_points.size();
+  int const num_cube_faces  = cube_faces.size();
+
+  ASSERT_EQ(num_cube_points, matpoly.num_vertices());
+  for (int ivrt = 0; ivrt < num_cube_points; ivrt++)
     for (int j = 0; j < 3; j++)
       ASSERT_NEAR(cube_points[ivrt][j], matpoly_points[ivrt][j], 1.0e-15);
 
   // Verify faces
-  ASSERT_EQ(cube_faces.size(), matpoly.num_faces());
-  for (int iface = 0; iface < cube_faces.size(); iface++) {
+  ASSERT_EQ(num_cube_faces, matpoly.num_faces());
+  for (int iface = 0; iface < num_cube_faces; iface++) {
     const std::vector<int>& face_vertices = matpoly.face_vertices(iface);
     ASSERT_EQ(cube_faces[iface].size(), face_vertices.size());
-    for (int ivrt = 0; ivrt < cube_faces[iface].size(); ivrt++)
+    int const num_face_vertices = cube_faces[iface].size();
+    for (int ivrt = 0; ivrt < num_face_vertices; ivrt++)
       ASSERT_EQ(cube_faces[iface][ivrt], face_vertices[ivrt]);
   }
 
   // Verify centroids
-  for (int iface = 0; iface < cube_faces.size(); iface++)
-    ASSERT_TRUE(
-        approxEq(face_centroids[iface], matpoly.face_centroid(iface), 1.0e-15));
+  for (int iface = 0; iface < num_cube_faces; iface++)
+    ASSERT_TRUE(approxEq(face_centroids[iface], matpoly.face_centroid(iface), 1.0e-15));
 
   // Facet the cube
   Tangram::MatPoly<3> faceted_matpoly;
@@ -299,7 +315,7 @@ TEST(TANGRAM_3D, test_matpoly_intersect) {
   // Convert the points
   std::vector<Wonton::Point<3>> _source_points = faceted_matpoly.points();
   std::vector<Wonton::Point<3>> source_points;
-  for (auto p : _source_points) source_points.push_back(Wonton::Point<3>(p));
+  for (auto const& p : _source_points) source_points.emplace_back(p);
 
   // Convert the face indices from the matpoly to a Portage style
   std::vector<std::vector<int>> facetpoints;

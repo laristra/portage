@@ -114,8 +114,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // mismatch fixup modifies the target state in place.
   // Interpolation no longer does any repair
   //-------------------------------------------------------------------      
-  
-  double dblmin = -std::numeric_limits<double>::max();
+
   double dblmax =  std::numeric_limits<double>::max();
 
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(

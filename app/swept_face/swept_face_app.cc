@@ -269,7 +269,7 @@ int main(int argc, char** argv) {
     std::string arg(argv[i]);
     std::size_t len = arg.length();
     std::size_t keyword_beg = 2;
-    std::size_t keyword_end = arg.find_first_of("=");
+    std::size_t keyword_end = arg.find_first_of('=');
     std::string keyword = arg.substr(keyword_beg, keyword_end-keyword_beg);
     std::string valueword = arg.substr(keyword_end+1, len-(keyword_end+1));
 
@@ -400,7 +400,7 @@ int main(int argc, char** argv) {
   // make sure that we have the right dimension and that source and
   // target mesh dimensions matches.
   assert(source_mesh->space_dimension() == target_mesh->space_dimension());
-  assert(dim == source_mesh->space_dimension());
+  assert(unsigned(dim) == source_mesh->space_dimension());
 
 #if ENABLE_TIMINGS
   profiler->time.mesh_init = timer::elapsed(tic);
@@ -529,10 +529,6 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                               source_mesh_wrapper.num_ghost_cells();
   int const nb_target_cells = target_mesh_wrapper.num_owned_cells();
 
-#if ENABLE_TIMINGS
-  auto tic = timer::now();
-#endif
-
   // initialize the source field and add to state
   user_field_t exact_value;
   if (not exact_value.initialize(dim, field_expression))
@@ -573,14 +569,25 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                target_mesh_wrapper, target_state_wrapper, executor);
 #endif
 
+#if ENABLE_TIMINGS
+    auto tic = timer::now();
+#endif
+
     // search for neighboring cells candidates
     auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
                                        : remapper.template search<Portage::SearchSweptFace>());
+#if ENABLE_TIMINGS
+    profiler->time.search += timer::elapsed(tic, true);
+#endif
 
     // compute interpolation weights using intersection or swept regions moments.
     auto weights = (intersect_based
       ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
       : remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates));
+
+#if ENABLE_TIMINGS
+    profiler->time.intersect += timer::elapsed(tic, true);
+#endif
 
     // interpolate the field eventually
     if (interp_order == 1) {
@@ -589,10 +596,21 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                                                                     weights);
     } else if (interp_order == 2) {
       auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
+
+#if ENABLE_TIMINGS
+      profiler->time.gradient += timer::elapsed(tic);
+#endif
+
+     remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
                                                                                     "density",
                                                                                     weights, &gradients);
+										    
     }
+
+#if ENABLE_TIMINGS
+     profiler->time.interpolate += timer::elapsed(tic, true);
+#endif
+
   } else { //3D
 #ifndef HAVE_TANGRAM
     Portage::CoreDriver<3,
@@ -614,14 +632,27 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
       remapper(source_mesh_wrapper, source_state_wrapper,
                target_mesh_wrapper, target_state_wrapper, executor);
 #endif
+
+#if ENABLE_TIMINGS
+    auto tic = timer::now();
+#endif
+
     // search for neighboring cells candidates
     auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
                                        : remapper.template search<Portage::SearchSweptFace>());
+
+#if ENABLE_TIMINGS
+    profiler->time.search += timer::elapsed(tic, true);
+#endif
 
     // compute interpolation weights using intersection or swept regions moments.
     auto weights = (intersect_based
       ? remapper.template intersect_meshes<Portage::IntersectR3D>(candidates)
       : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
+
+#if ENABLE_TIMINGS
+    profiler->time.intersect += timer::elapsed(tic, true);
+#endif
 
     // interpolate the field eventually
     if (interp_order == 1) {
@@ -630,14 +661,26 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                                                                                     weights);
     } else if (interp_order == 2) {
       auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+
+#if ENABLE_TIMINGS
+      profiler->time.gradient += timer::elapsed(tic);
+#endif
+
       remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
                                                                                     "density",
                                                                                     weights, &gradients);
     }
+
+#if ENABLE_TIMINGS
+     profiler->time.interpolate += timer::elapsed(tic, true);
+#endif
+
   }
 
 #if ENABLE_TIMINGS
-  profiler->time.remap += timer::elapsed(tic);
+  profiler->time.remap = profiler->time.search + 
+                         profiler->time.intersect + 
+                         profiler->time.interpolate ;
 
   if (rank == 0)
     std::printf("done. \e[32m(%.3f s)\e[0m\n", profiler->time.remap);
@@ -930,9 +973,9 @@ template<>
 void rotate_vortex<2>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
-  double const deltaT = periodT/ntimesteps;
+  double const deltaT = (periodT/ntimesteps)/scale;
   double const tcur = iter * deltaT;
-  double const step = (deltaT / scale);
+  double const step = deltaT;
 
   double& x = coords[0];
   double& y = coords[1];
@@ -964,9 +1007,9 @@ template<>
 void rotate_vortex<3>(double* coords, int iter, int ntimesteps, int scale) {
 
   double const periodT = 2.0;
-  double const deltaT = periodT/ntimesteps;
+  double const deltaT = (periodT/ntimesteps)/scale;
   double const tcur = iter * deltaT;
-  double const step = (deltaT / scale);
+  double const step = deltaT;
 
   double& x = coords[0];
   double& y = coords[1];
