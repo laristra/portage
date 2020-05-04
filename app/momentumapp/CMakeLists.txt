@@ -79,6 +79,36 @@ if (ENABLE_MPI AND Jali_DIR)
     target_link_libraries(momentumapp3D PRIVATE ${VTUNE_LIBS})
   endif()
 
+  #
+  # MM : create 2D binary
+  #
+  if (TANGRAM_FOUND)
+    add_executable(momentumapp2D_mm momentumapp2D_mm.cc)
+
+    # available build options
+    set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
+    set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune profiling")
+
+    # link to portage and its dependencies
+    target_link_libraries(momentumapp2D_mm PRIVATE portage)
+    target_link_libraries(momentumapp2D_mm PRIVATE ${EXTRA_LIBS})
+    target_link_libraries(momentumapp2D_mm PRIVATE ${MPI_CXX_LIBRARIES})
+    target_link_libraries(momentumapp2D_mm PRIVATE ${TANGRAM_LIBRARIES})
+    set_target_properties(momentumapp2D_mm PROPERTIES LINK_FLAGS "${MPI_CXX_LINK_FLAGS}")
+
+    # link to jali
+    target_include_directories(momentumapp2D_mm PRIVATE ${Jali_INCLUDE_DIRS})
+    target_include_directories(momentumapp2D_mm PRIVATE ${Jali_TPL_INCLUDE_DIRS})
+    target_link_libraries(momentumapp2D_mm PRIVATE ${Jali_LIBRARIES})
+    target_link_libraries(momentumapp2D_mm PRIVATE ${Jali_TPL_LIBRARIES})
+
+    # use tc-malloc
+    if(ENABLE_TCMALLOC)
+      set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
+      target_link_libraries(momentumapp2D_mm PRIVATE ${TCMALLOC_LIB})
+    endif()
+  endif()
+
   if(ENABLE_APP_TESTS)
     add_subdirectory(test)
   endif()

@@ -43,7 +43,7 @@ Please see the license file at the root of this repository, or at:
     B. Conservative remap of momentum
     C. Verification of output data: cell-centered massed and velocities
 
-  Assumptions: meshes are matching.
+  Assumptions: meshes occupy the same domain.
 */
 
 
