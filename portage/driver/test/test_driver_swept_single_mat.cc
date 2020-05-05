@@ -485,7 +485,6 @@ TEST(SweptFaceRemap, MassConservationConstantField2D) {
   int const nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
   int const nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
 
-  // now add a linear temperature field on the source mesh
   double source_density[nb_source_cells];
   double* target_density = nullptr;
 
@@ -549,7 +548,6 @@ TEST(SweptFaceRemap, MassConservationConstantField3D) {
   int const nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
   int const nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
 
-  // now add a linear temperature field on the source mesh
   double source_density[nb_source_cells];
   double* target_density = nullptr;
 
