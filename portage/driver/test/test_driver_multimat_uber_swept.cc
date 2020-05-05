@@ -448,7 +448,8 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
                                           Jali::Entity_type::ALL);
 
   // move few(16) nodes in material 0 of the target mesh in x direction by DX
-  double DX = 0.01;
+  //double DX = 0.01;
+  double DX = 0.05;
   std::array<double, 2> pnt;
 
   for (int i = 0; i < 4; i++) {
@@ -728,9 +729,18 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
 
-    for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
-               <<" density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
+   //dbg 
+   {
+     Wonton::Point<2> *matcen_remap;
+     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+     for (int ic = 0; ic < nmatcells; ic++) {
+       std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]<<std::endl; 
+       std::cout<<" ------density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
+       std::cout<<" ------volume fraction: "<<matvf_trg[m][ic]<<" "<<matvf_remap[ic]<<std::endl;
+       std::cout<<" ------centroids: "<<matcen_trg[m][ic][0]<<" "<<matcen_trg[m][ic][1]<<" "
+	<<matcen_remap[ic][0]<<" "<<matcen_remap[ic][1]<<std::endl;
+     }
+   }//dbg
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
@@ -778,6 +788,77 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
         matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
 #endif
+  }
+
+  // dbg dump meshes
+ {
+  for (int m = 0; m < nmats; m++) {
+    std::string varname1 = "density_" + matnames[m];
+    std::string varname2 = "density_weighted_" + matnames[m];
+    std::string varname3 = "volume_fraction_" + matnames[m];
+
+    std::vector<double> cell_density(nsrccells, 0.0);
+    std::vector<double> cell_density_wtd(nsrccells, 0.0);
+    std::vector<double> cell_vf(nsrccells, 0.0);
+
+    std::vector<int> current_matcells;
+    sourceStateWrapper.mat_get_cells(m, &current_matcells);
+    int nmatcells = current_matcells.size();
+
+    double *matvec;
+    sourceStateWrapper.mat_get_celldata("density", m, &matvec);
+
+    double *matvolfracs;
+    sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &matvolfracs);
+
+    for (int ic = 0; ic < nmatcells; ic++) {
+     int c = current_matcells[ic];
+     cell_density[c] = matvec[ic];
+     cell_vf[c] = matvolfracs[ic];
+     cell_density_wtd[c] = matvec[ic]*matvolfracs[ic];
+    }
+
+    sourceStateWrapper.mesh_add_data(Portage::CELL, varname1, &(cell_density[0]));
+    sourceStateWrapper.mesh_add_data(Portage::CELL, varname2, &(cell_density_wtd[0]));
+    sourceStateWrapper.mesh_add_data(Portage::CELL, varname3, &(cell_vf[0]));
+   }
+
+    sourceState->export_to_mesh();
+    sourceMesh->write_to_exodus_file("source.exo");
+ 
+  for (int m = 0; m < nmats; m++) {
+    std::string varname1 = "density_" + matnames[m];
+    std::string varname2 = "density_weighted_" + matnames[m];
+    std::string varname3 = "volume_fraction_" + matnames[m];
+
+    std::vector<double> cell_density(ntrgcells, 0.0);
+    std::vector<double> cell_density_wtd(ntrgcells, 0.0);
+    std::vector<double> cell_vf(ntrgcells, 0.0);
+
+    std::vector<int> current_matcells;
+    targetStateWrapper.mat_get_cells(m, &current_matcells);
+    int nmatcells = current_matcells.size();
+
+    double *matvec;
+    targetStateWrapper.mat_get_celldata("density", m, &matvec);
+
+    double *matvolfracs;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvolfracs);
+
+    for (int ic = 0; ic < nmatcells; ic++) {
+     int c = current_matcells[ic];
+     cell_density[c] = matvec[ic];
+     cell_vf[c] = matvolfracs[ic];
+     cell_density_wtd[c] = matvec[ic]*matvolfracs[ic];
+    }
+
+    targetStateWrapper.mesh_add_data(Portage::CELL, varname1, &(cell_density[0]));
+    targetStateWrapper.mesh_add_data(Portage::CELL, varname2, &(cell_density_wtd[0]));
+    targetStateWrapper.mesh_add_data(Portage::CELL, varname3, &(cell_vf[0]));
+   }
+
+    targetState->export_to_mesh();
+    targetMesh->write_to_exodus_file("target.exo");
   }
 
 } //ThreeMat2D_2ndOrder
