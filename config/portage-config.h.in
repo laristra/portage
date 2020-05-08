@@ -17,21 +17,9 @@ Please see the license file at the root of this repository, or at:
 #define PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@
 #define PORTAGE_VERSION_PATCH @PORTAGE_VERSION_PATCH@
 
-// Is PORTAGE compiled with MPI
-
-#cmakedefine PORTAGE_ENABLE_MPI 
-
-// Is PORTAGE compiled with Thrust
-
-#cmakedefine PORTAGE_ENABLE_THRUST
-
 // Is Portage compiled with TANGRAM support
 
 #cmakedefine PORTAGE_HAS_TANGRAM
-
-// Is PORTAGE linked with Jali
-
-#cmakedefine HAVE_JALI
 
 #endif  // PORTAGE_CONFIG_H_
 
