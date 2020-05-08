@@ -44,7 +44,7 @@ if [[ $compiler == "intel18" ]]; then
 
     compiler_version=18.0.1
     cxxmodule=intel/${compiler_version}
-    compiler_suffix="-intel-${intel_version}"
+    compiler_suffix="-intel-${compiler_version}"
     
     openmpi_version=2.1.2
     mpi_module=openmpi/${openmpi_version}
@@ -63,7 +63,7 @@ elif [[ $compiler =~ "gcc" ]]; then
     fi
     
     cxxmodule=gcc/${compiler_version}
-    compiler_suffix="-gcc-"${compiler_version}
+    compiler_suffix="-gcc-${compiler_version}"
 
     mpi_module=openmpi/${openmpi_version}
     mpi_suffix="-openmpi-${openmpi_version}"
@@ -97,7 +97,7 @@ if [[ $build_type == "coverage" ]]; then
 fi
 
 
-wonton_install_dir_base=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpis_suffix}
+wonton_install_dir=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpi_suffix}
 wonton_flags="-D WONTON_ROOT:PATH=$wonton_install_dir"
 
 tangram_flags=
