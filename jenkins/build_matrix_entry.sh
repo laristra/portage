@@ -100,8 +100,11 @@ fi
 wonton_install_dir_base=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpis_suffix}
 wonton_flags="-D WONTON_ROOT:PATH=$wonton_install_dir"
 
-tangram_install_dir_base=${ngc_tpl_dir}/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}
-tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:PATH=$tangram_install_dir"
+tangram_flags=
+if [[ $build_type != singlemat ]]
+   tangram_install_dir=${ngc_tpl_dir}/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}
+   tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:PATH=$tangram_install_dir"
+fi
 
 if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
     flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"  # FleCSI found through Wonton
