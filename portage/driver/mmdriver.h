@@ -905,6 +905,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_interp += timer::elapsed(tic, true);
 #endif
 
+#ifdef PORTAGE_HAS_TANGRAM
   if (nmats > 1) {
     //--------------------------------------------------------------------
     // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
@@ -940,6 +941,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }  // nmatvars
   }
+#endif
 
 
 #ifdef ENABLE_DEBUG
