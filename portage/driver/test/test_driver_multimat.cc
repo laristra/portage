@@ -105,13 +105,13 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<2> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<2>(0.0, 0.0);
-  mathi[0] = Portage::Point<2>(0.5, 1.0);
-  matlo[1] = Portage::Point<2>(0.5, 0.0);
-  mathi[1] = Portage::Point<2>(1.0, 0.5);
-  matlo[2] = Portage::Point<2>(0.5, 0.5);
-  mathi[2] = Portage::Point<2>(1.0, 1.0);
+  Wonton::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<2>(0.0, 0.0);
+  mathi[0] = Wonton::Point<2>(0.5, 1.0);
+  matlo[1] = Wonton::Point<2>(0.5, 0.0);
+  mathi[1] = Wonton::Point<2>(1.0, 0.5);
+  matlo[2] = Wonton::Point<2>(0.5, 0.5);
+  mathi[2] = Wonton::Point<2>(1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
@@ -120,7 +120,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<2>> matcen_src[nmats];
+  std::vector<Wonton::Point<2>> matcen_src[nmats];
 
 
   //-------------------------------------------------------------------
@@ -135,12 +135,12 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -151,7 +151,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_src[m].push_back(mcen);
         }
@@ -230,7 +230,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   targetStateWrapper.add_material("mat2", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -265,17 +265,17 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   std::vector<int> matcells_trg[nmats];
   std::vector<double> matv_trg[nmats];
   std::vector<double> matvf_trg[nmats];
-  std::vector<Portage::Point<2>> matcen_trg[nmats];
+  std::vector<Wonton::Point<2>> matcen_trg[nmats];
 
   int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -287,7 +287,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
           matv_trg[m].push_back(xmoments[0]);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<2> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
         }
@@ -337,7 +337,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
 
-    Portage::Point<2> const *matcen_remap;
+    Wonton::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
@@ -356,12 +356,12 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
     double *vf, *rho;
-    Portage::Point<2> *cen;
+    Wonton::Point<2> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    Portage::Point<2> totcen;
+    Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
     int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
@@ -439,13 +439,13 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<3> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<3>(0.0, 0.0, 0.0);
-  mathi[0] = Portage::Point<3>(0.5, 1.0, 1.0);
-  matlo[1] = Portage::Point<3>(0.5, 0.0, 0.0);
-  mathi[1] = Portage::Point<3>(1.0, 0.5, 1.0);
-  matlo[2] = Portage::Point<3>(0.5, 0.5, 0.0);
-  mathi[2] = Portage::Point<3>(1.0, 1.0, 1.0);
+  Wonton::Point<3> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<3>(0.0, 0.0, 0.0);
+  mathi[0] = Wonton::Point<3>(0.5, 1.0, 1.0);
+  matlo[1] = Wonton::Point<3>(0.5, 0.0, 0.0);
+  mathi[1] = Wonton::Point<3>(1.0, 0.5, 1.0);
+  matlo[2] = Wonton::Point<3>(0.5, 0.5, 0.0);
+  mathi[2] = Wonton::Point<3>(1.0, 1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
@@ -454,7 +454,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
-  std::vector<Portage::Point<3>> matcen_src[nmats];
+  std::vector<Wonton::Point<3>> matcen_src[nmats];
 
   //-------------------------------------------------------------------
   // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
@@ -468,12 +468,12 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -484,7 +484,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
           matcells_src[m].push_back(c);
           matvf_src[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<3> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<3> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_src[m].push_back(mcen);
@@ -564,7 +564,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
   targetStateWrapper.add_material("mat2", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Portage::Point<3>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<3>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -601,17 +601,17 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
 
   std::vector<int> matcells_trg[nmats];
   std::vector<double> matvf_trg[nmats];
-  std::vector<Portage::Point<3>> matcen_trg[nmats];
+  std::vector<Wonton::Point<3>> matcen_trg[nmats];
 
   int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -622,7 +622,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
           matcells_trg[m].push_back(c);
           matvf_trg[m].push_back(xmoments[0]/cellvol);
 
-          Portage::Point<3> mcen(xmoments[1]/xmoments[0],
+          Wonton::Point<3> mcen(xmoments[1]/xmoments[0],
                                  xmoments[2]/xmoments[0],
                                  xmoments[3]/xmoments[0]);
           matcen_trg[m].push_back(mcen);
@@ -673,7 +673,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-8);
 
-    Portage::Point<3> const *matcen_remap;
+    Wonton::Point<3> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
     // MOF cannot match moments and centroids as well as it can volume
@@ -694,12 +694,12 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     std::vector<int> matcells;
     targetStateWrapper.mat_get_cells(m, &matcells);
     double *vf, *rho;
-    Portage::Point<3> *cen;
+    Wonton::Point<3> *cen;
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    Portage::Point<3> totcen;
+    Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
     int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
@@ -774,11 +774,11 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<2> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<2>(0.0, 0.0);
-  mathi[0] = Portage::Point<2>(0.5, 1.0);
-  matlo[1] = Portage::Point<2>(0.5, 0.0);
-  mathi[1] = Portage::Point<2>(1.0, 1.0);
+  Wonton::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<2>(0.0, 0.0);
+  mathi[0] = Wonton::Point<2>(0.5, 1.0);
+  matlo[1] = Wonton::Point<2>(0.5, 0.0);
+  mathi[1] = Wonton::Point<2>(1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0};  // material density
@@ -799,12 +799,12 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -925,12 +925,12 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
   int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<2>> ccoords;
+    std::vector<Wonton::Point<2>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<2> cell_lo, cell_hi;
+    Wonton::Point<2> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -1076,11 +1076,11 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
 
   // Extents of the materials in the overall domain
 
-  Portage::Point<3> matlo[nmats], mathi[nmats];
-  matlo[0] = Portage::Point<3>(0.0, 0.0, 0.0);
-  mathi[0] = Portage::Point<3>(0.5, 1.0, 1.0);
-  matlo[1] = Portage::Point<3>(0.5, 0.0, 0.0);
-  mathi[1] = Portage::Point<3>(1.0, 1.0, 1.0);
+  Wonton::Point<3> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<3>(0.0, 0.0, 0.0);
+  mathi[0] = Wonton::Point<3>(0.5, 1.0, 1.0);
+  matlo[1] = Wonton::Point<3>(0.5, 0.0, 0.0);
+  mathi[1] = Wonton::Point<3>(1.0, 1.0, 1.0);
 
   double meshtemp = 55;  // scalar temperature on mesh
   double matrho[nmats] = {0.1, 10.0};  // material density
@@ -1100,12 +1100,12 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
   int nsrccells = sourceMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < nsrccells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = sourceMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
@@ -1229,12 +1229,12 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
   int ntrgcells = targetMeshWrapper.num_entities(Portage::Entity_kind::CELL,
                                                  Portage::Entity_type::ALL);
   for (int c = 0; c < ntrgcells; c++) {
-    std::vector<Portage::Point<3>> ccoords;
+    std::vector<Wonton::Point<3>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
     double cellvol = targetMeshWrapper.cell_volume(c);
 
-    Portage::Point<3> cell_lo, cell_hi;
+    Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
     std::vector<double> xmoments;
