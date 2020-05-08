@@ -13,7 +13,7 @@
 
 #include "exprtk.hpp"
 #include "wonton/support/Point.h"
-#ifdef HAVE_JALI
+#ifdef WONTON_ENABLE_Jali
   #include "Point.hh"
 #endif
 
@@ -70,7 +70,7 @@ public:
       throw std::runtime_error("incompatible dimensions");
   }
 
-#ifdef HAVE_JALI
+#ifdef WONTON_ENABLE_Jali
   double operator()(JaliGeometry::Point const& c) {
     if (dim_ == c.dim()) {
       if (dim_ > 0) x = c[0];
