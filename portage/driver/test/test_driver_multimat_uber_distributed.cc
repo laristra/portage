@@ -785,7 +785,7 @@ TEST(UberDriver2D, Layer_Const1stOrder)
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
   mf.included_entities(Jali::Entity_kind::ALL_KIND);
-  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
   targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
