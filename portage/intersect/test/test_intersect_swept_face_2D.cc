@@ -6,7 +6,7 @@
 
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "mpi.h"
 #endif
 

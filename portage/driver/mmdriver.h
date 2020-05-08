@@ -37,7 +37,7 @@
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -457,7 +457,7 @@ class MMDriver {
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -490,7 +490,7 @@ class MMDriver {
         double lower_bound = *std::min_element(source_data, source_data + nsrcents);
         double upper_bound = *std::max_element(source_data, source_data + nsrcents);
         
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (mycomm != MPI_COMM_NULL) {
           double global_bounds[2] = { 0.0, 0.0 };
           MPI_Allreduce(&lower_bound, global_bounds+0, 1, MPI_DOUBLE, MPI_MIN, mycomm);
@@ -536,7 +536,7 @@ class MMDriver {
     int comm_rank = 0;
     int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -590,7 +590,7 @@ class MMDriver {
 
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     // Create a new mesh wrapper that we can use for redistribution
     // of the source mesh as necessary (so that every target cell
     // sees any source cell that it overlaps with)
@@ -676,7 +676,7 @@ class MMDriver {
     }
 
     if (not src_meshvar_names.empty()) {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (redistributed_source)
         node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
             (source_mesh_flat, source_state_flat,
@@ -771,7 +771,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -996,7 +996,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {

@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 

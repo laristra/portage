@@ -125,7 +125,7 @@ class CoreDriver {
         target_state_(target_state),
         executor_(executor)
   {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     mycomm_ = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -410,7 +410,7 @@ class CoreDriver {
 
       int nmatcells = matcellstgt.size();
       int nmatcells_global = nmatcells;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (mycomm_!= MPI_COMM_NULL)
         MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
                       mycomm_);
@@ -984,7 +984,7 @@ class CoreDriver {
 
   Wonton::Executor_type const *executor_;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 

@@ -24,7 +24,7 @@
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
@@ -304,7 +304,7 @@ public:
     int nprocs = 1;
     bool distributed = false;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm comm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const*>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -339,7 +339,7 @@ public:
     // ranks.
     // For the scatter scheme, the smoothing_lengths will also
     // be changed.
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed) {
       MPI_Particle_Distribute<dim> distributor(mpiexecutor);
       //For scatter scheme, the smoothing_lengths_, kernel_types_

@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 #define MPI_BOUNDING_BOXES_H_
 
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -1325,6 +1325,6 @@ class MPI_Bounding_Boxes {
 
 } // namespace Portage
 
-#endif  // PORTAGE_ENABLE_MPI
+#endif  // WONTON_ENABLE_MPI
 
 #endif // MPI_Bounding_Boxes_H_

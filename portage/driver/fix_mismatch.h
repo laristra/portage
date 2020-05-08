@@ -44,7 +44,7 @@ using Wonton::Weights_t;
 // processor. This is useful for meshes where the partitioning of cells
 // on ranks is not mutually exclusive.
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 template<Entity_kind onwhat, class Mesh_Wrapper>
 void get_unique_entity_masks(Mesh_Wrapper const &mesh,
@@ -132,7 +132,7 @@ class MismatchFixer {
       target_mesh_(target_mesh), target_state_(target_state),
       global_check_(global_check) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       distributed_ = true;
@@ -166,7 +166,7 @@ class MismatchFixer {
     // don't form a strict tiling (no overlaps) after redistribution
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
                                                           &source_ent_masks,
@@ -186,7 +186,7 @@ class MismatchFixer {
                         0.0);
 
     global_source_volume_ = source_volume_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
@@ -206,7 +206,7 @@ class MismatchFixer {
 
 
     global_target_volume_ = target_volume_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&target_volume_, &global_target_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
@@ -231,7 +231,7 @@ class MismatchFixer {
                                           xsect_volumes_.end(), 0.0);
 
     global_xsect_volume_ = xsect_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
                     MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -523,7 +523,7 @@ class MismatchFixer {
                              source_ent_volumes_.begin(), 0.0);
 
       double global_source_sum = source_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_ && global_check_)
         MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
@@ -534,7 +534,7 @@ class MismatchFixer {
                              target_ent_volumes_.begin(), 0.0);
 
       double global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_ && global_check_)
         MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
@@ -566,7 +566,7 @@ class MismatchFixer {
           }
         }
         global_covered_target_volume = covered_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&covered_target_volume, &global_covered_target_volume,
                         1, MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -643,7 +643,7 @@ class MismatchFixer {
                                         target_ent_volumes_.begin(), 0.0);
 
         global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                         mycomm_);
@@ -659,7 +659,7 @@ class MismatchFixer {
         global_diff = global_target_sum - global_source_sum;
 
         global_adj_target_volume = adj_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
                         MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -717,7 +717,7 @@ class MismatchFixer {
   bool computed_mismatch_ = false;
   bool global_check_=true;
   bool computed_layers_=false;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
@@ -757,7 +757,7 @@ class MismatchFixer {
 #ifdef ENABLE_DEBUG
 
     int global_nempty = nempty;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_) {
       int *nempty_all = new int[nprocs_];
       MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);

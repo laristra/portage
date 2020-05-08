@@ -303,7 +303,7 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 

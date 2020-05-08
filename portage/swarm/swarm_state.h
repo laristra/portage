@@ -203,7 +203,7 @@ public:
     }
   }
 
-#ifdef PORTAGE_ENABLE_THRUST
+#ifdef WONTON_ENABLE_THRUST
   /**
    * @brief Set a field on the swarm.
    *

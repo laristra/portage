@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <cassert>
 #include <cmath>
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include <mpi.h>
 #endif
 
@@ -242,7 +242,7 @@ void run<2>(int example_num, int n_source, int n_target,
     default: break;
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   remapper.run(&mpiexecutor, true);
 #else
@@ -400,7 +400,7 @@ void run<3>(int example_num, int n_source, int n_target,
     default: break;
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   remapper.run(&mpiexecutor, true);
 #else
@@ -475,7 +475,7 @@ void run<3>(int example_num, int n_source, int n_target,
  */
 int main(int argc, char** argv) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int nb_ranks = 1;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_ranks);
@@ -483,7 +483,7 @@ int main(int argc, char** argv) {
 
   if (argc < 7) {
     print_usage();
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Finalize();
 #endif
     return EXIT_FAILURE;
@@ -511,7 +511,7 @@ int main(int argc, char** argv) {
     default: throw std::runtime_error("invalid dimension");
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;

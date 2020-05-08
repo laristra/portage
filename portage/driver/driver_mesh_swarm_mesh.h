@@ -32,7 +32,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/estimate/estimate.h"
 #include "portage/driver/driver_swarm.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -214,7 +214,7 @@ public:
     int rank = 0;
     int nprocs = 1;
     
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {

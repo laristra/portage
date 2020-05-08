@@ -51,7 +51,7 @@ public:
       num_local_points_(points_.size())
   {}
 
-#ifdef PORTAGE_ENABLE_THRUST
+#ifdef WONTON_ENABLE_THRUST
   /**
    * @brief Create a particle field from a given list.
    *

@@ -263,7 +263,7 @@ public:
   ) : source_(source_mesh, source_state, source_entities),
       target_(target_mesh, target_state, target_entities)
   {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       distributed_ = true;
@@ -281,7 +281,7 @@ public:
     int nb_masks = source_.mesh().num_owned_cells();
 
     source_entities_masks_.resize(nb_masks, 1);
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       get_unique_entity_masks<Entity_kind::CELL, SourceMesh>(
         source_.mesh(), &source_entities_masks_, mycomm_
@@ -394,7 +394,7 @@ public:
     global_target_volume_    = target_volume;
     global_intersect_volume_ = intersect_volume;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       MPI_Allreduce(&source_volume, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
       MPI_Allreduce(&target_volume, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -478,7 +478,7 @@ public:
     int nb_empty = empty_entities.size();
     int global_nb_empty = nb_empty;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       global_nb_empty = 0;
       MPI_Reduce(&nb_empty, &global_nb_empty, 1, MPI_INT, MPI_SUM, 0, mycomm_);
@@ -740,7 +740,7 @@ public:
       double global_source_sum = source_sum;
       double global_target_sum = target_sum;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_) {
         MPI_Allreduce(
           &source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM, mycomm_
@@ -781,7 +781,7 @@ public:
           }
         }
         global_covered_target_volume = covered_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &covered_target_volume, &global_covered_target_volume,
@@ -861,7 +861,7 @@ public:
         }
 
         global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM, mycomm_
@@ -878,7 +878,7 @@ public:
         absolute_diff = global_target_sum - global_source_sum;
         global_adj_target_volume = adj_target_volume;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &adj_target_volume, &global_adj_target_volume,
@@ -951,7 +951,7 @@ private:
   int rank_         = 0;
   int nprocs_       = 1;
   bool distributed_ = false;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 };

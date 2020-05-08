@@ -14,7 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include <mpi.h>
 #else
 #define PORTAGE_SERIAL_ONLY
@@ -1041,7 +1041,7 @@ int main(int argc, char** argv) {
     throw std::runtime_error("error in input file");
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)

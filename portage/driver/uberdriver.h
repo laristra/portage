@@ -41,7 +41,7 @@
 #include "portage/driver/coredriver.h"
 
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -214,7 +214,7 @@ public:
   bool is_distributed_run(Wonton::Executor_type const *executor = nullptr) {
     distributed_ = false;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     mycomm_ = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -769,7 +769,7 @@ public:
   // Component variables
   bool distributed_ = false;  // default is serial
   Wonton::Executor_type const *executor_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif

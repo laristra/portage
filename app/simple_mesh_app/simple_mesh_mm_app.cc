@@ -31,7 +31,7 @@
 #include "tangram/driver/write_to_gmv.h"
 #endif
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -554,7 +554,7 @@ void run(
 
 int main(int argc, char** argv) {
 
-  #ifdef PORTAGE_ENABLE_MPI
+  #ifdef WONTON_ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -681,7 +681,7 @@ int main(int argc, char** argv) {
   auto seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
 

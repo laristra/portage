@@ -7,7 +7,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_PARTICLE_DISTRIBUTE_H_
 #define MPI_PARTICLE_DISTRIBUTE_H_
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -568,6 +568,6 @@ private:
 }; // MPI_Particle_Distribute
 } // namespace Portage
 
-#endif  // PORTAGE_ENABLE_MPI
+#endif  // WONTON_ENABLE_MPI
 
 #endif // MPI_Particle_Distribute
