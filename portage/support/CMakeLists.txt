@@ -23,6 +23,7 @@ set(portage_support_HEADERS
     operator_references.h
     faceted_setup.h
     timer.h
+    mpi_collate.h
     )
 
 # Not yet allowed for INTERFACE libraries
