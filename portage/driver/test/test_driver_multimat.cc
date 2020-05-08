@@ -341,8 +341,8 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 2; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-10);
+      for (int dim = 0; dim < 2; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-10);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -679,8 +679,8 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-9);
+      for (int dim = 0; dim < 3; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-9);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
