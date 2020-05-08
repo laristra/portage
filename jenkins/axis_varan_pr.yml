@@ -10,6 +10,7 @@ BUILD_TYPE:
   - thrust
   - flecsi
   - readme
+  - singlemat
 
 exclude:
   - COMPILER: intel18
