@@ -764,8 +764,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                   Portage::Interpolate_2ndOrder>("density", "density",
     					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
                      Portage::Boundary_Limiter_type::BND_NOLIMITER);
-  }
- else
+  } else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
 
   //-------------------------------------------------------------------
