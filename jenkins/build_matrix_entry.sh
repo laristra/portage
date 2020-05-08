@@ -31,8 +31,8 @@ fi
 
 # set modules and install paths
 
-wonton_version=new-cmake
-tangram_version=new-cmake
+wonton_version=1.1.5
+tangram_version=0.9.9
  
 
 export NGC=/usr/local/codes/ngc
@@ -42,69 +42,74 @@ ngc_tpl_dir=$NGC/private
 # compiler-specific settings
 if [[ $compiler == "intel18" ]]; then
 
-    compiler_type=intel
     compiler_version=18.0.1
     cxxmodule=intel/${compiler_version}
+    compiler_suffix="-intel-${intel_version}"
+    
     openmpi_version=2.1.2
     mpi_module=openmpi/${openmpi_version}
+    mpi_suffix="-openmpi-${openmpi_version}"
 
-elif [[ $compiler == "gcc6" ]]; then
+elif [[ $compiler =~ "gcc" ]]; then
 
-    compiler_type=gcc
-    compiler_version=6.4.0
+    openmpi_version=2.1.2
+    if [[ $compiler == "gcc6" ]]; then
+	compiler_version=6.4.0
+    elif [[ $compiler == "gcc7" ]]; then
+	compiler_version=7.3.0
+    elif [[ $compiler == "gcc8" ]]; then
+	compiler_version=8.2.0
+	openmpi_version=3.1.3
+    fi
+    
     cxxmodule=gcc/${compiler_version}
-    openmpi_version=2.1.2
+    compiler_suffix="-gcc-"${compiler_version}
+
     mpi_module=openmpi/${openmpi_version}
-
-elif [[ $compiler == "gcc7" ]]; then
-
-    compiler_type=gcc
-    compiler_version=7.3.0
-    cxxmodule=gcc/${compiler_version}
-    openmpi_version=2.1.2
-    mpi_module=openmpi/${openmpi_version}
-
+    mpi_suffix="-openmpi-${openmpi_version}"
+    
 fi
 
 
-wonton_install_dir_base=${ngc_tpl_dir}/wonton/${wonton_version}-${compiler_type}-${compiler_version}
-wonton_install_suffix="-openmpi-${openmpi_version}"
-
-tangram_install_dir_base=${ngc_tpl_dir}/tangram/${tangram_version}-${compiler_type}-${compiler_version}
-tangram_install_suffix="-openmpi-${openmpi_version}"
-
-  
-cmake_build_type=Release
-extra_flags=
 mpi_flags="-D PORTAGE_ENABLE_MPI=True"
-
-if [[ $build_type == "debug" ]]; then
-
-    cmake_build_type=Debug
-    
-elif [[ $build_type == "serial" ]]; then
-
+if [[ $build_type == "serial" ]]; then
     mpi_flags=
-    wonton_install_suffix=     # use serial version of wonton
-    tangram_install_suffix=    # use serial version of tangram
+    mpi_suffix=
+fi
 
-elif [[ $build_type == "thrust" ]]; then
+cmake_build_type=Release
+if [[ $build_type == "debug" ]]; then
+    cmake_build_type=Debug
+fi
 
-    extra_flags="-D PORTAGE_ENABLE_THRUST=True"
-    wonton_install_suffix="${wonton_install_suffix}-thrust"
-    tangram_install_suffix="${tangram_install_suffix}-thrust"
+thrust_flags=
+thrust_suffix=
+if [[ $build_type == "thrust" ]]; then
+    thrust_flags="-D PORTAGE_ENABLE_THRUST=True"
+    thrust_suffix="-thrust"
+fi
 
-elif [[ $build_type == "coverage" ]]; then
-
-    extra_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
+cov_flags=
+if [[ $build_type == "coverage" ]]; then
+    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
     cmake_build_type=Debug
     export PATH=$NGC/private/bin:${PATH}
-
 fi
 
-wonton_flags="-D WONTON_ROOT:FILEPATH=${wonton_install_dir_base}${wonton_install_suffix}"
-tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True \
--D TANGRAM_ROOT:FILEPATH=${tangram_install_dir_base}${tangram_install_suffix}"
+
+wonton_install_dir_base=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpis_suffix}
+wonton_flags="-D WONTON_ROOT:PATH=$wonton_install_dir"
+
+tangram_install_dir_base=${ngc_tpl_dir}/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}
+tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:PATH=$tangram_install_dir"
+
+if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
+    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"  # FleCSI found through Wonton
+fi
+if [[ $build_type != "serial" ]]; then
+    jali_flags="-D PORTAGE_ENABLE_Jali:BOOL=True"  # Jali found through Wonton
+fi
+
 
 export SHELL=/bin/sh
 
@@ -131,8 +136,10 @@ cmake \
   $mpi_flags \
   $wonton_flags \
   $tangram_flags \
-  $xmof2d_flags \
-  $extra_flags \
+  $thrust_flags \
+  $jali_flags \
+  $flecsi_flags \
+  $cov_flags \
   ..
 make -j2
 ctest --output-on-failure

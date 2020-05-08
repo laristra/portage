@@ -58,9 +58,11 @@ The following libraries are also _required_ (see examples below):
   library, the Boost library must be linked into Wonton. See the
   Wonton README for details.
   
-  If you specify, ```PORTAGE_ENABLE_TANGRAM``` and ```TANGRAM_ROOT```,
+  If you specify, `PORTAGE_ENABLE_TANGRAM` and `TANGRAM_ROOT`,
   Wonton will be picked up automatically as Wonton is a dependency of
-  Tangram as well
+  Tangram as well. If not, you must specify the path to Wonton as
+  `WONTON_ROOT`
+  
   
 The following libraries are _required if multi-material remapping is to be enabled_:
 
@@ -135,8 +137,8 @@ Execute the following from the portage root directory:
 
 INTEL_VERSION=18.0.3
 MPI_VERSION=3.1.3
-TANGRAM_VERSION=new-cmake
-WONTON_VERSION=new-cmake
+TANGRAM_VERSION=1.1.5
+WONTON_VERSION=0.9.9
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -150,10 +152,12 @@ cmake \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D WONTON_ROOT=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
-    -D ENABLE_TANGRAM=True \
+    -D PORTAGE_ENABLE_TANGRAM=True \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
     -D PORTAGE_ENABLE_THRUST=False \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 
 make -j16
@@ -171,8 +175,8 @@ Execute the following from the portage root directory:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=new-cmake
-TANGRAM_VERSION=new-cmake
+WONTON_VERSION=1.1.5
+TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -189,6 +193,8 @@ cmake \
     -D PORTAGE_ENABLE_TANGRAM=True \
 	-D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}
     -D PORTAGE_ENABLE_MPI=True \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 make -j4
 ctest -j4 --output-on-failure
@@ -205,11 +211,10 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=new-cmake
-TANGRAM_VERSION=new-cmake
+WONTON_VERSION=1.1.5
+TANGRAM_VERSION=0.9.9
 
 module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.8-intel-18.0.5-openmpi-2.1.2-thrust
 mkdir build-thrust
 cd build-thrust
 cmake \
@@ -221,6 +226,8 @@ cmake \
    -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
    -D PORTAGE_ENABLE_MPI=True \
    -D PORTAGE_ENABLE_THRUST=True \
+   -D PORTAGE_ENABLE_Jali=True \
+   -D PORTAGE_ENABLE_FleCSI=False \
    ..
 make -j4
 ctest -j4 --output-on-failure
@@ -238,8 +245,8 @@ export MODULEPATH=""
 
 INTEL_VERSION=18.0.1
 MPI_VERSION=2.1.2
-WONTON_VERSION=new-cmake
-TANGRAM_VERSION=new-cmake
+WONTON_VERSION=1.1.5
+TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/local/codes/ngc/private
 
@@ -254,6 +261,8 @@ cmake \
     -D PORTAGE_ENABLE_TANGRAM=True \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 make -j2
 ctest -j2 --output-on-failure
