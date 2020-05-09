@@ -81,13 +81,13 @@ if (ENABLE_UNIT_TESTS)
        THREADS 1)
 
        cinch_add_unit(test_mismatch_fixup
-       SOURCES test/test_mismatch_fixup.cc 
+       SOURCES test/test_driver_mismatch_fixup.cc 
        LIBRARIES portage_driver
        POLICY MPI
        THREADS 1)
 
        cinch_add_unit(test_mismatch_disjoint
-       SOURCES test/test_mismatch_disjoint
+       SOURCES test/test_driver_mismatch_disjoint.cc
        LIBRARIES portage_driver
        POLICY MPI
        THREADS 1)
