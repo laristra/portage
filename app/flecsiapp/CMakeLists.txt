@@ -6,8 +6,8 @@ Please see the license file at the root of this repository, or at:
 
 
 if (WONTON_ENABLE_FleCSI)
-    add_executable(flecsiapp flecsiapp.cc)
-    target_link_libraries(flecsiapp portage)
+  add_executable(flecsiapp flecsiapp.cc)
+  target_link_libraries(flecsiapp PRIVATE portage)
 endif ()
 
 
@@ -17,10 +17,10 @@ if(ENABLE_PROFILE)
   set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
   set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
 
-  include_directories(${VTUNE_INCLUDE_DIR})
+  target_include_directories(flecsiapp PRIVATE ${VTUNE_INCLUDE_DIR})
 
   if (WONTON_ENABLE_FleCSI)
-    target_link_libraries(flecsiapp ${VTUNE_LIB})
+    target_link_libraries(flecsiapp PRIVATE ${VTUNE_LIB})
   endif (ENABLE_FleCSI)
 endif(ENABLE_PROFILE)
 

@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 
 # cannot build jali apps without MPI.
-if (ENABLE_MPI AND Jali_DIR)
+if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
 
   #
   # create 2D binary

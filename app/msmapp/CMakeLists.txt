@@ -13,7 +13,7 @@ Please see the license file at the root of this repository, or at:
 if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
 
   add_executable(msmapp msmapp.cc)
-  target_link_libraries(msmapp portage)
+  target_link_libraries(msmapp PRIVATE portage)
 
   # Can we do a find_package(vtune)? and just link to an imported library?
   # It would make this a lot less verbose
@@ -24,9 +24,9 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
     set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
     set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
 
-    include_directories(${VTUNE_INCLUDE_DIR})
+    target_include_directories(msmapp PRIVATE ${VTUNE_INCLUDE_DIR})
 
-    target_link_libraries(msmapp ${VTUNE_LIB})
+    target_link_libraries(msmapp PRIVATE ${VTUNE_LIB})
   endif(ENABLE_PROFILE)
 
 
