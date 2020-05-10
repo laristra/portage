@@ -309,7 +309,7 @@ void test_scatter_2d_random(int nsrc, int ntgt) {
     simplesearch(source_swarm, target_swarm, source_extent, target_extent);
 
   Wonton::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -384,7 +384,7 @@ void test_scatter_3d_random(int nsrc, int ntgt, bool check=true) {
     cellsearch(source_swarm, target_swarm, source_extent, target_extent);
 
   Wonton::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -470,7 +470,7 @@ void test_gather_2d_random(const int nsrc, const int ntgt) {
     simplesearch(source_swarm, target_swarm, source_extent, target_extent, Gather);
 
   Wonton::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -546,7 +546,7 @@ void test_gather_3d_random(const int nsrc, const int ntgt, bool check = true) {
     cellsearch(source_swarm, target_swarm, source_extent, target_extent, Gather);
 
   Wonton::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
