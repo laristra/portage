@@ -352,7 +352,7 @@ public:
               class, class> class Intersect
     >
   Wonton::vector<std::vector<Portage::Weights_t>>         // return type
-  intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
+  intersect_meshes(Wonton::vector<std::vector<int>> const& candidates) {
     switch (ONWHAT) {
       case CELL: {
         auto const& weights = driver_cell_->template intersect_meshes<Intersect>(candidates);
