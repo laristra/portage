@@ -25,31 +25,28 @@ Please see the license file at the root of this repository, or at:
 
 /*!
   @file momentumapp2D_mm.cc
-  @brief A 2D application that remaps velocity for CCH and multiple materials
+  @brief A 2D application that remaps velocity for CCH and two materials
 
   The program is used to showcase the capability of remapping velocity 
-  and mass for staggered and cell-centered hydro codes. Velocity remap
-  conserves the total momentum. The app is controlled by a few input 
-  commands. Unnecessary longer code is used for the implementation clarity.
+  and mass for staggered (not yet) and cell-centered hydro codes. Velocity
+  remap conserves the total momentum. The app is controlled by a few input 
+  parameters.
 
-  CCH: 
-    A. Populate input data: cell-centered masses and velocities
-    B. Conservative remap of momentum
-    C. Verification of output data: cell-centered massed and velocities
-
-  Assumptions: meshes occupy the same domain.
+  Assumptions:
+    - meshes occupy the same domain;
+    - no limiters on the boundary.
 */
 
 
 void print_usage() {
   std::cout << "Usage: ./momentumapp2D_mm nx ny limiter \"density formula\" \"velx formula\" \"vely formula\"\n\n"
             << "   source mesh:     nx x ny rectangular cells inside unit square\n" 
-            << "   target mesh:     (nx + 1) x (ny + 1) rectangular cells\n\n"
+            << "   target mesh:     max(nx + 2, 1.1 * nx) x max(ny + 3, 1.2 * ny) rectangular cells\n\n"
             << "   limiter:         0 - limiter is off, otherwise Barth-Jespersen is used\n\n"
-            << "   density formula: mathematical expression for density\n"
+            << "   density formula: mathematical expression for density, a comma-separated list\n"
             << "   velx formula:    mathematical expression for x-component of velocity\n"
             << "   vely formula:    mathematical expression for y-component of velocity\n\n"
-            << "Example: ./momentumapp2D_mm 10 10  1  \"1+x+x*y\" \"x\" \"if((x < 0.5),1 + x, 2 + y)\"\n";
+            << "Example: ./momentumapp2D_mm 10 11  1  \"1+x, 1+y\" \"x\" \"y\"\n";
 }
 
 
@@ -129,14 +126,14 @@ int main(int argc, char** argv) {
   Jali::MeshFactory mesh_factory(MPI_COMM_WORLD);
   mesh_factory.included_entities(Jali::Entity_kind::ALL_KIND);
 
+  int nxx = std::max(nx + 2, (int)(1.1 * nx));
+  int nxy = std::max(ny + 3, (int)(1.2 * ny));
   auto srcmesh = mesh_factory(0.0, 0.0, lenx, leny, nx, ny);
-  auto trgmesh = mesh_factory(0.0, 0.0, lenx, leny, nx + 1, ny + 1);
+  auto trgmesh = mesh_factory(0.0, 0.0, lenx, leny, nxx, nxy);
 
   // -- setup mesh wrappers
   Wonton::Jali_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
   Wonton::Jali_Mesh_Wrapper trgmesh_wrapper(*trgmesh);
-
-  int nnodes_src = srcmesh_wrapper.num_owned_nodes() + srcmesh_wrapper.num_ghost_nodes();
 
   // -- states
   std::shared_ptr<Jali::State> srcstate = Jali::State::create(srcmesh);
@@ -166,7 +163,6 @@ int main(int argc, char** argv) {
   mr.SetVelocity(trgmesh_wrapper, trgstate_wrapper, "velocity_x", ini_velx);
   mr.SetVelocity(trgmesh_wrapper, trgstate_wrapper, "velocity_y", ini_vely);
 
-  double sum(0.0);
   Wonton::Point<2> xyz;
   
   // -- summary
@@ -200,7 +196,7 @@ int main(int argc, char** argv) {
 
   if (rank == 0) {
     std::cout << "\n=== TARGET data ===" << std::endl;
-    std::cout << "mesh:           " << nx + 1 << " x " << ny + 1 << std::endl;
+    std::cout << "mesh:           " << nxx << " x " << nxy << std::endl;
     std::cout << "total mass:     " << total_mass_trg << " kg" << std::endl;
     std::cout << "total momentum: " << total_momentum_trg << " kg m/s" << std::endl;
     std::cout << "velocity bounds," << " min: " << umin << " max: " << umax << std::endl;
@@ -230,25 +226,80 @@ int main(int argc, char** argv) {
     std::cout << "in dencity:  l2-err=" << dl2err << " l2-norm=" << dl2norm << std::endl;
   }
 
+  //
+  // Additional analysis: angular momentum
+  //
+  double curl_src(0.0), curl_trg(0.0);
+  std::vector<std::string> vel_names = { "velocity_x", "velocity_y" };
+
+  { 
+    int ncells_src = srcmesh_wrapper.num_owned_cells();
+    int ncells_all = ncells_src + srcmesh_wrapper.num_ghost_cells();
+    std::vector<Portage::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+
+    for (int i = 0; i < 2; ++i) {
+      Portage::Limited_Gradient<2, Wonton::Entity_kind::CELL,
+                                Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+          gradient_kernel(srcmesh_wrapper,srcstate_wrapper,
+                          vel_names[i], limiter, Portage::BND_NOLIMITER);
+
+      Portage::transform(srcmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+                         srcmesh_wrapper.end(Wonton::Entity_kind::CELL),
+                         grads_src[i].begin(), gradient_kernel);
+    }
+
+    for (int c = 0; c < ncells_src; ++c) {
+      double tmp = grads_src[0][c][1] - grads_src[1][c][0]; 
+      double vol = srcmesh_wrapper.cell_volume(c);
+      curl_src += tmp * tmp * vol; 
+    }
+    curl_src = std::sqrt(curl_src);
+  }
+
+  { 
+    int ncells_trg = trgmesh_wrapper.num_owned_cells();
+    int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
+    std::vector<Portage::vector<Wonton::Vector<2>>> grads_trg(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+
+    for (int i = 0; i < 2; ++i) {
+      Portage::Limited_Gradient<2, Wonton::Entity_kind::CELL,
+                                Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+          gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
+                          vel_names[i], limiter, Portage::BND_NOLIMITER);
+
+      Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+                         trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
+                         grads_trg[i].begin(), gradient_kernel);
+    }
+
+    for (int c = 0; c < ncells_trg; ++c) {
+      double tmp = grads_trg[0][c][1] - grads_trg[1][c][0]; 
+      double vol = trgmesh_wrapper.cell_volume(c);
+      curl_trg += tmp * tmp * vol; 
+    }
+    curl_trg = std::sqrt(curl_trg);
+  }
+
+  if (rank == 0) {
+    std::cout << "\n=== Rotational component ===" << std::endl;
+    std::cout << "inp velocity: L2-norm=" << curl_src << std::endl;
+    std::cout << "out velocity: L2-norm=" << curl_trg << std::endl;
+  }
+
   // save data
   if (rank == 0) {
     std::ofstream datafile;
     std::stringstream ss;
-    ss << "errors2D_mm" << ".txt"; 
+    ss << "errorsMM_0" << ".txt"; 
     datafile.open(ss.str());
     datafile << "0 " << cons_law0 << std::endl;
     datafile << "1 " << cons_law1 << std::endl;
     datafile << "2 " << ul2err << std::endl;
     datafile << "3 " << ul2norm << std::endl;
+    datafile << "4 " << curl_src << std::endl;
+    datafile << "5 " << curl_trg << std::endl;
     datafile.close();
   }
-
-  /*
-  srcstate->export_to_mesh();
-  srcmesh->write_to_exodus_file("input.exo");
-  trgstate->export_to_mesh();
-  trgmesh->write_to_exodus_file("output.exo");
-  */
 
   MPI_Finalize();
   return 0;

@@ -105,7 +105,8 @@ class MomentumRemap_mm {
   int method_;
   std::vector<std::string> mat_names_;
 
-  std::string mass_name_, velocity_name_[3];
+  std::string mass_name_;
+  std::vector<std::string> velocity_name_;
 };
 
 
@@ -129,8 +130,8 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::InitMaterials(
   double circle_rad = 0.5;
   int nquadrant_samples = 90;
 
-  double dst_tol = sqrt(D) * std::numeric_limits<double>::epsilon();
-  double vol_tol = std::numeric_limits<double>::epsilon();
+  double dst_tol = 100 * std::numeric_limits<double>::epsilon();
+  double vol_tol = 100 * std::numeric_limits<double>::epsilon();
 
   get_material_moments<Mesh_Wrapper>(mesh, material_IDs, 
     circle_cen, circle_rad, nquadrant_samples,
@@ -141,7 +142,6 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::InitMaterials(
   std::set<int> mat_ids;
   for (auto id : cell_mat_ids) mat_ids.insert(id);
   std::vector<int> local_material_IDs(mat_ids.begin(), mat_ids.end());
-  int nlocal_mats = local_material_IDs.size();
  
   // Compute offsets into flattened arrays based on cell_num_mats
   std::vector<int> offsets(ncells, 0);
@@ -194,9 +194,6 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::SetMass(
     const Mesh_Wrapper& mesh, State_Wrapper& state,
     const std::string& name, std::vector<user_field_t>& formula)
 {
-  int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
-
-  double vol, den;
   Wonton::Point<D> xyz;
 
   for (int m = 0; m < mat_names_.size(); ++m) {
@@ -214,7 +211,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::SetMass(
 
     for (int ic = 0; ic < nmatcells; ic++) {
       int c = matcells[ic];
-      vol = mesh.cell_volume(c);
+      double vol = mesh.cell_volume(c);
       mass[ic] = formula[m](matcen[ic]) * vol * matvf[ic];
     }
 
@@ -436,7 +433,6 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::ErrorDensity(
     state.mat_get_celldata("mat_centroids", m, &matcen);
 
     for (int ic = 0; ic < nmatcells; ic++) {
-      int c = matcells[ic];
       double den_exact = formula_rho[m](matcen[ic]);
       *l2err += (den_exact - density[ic]) * (den_exact - density[ic]);
       *l2norm += den_exact * den_exact;
@@ -466,10 +462,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
     Portage::Limiter_type limiter)
 {
   // mesh data
-  int ncells_src = srcmesh.num_owned_cells() + srcmesh.num_ghost_cells();
   int ncells_trg = trgmesh.num_owned_cells();
-  int nnodes_trg = trgmesh.num_owned_nodes();
-  int ncorners_trg = trgmesh.num_owned_corners();
 
   // state fields
   // -- materials and mass
@@ -553,7 +546,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
   cd.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
 
   // -- specify tolerances
-  double dst_tol = sqrt(D) * std::numeric_limits<double>::epsilon();
+  double dst_tol = 100 * std::numeric_limits<double>::epsilon();
   double vol_tol = std::numeric_limits<double>::epsilon();
 
   std::vector<Tangram::IterativeMethodTolerances_t> ims_tols(2);
@@ -561,6 +554,9 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
   ims_tols[1] = {100, 1.0e-15, 1.0e-15};
 
   cd.set_reconstructor_options(true, ims_tols);
+
+  // for (auto& name : field_names) 
+  //   cd.set_conservation_tolerance(name, 1000 * dst_tol);
 
   // -- execute
   int numpe;
