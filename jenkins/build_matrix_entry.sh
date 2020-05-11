@@ -97,12 +97,12 @@ if [[ $build_type == "coverage" ]]; then
 fi
 
 
-wonton_install_dir=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpi_suffix}
+wonton_install_dir=${ngc_tpl_dir}/wonton/${wonton_version}${compiler_suffix}${mpi_suffix}${thrust_suffix}
 wonton_flags="-D WONTON_ROOT:PATH=$wonton_install_dir"
 
 tangram_flags=
 if [[ $build_type != singlemat ]]; then
-   tangram_install_dir=${ngc_tpl_dir}/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}
+   tangram_install_dir=${ngc_tpl_dir}/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}${thrust_suffix}
    tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:PATH=$tangram_install_dir"
 fi
 
