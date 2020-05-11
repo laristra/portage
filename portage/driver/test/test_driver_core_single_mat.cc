@@ -4,6 +4,9 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+// this should be included prior to the use of Portage macros
+#include "portage/support/portage.h"
+
 #ifdef HAVE_TANGRAM
 
 #include <iostream>
@@ -30,8 +33,6 @@ Please see the license file at the root of this repository, or at:
 #include "JaliState.h"
 
 #include "portage/driver/coredriver.h"
-
-#include "portage/support/portage.h"
 
 double TOL = 1e-6;
 
@@ -87,9 +88,6 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
-
-  double dblmin = -std::numeric_limits<double>::max();
-  double dblmax =  std::numeric_limits<double>::max();
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
@@ -180,9 +178,6 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   auto candidates = d.search<Portage::SearchKDTree>();
   auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);
-
-  double dblmin = -std::numeric_limits<double>::max();
-  double dblmax =  std::numeric_limits<double>::max();
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(

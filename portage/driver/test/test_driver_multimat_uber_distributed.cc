@@ -764,8 +764,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                   Portage::Interpolate_2ndOrder>("density", "density",
     					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
                      Portage::Boundary_Limiter_type::BND_NOLIMITER);
-  }
- else
+  } else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
 
   //-------------------------------------------------------------------
@@ -785,7 +784,7 @@ TEST(UberDriver2D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
@@ -808,8 +807,8 @@ TEST(UberDriver2D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
-  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
   targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
@@ -831,7 +830,7 @@ TEST(UberDriver3D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -855,7 +854,7 @@ TEST(UberDriver3D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -879,7 +878,7 @@ TEST(UberDriver2D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -902,7 +901,7 @@ TEST(UberDriver2D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -925,7 +924,7 @@ TEST(UberDriver3D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
@@ -948,7 +947,7 @@ TEST(UberDriver3D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
