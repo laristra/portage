@@ -249,8 +249,8 @@ int main(int argc, char** argv) {
     }
 
     for (int c = 0; c < ncells_src; ++c) {
-      const auto& a = grads_src[0][c];
-      const auto& b = grads_src[1][c]; 
+      const Wonton::Vector<2>& a = grads_src[0][c];
+      const Wonton::Vector<2>& b = grads_src[1][c]; 
       double tmp = a[1] - b[0]; 
       double vol = srcmesh_wrapper.cell_volume(c);
       curl_src += tmp * tmp * vol; 
@@ -275,8 +275,8 @@ int main(int argc, char** argv) {
     }
 
     for (int c = 0; c < ncells_trg; ++c) {
-      const auto& a = grads_trg[0][c];
-      const auto& b = grads_trg[1][c]; 
+      const Wonton::Vector<2>& a = grads_trg[0][c];
+      const Wonton::Vector<2>& b = grads_trg[1][c]; 
       double tmp = a[1] - b[0]; 
       double vol = trgmesh_wrapper.cell_volume(c);
       curl_trg += tmp * tmp * vol; 
