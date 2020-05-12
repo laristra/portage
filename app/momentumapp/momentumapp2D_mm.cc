@@ -249,7 +249,9 @@ int main(int argc, char** argv) {
     }
 
     for (int c = 0; c < ncells_src; ++c) {
-      double tmp = grads_src[0][c][1] - grads_src[1][c][0]; 
+      const auto& a = grads_src[0][c];
+      const auto& b = grads_src[1][c]; 
+      double tmp = a[1] - b[0]; 
       double vol = srcmesh_wrapper.cell_volume(c);
       curl_src += tmp * tmp * vol; 
     }
@@ -273,7 +275,9 @@ int main(int argc, char** argv) {
     }
 
     for (int c = 0; c < ncells_trg; ++c) {
-      double tmp = grads_trg[0][c][1] - grads_trg[1][c][0]; 
+      const auto& a = grads_trg[0][c];
+      const auto& b = grads_trg[1][c]; 
+      double tmp = a[1] - b[0]; 
       double vol = trgmesh_wrapper.cell_volume(c);
       curl_trg += tmp * tmp * vol; 
     }
