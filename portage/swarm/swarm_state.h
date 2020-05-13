@@ -124,7 +124,7 @@ public:
     }
 
     // get sizes of data fields that match entity on each wrapper
-    std::vector<int> sizes[num_fields];
+    std::vector<std::vector<int>> sizes(num_fields);
 
     for (int i = 0; i < num_fields; ++i) {
       auto const& name = names[i];

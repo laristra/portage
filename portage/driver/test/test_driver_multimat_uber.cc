@@ -720,8 +720,8 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-8);
+      for (int dim = 0; dim < 3; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-8);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -957,7 +957,6 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
   targetStateWrapper.add_material("mat1", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -1093,16 +1092,13 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-      int const num_matcells = matcells.size();
+    int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
-      totcen += rho[ic]*matcen_trg[m][ic]*cellvol;
     }
-    totcen /= mass;
 
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
