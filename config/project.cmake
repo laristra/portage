@@ -114,6 +114,8 @@ if (PORTAGE_ENABLE_MPI AND NOT WONTON_ENABLE_MPI)
   message(FATAL_ERROR "MPI enabled for Portage but Wonton is not compiled with MPI")
 endif ()
 
+# This combination will probably work but we are trying to enforce
+# consistency throughout the software stack
 if (NOT PORTAGE_ENABLE_MPI AND WONTON_ENABLE_MPI)
   message(FATAL_ERROR "MPI disabled for Portage but Wonton is compiled with MPI")
 endif ()
@@ -122,10 +124,21 @@ if (PORTAGE_ENABLE_Jali AND NOT WONTON_ENABLE_Jali)
   message(FATAL_ERROR "Jali enabled for Portage but Wonton is not compiled with Jali")
 endif ()
 
+# This combination will probably work but we are trying to enforce
+# consistency throughout the software stack
+if (NOT PORTAGE_ENABLE_Jali AND WONTON_ENABLE_Jali)
+  message(FATAL_ERROR "Jali not enabled for Portage but Wonton is compiled with Jali")
+endif ()
+
 if (PORTAGE_ENABLE_FleCSI AND NOT WONTON_ENABLE_FleCSI)
   message(FATAL_ERROR "FleCSI enabled for Portage but Wonton is not compiled with FleCSI")
 endif ()
 
+# This combination will probably work but we are trying to enforce
+# consistency throughout the software stack
+if (NOT PORTAGE_ENABLE_FleCSI AND WONTON_ENABLE_FleCSI)
+  message(FATAL_ERROR "FleCSI not enabled for Portage but Wonton is compiled with FleCSI")
+endif ()
   
 
 #-----------------------------------------------------------------------------
