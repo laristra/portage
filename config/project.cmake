@@ -81,9 +81,6 @@ if (PORTAGE_ENABLE_TANGRAM)
 
   target_link_libraries(portage INTERFACE ${TANGRAM_LIBRARIES})
   message(STATUS "TANGRAM_LIBRARIES ${TANGRAM_LIBRARIES}")
-  
-  # is this necessary?
-  target_include_directories(portage INTERFACE ${TANGRAM_INCLUDE_DIR})
   message(STATUS "TANGRAM_INCLUDE_DIR ${TANGRAM_INCLUDE_DIR}")
 
   set(PORTAGE_HAS_TANGRAM True CACHE BOOL "Is Tangram support enabled?" FORCE)
