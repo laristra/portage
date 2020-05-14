@@ -13,16 +13,17 @@
 #include <vector>
 #include <iostream>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
 
-#include "wonton/support/lsfits.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
-
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/support/MatPoly.h"
@@ -52,7 +53,7 @@ namespace Portage {
   class Limited_Gradient {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -85,7 +86,7 @@ namespace Portage {
         limiter_type_(limiter_type),
         boundary_limiter_type_(boundary_limiter_type) {}
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     Limited_Gradient(Mesh const &mesh, State const &state,
                      std::string const var_name,
                      Limiter_type limiter_type,
@@ -149,7 +150,7 @@ namespace Portage {
   > {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -190,7 +191,7 @@ namespace Portage {
                                         &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
                                       Entity_type::PARALLEL_OWNED),
                           mesh_.end(Entity_kind::CELL,
                                     Entity_type::PARALLEL_OWNED),
@@ -201,13 +202,13 @@ namespace Portage {
         };
 
         auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // Constructor with interface reconstructor for multimaterial remaps.
     Limited_Gradient(Mesh const& mesh,
                      State const& state,
@@ -241,7 +242,7 @@ namespace Portage {
           mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
         };
 
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
+        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
                                       Entity_type::PARALLEL_OWNED),
                           mesh_.end(Entity_kind::CELL,
                                     Entity_type::PARALLEL_OWNED),
@@ -253,7 +254,7 @@ namespace Portage {
         };
 
         auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
 
       //If the field type is a MESH_FIELD, then the corresponding data will
@@ -331,7 +332,7 @@ namespace Portage {
 
       // Loop over cell where grad is needed and its neighboring cells
       for (auto&& neigh_global : neighbors) {
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
         // in the material cell list to access the correct field value
@@ -473,7 +474,7 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> cell_neighbors_;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
     Part<Mesh, State> const* part_;
@@ -502,7 +503,7 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
     Tangram::Driver<
       InterfaceReconstructorType, D, Mesh,
@@ -579,7 +580,7 @@ namespace Portage {
       int const nnodes = mesh_.num_entities(Entity_kind::NODE,
                                             Entity_type::ALL);
       node_neighbors_.resize(nnodes);
-      Portage::for_each(mesh_.begin(Entity_kind::NODE,
+      Wonton::for_each(mesh_.begin(Entity_kind::NODE,
                                     Entity_type::ALL),
                         mesh_.end(Entity_kind::NODE,
                                   Entity_type::ALL),
@@ -588,7 +589,7 @@ namespace Portage {
       set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief Additional constructor to be consistent with cell-centered version.
      *

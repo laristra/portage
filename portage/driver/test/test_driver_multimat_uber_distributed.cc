@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -15,9 +15,17 @@
 #include <type_traits>
 #include <vector> 
 
-//This test is distributed
-#include "mpi.h"
 #include "gtest/gtest.h"
+
+//Wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
+//This test is distributed
+#ifdef WONTON_ENABLE_MPI
+#include "mpi.h"
+#endif
 
 //Tangram includes
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -36,10 +44,6 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-
-//Wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 
@@ -960,4 +964,4 @@ TEST(UberDriver3D, NestedBox_Linear2ndOrder)
   run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

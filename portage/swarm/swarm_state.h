@@ -12,6 +12,8 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <cassert>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/swarm/swarm.h"
 #include "portage/support/portage.h"
 
@@ -186,7 +188,7 @@ public:
    * @param value: field values list.
    */
   template<typename T = double>
-  void add_field(std::string name, Portage::vector<T> const&  value) {
+  void add_field(std::string name, Wonton::vector<T> const&  value) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
     // sizes should match
@@ -203,7 +205,7 @@ public:
     }
   }
 
-#ifdef PORTAGE_ENABLE_THRUST
+#ifdef WONTON_ENABLE_THRUST
   /**
    * @brief Set a field on the swarm.
    *
@@ -286,9 +288,9 @@ public:
    * @param name the name of the integer field
    * @return value the values in the field
    */
-  Portage::vector<int>& get_field_int(std::string name) const {
+  Wonton::vector<int>& get_field_int(std::string name) const {
     assert(fields_int_.count(name));
-    using T = Portage::vector<int>;
+    using T = Wonton::vector<int>;
     return const_cast<T&>(fields_int_.at(name));
   }
 
@@ -302,9 +304,9 @@ public:
    * @param name the name of the integer field
    * @return value the values in the field
    */
-  Portage::vector<double>& get_field_dbl(std::string name) const {
+  Wonton::vector<double>& get_field_dbl(std::string name) const {
     assert(fields_dbl_.count(name));
-    using T = Portage::vector<double>;
+    using T = Wonton::vector<double>;
     return const_cast<T&>(fields_dbl_.at(name));
   }
 
@@ -313,7 +315,7 @@ public:
    * @param name
    * @return
    */
-  Portage::vector<double>& get_field(std::string name) const {
+  Wonton::vector<double>& get_field(std::string name) const {
     return get_field_dbl(name);
   }
 
@@ -378,7 +380,7 @@ public:
    * @param values: the subfield to add.
    */
   template<typename T>
-  void extend_field(std::string name, Portage::vector<T> const& values) {
+  void extend_field(std::string name, Wonton::vector<T> const& values) {
 
     static_assert(std::is_arithmetic<T>::value, "only numeric fields");
 
@@ -398,8 +400,8 @@ public:
   int num_local_points_ = 0;
 
   /** data fields */
-  std::map<std::string, Portage::vector<int>>    fields_int_ {};
-  std::map<std::string, Portage::vector<double>> fields_dbl_ {};
+  std::map<std::string, Wonton::vector<int>>    fields_int_ {};
+  std::map<std::string, Wonton::vector<double>> fields_dbl_ {};
 };
 
 }} //namespace Portage::MeshFree

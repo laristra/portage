@@ -5,22 +5,24 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <memory>
 
-
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
@@ -1363,4 +1365,4 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
   }
 }  // ThreeMat3D_VOF_2ndOrderRemap
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

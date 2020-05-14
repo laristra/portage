@@ -15,9 +15,21 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+// wonton includes
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+
 
 // portage includes
 #include "portage/driver/mmdriver.h"
@@ -30,14 +42,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
-
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/state/state_vector_uni.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace {
 // avoid long namespaces
@@ -166,7 +170,7 @@ public:
     mesh_remap.run();  // run in serial (executor argument defaults to nullptr)
 
     // Set up the operator information if needed
-    Portage::vector<std::vector<Wonton::Point<dim>>> data;
+    Wonton::vector<std::vector<Wonton::Point<dim>>> data;
     std::vector<double> exact;
     oper::Domain domain_types[3] = {oper::Interval,
                                     oper::Quadrilateral,
@@ -337,7 +341,7 @@ protected:
   Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
 
   // Operator domains and data
-  Portage::vector<oper::Domain> domains_;
+  Wonton::vector<oper::Domain> domains_;
 };
 
 // Class which constructs a pair of simple 2-D meshes, target

@@ -5,8 +5,9 @@ Please see the license file at the root of this repository, or at:
 ]]
 #-----------------------------------------------------------------------------~#
 
+project(portage_search)
 
-#-----------------------------------------------------------------------------~#
+add_library(portage_search)
 
 # Add header files
 set(search_HEADERS
@@ -21,65 +22,89 @@ set(search_HEADERS
     pairs.hh
     BoundBox.h
     search_swept_face.h
-    PARENT_SCOPE
+    pairs.hh
 )
-
-if (nanoflann_FOUND)
-  list(APPEND search_HEADERS search_kdtree_nanoflann.h)
-endif (nanoflann_FOUND)
 
 # Add source files
 set(search_SOURCES
     pairs.cc
-    PARENT_SCOPE
 )
+
+target_include_directories(portage_search PUBLIC
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+  $<INSTALL_INTERFACE:include>
+  )
+
+target_sources(portage_search PRIVATE "${search_SOURCES}")
+
+
+set_target_properties(portage_search PROPERTIES
+  PUBLIC_HEADER "${portage_search_HEADERS}")
+
+
+target_link_libraries(portage_search PUBLIC portage_support)
+
+target_link_libraries(portage INTERFACE portage_search)
+
+install(TARGETS portage_search
+  EXPORT portage_LIBRARIES
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/portage/search
+  INCLUDES DESTINATION include/portage/search
+  )
+
+
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
    cinch_add_unit(test_search_direct_product
     SOURCES test/test_search_direct_product.cc
-    LIBRARIES portage  
+    LIBRARIES portage_search 
     POLICY SERIAL)
   
    cinch_add_unit(test_search_simple
     SOURCES test/test_search_simple.cc
-    LIBRARIES portage  
+    LIBRARIES portage_search  
     POLICY SERIAL)
   
   cinch_add_unit(test_search_kdtree2
     SOURCES test/test_search_kdtree2.cc
-    LIBRARIES portage  
+    LIBRARIES portage_search  
     POLICY SERIAL)
 
   cinch_add_unit(test_search_kdtree3
     SOURCES test/test_search_kdtree3.cc
-    LIBRARIES portage 
+    LIBRARIES portage_search 
     POLICY SERIAL)
 
   cinch_add_unit(test_search_swept_face
     SOURCES test/test_search_swept_face.cc
-    LIBRARIES portage 
+    LIBRARIES portage_search 
     POLICY SERIAL)
 
   cinch_add_unit(test_search_simple_points
     SOURCES test/test_search_simple_points.cc
-    LIBRARIES portage  
+    LIBRARIES portage_search  
     POLICY MPI
     THREADS 1)
 
   cinch_add_unit(test_search_points_by_cells
     SOURCES pairs.cc test/test_search_points_by_cells.cc
-    LIBRARIES portage 
+    LIBRARIES portage_search 
     POLICY MPI
     THREADS 1)
 
   if (nanoflann_FOUND)
     cinch_add_unit(test_search_kdtree_nanoflann
       SOURCES test/test_search_kdtree_nanoflann.cc
-      LIBRARIES portage 
+      LIBRARIES portage_search 
       POLICY MPI
       THREADS 1)
   endif (nanoflann_FOUND)
+
 
 endif(ENABLE_UNIT_TESTS)
 

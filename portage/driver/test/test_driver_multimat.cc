@@ -5,14 +5,20 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
@@ -25,8 +31,6 @@ Please see the license file at the root of this repository, or at:
 
 
 #include "portage/driver/mmdriver.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 
 #include "Mesh.hh"
@@ -1327,4 +1331,4 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
 
 }  // ThreeMat3D_VOF_1stOrderRemap
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

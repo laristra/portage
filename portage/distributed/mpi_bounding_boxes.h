@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 #define MPI_BOUNDING_BOXES_H_
 
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -19,9 +19,10 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <set>
 
-#include "portage/support/portage.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_uni.h"
+#include "portage/support/portage.h"
 #include "mpi.h"
 
 /*!
@@ -978,7 +979,7 @@ class MPI_Bounding_Boxes {
     case, needs to get converted to gid. We always convert local ids to gids
     before distributing.
    */
-  std::vector<GID_t> to_gid(std::vector<int> const& in, vector<GID_t>const& gids) const {
+  std::vector<GID_t> to_gid(std::vector<int> const& in, std::vector<GID_t>const& gids) const {
     std::vector<GID_t> result;
     result.reserve(in.size());
     for (auto x:in) result.push_back(gids[x]);
@@ -1325,6 +1326,6 @@ class MPI_Bounding_Boxes {
 
 } // namespace Portage
 
-#endif  // PORTAGE_ENABLE_MPI
+#endif  // WONTON_ENABLE_MPI
 
 #endif // MPI_Bounding_Boxes_H_

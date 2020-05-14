@@ -14,11 +14,19 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
-#ifdef PORTAGE_ENABLE_MPI
-#include <mpi.h>
-#else
-#define PORTAGE_SERIAL_ONLY
-#endif
+// jali includes
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 // portage includes
 #include "portage/support/portage.h"
@@ -32,18 +40,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-
-// jali includes
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
+#ifdef WONTON_ENABLE_MPI
+#include <mpi.h>
+#else
+#define PORTAGE_SERIAL_ONLY
+#endif
 
 template<size_t dim>
 struct Controls {
@@ -264,8 +265,8 @@ public:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL,
                                               Portage::Entity_type::ALL);
@@ -578,8 +579,8 @@ protected:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMeshWrapper.num_owned_cells();
       domains.resize(numcells);
@@ -1041,7 +1042,7 @@ int main(int argc, char** argv) {
     throw std::runtime_error("error in input file");
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)

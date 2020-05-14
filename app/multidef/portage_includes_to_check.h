@@ -31,7 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/parts.h"
 #include "portage/driver/uberdriver.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "portage/driver/write_to_gmv.h"
 #endif
 
@@ -53,7 +53,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/kdtree.h"
 #include "portage/search/search_direct_product.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/search/search_kdtree_nanoflann.h"
 #include "portage/search/search_points_by_cells.h"
 #include "portage/search/search_simple.h"
 #include "portage/search/search_simple_points.h"

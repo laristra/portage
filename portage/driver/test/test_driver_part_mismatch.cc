@@ -8,7 +8,7 @@
 #include <memory>
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -17,8 +17,10 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"
