@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
   { 
     int ncells_src = srcmesh_wrapper.num_owned_cells();
     int ncells_all = ncells_src + srcmesh_wrapper.num_ghost_cells();
-    std::vector<Portage::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+    std::vector<Wonton::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
 
     for (int i = 0; i < 2; ++i) {
       Portage::Limited_Gradient<2, Wonton::Entity_kind::CELL,
