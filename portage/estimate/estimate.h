@@ -11,8 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 
 #include "wonton/support/wonton.h"
-
-#include "portage/swarm/swarm_state.h"
+#include "wonton/swarm/swarm_state.h"
 #include "portage/support/portage.h"
 
 namespace Portage {
@@ -33,7 +32,7 @@ class Estimate {
    * @brief Constructor
    * @param source_state the very same source state provided to @code Accumulate::Accumulate()@endcode
    */
-  Estimate(SwarmState<dim> const& source_state):
+  Estimate(Wonton::SwarmState<dim> const& source_state):
 	source_state_(source_state)
   {}
 
@@ -79,7 +78,7 @@ class Estimate {
   }
 
  private:
-  SwarmState<dim> const& source_state_;
+  Wonton::SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
   Wonton::vector<double> source_vals_;

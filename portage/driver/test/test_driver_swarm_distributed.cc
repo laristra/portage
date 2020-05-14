@@ -12,15 +12,14 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
 
+#include "portage/support/portage.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 #include "portage/driver/driver_swarm.h"
 #include "portage/estimate/estimate.h"
-
-#include "portage/support/portage.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/search/search_points_by_cells.h"
 
 #include "gtest/gtest.h"
@@ -94,8 +93,7 @@ public:
                 double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                 Swarm<dim>, SwarmState<dim>,
-                                 Swarm<dim>, SwarmState<dim>>;
+                                 Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     // Fill the source state data with the specified profile
     int const nb_source = source_swarm.num_owned_particles();
@@ -150,10 +148,10 @@ public:
 
 protected:
   // Source and target swarms
-  Swarm<dim> source_swarm;
-  Swarm<dim> target_swarm;
-  SwarmState<dim> source_state;
-  SwarmState<dim> target_state;
+  Wonton::Swarm<dim> source_swarm;
+  Wonton::Swarm<dim> target_swarm;
+  Wonton::SwarmState<dim> source_state;
+  Wonton::SwarmState<dim> target_state;
 
   // smoothing lengths matrix and weight center type
   Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths_ {};

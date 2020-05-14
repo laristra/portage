@@ -64,7 +64,3 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/support/weight.h"
-
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
-

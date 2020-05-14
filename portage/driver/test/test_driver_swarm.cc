@@ -16,14 +16,14 @@ Please see the license file at the root of this repository, or at:
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
 
 #include "portage/driver/driver_swarm.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
@@ -173,8 +173,7 @@ public:
                 double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                 Swarm<dim>, SwarmState<dim>,
-                                 Swarm<dim>, SwarmState<dim>>;
+                                 Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     // Fill the source state data with the specified profile
     const int nb_source = source_swarm.num_owned_particles();
@@ -257,8 +256,7 @@ public:
                    double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                 Swarm<dim>, SwarmState<dim>,
-                                 Swarm<dim>, SwarmState<dim>>;
+                                 Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     // Fill the source state data with the specified profile
     int const nb_source = source_swarm.num_owned_particles();
@@ -337,10 +335,10 @@ public:
 
 protected:
   // swarms and states
-  Swarm<dim> source_swarm;
-  Swarm<dim> target_swarm;
-  SwarmState<dim> source_state;
-  SwarmState<dim> target_state;
+  Wonton::Swarm<dim> source_swarm;
+  Wonton::Swarm<dim> target_swarm;
+  Wonton::SwarmState<dim> source_state;
+  Wonton::SwarmState<dim> target_state;
 
   // smoothing lengths
   Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths_;
@@ -623,8 +621,7 @@ TEST(Part, 2D) {
 
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 2,
-                               Swarm<2>, SwarmState<2>,
-                               Swarm<2>, SwarmState<2>>;
+                               Wonton::Swarm<2>, Wonton::SwarmState<2>>;
 
   int const nb_per_axis = 4;
   Wonton::Simple_Mesh mesh(-1.0, -1.0, 1.0, 1.0, nb_per_axis, nb_per_axis);
@@ -650,10 +647,10 @@ TEST(Part, 2D) {
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states
-  Swarm<2> source_swarm(mesh_wrapper, Wonton::CELL);
-  Swarm<2> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0);
-  SwarmState<2> source_state(state_wrapper, Wonton::CELL);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::Swarm<2> source_swarm(mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<2> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0);
+  Wonton::SwarmState<2> source_state(state_wrapper, Wonton::CELL);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   // keep all target swarm points from overlying any source points
   Wonton::vector<double> target_data(nb_target, 0.0);
@@ -697,8 +694,7 @@ TEST(Part, 3D) {
 
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 3,
-                               Swarm<3>, SwarmState<3>,
-                               Swarm<3>, SwarmState<3>>;
+                               Wonton::Swarm<3>, Wonton::SwarmState<3>>;
 
   int const nb_per_axis = 4;
   Wonton::Simple_Mesh mesh(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
@@ -725,10 +721,10 @@ TEST(Part, 3D) {
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states
-  Swarm<3> source_swarm(mesh_wrapper, Wonton::CELL);
-  Swarm<3> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-  SwarmState<3> source_state(state_wrapper, Wonton::CELL);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::Swarm<3> source_swarm(mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<3> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  Wonton::SwarmState<3> source_state(state_wrapper, Wonton::CELL);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   // keep all target swarm points from overlying any source points
   Wonton::vector<double> target_data(nb_target, 0.0);
