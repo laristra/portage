@@ -12,6 +12,8 @@
 #include <string>
 #include <memory>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
@@ -24,14 +26,14 @@
 #include "read_material_data.h"
 #include "user_field.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/driver/write_to_gmv.h"
 #endif
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -420,9 +422,9 @@ void run(
 
     // get the vector of material ids,volume fraction and centroid
     // with thrust turned on, these need to be portage vectors, not std::vectors
-    const Portage::vector<int> mats{map_target_cell_materials.at(c)};
-    const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-    const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+    const Wonton::vector<int> mats{map_target_cell_materials.at(c)};
+    const Wonton::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
+    const Wonton::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
     int const num_mats = mats.size();
 
     // push the size onto the number of mats
@@ -554,7 +556,7 @@ void run(
 
 int main(int argc, char** argv) {
 
-  #ifdef PORTAGE_ENABLE_MPI
+  #ifdef WONTON_ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -681,7 +683,7 @@ int main(int argc, char** argv) {
   auto seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
 

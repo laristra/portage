@@ -11,9 +11,11 @@ Please see the license file at the root of this repository, or at:
 #include <array>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 namespace Portage { namespace Meshfree { namespace basis {
 

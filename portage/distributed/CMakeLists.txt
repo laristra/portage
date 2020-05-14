@@ -5,27 +5,59 @@ Please see the license file at the root of this repository, or at:
 ]]
 #-----------------------------------------------------------------------------~#
 
+project(portage_distribute)
 
-#-----------------------------------------------------------------------------~#
+add_library(portage_distribute INTERFACE)
 
-set(distributed_HEADERS
+target_include_directories(portage_distribute INTERFACE
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
+  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+  $<INSTALL_INTERFACE:include>
+  )
+
+# Add header files
+set(portage_distribute_HEADERS
     mpi_bounding_boxes.h
     mpi_particle_distribute.h
-    PARENT_SCOPE)
+    )
+
+# Not yet allowed for INTERFACE libraries
+# 
+# set_target_properties(portage_distribute PROPERTIES
+#   PUBLIC_HEADER "${portage_distribute_HEADERS}")
+#
+# Directly install files instead
+#
+install(FILES ${portage_distribute_HEADERS} DESTINATION include/portage/distributed)
+
+target_link_libraries(portage_distribute INTERFACE portage_support)
+
+target_link_libraries(portage INTERFACE portage_distribute)
+
+install(TARGETS portage_distribute
+  EXPORT portage_LIBRARIES
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/portage/distribute
+  INCLUDES DESTINATION include/portage/distribute
+  )
+
+
 
 if (ENABLE_UNIT_TESTS)
-  if (Jali_DIR)
+  if (WONTON_HAS_Jali)
     cinch_add_unit(test_mpi_bounding_boxes
                    SOURCES test/test_mpi_bounding_boxes.cc
-                   LIBRARIES portage  ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                   LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
 
     cinch_add_unit(test_mpi_particle_distribute
                    SOURCES test/test_mpi_particle_distribute.cc
-                   LIBRARIES portage  ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                   LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
-  endif (Jali_DIR)
+  endif ()
 endif(ENABLE_UNIT_TESTS)
 

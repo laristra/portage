@@ -34,12 +34,14 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/support/timer.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/utility/get_material_moments.h"
 #include "tangram/utility/rpgtools/cuts.h"

@@ -18,14 +18,15 @@
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/swarm/swarm.h"
-#include "portage/support/portage.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/support/Point.h"
+
+// portage includes
+#include "portage/swarm/swarm.h"
+#include "portage/support/portage.h"
 
 using namespace Portage::Meshfree;
 
@@ -241,7 +242,7 @@ TEST_F(SwarmTest, Sanity_Check_3D) {
   std::mt19937 engine { device() };
   std::uniform_real_distribution<double> generator(p_min, p_max);
 
-  Portage::vector<Wonton::Point<3>> points(n);
+  Wonton::vector<Wonton::Point<3>> points(n);
 
   for (auto&& current : points) {
     // point coordinates are not always initialized in order

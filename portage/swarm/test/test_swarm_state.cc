@@ -11,17 +11,18 @@
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
-#include "portage/support/portage.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
 #include "wonton/support/Point.h"
+
+// portage includes
+#include "portage/swarm/swarm.h"
+#include "portage/swarm/swarm_state.h"
+#include "portage/support/portage.h"
 
 TEST(SwarmState, basic) {
 //  using std::make_shared;
@@ -34,7 +35,7 @@ TEST(SwarmState, basic) {
   std::uniform_real_distribution<double> generator(0.0, 1.0);
 
   int const num_points = 10;
-  Portage::vector<Wonton::Point<3>> points(num_points);
+  Wonton::vector<Wonton::Point<3>> points(num_points);
 
   for (int i = 0; i < num_points; i++) {
     // point coordinates are not always initialized in order
@@ -52,10 +53,10 @@ TEST(SwarmState, basic) {
   ASSERT_EQ(state.get_size(), num_points);
 
   // create state fields
-  Portage::vector<double> dbl_field1(num_points, 0.);
-  Portage::vector<double> dbl_field2(num_points, 0.);
-  Portage::vector<int>    int_field1(num_points, 0.);
-  Portage::vector<int>    int_field2(num_points, 0.);
+  Wonton::vector<double> dbl_field1(num_points, 0.);
+  Wonton::vector<double> dbl_field2(num_points, 0.);
+  Wonton::vector<int>    int_field1(num_points, 0.);
+  Wonton::vector<int>    int_field2(num_points, 0.);
   std::vector<double>     dbl_field3(num_points, 0.);
   std::vector<int>        int_field3(num_points, 0.);
 

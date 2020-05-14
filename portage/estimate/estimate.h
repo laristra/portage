@@ -10,6 +10,8 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <cassert>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/swarm/swarm_state.h"
 #include "portage/support/portage.h"
 
@@ -80,7 +82,7 @@ class Estimate {
   SwarmState<dim> const& source_state_;
   std::string var_name_;
   size_t derivative_;
-  Portage::vector<double> source_vals_;
+  Wonton::vector<double> source_vals_;
 };
 
 }

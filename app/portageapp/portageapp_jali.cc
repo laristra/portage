@@ -31,16 +31,16 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h" 
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
-
-// wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/support/Point.h" 
-#include "wonton/support/wonton.h"
 
 // For parsing and evaluating user defined expressions in apps
 

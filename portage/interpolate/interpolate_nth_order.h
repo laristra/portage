@@ -8,6 +8,8 @@ Please see the license file at the root of this repository, or at:
 #ifndef PORTAGE_INTERPOLATE_INTERPOLATE_RND_H_
 #define PORTAGE_INTERPOLATE_INTERPOLATE_RND_H_
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"

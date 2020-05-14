@@ -12,9 +12,11 @@
 // See http://www.partow.net/programming/exprtk/ for source and examples
 
 #include "exprtk.hpp"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
-#ifdef HAVE_JALI
-  #include "Point.hh"
+
+#ifdef WONTON_ENABLE_Jali
+#include "Point.hh"         // for Jali's Point class
 #endif
 
 // This functor initializes a general field from a string expression
@@ -70,7 +72,7 @@ public:
       throw std::runtime_error("incompatible dimensions");
   }
 
-#ifdef HAVE_JALI
+#ifdef WONTON_ENABLE_Jali
   double operator()(JaliGeometry::Point const& c) {
     if (dim_ == c.dim()) {
       if (dim_ > 0) x = c[0];

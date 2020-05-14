@@ -7,10 +7,12 @@ Please see the license file at the root of this repository, or at:
 // this should be included prior to the use of Portage macros
 #include "portage/support/portage.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 // system
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 

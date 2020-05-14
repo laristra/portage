@@ -28,12 +28,14 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 #define ENABLE_TIMINGS 1
 

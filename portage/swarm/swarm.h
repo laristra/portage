@@ -18,9 +18,12 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <random>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 namespace Portage { namespace Meshfree {
 
@@ -46,12 +49,12 @@ public:
    *
    * @param points: the given list of points.
    */
-  explicit Swarm(Portage::vector<Wonton::Point<dim>> const& points)
+  explicit Swarm(Wonton::vector<Wonton::Point<dim>> const& points)
     : points_(points),
       num_local_points_(points_.size())
   {}
 
-#ifdef PORTAGE_ENABLE_THRUST
+#ifdef WONTON_ENABLE_THRUST
   /**
    * @brief Create a particle field from a given list.
    *
@@ -157,11 +160,11 @@ public:
    * @param type: entity type (kept for consistency with mesh iterators)
    * @return an iterator pointing to the first element of the particle field.
    */
-  counting_iterator begin(Entity_kind const kind = Wonton::PARTICLE,
-                          Entity_type const type = Wonton::ALL) const {
+  Wonton::counting_iterator begin(Entity_kind const kind = Wonton::PARTICLE,
+                                  Entity_type const type = Wonton::ALL) const {
 
     assert(kind == Wonton::PARTICLE);
-    return make_counting_iterator(0);
+    return Wonton::make_counting_iterator(0);
   }
 
   /**
@@ -171,11 +174,11 @@ public:
    * @param type: entity type (kept for consistency with mesh iterators)
    * @return an iterator pointing to the last element of the particle field.
    */
-  counting_iterator end(Entity_kind const kind = Wonton::PARTICLE,
-                        Entity_type const type = Wonton::ALL) const {
+  Wonton::counting_iterator end(Entity_kind const kind = Wonton::PARTICLE,
+                                Entity_type const type = Wonton::ALL) const {
 
     assert(kind == Wonton::PARTICLE);
-    return (make_counting_iterator(0) + num_particles(type));
+    return (Wonton::make_counting_iterator(0) + num_particles(type));
   }
 
   /**
@@ -188,7 +191,7 @@ public:
 
 private:
   /** the centers of the particles */
-  Portage::vector<Wonton::Point<dim>> points_ {};
+  Wonton::vector<Wonton::Point<dim>> points_ {};
 
   /** the number of owned particles in the swarm */
   int num_local_points_ = 0;

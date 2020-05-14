@@ -11,8 +11,9 @@
 #include <cmath>
 #include "gtest/gtest.h"
 
-#include "portage/support/operator.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "portage/support/operator.h"
 
 using Wonton::Point;
 

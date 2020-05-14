@@ -15,6 +15,14 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+#include "wonton/support/Matrix.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 // portage includes
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
@@ -24,13 +32,6 @@ Please see the license file at the root of this repository, or at:
 // generic structure for invoking 1st & 2nd order interpolate (see last test)
 // includes the include files for 1st and 2nd order interpolator
 #include "portage/interpolate/interpolate_nth_order.h"
-
-// wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
-#include "wonton/support/Matrix.h"
 
 double TOL = 1e-12;
 

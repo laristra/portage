@@ -11,10 +11,14 @@ Please see the license file at the root of this repository, or at:
 #ifndef DUMMY_INTERFACE_RECONSTRUCTOR_H
 #define DUMMY_INTERFACE_RECONSTRUCTOR_H
 
-#include "portage-config.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 
-#ifdef HAVE_TANGRAM
+// need it for portage-config.h which defines PORTAGE_HAS_TANGRAM (if
+// Tangram is included in the build)
+#include "portage/support/portage.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/support/tangram.h"
 #include "tangram/driver/CellMatPoly.h"
 #endif
@@ -31,7 +35,7 @@ class DummyInterfaceReconstructor {
  public:
   explicit DummyInterfaceReconstructor(Mesh_Wrapper const& mesh) {}
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   DummyInterfaceReconstructor(Mesh_Wrapper const& mesh,
                               const std::vector<Tangram::IterativeMethodTolerances_t>& im_tols,
                               const bool all_convex = false) {}
@@ -48,7 +52,7 @@ class DummyInterfaceReconstructor {
 
   void set_cell_indices_to_operate_on(std::vector<int> const& cellIDs_to_op_on) {}
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<Tangram::CellMatPoly<Dim>> operator()(const int cell_op_ID) const {
     throw std::runtime_error("not implemented");
   }

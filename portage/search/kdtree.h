@@ -17,9 +17,11 @@ Please see the license file at the root of this repository, or at:
 #include <set>
 #include <cstdlib>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/search/BoundBox.h"
-#include "wonton/support/Point.h"
 
 namespace Portage {
 

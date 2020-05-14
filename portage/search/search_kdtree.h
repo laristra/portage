@@ -10,11 +10,13 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <memory>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/search/BoundBox.h"
 #include "portage/search/kdtree.h"
-#include "wonton/support/Point.h"
 
 namespace Portage {
 

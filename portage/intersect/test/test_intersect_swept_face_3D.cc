@@ -6,20 +6,27 @@
 
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#include "wonton/support/wonton.h"
+#ifdef WONTON_ENABLE_MPI
   #include "mpi.h"
 #endif
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/intersect/intersect_swept_face.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#ifdef HAVE_TANGRAM
+
+#include "portage/support/portage.h"
+#ifdef PORTAGE_HAS_TANGRAM
+  #include "tangram/driver/CellMatPoly.h"  // TEMPORARY till we fix Tangram
   #include "tangram/intersect/split_r3d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
+
+#include "portage/intersect/intersect_swept_face.h"
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
 /**
  * @brief Fixture class for swept volume moments computation tests.
  *
@@ -32,7 +39,7 @@
 class IntersectSweptBase3D : public testing::Test {
 
 protected:
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,

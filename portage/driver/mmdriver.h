@@ -18,7 +18,13 @@
 #include <limits>
 #include <cmath>
 
-#ifdef HAVE_TANGRAM
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/state_vector_multi.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
 #endif
 
@@ -30,14 +36,10 @@
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -102,7 +104,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // alias for interface reconstructor parameterized on the mesh type.
   // it will be used for gradient field computation.
   template<typename SourceMesh>
@@ -335,7 +337,7 @@ class MMDriver {
       std::cerr << "Type not supported \n";
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver  
     @param all_convex Should be set to false if the source mesh contains 
@@ -457,7 +459,7 @@ class MMDriver {
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -490,7 +492,7 @@ class MMDriver {
         double lower_bound = *std::min_element(source_data, source_data + nsrcents);
         double upper_bound = *std::max_element(source_data, source_data + nsrcents);
         
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (mycomm != MPI_COMM_NULL) {
           double global_bounds[2] = { 0.0, 0.0 };
           MPI_Allreduce(&lower_bound, global_bounds+0, 1, MPI_DOUBLE, MPI_MIN, mycomm);
@@ -536,7 +538,7 @@ class MMDriver {
     int comm_rank = 0;
     int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -590,7 +592,7 @@ class MMDriver {
 
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     // Create a new mesh wrapper that we can use for redistribution
     // of the source mesh as necessary (so that every target cell
     // sees any source cell that it overlaps with)
@@ -676,7 +678,7 @@ class MMDriver {
     }
 
     if (not src_meshvar_names.empty()) {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (redistributed_source)
         node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
             (source_mesh_flat, source_state_flat,
@@ -714,7 +716,7 @@ class MMDriver {
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the
   // tols vector is currently set to two since MOF requires two
@@ -771,7 +773,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -793,7 +795,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
@@ -819,7 +821,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_cell.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_cell.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  
@@ -860,7 +862,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, CELL,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
@@ -905,6 +907,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_interp += timer::elapsed(tic, true);
 #endif
 
+#ifdef PORTAGE_HAS_TANGRAM
   if (nmats > 1) {
     //--------------------------------------------------------------------
     // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
@@ -914,7 +917,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
         coredriver_cell.template intersect_materials<Intersect>(candidates);
     
     int nmatvars = src_matvar_names.size();
-    std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+    std::vector<Wonton::vector<Vector<D>>> matgradients(nmats);
 
     for (int i = 0; i < nmatvars; ++i) {
       std::string const& srcvar = src_matvar_names[i];
@@ -940,6 +943,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }  // nmatvars
   }
+#endif
 
 
 #ifdef ENABLE_DEBUG
@@ -994,7 +998,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   int comm_rank = 0;
   int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -1017,7 +1021,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     source_remap_var_names.push_back(stpair.first);
 
   
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
     if (!num_tols_.user_tolerances && (!reconstructor_tols_.empty()) ) {
@@ -1040,7 +1044,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_node.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_node.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  
@@ -1080,7 +1084,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   }
 #endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, NODE,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,

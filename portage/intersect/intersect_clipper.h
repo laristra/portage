@@ -12,10 +12,12 @@ Please see the license file at the root of this repository, or at:
 #include <cfloat>
 #include <algorithm>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/intersect/clipper.hpp"
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 namespace Portage {
 

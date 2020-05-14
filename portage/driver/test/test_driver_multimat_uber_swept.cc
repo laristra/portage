@@ -4,15 +4,22 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
@@ -23,8 +30,6 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_swept_face.h"
 #include "portage/search/search_kdtree.h"
@@ -426,4 +431,4 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
 }
 
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

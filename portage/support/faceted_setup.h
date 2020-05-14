@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/AuxMeshTopology.h"
 #include "wonton/support/Point.h"
 #include "portage/support/weight.h"
@@ -36,8 +37,8 @@ namespace Portage { namespace Meshfree { namespace Weight {
  */
 template<int dim, class Mesh>
 void faceted_setup_cell(Mesh const& mesh,
-                        Portage::vector<std::vector<std::vector<double>>>& smoothing_lengths,
-                        Portage::vector<Wonton::Point<dim>>& extents,
+                        Wonton::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                        Wonton::vector<Wonton::Point<dim>>& extents,
                         double smoothing_factor, double boundary_factor) {
 
   if (smoothing_factor < 0.) {
@@ -188,8 +189,8 @@ void faceted_setup_cell(Mesh const& mesh,
 
 template<int dim, class Mesh>
 void faceted_setup_cell(std::vector<Mesh*> meshes,
-                        Portage::vector<std::vector<std::vector<double>>>& smoothing_lengths,
-                        Portage::vector<Wonton::Point<dim>>& extents,
+                        Wonton::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                        Wonton::vector<Wonton::Point<dim>>& extents,
                         double smoothing_factor, double boundary_factor) {
 
   int total_cells = 0;
@@ -203,8 +204,8 @@ void faceted_setup_cell(std::vector<Mesh*> meshes,
 
   for (auto&& mesh : meshes) {
     int ncells = mesh->num_owned_cells();
-    Portage::vector<std::vector<std::vector<double>>> sl;
-    Portage::vector<Wonton::Point<dim>> ex;
+    Wonton::vector<std::vector<std::vector<double>>> sl;
+    Wonton::vector<Wonton::Point<dim>> ex;
     faceted_setup_cell<dim, Mesh>(*mesh, sl, ex, smoothing_factor, boundary_factor);
     for (int i = 0; i < ncells; i++) {
       smoothing_lengths[offset + i] = sl[i];
@@ -251,8 +252,8 @@ void faceted_setup_cell(std::vector<Mesh*> meshes,
 template<int dim, class Mesh, class State>
 void faceted_setup_cell(const Mesh& mesh, const State& state,
                         std::string field, double tolerance,
-                        Portage::vector<std::vector<std::vector<double>>>& smoothing_lengths,
-                        Portage::vector<Wonton::Point<dim>>& extents,
+                        Wonton::vector<std::vector<std::vector<double>>>& smoothing_lengths,
+                        Wonton::vector<Wonton::Point<dim>>& extents,
                         double smoothing_factor, double boundary_factor) {
 
   faceted_setup_cell(mesh, smoothing_lengths, extents,
