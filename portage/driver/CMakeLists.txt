@@ -67,7 +67,7 @@ install(TARGETS portage_driver
 
 if (ENABLE_UNIT_TESTS)
 
-   if (Jali_DIR)
+   if (WONTON_ENABLE_Jali)
        cinch_add_unit(test_driver
        SOURCES test/test_driver.cc 
        LIBRARIES portage_driver
