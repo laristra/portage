@@ -8,6 +8,8 @@ Please see the license file at the root of this repository, or at:
 #ifndef PORTAGE_INTERSECT_INTERSECT_RND_H_
 #define PORTAGE_INTERSECT_INTERSECT_RND_H_
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"

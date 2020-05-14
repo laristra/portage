@@ -9,18 +9,20 @@ Please see the license file at the root of this repository, or at:
 
 #include <memory>
 
-
 #include "gtest/gtest.h"
+
+#include "wonton/support/wonton.h"
+
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"

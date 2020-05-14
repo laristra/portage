@@ -6,10 +6,12 @@
 
 #pragma once
 
-#include "portage/support/portage.h"
-#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Polytope.h"
+
+#include "portage/support/portage.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"

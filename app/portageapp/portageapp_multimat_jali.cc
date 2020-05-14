@@ -28,14 +28,16 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/write_to_gmv.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/support/Point.h"
 #include "read_material_data.h"
 #include "user_field.h"
 

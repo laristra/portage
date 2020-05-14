@@ -23,6 +23,8 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 
 // wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/state_vector_uni.h"

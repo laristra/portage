@@ -19,6 +19,8 @@
 #include <type_traits>
 #include <limits>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/driver/fix_mismatch.h"
 

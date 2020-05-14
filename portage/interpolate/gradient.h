@@ -13,14 +13,15 @@
 #include <vector>
 #include <iostream>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
-
-#include "wonton/support/lsfits.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"

@@ -7,18 +7,21 @@ Please see the license file at the root of this repository, or at:
 #ifndef MPI_PARTICLE_DISTRIBUTE_H_
 #define MPI_PARTICLE_DISTRIBUTE_H_
 
-#ifdef WONTON_ENABLE_MPI
-
 #include <cassert>
 #include <algorithm>
 #include <numeric>
 #include <memory>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
+
+#include "wonton/support/Point.h"
+
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
-#include "wonton/support/Point.h"
 
 #include "mpi.h"
 

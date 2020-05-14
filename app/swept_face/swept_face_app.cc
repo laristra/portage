@@ -18,6 +18,9 @@
 #include "Mesh.hh"         // see https://github.com/lanl/jali
 #include "MeshFactory.hh"
 #include "JaliState.h"
+
+// wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 

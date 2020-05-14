@@ -8,9 +8,11 @@ Please see the license file at the root of this repository, or at:
 #include <random>
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/basis.h"
-#include "wonton/support/Point.h"
 
 using Portage::Meshfree::basis::Type;
 using Portage::Meshfree::basis::Unitary;

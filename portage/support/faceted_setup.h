@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <stdexcept>
 
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/AuxMeshTopology.h"
 #include "wonton/support/Point.h"
 #include "portage/support/weight.h"

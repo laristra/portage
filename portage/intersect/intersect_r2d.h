@@ -13,6 +13,9 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 extern "C" {
 #include "wonton/intersect/r3d/r2d.h"
@@ -27,7 +30,6 @@ extern "C" {
 #include "tangram/support/MatPoly.h"
 #endif 
 
-#include "wonton/support/Point.h"
 
 namespace Portage {
 

@@ -8,12 +8,14 @@ Please see the license file at the root of this repository, or at:
 #include <ostream>
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/estimate/estimate.h"
 
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 using Wonton::Point;
 using namespace Portage::Meshfree;

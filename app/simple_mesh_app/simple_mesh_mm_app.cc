@@ -12,6 +12,8 @@
 #include <string>
 #include <memory>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"

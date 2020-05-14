@@ -8,11 +8,13 @@ Please see the license file at the root of this repository, or at:
 #include <portage/driver/driver_swarm.h>
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
 #include "portage/support/operator_references.h"
-#include "wonton/support/Point.h"
 
 using namespace Portage::Meshfree;
 using Wonton::Point;

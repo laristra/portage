@@ -12,18 +12,19 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 extern "C" {
 #include "wonton/intersect/r3d/r3d.h"
 }
 
+#include "portage/support/portage.h"
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/support/MatPoly.h"
 #endif
 
-
-#include "portage/support/portage.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
 
 
 namespace Portage {

@@ -14,11 +14,19 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
-#ifdef WONTON_ENABLE_MPI
-#include <mpi.h>
-#else
-#define PORTAGE_SERIAL_ONLY
-#endif
+// jali includes
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 // portage includes
 #include "portage/support/portage.h"
@@ -32,18 +40,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-
-// jali includes
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
+#ifdef WONTON_ENABLE_MPI
+#include <mpi.h>
+#else
+#define PORTAGE_SERIAL_ONLY
+#endif
 
 template<size_t dim>
 struct Controls {

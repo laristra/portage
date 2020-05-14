@@ -13,6 +13,14 @@ Please see the license file at the root of this repository, or at:
 
 #include "mpi.h"
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -20,14 +28,6 @@ Please see the license file at the root of this repository, or at:
 // Jali includes
 #include "Mesh.hh"
 #include "MeshFactory.hh"
-
-// wonton includes
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/support/wonton.h"
-#include "wonton/support/Point.h"
 
 
 TEST(MPI_Bounding_Boxes, SimpleTest3D) {

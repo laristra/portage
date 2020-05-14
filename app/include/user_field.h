@@ -12,9 +12,11 @@
 // See http://www.partow.net/programming/exprtk/ for source and examples
 
 #include "exprtk.hpp"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+
 #ifdef WONTON_ENABLE_Jali
-  #include "Point.hh"
+#include "Point.hh"         // for Jali's Point class
 #endif
 
 // This functor initializes a general field from a string expression

@@ -15,13 +15,14 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/CoordinateSystem.h"
+
 #include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
-
-#include "wonton/support/CoordinateSystem.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"

@@ -5,15 +5,16 @@ Please see the license file at the root of this repository, or at:
 */
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/intersect/intersect_r3d.h"
-#include "portage/support/portage.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
+
+// portage includes
+#include "portage/intersect/intersect_r3d.h"
+#include "portage/support/portage.h"
 
 TEST(intersectR3D, simple1) {
   auto sourcemesh = std::make_shared<Wonton::Simple_Mesh>(0, 0, 0, 2, 2, 2, 1, 1, 1);

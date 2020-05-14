@@ -9,11 +9,16 @@ Please see the license file at the root of this repository, or at:
 
 #include <iostream>
 #include <memory>
-
 #include "gtest/gtest.h"
+
+#include "wonton/support/wonton.h"
+
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
@@ -25,8 +30,6 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/write_to_gmv.h"
 
 #include "portage/driver/uberdriver.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
 #include "portage/intersect/intersect_r3d.h"

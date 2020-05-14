@@ -11,12 +11,13 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/search/search_simple_points.h"
 #include "portage/search/search_points_by_cells.h"
-
-#include "wonton/support/Point.h"
 
 TEST(search_by_cells, scatter_2d) {
 

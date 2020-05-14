@@ -18,14 +18,15 @@
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/swarm/swarm.h"
-#include "portage/support/portage.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/support/Point.h"
+
+// portage includes
+#include "portage/swarm/swarm.h"
+#include "portage/support/portage.h"
 
 using namespace Portage::Meshfree;
 

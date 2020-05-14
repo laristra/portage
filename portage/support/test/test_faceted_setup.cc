@@ -11,11 +11,14 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
 #include "wonton/support/Matrix.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
 #include "portage/support/faceted_setup.h"

@@ -15,6 +15,9 @@
 #include <type_traits>
 #include <cmath>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/support/basis.h"

@@ -10,9 +10,15 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 
 #include "gtest/gtest.h"
+
+#include "wonton/support/wonton.h"
+
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
@@ -25,8 +31,6 @@ Please see the license file at the root of this repository, or at:
 
 
 #include "portage/driver/mmdriver.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 
 #include "Mesh.hh"

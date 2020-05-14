@@ -12,18 +12,19 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+
 // portage includes
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/support/portage.h"
 #include "portage/driver/coredriver.h"
-
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
-#include "wonton/support/Point.h"
 
 double TOL = 1e-12;
 

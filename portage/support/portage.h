@@ -14,12 +14,12 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <string>
 #include <limits>
-
 #include <algorithm>
+
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 #include "wonton/support/Matrix.h"
-#include "wonton/support/wonton.h"
 
 /*
   @file portage.h

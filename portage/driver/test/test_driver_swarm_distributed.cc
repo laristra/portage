@@ -9,6 +9,10 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/support/Point.h"
+
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 #include "portage/driver/driver_swarm.h"
@@ -17,8 +21,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/support/Point.h"
 #include "portage/search/search_points_by_cells.h"
 
 #include "gtest/gtest.h"

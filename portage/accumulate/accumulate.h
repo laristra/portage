@@ -10,15 +10,16 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Matrix.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/support/operator.h"
 #include "portage/swarm/swarm.h"
-
-// wonton includes
-#include "wonton/support/Matrix.h"
 
 namespace Portage { namespace Meshfree {
 

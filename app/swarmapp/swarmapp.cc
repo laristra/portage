@@ -11,6 +11,10 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <cassert>
 #include <cmath>
+
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #ifdef WONTON_ENABLE_MPI
   #include <mpi.h>
 #endif
@@ -23,7 +27,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
-#include "wonton/support/Point.h"
 #ifdef HAVE_NANOFLANN
   #include "portage/search/search_kdtree_nanoflann.h"
 #endif

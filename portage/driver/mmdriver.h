@@ -18,6 +18,12 @@
 #include <limits>
 #include <cmath>
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/state_vector_multi.h"
+
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
 #endif
@@ -30,10 +36,6 @@
 #include "portage/intersect/intersect_r3d.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 

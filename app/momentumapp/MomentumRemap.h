@@ -11,6 +11,11 @@ Please see the license file at the root of this repository, or at:
 #include <sstream>
 #include <vector>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 // portage includes
 #include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -19,9 +24,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/support/portage.h"
-
-// wonton includes
-#include "wonton/support/Point.h"
 
 // App includes
 #include "corner_get_centroid.h"

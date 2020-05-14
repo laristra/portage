@@ -21,6 +21,8 @@ Please see the license file at the root of this repository, or at:
 #include <numeric>
 #include <stdexcept>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 
 /*!

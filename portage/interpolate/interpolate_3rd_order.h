@@ -15,6 +15,8 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/interpolate/quadfit.h"
 #include "portage/driver/parts.h"

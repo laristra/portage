@@ -5,6 +5,11 @@
 */
 
 #include <iostream>
+
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 
@@ -12,8 +17,6 @@
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
 #include "portage/support/faceted_setup.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/support/Point.h"
 
 #include "gtest/gtest.h"
 #include "mpi.h"

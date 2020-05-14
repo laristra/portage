@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #ifndef DUMMY_INTERFACE_RECONSTRUCTOR_H
 #define DUMMY_INTERFACE_RECONSTRUCTOR_H
 
-#include "portage-config.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 
 // need it for portage-config.h which defines PORTAGE_HAS_TANGRAM (if

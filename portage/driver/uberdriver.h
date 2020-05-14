@@ -19,6 +19,14 @@
 #include <memory>
 #include <limits>
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/state_vector_multi.h"
+
+#include "portage/support/portage.h"
+
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/intersect/split_r2d.h"
@@ -27,17 +35,11 @@
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
 
-#include "portage/support/portage.h"
-
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/coredriver.h"
 
 

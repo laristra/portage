@@ -18,6 +18,11 @@
 #include <memory>
 #include <limits>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/CoordinateSystem.h"
+
+#include "portage/support/portage.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
@@ -25,9 +30,6 @@
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/interpolate/gradient.h"
-#include "portage/support/portage.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/CoordinateSystem.h"
 #include "portage/driver/parts.h"
 #include "portage/driver/fix_mismatch.h"
 

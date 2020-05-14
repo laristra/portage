@@ -6,20 +6,26 @@
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
 #ifdef WONTON_ENABLE_MPI
   #include "mpi.h"
 #endif
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/intersect/intersect_swept_face.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
+
+#include "portage/support/portage.h"
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/intersect/split_r3d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
+
+#include "portage/intersect/intersect_swept_face.h"
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
 /**
  * @brief Fixture class for swept volume moments computation tests.
  *

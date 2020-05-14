@@ -14,6 +14,13 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+
 #include "portage/driver/driver_swarm.h"
 #include "portage/swarm/swarm.h"
 #include "portage/swarm/swarm_state.h"
@@ -24,11 +31,6 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 #include "portage/search/search_points_by_cells.h"
-#include "wonton/support/Point.h"
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
 
 namespace {
 // avoid long namespaces
