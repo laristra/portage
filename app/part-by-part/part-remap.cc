@@ -33,7 +33,6 @@
 /* -------------------------------------------------------------------------- */
 namespace entity {
   auto const cell = Wonton::Entity_kind::CELL;
-  auto const node = Wonton::Entity_kind::NODE;
 
   // entities parts pair data
   struct part {
@@ -108,7 +107,6 @@ static MPI_Comm comm = MPI_COMM_WORLD;
 // constants for interpolation
 static double const upper_bound = std::numeric_limits<double>::max();
 static double const lower_bound = -upper_bound;
-static double const epsilon = 1.E-10;
 
 /* -------------------------------------------------------------------------- */
 /**
