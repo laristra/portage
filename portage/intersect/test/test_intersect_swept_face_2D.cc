@@ -14,12 +14,14 @@
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/intersect/intersect_swept_face.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
+  #include "tangram/driver/CellMatPoly.h"   // TEMPORARY until Tangram is fixed
   #include "tangram/intersect/split_r2d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
+
+#include "portage/intersect/intersect_swept_face.h"
 
 #include "Mesh.hh"
 #include "MeshFactory.hh"
