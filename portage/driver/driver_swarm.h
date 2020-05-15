@@ -304,15 +304,15 @@ public:
   void run(Wonton::Executor_type const* executor = nullptr, bool report_time = true) {
 
     int rank   = 0;
-    int nprocs = 1;
-    bool distributed = false;
 
 #ifdef WONTON_ENABLE_MPI
+    bool distributed = false;
     MPI_Comm comm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const*>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       comm = mpiexecutor->mpicomm;
       MPI_Comm_rank(comm, &rank);
+      int nprocs = 0;
       MPI_Comm_size(comm, &nprocs);
       distributed = nprocs > 1;
     }

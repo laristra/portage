@@ -532,23 +532,31 @@ class MMDriver {
           std::string *errmsg = nullptr) {
     std::string message;
 
+#ifdef ENABLE_DEBUG
     auto tic = timer::now();
+#endif
 
     bool distributed = false;
+
+#ifdef ENABLE_DEBUG
     int comm_rank = 0;
-    int nprocs = 1;
+#endif
 
 #ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
+#ifdef ENABLE_DEBUG      
       MPI_Comm_rank(mycomm, &comm_rank);
+#endif
+      int nprocs = 0;
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1)
         distributed = true;
     }
 #endif
+
 #ifdef ENABLE_DEBUG
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
@@ -604,7 +612,9 @@ class MMDriver {
     if (distributed) {
       MPI_Bounding_Boxes distributor(mpiexecutor);
       if (distributor.is_redistribution_needed(source_mesh_, target_mesh_)) {
+#ifdef ENABLE_DEBUG
         tic = timer::now();
+#endif
         
         source_mesh_flat.initialize(source_mesh_);
         
@@ -769,17 +779,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &src_matvar_names,
                            std::vector<std::string> const &trg_matvar_names,
                            Wonton::Executor_type const *executor) {
-  
+
+#ifdef ENABLE_DEBUG
   int comm_rank = 0;
-  int nprocs = 1;
+#endif
 
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
+#ifdef ENABLE_DEBUG
     MPI_Comm_rank(mycomm, &comm_rank);
-    MPI_Comm_size(mycomm, &nprocs);
+#endif
   }
 #endif
 
@@ -994,17 +1006,20 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &src_meshvar_names,
                            std::vector<std::string> const &trg_meshvar_names,
                            Wonton::Executor_type const *executor) {
-  
+
+#ifdef ENABLE_DEBUG
   int comm_rank = 0;
   int nprocs = 1;
+#endif
 
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
+#ifdef ENABLE_DEBUG
     MPI_Comm_rank(mycomm, &comm_rank);
-    MPI_Comm_size(mycomm, &nprocs);
+#endif
   }
 #endif
 
