@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#ifdef PORTAGE_HAS_TANGRAM
+#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
 
 #include <cmath>
 #include <iomanip>

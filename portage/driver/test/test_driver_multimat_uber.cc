@@ -5,7 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef PORTAGE_HAS_TANGRAM
+#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
 
 #include <iostream>
 #include <memory>

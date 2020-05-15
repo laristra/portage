@@ -106,7 +106,7 @@ if (ENABLE_UNIT_TESTS)
 
      if (PORTAGE_HAS_TANGRAM)
 
-       if (TANGRAM_HAS_XMOF2D)
+       if (TANGRAM_ENABLE_XMOF2D)
 	 cinch_add_unit(test_driver_multimat
 	   SOURCES test/test_driver_multimat.cc
 	   LIBRARIES portage_driver ${TANGRAM_LIBRARIES}

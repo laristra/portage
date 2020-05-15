@@ -21,6 +21,10 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Vector.h"
 #include "wonton/support/Matrix.h"
 
+#ifdef PORTAGE_HAS_TANGRAM
+#include "tangram/support/tangram.h"
+#endif
+
 /*
   @file portage.h
   @brief Several utility types and functions within the Portage namespace.
