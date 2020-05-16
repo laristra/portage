@@ -1170,4 +1170,4 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
 #endif
 }
 
-#endif // PORTAGE_HAS_TANGRAM
+#endif // PORTAGE_HAS_TANGRAM and TANGRAM_ENABLE_XMOF2D

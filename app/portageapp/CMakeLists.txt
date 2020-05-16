@@ -28,7 +28,7 @@ if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
   endif ()
 
 
-  if (PORTAGE_ENABLE_TANGRAM)
+  if (PORTAGE_HAS_TANGRAM)
     add_executable(portageapp_rgmd_jali portageapp_rgmd_jali.cc)    
     target_link_libraries(portageapp_rgmd_jali PRIVATE portage)
     

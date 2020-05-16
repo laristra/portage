@@ -12,9 +12,11 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 #include "wonton/support/wonton.h"
+
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
@@ -40,7 +42,6 @@ Please see the license file at the root of this repository, or at:
 #endif
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
-
 
 double TOL = 1e-6;
 
