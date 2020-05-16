@@ -858,7 +858,9 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D>
+          Tangram::IR_2D,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -874,7 +876,9 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D>
+          Tangram::IR_2D,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
