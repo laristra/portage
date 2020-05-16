@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -28,12 +28,18 @@
 #endif
 
 //Tangram includes
-#include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/reconstruct/MOF.h"
+
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+  #define IR_2D XMOF2D_Wrapper
+#else
+  #define IR_2D MOF
+#endif
 
 //Portage includes
 #include "portage/driver/uberdriver.h"
@@ -707,7 +713,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::XMOF2D_Wrapper>
+                       Tangram::IR_2D>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
@@ -723,7 +729,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::XMOF2D_Wrapper>
+                       Tangram::IR_2D>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         

@@ -5,7 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
@@ -22,12 +22,18 @@ Please see the license file at the root of this repository, or at:
 
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
+
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+  #define IR_2D XMOF2D_Wrapper
+#else
+  #define IR_2D MOF
+#endif
 
 #include "portage/driver/uberdriver.h"
 #include "portage/search/search_kdtree.h"
@@ -246,7 +252,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::XMOF2D_Wrapper>
+                       Tangram::IR_2D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
