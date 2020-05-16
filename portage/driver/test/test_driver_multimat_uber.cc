@@ -252,7 +252,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D>
+                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
