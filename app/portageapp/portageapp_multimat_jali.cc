@@ -6,7 +6,10 @@
 
 #include "portage/support/portage.h"
 
-#ifdef PORTAGE_HAS_TANGRAM
+// need XMOF for this one
+// otherwise: "error: variable or field ‘split_matpolys’ declared void
+//     MatPoly_Splitter split_matpolys(hs_sets.upper_halfspace_set.matpolys,"
+#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
 
 #include <sys/time.h>
 #include <cstdio>
@@ -44,17 +47,11 @@
 #include "user_field.h"
 
 #include "tangram/driver/driver.h"
+#include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/intersect/split_r2d.h"
-
-#ifdef TANGRAM_ENABLE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
-#endif
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -196,7 +193,7 @@ class interface_reconstructor_factory<2, MeshWrapper, true>{
       mesh_(mesh), tols_(tols) {};
 
   auto operator()() -> decltype(auto) {
-    return std::make_shared<Tangram::Driver<Tangram::IR_2D, 2,
+    return std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
                                             MeshWrapper>>(mesh_, tols_, true);
   }
 
@@ -858,7 +855,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D>
+          Tangram::XMOF2D_Wrapper>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -874,7 +871,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D>
+          Tangram::XMOF2D_Wrapper>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
