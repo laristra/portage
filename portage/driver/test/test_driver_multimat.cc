@@ -20,6 +20,13 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
+#include "portage/driver/mmdriver.h"
+#include "portage/intersect/simple_intersect_for_tests.h"
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
@@ -27,14 +34,6 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
-
-
-#include "portage/driver/mmdriver.h"
-#include "portage/intersect/simple_intersect_for_tests.h"
-
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
 
 double TOL = 1e-6;
 

@@ -11,30 +11,15 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include "gtest/gtest.h"
 
+// wonton
 #include "wonton/support/wonton.h"
-
 #ifdef WONTON_ENABLE_MPI
-#include "mpi.h"
+  #include "mpi.h"
 #endif
-
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-
-#ifdef TANGRAM_ENABLE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
-#endif
-
+// portage
 #include "portage/driver/uberdriver.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -46,6 +31,22 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+// tangram
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+  #define IR_2D XMOF2D_Wrapper
+#else
+  #define IR_2D MOF
+#endif
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
+
 
 double TOL = 1e-6;
 

@@ -21,14 +21,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_swept_face.h"
 #include "portage/search/search_kdtree.h"
@@ -42,6 +34,14 @@ Please see the license file at the root of this repository, or at:
 #include "JaliState.h"
 
 #include "portage/driver/uberdriver.h"
+
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 double TOL = 1e-6;
 

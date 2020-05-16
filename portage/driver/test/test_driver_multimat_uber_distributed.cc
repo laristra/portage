@@ -27,20 +27,6 @@
 #include "mpi.h"
 #endif
 
-//Tangram includes
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/MOF.h"
-
-#ifdef TANGRAM_ENABLE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
-#endif
-
 //Portage includes
 #include "portage/driver/uberdriver.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
@@ -50,6 +36,20 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+
+//Tangram includes
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+  #define IR_2D XMOF2D_Wrapper
+#else
+  #define IR_2D MOF
+#endif
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 
@@ -713,7 +713,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D>
+                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
@@ -729,7 +729,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D>
+                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
