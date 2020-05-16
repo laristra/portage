@@ -26,9 +26,9 @@ if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
   if (ENABLE_PROFILE)
     target_link_libraries(portageapp_jali PRIVATE ${VTUNE_LIB})
   endif ()
-  
 
-  if (PORTAGE_HAS_TANGRAM)
+
+  if (PORTAGE_ENABLE_TANGRAM)
     add_executable(portageapp_rgmd_jali portageapp_rgmd_jali.cc)    
     target_link_libraries(portageapp_rgmd_jali PRIVATE portage)
     

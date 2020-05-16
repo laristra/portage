@@ -5,27 +5,24 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-
 #ifdef PORTAGE_HAS_TANGRAM
 
 #include <memory>
+
 #include "gtest/gtest.h"
 
-// wonton
 #include "wonton/support/wonton.h"
 #ifdef WONTON_ENABLE_MPI
-  #include "mpi.h"
+#include "mpi.h"
 #endif
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-// jali
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-// portage
 #include "portage/driver/mmdriver.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -33,7 +30,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 
-// tangram
+double TOL = 1e-6;
+
+// for some reason, tangram headers should be included
+// after portage ones, otherwise this error may occur:
+// error: ‘CellMatPoly’ was not declared in this scope.
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
 #ifdef TANGRAM_ENABLE_XMOF2D
@@ -41,8 +42,6 @@ Please see the license file at the root of this repository, or at:
 #endif
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
-
-double TOL = 1e-6;
 
 // Tests for multi-material remap with 2nd Order Accurate Remap
 

@@ -41,11 +41,13 @@
 //Tangram includes
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
-#ifdef TANGRAM_ENABLE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
+#ifndef IR_2D
+  #ifdef TANGRAM_ENABLE_XMOF2D
+    #include "tangram/reconstruct/xmof2D_wrapper.h"
+    #define IR_2D XMOF2D_Wrapper
+  #else
+    #define IR_2D MOF
+  #endif
 #endif
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/driver/driver.h"
