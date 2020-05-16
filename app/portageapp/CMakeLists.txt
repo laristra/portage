@@ -48,7 +48,7 @@ if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
     add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
     target_link_libraries(portageapp_multimat_jali PRIVATE portage)
 
-    if (TANGRAM_HAS_XMOF2D)
+    if (TANGRAM_ENABLE_XMOF2D)
       target_link_libraries(portageapp_multimat_jali PRIVATE ${XMOF2D_LIBRARIES})
     endif ()
 
