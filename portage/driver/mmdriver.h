@@ -782,17 +782,14 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 #ifdef ENABLE_DEBUG
   int comm_rank = 0;
-#endif
-
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
-#ifdef ENABLE_DEBUG
     MPI_Comm_rank(mycomm, &comm_rank);
-#endif
   }
+#endif
 #endif
 
 #ifdef ENABLE_DEBUG
@@ -1009,18 +1006,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
 #ifdef ENABLE_DEBUG
   int comm_rank = 0;
-  int nprocs = 1;
-#endif
 
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
-#ifdef ENABLE_DEBUG
     MPI_Comm_rank(mycomm, &comm_rank);
-#endif
   }
+#endif
 #endif
 
 #ifdef ENABLE_DEBUG
