@@ -20,15 +20,6 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-
 #include "portage/driver/uberdriver.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -40,6 +31,17 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+#endif
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 double TOL = 1e-6;
 
@@ -63,6 +65,8 @@ double TOL = 1e-6;
 // target mesh side
 
 
+#ifdef TANGRAM_ENABLE_XMOF2D
+// this test won't pass with MOF
 TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -421,7 +425,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
     ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);
 
 }  // ThreeMat2D_MOF_MixedOrderRemap
-
+#endif
 
 
 

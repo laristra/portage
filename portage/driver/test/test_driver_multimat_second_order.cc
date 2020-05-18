@@ -16,6 +16,7 @@ Please see the license file at the root of this repository, or at:
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
@@ -23,12 +24,6 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
-
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
 
 #include "portage/driver/mmdriver.h"
 #include "portage/search/search_kdtree.h"
@@ -39,6 +34,16 @@ Please see the license file at the root of this repository, or at:
 
 double TOL = 1e-6;
 
+// for some reason, tangram headers should be included
+// after portage ones, otherwise this error may occur:
+// error: ‘CellMatPoly’ was not declared in this scope.
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+#endif
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 
 // Tests for multi-material remap with 2nd Order Accurate Remap
 
@@ -59,6 +64,8 @@ double TOL = 1e-6;
 // target mesh side
 
 
+#ifdef TANGRAM_ENABLE_XMOF2D
+// this test won't pass with MOF
 TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -402,7 +409,7 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
      ASSERT_NEAR(l2error, 0.0, TOL);
   }
 }  // ThreeMat2D_MOF_2ndOrderRemap
-
+#endif
 
 TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
   // Source and target meshes

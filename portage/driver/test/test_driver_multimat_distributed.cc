@@ -23,14 +23,6 @@
 #include "mpi.h"
 #include "gtest/gtest.h"
 
-//Tangram includes
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-
 //Portage includes
 #include "portage/driver/uberdriver.h"
 #include "portage/driver/mmdriver.h"
@@ -41,6 +33,14 @@
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+//Tangram includes
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 

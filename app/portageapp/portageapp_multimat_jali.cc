@@ -4,6 +4,10 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#include "portage/support/portage.h"
+
+#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
+
 #include <sys/time.h>
 #include <cstdio>
 #include <cstdlib>
@@ -28,12 +32,10 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "wonton/support/Point.h"
 
-#include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
@@ -41,15 +43,12 @@
 #include "read_material_data.h"
 #include "user_field.h"
 
-
-#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r3d.h"
 #include "tangram/intersect/split_r2d.h"
-#endif
 
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
@@ -1170,3 +1169,5 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
   }
 #endif
 }
+
+#endif // PORTAGE_HAS_TANGRAM and TANGRAM_ENABLE_XMOF2D

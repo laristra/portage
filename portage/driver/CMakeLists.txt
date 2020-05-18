@@ -106,7 +106,6 @@ if (ENABLE_UNIT_TESTS)
 
      if (PORTAGE_HAS_TANGRAM)
 
-       if (TANGRAM_HAS_XMOF2D)
 	 cinch_add_unit(test_driver_multimat
 	   SOURCES test/test_driver_multimat.cc
 	   LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
@@ -130,7 +129,6 @@ if (ENABLE_UNIT_TESTS)
 	   LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
 	   POLICY MPI
 	   THREADS 1)
-       endif ()
 
        cinch_add_unit(test_driver_multimat_distributed
        SOURCES test/test_driver_multimat_distributed.cc

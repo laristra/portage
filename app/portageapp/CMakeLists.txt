@@ -25,11 +25,10 @@ if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
   
   if (ENABLE_PROFILE)
     target_link_libraries(portageapp_jali PRIVATE ${VTUNE_LIB})
-    target_include_directories(portageapp_multimat_jali PRIVATE ${VTUNE_INCLUDE_DIR})
   endif ()
-  
 
-  if (PORTAGE_ENABLE_TANGRAM)    
+
+  if (PORTAGE_HAS_TANGRAM)
     add_executable(portageapp_rgmd_jali portageapp_rgmd_jali.cc)    
     target_link_libraries(portageapp_rgmd_jali PRIVATE portage)
     
@@ -41,24 +40,21 @@ if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
       target_link_libraries(portageapp_rgmd_jali PRIVATE ${VTUNE_LIB})
     endif ()
     
-    if (TANGRAM_HAS_XMOF2D)
+    if (TANGRAM_ENABLE_XMOF2D)
       target_link_libraries(portageapp_rgmd_jali PRIVATE ${XMOF2D_LIBRARIES})
-    endif ()
-    
-    add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
-    target_link_libraries(portageapp_multimat_jali PRIVATE portage)
 
-    if (TANGRAM_HAS_XMOF2D)
+      add_executable(portageapp_multimat_jali portageapp_multimat_jali.cc)
+      target_link_libraries(portageapp_multimat_jali PRIVATE portage)
       target_link_libraries(portageapp_multimat_jali PRIVATE ${XMOF2D_LIBRARIES})
-    endif ()
 
-    if (ENABLE_APP_TIMINGS)
-      target_compile_definitions(portageapp_multimat_jali PRIVATE ENABLE_TIMINGS=1)
-    endif()
+      if (ENABLE_APP_TIMINGS)
+        target_compile_definitions(portageapp_multimat_jali PRIVATE ENABLE_TIMINGS=1)
+      endif()
 
-    if (ENABLE_PROFILE)
-      target_link_libraries(portageapp_multimat_jali PRIVATE ${VTUNE_LIB})
-      target_include_directories(portageapp_multimat_jali PRIVATE ${VTUNE_INCLUDE_DIR})
+      if (ENABLE_PROFILE)
+        target_link_libraries(portageapp_multimat_jali PRIVATE ${VTUNE_LIB})
+        target_include_directories(portageapp_multimat_jali PRIVATE ${VTUNE_INCLUDE_DIR})
+      endif ()
     endif ()
   endif ()
 

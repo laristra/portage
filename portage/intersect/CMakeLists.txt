@@ -82,7 +82,6 @@ if (ENABLE_UNIT_TESTS)
     POLICY SERIAL)
   
   if (PORTAGE_HAS_TANGRAM)
-    if (TANGRAM_HAS_XMOF2D)	    
       cinch_add_unit(test_intersect_tangram_2d
         SOURCES test/test_tangram_intersect_2D.cc
         LIBRARIES portage_intersect
@@ -92,7 +91,6 @@ if (ENABLE_UNIT_TESTS)
         SOURCES test/test_tangram_intersect_3D.cc
         LIBRARIES portage_intersect
         POLICY SERIAL)
-    endif ()
   endif ()
 
 endif (ENABLE_UNIT_TESTS)
