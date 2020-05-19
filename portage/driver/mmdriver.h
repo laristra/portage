@@ -534,15 +534,13 @@ class MMDriver {
 
 #ifdef ENABLE_DEBUG
     auto tic = timer::now();
-#endif
 
-    bool distributed = false;
-
-#ifdef ENABLE_DEBUG
     int comm_rank = 0;
 #endif
 
 #ifdef WONTON_ENABLE_MPI
+    bool distributed = false;
+
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
