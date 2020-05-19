@@ -840,7 +840,9 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #ifdef ENABLE_DEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
+#ifdef PORTAGE_HAS_TANGRAM
   int nmats = source_state2.num_materials();
+#endif
 
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
