@@ -267,8 +267,10 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   remapper.run();
 
  // the result should the same
-  for ( auto c : mesh_b.cells() )
-    assert( std::fabs(b[c]- 1.0) <= flecsi_3d::test_tolerance );
+  for ( auto c : mesh_b.cells() ) {
+    auto val = b[c];
+    assert( std::fabs(val - 1.0) <= flecsi_3d::test_tolerance );
+  }
 
   // now try something more complicated
 
