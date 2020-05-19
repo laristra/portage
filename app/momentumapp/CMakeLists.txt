@@ -50,20 +50,9 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
   #
   # MM : create 2D binary
   #
-  if (PORTAGE_ENABLE_TANGRAM)
+  if (PORTAGE_HAS_TANGRAM AND WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
     add_executable(momentumapp2D_mm momentumapp2D_mm.cc)
-
-    # available build options
-    set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune profiling")
-
-    # link to portage and its dependencies
     target_link_libraries(momentumapp2D_mm PRIVATE portage)
-
-    # link to jali
-    target_include_directories(momentumapp2D_mm PRIVATE ${Jali_INCLUDE_DIRS})
-    target_include_directories(momentumapp2D_mm PRIVATE ${Jali_TPL_INCLUDE_DIRS})
-    target_link_libraries(momentumapp2D_mm PRIVATE ${Jali_LIBRARIES})
-    target_link_libraries(momentumapp2D_mm PRIVATE ${Jali_TPL_LIBRARIES})
   endif()
 
   if(ENABLE_APP_TESTS)

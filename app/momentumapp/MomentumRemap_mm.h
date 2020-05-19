@@ -35,8 +35,7 @@ Please see the license file at the root of this repository, or at:
 #define IR_2D MOF
 #endif
 
-const int SGH = 1;
-const int CCH = 2;
+#include "MomentumRemapDefs.h"
 
 /* ******************************************************************
 * App class that handles initialization and verification of fields.
@@ -44,7 +43,7 @@ const int CCH = 2;
 template<int D, class Mesh_Wrapper, class State_Wrapper>
 class MomentumRemap_mm {
  public:
-  MomentumRemap_mm(int method)
+  MomentumRemap_mm(const Method& method)
     : method_(method),
       mass_name_("mass"),
       velocity_name_({ "velocity_x", "velocity_y", "velocity_z" }) {};
@@ -62,10 +61,10 @@ class MomentumRemap_mm {
 
   // field type
   Wonton::Entity_kind MassKind() const {
-    return (method_ == SGH) ? Wonton::Entity_kind::CORNER : Wonton::Entity_kind::CELL;
+    return (method_ == Method::SGH) ? Wonton::Entity_kind::CORNER : Wonton::Entity_kind::CELL;
   }
   Wonton::Entity_kind VelocityKind() const {
-    return (method_ == SGH) ? Wonton::Entity_kind::NODE : Wonton::Entity_kind::CELL;
+    return (method_ == Method::SGH) ? Wonton::Entity_kind::NODE : Wonton::Entity_kind::CELL;
   }
 
   // main remap method
@@ -101,8 +100,7 @@ class MomentumRemap_mm {
       double* l2err, double* l2norm);
 
  private:
- private:
-  int method_;
+  Method method_;
   std::vector<std::string> mat_names_;
 
   std::string mass_name_;
@@ -535,15 +533,15 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
                     Mesh_Wrapper, State_Wrapper,
                     Tangram::IR_2D,
                     Tangram::SplitR2D, Tangram::ClipR2D>
-      cd(srcmesh, srcstate,
-         trgmesh, trgstate);
+      mmd(srcmesh, srcstate,
+          trgmesh, trgstate);
 
   // -- register fields that we want to remap
-  cd.set_remap_var_names(field_names);
+  mmd.set_remap_var_names(field_names);
 
   // -- select limiters
-  cd.set_limiter(limiter);
-  cd.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
+  mmd.set_limiter(limiter);
+  mmd.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
 
   // -- specify tolerances
   double dst_tol = 100 * std::numeric_limits<double>::epsilon();
@@ -553,10 +551,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
   ims_tols[0] = {1000, dst_tol, vol_tol};
   ims_tols[1] = {100, 1.0e-15, 1.0e-15};
 
-  cd.set_reconstructor_options(true, ims_tols);
-
-  // for (auto& name : field_names) 
-  //   cd.set_conservation_tolerance(name, 1000 * dst_tol);
+  mmd.set_reconstructor_options(true, ims_tols);
 
   // -- execute
   int numpe;
@@ -564,7 +559,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
 
-  cd.run(executor);
+  mmd.run(executor);
 
   // -- extract multi-material data
   std::vector<int> matcells_trg[nmats];

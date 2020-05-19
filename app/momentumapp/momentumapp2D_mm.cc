@@ -66,6 +66,27 @@ void StringToStrings(int D, const std::string& in, std::vector<std::string>& out
 
 
 /* ******************************************************************
+* Supporting routines
+****************************************************************** */
+template<typename Mesh_Wrapper>
+double EvaluateCurl(Mesh_Wrapper const& mesh,
+                    const std::vector<Wonton::vector<Wonton::Vector<2>>>& gradient)
+{
+  int ncells = mesh.num_owned_cells();
+
+  double L2norm_loc(0.0), L2norm_glb;
+  for (int c = 0; c < ncells; ++c) {
+    const Wonton::Vector<2>& a = gradient[0][c];
+    const Wonton::Vector<2>& b = gradient[1][c]; 
+    L2norm_loc += std::pow(a[1] - b[0], 2) * mesh.cell_volume(c); 
+  }
+ 
+  MPI_Allreduce(&L2norm_loc, &L2norm_glb, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  return std::sqrt(L2norm_glb);
+}
+
+
+/* ******************************************************************
 * Main driver for the momentum remap
 ****************************************************************** */
 int main(int argc, char** argv) {
@@ -144,7 +165,7 @@ int main(int argc, char** argv) {
   Wonton::Jali_State_Wrapper trgstate_wrapper(*trgstate);
 
   // -- register materials with the states
-  MomentumRemap_mm<2, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> mr(CCH);
+  MomentumRemap_mm<2, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> mr(Method::CCH);
   mr.InitMaterials(srcmesh_wrapper, srcstate_wrapper);
 
   for (int m = 0; m < mr.mat_names().size(); ++m)
@@ -248,14 +269,7 @@ int main(int argc, char** argv) {
                          grads_src[i].begin(), gradient_kernel);
     }
 
-    for (int c = 0; c < ncells_src; ++c) {
-      const Wonton::Vector<2>& a = grads_src[0][c];
-      const Wonton::Vector<2>& b = grads_src[1][c]; 
-      double tmp = a[1] - b[0]; 
-      double vol = srcmesh_wrapper.cell_volume(c);
-      curl_src += tmp * tmp * vol; 
-    }
-    curl_src = std::sqrt(curl_src);
+    curl_src = EvaluateCurl(srcmesh_wrapper, grads_src);
   }
 
   { 
@@ -274,14 +288,7 @@ int main(int argc, char** argv) {
                          grads_trg[i].begin(), gradient_kernel);
     }
 
-    for (int c = 0; c < ncells_trg; ++c) {
-      const Wonton::Vector<2>& a = grads_trg[0][c];
-      const Wonton::Vector<2>& b = grads_trg[1][c]; 
-      double tmp = a[1] - b[0]; 
-      double vol = trgmesh_wrapper.cell_volume(c);
-      curl_trg += tmp * tmp * vol; 
-    }
-    curl_trg = std::sqrt(curl_trg);
+    curl_trg = EvaluateCurl(trgmesh_wrapper, grads_trg);
   }
 
   if (rank == 0) {
