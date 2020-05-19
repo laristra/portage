@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
        error = cen[0] + cen[1] - targetMeshAccessor[c];
     else
        error = cen[0]*cen[0] + cen[1]*cen[1] - targetMeshAccessor[c];
-    std::printf("Cell=% 4u Centroid = (% 5.3lf,% 5.3lf)",
+    std::printf("Cell=% 4z Centroid = (% 5.3lf,% 5.3lf)",
                 c.id(), cen[0], cen[1]);
     std::printf("  Value = % 10.6lf  Err = % lf\n",
                 targetMeshAccessor[c], error);
