@@ -17,12 +17,18 @@ target_include_directories(portage_driver INTERFACE
 
 set(portage_driver_HEADERS
   mmdriver.h
-  driver_swarm.h
-  driver_mesh_swarm_mesh.h
   fix_mismatch.h
   coredriver.h
   uberdriver.h
   parts.h)
+
+if (WONTON_ENABLE_KOKKOS)
+  set(portage_driver_HEADERS
+      ${portage_driver_HEADERS}
+      driver_swarm.h
+      driver_mesh_swarm_mesh.h)
+endif()
+
 if (PORTAGE_HAS_TANGRAM)
   list(APPEND portage_driver_headers
     write_to_gmv.h
@@ -42,8 +48,12 @@ install(FILES ${portage_driver_HEADERS} DESTINATION include/portage/driver)
 target_link_libraries(portage_driver INTERFACE portage_support)
 target_link_libraries(portage_driver INTERFACE portage_search)
 target_link_libraries(portage_driver INTERFACE portage_distribute)
-target_link_libraries(portage_driver INTERFACE portage_accumulate)
-target_link_libraries(portage_driver INTERFACE portage_estimate)
+
+if (WONTON_ENABLE_KOKKOS)
+  target_link_libraries(portage_driver INTERFACE portage_accumulate)
+  target_link_libraries(portage_driver INTERFACE portage_estimate)
+endif()
+
 target_link_libraries(portage_driver INTERFACE portage_intersect)
 target_link_libraries(portage_driver INTERFACE portage_interpolate)
 if (PORTAGE_HAS_TANGRAM)
@@ -98,11 +108,13 @@ if (ENABLE_UNIT_TESTS)
        POLICY MPI
        THREADS 1)
 
-       cinch_add_unit(test_driver_swarm_distributed
-       SOURCES test/test_driver_swarm_distributed.cc
-       LIBRARIES portage_driver
-       POLICY MPI
-       THREADS 4)
+       if (WONTON_ENABLE_KOKKOS)
+         cinch_add_unit(test_driver_swarm_distributed
+         SOURCES test/test_driver_swarm_distributed.cc
+         LIBRARIES portage_driver
+         POLICY MPI
+         THREADS 4)
+       endif()
 
      if (PORTAGE_HAS_TANGRAM)
 
@@ -164,22 +176,24 @@ if (ENABLE_UNIT_TESTS)
      
    endif ()
 
-   cinch_add_unit(test_driver_swarm
-     SOURCES test/test_driver_swarm.cc
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+   if (WONTON_ENABLE_KOKKOS)
+     cinch_add_unit(test_driver_swarm
+       SOURCES test/test_driver_swarm.cc
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
 
-   cinch_add_unit(test_driver_mesh_swarm_mesh
-     SOURCES test/test_driver_mesh_swarm_mesh.cc
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+     cinch_add_unit(test_driver_mesh_swarm_mesh
+       SOURCES test/test_driver_mesh_swarm_mesh.cc
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
 
-   cinch_add_unit(test_driver_part_by_particle
-     SOURCES test/test_driver_part_by_particle
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+     cinch_add_unit(test_driver_part_by_particle
+       SOURCES test/test_driver_part_by_particle
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
+   endif()
 
 endif (ENABLE_UNIT_TESTS)
