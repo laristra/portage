@@ -36,6 +36,9 @@ if (WONTON_ENABLE_KOKKOS)
 
   target_sources(portage_search PRIVATE "${search_SOURCES}")
 
+  set_target_properties(portage_search PROPERTIES
+      PUBLIC_HEADER "${portage_search_HEADERS}")
+
 else()
   add_library(portage_search INTERFACE)
 
@@ -47,9 +50,6 @@ else()
   target_link_libraries(portage_search INTERFACE portage_support)
 endif()
 
-set_target_properties(portage_search PROPERTIES
-  PUBLIC_HEADER "${portage_search_HEADERS}")
-
 target_link_libraries(portage INTERFACE portage_search)
 
 install(TARGETS portage_search
@@ -60,8 +60,6 @@ install(TARGETS portage_search
   PUBLIC_HEADER DESTINATION include/portage/search
   INCLUDES DESTINATION include/portage/search
   )
-
-
 
 # Add unit test
 if(ENABLE_UNIT_TESTS)
