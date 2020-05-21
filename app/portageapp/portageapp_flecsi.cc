@@ -68,7 +68,7 @@ int main(int argc, char** argv) {
   auto nx = atoi(argv[1]);
   auto ny = atoi(argv[2]);
   auto order = (argc > 3) ? atoi(argv[3]) : 1;
-  auto dump_output = (argc > 4) ? ((strcmp(argv[4],"n") == 0) || (strcmp(argv[4],"N") == 0)) : true;
+  auto dump_output = (argc > 4) ? ((strcmp(argv[4],"y") == 0) || (strcmp(argv[4],"Y") == 0)) : true;
 
   // length of meshes
   constexpr size_t lenx = 1.;
