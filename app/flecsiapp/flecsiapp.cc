@@ -24,10 +24,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 
 // system includes
-#include <cassert>
 #include <cmath>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace math = flecsi::sp::math;
 namespace mesh = flecsi::sp::burton;
@@ -189,7 +189,8 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
 
   // the result should the same
   for ( auto c : mesh_b.cells() )
-    assert( std::fabs(b[c]- 1.0) <= flecsi_2d::test_tolerance );
+    if (std::fabs(b[c]- 1.0) > flecsi_2d::test_tolerance)
+      throw std::runtime_error("remapped values deviate from expected values");
   
   // now try something more complicated
 
@@ -211,7 +212,8 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
   for ( auto c : mesh_b.cells() ) 
     total_b += c->volume() * b[c];
  
-  assert(std::fabs(total_a-total_b) <= flecsi_2d::test_tolerance);
+  if (std::fabs(total_a-total_b) > flecsi_2d::test_tolerance)
+    throw std::runtime_error("total values on source and target differ");
 
   // write out results  
   mesh::write_mesh(output_prefix+"_a.vtk", mesh_a, false);
@@ -267,8 +269,10 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   remapper.run();
 
  // the result should the same
-  for ( auto c : mesh_b.cells() )
-    assert( std::fabs(b[c]- 1.0) <= flecsi_3d::test_tolerance );
+  for ( auto c : mesh_b.cells() ) {
+    if (std::fabs(b[c] - 1.0) > flecsi_3d::test_tolerance)
+      std::printf("Remapped values deviate from expected values");
+  }
 
   // now try something more complicated
 
@@ -290,7 +294,8 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   for ( auto c : mesh_b.cells() )
     total_b += c->volume() * b[c];
 
-  assert(std::fabs(total_a-total_b) <= flecsi_3d::test_tolerance);
+  if (std::fabs(total_a-total_b) > flecsi_3d::test_tolerance)
+    throw std::runtime_error("total value on source and target meshes differ");
 
   // write out results
   mesh::write_mesh(output_prefix+"_a.vtk", mesh_a, false);

@@ -12,6 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <algorithm>
 #include <iterator>
+#include <cstring>
 
 #include "flecsi-sp.h"
 #include "flecsi/io/io.h"
@@ -67,7 +68,7 @@ int main(int argc, char** argv) {
   auto nx = atoi(argv[1]);
   auto ny = atoi(argv[2]);
   auto order = (argc > 3) ? atoi(argv[3]) : 1;
-  auto dump_output = (argc > 4) ? (argv[4] != "n" || argv[4] != "N") : true;
+  auto dump_output = (argc > 4) ? ((strcmp(argv[4],"y") == 0) || (strcmp(argv[4],"Y") == 0)) : true;
 
   // length of meshes
   constexpr size_t lenx = 1.;
@@ -165,7 +166,7 @@ int main(int argc, char** argv) {
        error = cen[0] + cen[1] - targetMeshAccessor[c];
     else
        error = cen[0]*cen[0] + cen[1]*cen[1] - targetMeshAccessor[c];
-    std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)",
+    std::printf("Cell=%zu Centroid = (% 5.3lf,% 5.3lf)",
                 c.id(), cen[0], cen[1]);
     std::printf("  Value = % 10.6lf  Err = % lf\n",
                 targetMeshAccessor[c], error);
@@ -197,7 +198,7 @@ int main(int argc, char** argv) {
     fout << std::scientific;
     fout.precision(17);
 
-    for (int i = 0; i < lgid.size(); ++i)
+    for (unsigned int i = 0; i < lgid.size(); ++i)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
 

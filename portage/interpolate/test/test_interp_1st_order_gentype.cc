@@ -108,8 +108,9 @@ TEST(Interpolate_1st_Order_Vec, Cell_Ctr_Const_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int nxcells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(nxcells);
+    for (int i = 0; i < nxcells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -229,8 +230,9 @@ TEST(Interpolate_1st_Order_Vec, Cell_Ctr_Lin_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int nxcells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(nxcells);
+    for (int i = 0; i < nxcells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
@@ -359,8 +361,9 @@ TEST(Interpolate_1st_Order_Vec, Node_Ctr_Const_2D) {
 
     // Pack the results into a vector of true Portage::Weights_t
 
-    std::vector<Portage::Weights_t> wtsvec(xcells.size());
-    for (int i = 0; i < xcells.size(); ++i) {
+    int nxcells = xcells.size();
+    std::vector<Portage::Weights_t> wtsvec(nxcells);
+    for (int i = 0; i < nxcells; ++i) {
       wtsvec[i].entityID = xcells[i];
       wtsvec[i].weights = xwts[i];
     }
