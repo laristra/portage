@@ -10,14 +10,15 @@ Please see the license file at the root of this repository, or at:
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
 
 #include "portage/estimate/estimate.h"
-
-#include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
 
 using Wonton::Point;
+using Wonton::Swarm;
+using Wonton::SwarmState;
 using namespace Portage::Meshfree;
 
 template<int dim>

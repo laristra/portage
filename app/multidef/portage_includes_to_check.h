@@ -18,15 +18,10 @@ Please see the license file at the root of this repository, or at:
 // Option 3 and 4 will cause each translation unit (compiled source file) to
 // have it's own copy of the function
 
-
-#include "portage/accumulate/accumulate.h"
-
 #include "portage/distributed/mpi_bounding_boxes.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 
 #include "portage/driver/coredriver.h"
-#include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/driver/driver_swarm.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/parts.h"
@@ -35,7 +30,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/write_to_gmv.h"
 #endif
 
-#include "portage/estimate/estimate.h"
 #include "portage/interpolate/gradient.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -53,18 +47,21 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/kdtree.h"
 #include "portage/search/search_direct_product.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/search/search_points_by_cells.h"
 #include "portage/search/search_simple.h"
-#include "portage/search/search_simple_points.h"
 
-#include "portage/support/basis.h"
-#include "portage/support/faceted_setup.h"
 #include "portage/support/mpi_collate.h"
-#include "portage/support/operator.h"
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
-#include "portage/support/weight.h"
 
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
-
+#ifdef WONTON_ENABLE_KOKKOS
+  #include "portage/search/search_simple_points.h"
+  #include "portage/search/search_points_by_cells.h"
+  #include "portage/accumulate/accumulate.h"
+  #include "portage/estimate/estimate.h"
+  #include "portage/driver/driver_mesh_swarm_mesh.h"
+  #include "portage/driver/driver_swarm.h"
+  #include "portage/support/basis.h"
+  #include "portage/support/faceted_setup.h"
+  #include "portage/support/operator.h"
+  #include "portage/support/weight.h"
+#endif

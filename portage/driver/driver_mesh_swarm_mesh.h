@@ -22,6 +22,8 @@ Please see the license file at the root of this repository, or at:
 // wonton includes
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
 
 // portage includes
 #include "portage/support/timer.h"
@@ -30,8 +32,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
 #include "portage/support/faceted_setup.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/driver/driver_swarm.h"
@@ -213,7 +213,7 @@ public:
     using namespace Meshfree;
     // useful aliases
     using SwarmRemap = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                   Swarm<dim>, SwarmState<dim>>;
+                                   Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     int rank = 0;
     int nprocs = 1;
@@ -261,10 +261,10 @@ public:
     // Collect all cell based variables and remap them
     if (not source_cellvar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
-      Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
-      SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
-      SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
+      Wonton::Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
+      Wonton::Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
+      Wonton::SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
+      Wonton::SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
 
       // set up smoothing lengths and extents
       Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths;
@@ -390,10 +390,10 @@ public:
 
     if (not source_nodevar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
-      Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
-      SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
-      SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
+      Wonton::Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
+      Wonton::Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
+      Wonton::SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
+      Wonton::SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
 
       // create smoothing lengths
       Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths;

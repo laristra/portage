@@ -17,14 +17,18 @@ target_include_directories(portage_support INTERFACE
 # Add header files
 set(portage_support_HEADERS
     portage.h
-    weight.h
-    basis.h
-    operator.h
-    operator_references.h
-    faceted_setup.h
     timer.h
-    mpi_collate.h
-    )
+    mpi_collate.h)
+
+if (WONTON_ENABLE_KOKKOS)
+  set(portage_support_HEADERS
+      ${portage_support_HEADERS}
+      weight.h
+      basis.h
+      operator.h
+      operator_references.h
+      faceted_setup.h)
+endif ()
 
 # Not yet allowed for INTERFACE libraries
 # 
@@ -65,7 +69,7 @@ install(TARGETS portage_support
 
 # Unit tests
 
-if (ENABLE_UNIT_TESTS)
+if (WONTON_ENABLE_KOKKOS AND ENABLE_UNIT_TESTS)
 
   cinch_add_unit(test_weight
     SOURCES test/test_weight.cc
@@ -96,4 +100,4 @@ if (ENABLE_UNIT_TESTS)
     THREADS 1
     )
 
-endif(ENABLE_UNIT_TESTS)
+endif()
