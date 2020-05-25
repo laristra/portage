@@ -10,13 +10,15 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-#include "portage/intersect/intersect_boxes.h"
-#include "portage/search/search_direct_product.h"
-
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/mesh/direct_product/direct_product_mesh.h"
 #include "wonton/mesh/direct_product/direct_product_mesh_wrapper.h"
 #include "wonton/mesh/adaptive_refinement/adaptive_refinement_mesh.h"
 #include "wonton/mesh/adaptive_refinement/adaptive_refinement_mesh_wrapper.h"
+
+#include "portage/intersect/intersect_boxes.h"
+#include "portage/search/search_direct_product.h"
 
 // ============================================================================
 

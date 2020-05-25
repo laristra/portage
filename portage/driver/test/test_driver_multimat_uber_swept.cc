@@ -4,13 +4,17 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -1662,4 +1666,4 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
 
 } //ThreeMat3D_2ndOrder
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

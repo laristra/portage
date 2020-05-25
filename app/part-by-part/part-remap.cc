@@ -9,10 +9,10 @@
 #include <memory>
 #include <chrono>
 #include <map>
-#include <portage/interpolate/interpolate_2nd_order.h>
 #include "mpi.h" // mandatory
 
 // meshes and states
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "MeshFactory.hh"
@@ -33,7 +33,6 @@
 /* -------------------------------------------------------------------------- */
 namespace entity {
   auto const cell = Wonton::Entity_kind::CELL;
-  auto const node = Wonton::Entity_kind::NODE;
 
   // entities parts pair data
   struct part {
@@ -108,7 +107,6 @@ static MPI_Comm comm = MPI_COMM_WORLD;
 // constants for interpolation
 static double const upper_bound = std::numeric_limits<double>::max();
 static double const lower_bound = -upper_bound;
-static double const epsilon = 1.E-10;
 
 /* -------------------------------------------------------------------------- */
 /**
@@ -584,7 +582,7 @@ void remap<2>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
-    Portage::vector<Wonton::Vector<2>> *gradients = nullptr;
+    Wonton::vector<Wonton::Vector<2>> *gradients = nullptr;
     auto const source_part = current_part->source();
 
     switch (params.order) {
@@ -679,7 +677,7 @@ void remap<3>(std::string field, int nb_parts,
 
   // use the right interpolator according to the requested order of remap.
   auto interpolate = [&](auto* current_part) {
-    Portage::vector<Wonton::Vector<3>> gradients;
+    Wonton::vector<Wonton::Vector<3>> gradients;
 
     switch (params.order) {
       case 1: 

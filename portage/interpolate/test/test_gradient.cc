@@ -9,17 +9,18 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/interpolate/gradient.h"
-#include "portage/support/portage.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
+
+// portage includes
+#include "portage/interpolate/gradient.h"
+#include "portage/support/portage.h"
 
 /// Test gradient computation for cell centered fields
 

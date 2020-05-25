@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <string>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 
 /* Do we need to write a variant of this which will work if we don't

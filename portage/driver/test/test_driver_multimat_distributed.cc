@@ -5,7 +5,7 @@
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -14,17 +14,14 @@
 #include <type_traits>
 #include <vector> 
 
+//Wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 //This test is distributed
 #include "mpi.h"
 #include "gtest/gtest.h"
-
-//Tangram includes
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
 
 //Portage includes
 #include "portage/driver/uberdriver.h"
@@ -37,9 +34,13 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-//Wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
+//Tangram includes
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 
@@ -1088,4 +1089,4 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
 
 }  // TwoMat2D_VOF_1stOrderRemap
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

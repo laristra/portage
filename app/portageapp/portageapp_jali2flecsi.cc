@@ -15,10 +15,12 @@ Please see the license file at the root of this repository, or at:
 #include <mpi.h>
 
 #define PORTAGE_SERIAL_ONLY
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 #include "wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "wonton/state/flecsi/flecsi_state_wrapper.h"
+
 #include "portage/driver/mmdriver.h"
 
 // FleCSI includes

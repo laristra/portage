@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include "portage/support/portage.h"
-#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Polytope.h"
 
-#ifdef HAVE_TANGRAM
+#include "portage/support/portage.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/driver/driver.h"
   #include "tangram/support/MatPoly.h"
@@ -47,7 +49,7 @@ namespace Portage {
   class IntersectSweptFace {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructorDriver = Tangram::Driver<
       InterfaceReconstructor, dim, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper>;
@@ -61,7 +63,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -129,7 +131,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -173,7 +175,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace
@@ -201,7 +203,7 @@ namespace Portage {
                            Matpoly_Splitter, Matpoly_Clipper> {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor2D = Tangram::Driver<
       InterfaceReconstructor, 2, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper>;
@@ -215,7 +217,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -382,7 +384,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -485,7 +487,7 @@ namespace Portage {
       // For the single material case, add the moments of the source cell id.
       // For the multimaterial case, add only the moments for the material
       // the intersector is working on. 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
@@ -503,7 +505,7 @@ namespace Portage {
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       } else if (source_cell_mat) {
         // mixed cell should contain this material
         assert(interface_reconstructor != nullptr);
@@ -585,11 +587,11 @@ namespace Portage {
           // if the computed swept face area is negative then assign its
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           if (single_mat_src_cell) {
 #endif          
             swept_moments.emplace_back(source_id, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else if (source_cell_mat) {
             //The volume we take out of the source cell's face group should be positive
             double clip_volume = -moments[0];
@@ -621,7 +623,7 @@ namespace Portage {
             throw std::runtime_error("invalid target mesh for swept face");
           }
           // append to list as current neighbor moment.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
@@ -637,7 +639,7 @@ namespace Portage {
           if (single_mat_adj_cell) {
 #endif
             swept_moments.emplace_back(neigh, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else {
             //Skip if the neighboring cell doesn't contain material_id_
             if (!adj_cell_mat)
@@ -662,7 +664,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace::2D::CELL
@@ -689,7 +691,7 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper> {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor3D = Tangram::Driver<
       InterfaceReconstructor, 3, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper
@@ -706,7 +708,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -886,7 +888,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -999,7 +1001,7 @@ namespace Portage {
 
       std::vector<Weights_t> swept_moments;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
@@ -1017,7 +1019,7 @@ namespace Portage {
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       } else if (source_cell_mat) {
         // mixed cell should contain this material
         assert(interface_reconstructor != nullptr);
@@ -1170,11 +1172,11 @@ namespace Portage {
           // if the computed swept region volume is negative then assign its
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           if (single_mat_src_cell) {
 #endif              
             swept_moments.emplace_back(source_id, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else if (source_cell_mat) {
             //The volume we take out of the source cell's face group should be positive
             double clip_volume = -moments[0];
@@ -1201,7 +1203,7 @@ namespace Portage {
             throw std::runtime_error("invalid stencil for source cell" + id);
           }
           // append to list as current neighbor moment.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
@@ -1217,7 +1219,7 @@ namespace Portage {
           if (single_mat_adj_cell) {
 #endif
             swept_moments.emplace_back(neigh, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else {
             //Skip if the neighboring cell doesn't contain material_id_
             if (!adj_cell_mat)
@@ -1245,7 +1247,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace::3D::CELL

@@ -19,7 +19,15 @@
 #include <memory>
 #include <limits>
 
-#ifdef HAVE_TANGRAM
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/state_vector_multi.h"
+
+#include "portage/support/portage.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/intersect/split_r2d.h"
 #include "tangram/intersect/split_r3d.h"
@@ -27,21 +35,15 @@
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #endif
 
-#include "portage/support/portage.h"
-
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/intersect_swept_face.h"
 #include "portage/interpolate/interpolate_nth_order.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/coredriver.h"
 
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -214,7 +216,7 @@ public:
   bool is_distributed_run(Wonton::Executor_type const *executor = nullptr) {
     distributed_ = false;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     mycomm_ = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -323,7 +325,7 @@ public:
     Entity_kind ONWHAT,
     template <int, Entity_kind, class, class> class Search
     >
-  Portage::vector<std::vector<int>> search() {
+  Wonton::vector<std::vector<int>> search() {
     search_completed_[ONWHAT] = true;
     switch (ONWHAT) {
       case CELL: return driver_cell_->template search<Search>();
@@ -351,8 +353,8 @@ public:
               template <class, int, class, class> class,
               class, class> class Intersect
     >
-  Portage::vector<std::vector<Portage::Weights_t>>         // return type
-  intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
+  Wonton::vector<std::vector<Portage::Weights_t>>         // return type
+  intersect_meshes(Wonton::vector<std::vector<int>> const& candidates) {
     switch (ONWHAT) {
       case CELL: {
         auto const& weights = driver_cell_->template intersect_meshes<Intersect>(candidates);
@@ -376,7 +378,7 @@ public:
     }
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver
     @param all_convex Should be set to false if the source mesh contains
@@ -418,8 +420,8 @@ public:
               template <class, int, class, class> class,
               class, class> class Intersect
     >
-  std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
-  intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
+  std::vector<Wonton::vector<std::vector<Portage::Weights_t>>>
+  intersect_materials(Wonton::vector<std::vector<int>> const& candidates) {
     assert(remap_kind_[CELL]);
     mat_intersection_completed_ = true;
     return driver_cell_->template intersect_materials<Intersect>(candidates);
@@ -538,7 +540,7 @@ public:
 
     if (source_state_.field_type(ONWHAT, srcvarname) == Field_type::MULTIMATERIAL_FIELD) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       assert(mat_intersection_completed_);
       assert(ONWHAT == CELL);
       
@@ -607,7 +609,7 @@ public:
                     class, class, class> class Interpolate
            >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights_in,
+                            Wonton::vector<std::vector<Weights_t>> const& sources_and_weights_in,
                             T lower_bound, T upper_bound,
                             Limiter_type limiter,
                             Boundary_Limiter_type bnd_limiter,
@@ -715,7 +717,7 @@ public:
                      class, class, class> class Interpolate
             >
   void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
+                           std::vector<Wonton::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat_in,
                            T/* unused */, T/* unused */,
                            Limiter_type limiter,
                            Boundary_Limiter_type bnd_limiter,
@@ -730,7 +732,7 @@ public:
       throw std::runtime_error(srcvarname + " not in field variables list");
     }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using Interpolator = Interpolate<D, CELL,
                                      SourceMesh, TargetMesh,
                                      SourceState, TargetState,
@@ -741,7 +743,7 @@ public:
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
-      std::vector<Portage::vector<Vector<D>>> gradients(nb_mats);
+      std::vector<Wonton::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver_cell_->compute_source_gradient(srcvarname, limiter,
                                                              bnd_limiter, i);
@@ -769,7 +771,7 @@ public:
   // Component variables
   bool distributed_ = false;  // default is serial
   Wonton::Executor_type const *executor_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
@@ -806,7 +808,7 @@ public:
   //   ||                        ||     for each target entity
   //   ||                        ||           ||
   //   \/                        \/           \/
-  std::map<Entity_kind, Portage::vector<std::vector<Weights_t>>> source_weights_ {};
+  std::map<Entity_kind, Wonton::vector<std::vector<Weights_t>>> source_weights_ {};
 
   // Weights of intersection b/w target CELLS and source material polygons
   // Each intersection is between a target cell and material polygon in
@@ -821,7 +823,7 @@ public:
   //   ||               ||     each target entity
   //   ||               ||           ||
   //   \/               \/           \/
-  std::vector<Portage::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
+  std::vector<Wonton::vector<std::vector<Weights_t>>> source_weights_by_mat_ {};
 
   /*!
     @brief Instantiate core drivers that abstract away whether we

@@ -4,6 +4,7 @@
   https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+#include "portage/support/portage.h"
 #include <sys/time.h>
 
 #include <cstdio>
@@ -34,12 +35,14 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/support/timer.h"
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
 
 #include "tangram/utility/get_material_moments.h"
 #include "tangram/utility/rpgtools/cuts.h"
@@ -49,7 +52,7 @@
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 
-#ifdef HAVE_XMOF2D
+#ifdef TANGRAM_ENABLE_XMOF2D
   #include "tangram/reconstruct/xmof2D_wrapper.h"
   #define IR_2D XMOF2D_Wrapper
 #else

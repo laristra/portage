@@ -6,17 +6,19 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+
 // portage includes
 #include "portage/support/portage.h"
 // templated struct for invoking 2D/3D intersect uniformly (see last test)
 // include the include files intersect_r2d.h and intersect_r3d.h
 #include "portage/intersect/intersect_rNd.h"
-
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
 
 /*!
  * @brief Intersect two cells on two single cell meshes to compute moments.

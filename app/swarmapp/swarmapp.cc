@@ -11,22 +11,22 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <cassert>
 #include <cmath>
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
+#ifdef WONTON_ENABLE_MPI
   #include <mpi.h>
 #endif
 
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
 #include "portage/support/portage.h"
 #include "portage/driver/driver_swarm.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/search/search_simple_points.h"
 #include "portage/search/search_points_by_cells.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
-#include "wonton/support/Point.h"
-#ifdef HAVE_NANOFLANN
-  #include "portage/search/search_kdtree_nanoflann.h"
-#endif
 
 using namespace Portage::Meshfree;
 
@@ -174,18 +174,18 @@ void run<2>(int example_num, int n_source, int n_target,
   std::cout << "estimate order: " << example.estimation_order << std::endl;
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  Swarm<2> source_swarm(n_source * n_source, distribution, seed,
-                        -1.1, 1.1, -1.1, 1.1);
-  Swarm<2> target_swarm(n_target * n_target, distribution, seed,
-                        -1.0, 1.0, -1.0, 1.0);
+  Wonton::Swarm<2> source_swarm(n_source * n_source, distribution, seed,
+                                -1.1, 1.1, -1.1, 1.1);
+  Wonton::Swarm<2> target_swarm(n_target * n_target, distribution, seed,
+                                -1.0, 1.0, -1.0, 1.0);
 
-  SwarmState<2> source_state(source_swarm);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::SwarmState<2> source_state(source_swarm);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_field(num_source_particles, 0.);
+  Wonton::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto p = source_swarm.get_particle_coordinates(i);
@@ -212,7 +212,7 @@ void run<2>(int example_num, int n_source, int n_target,
   }
 
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(2, h));
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
 
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   using Remapper = SwarmDriver<Portage::Search_KDTree_Nanoflann,
@@ -221,7 +221,7 @@ void run<2>(int example_num, int n_source, int n_target,
 #else
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 2,
-                               Swarm<2>, SwarmState<2>>;
+                               Wonton::Swarm<2>, Wonton::SwarmState<2>>;
 #endif
 
   Remapper remapper(source_swarm, source_state,
@@ -242,7 +242,7 @@ void run<2>(int example_num, int n_source, int n_target,
     default: break;
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   remapper.run(&mpiexecutor, true);
 #else
@@ -331,18 +331,18 @@ void run<3>(int example_num, int n_source, int n_target,
   auto const& example = examples[example_num];
 
   // Regularly ordered input swarm; randomly ordered output swarm
-  Swarm<3> source_swarm(n_source * n_source * n_source, distribution, seed,
-                        -1.1, 1.1, -1.1, 1.1, -1.1, 1.1);
-  Swarm<3> target_swarm(n_target * n_target * n_target, distribution, seed,
-                        -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  Wonton::Swarm<3> source_swarm(n_source * n_source * n_source, distribution, seed,
+                                -1.1, 1.1, -1.1, 1.1, -1.1, 1.1);
+  Wonton::Swarm<3> target_swarm(n_target * n_target * n_target, distribution, seed,
+                                -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
 
-  SwarmState<3> source_state(source_swarm);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::SwarmState<3> source_state(source_swarm);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   int const num_source_particles = source_swarm.num_particles();
   int const num_target_particles = target_swarm.num_particles();
 
-  Portage::vector<double> source_field(num_source_particles, 0.);
+  Wonton::vector<double> source_field(num_source_particles, 0.);
 
   for (int i = 0; i < num_source_particles; ++i) {
     auto coord = source_swarm.get_particle_coordinates(i);
@@ -369,7 +369,7 @@ void run<3>(int example_num, int n_source, int n_target,
   }
 
   std::vector<std::vector<double>> const default_lengths(1, std::vector<double>(3, h));
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths(nsmooth, default_lengths);
 
 #ifdef HAVE_NANOFLANN  // Search by kdtree
   using Remapper = SwarmDriver<Portage::Search_KDTree_Nanoflann,
@@ -378,7 +378,7 @@ void run<3>(int example_num, int n_source, int n_target,
 #else
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 3,
-                               Swarm<3>, SwarmState<3>>;
+                               Wonton::Swarm<3>, Wonton::SwarmState<3>>;
 #endif
 
   Remapper remapper(source_swarm, source_state,
@@ -400,7 +400,7 @@ void run<3>(int example_num, int n_source, int n_target,
     default: break;
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   remapper.run(&mpiexecutor, true);
 #else
@@ -475,7 +475,7 @@ void run<3>(int example_num, int n_source, int n_target,
  */
 int main(int argc, char** argv) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int nb_ranks = 1;
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nb_ranks);
@@ -483,7 +483,7 @@ int main(int argc, char** argv) {
 
   if (argc < 7) {
     print_usage();
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Finalize();
 #endif
     return EXIT_FAILURE;
@@ -511,7 +511,7 @@ int main(int argc, char** argv) {
     default: throw std::runtime_error("invalid dimension");
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
   return EXIT_SUCCESS;

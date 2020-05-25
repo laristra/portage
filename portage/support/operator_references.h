@@ -11,8 +11,9 @@
 #include <cmath>
 #include "gtest/gtest.h"
 
-#include "portage/support/operator.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "portage/support/operator.h"
 
 using Wonton::Point;
 
@@ -23,23 +24,50 @@ template<oper::Type type,
          basis::Type basis_type,
          oper::Domain domain_type>
 using OP = oper::Operator<type, basis_type, domain_type>;
+using oper::Interval;
+using oper::Quadrilateral;
+using oper::Triangle;
+using oper::Wedge;
+using oper::Tetrahedron;
+using oper::Hexahedron;
 
 // reference points for different domains
 template<oper::Domain domain>
-constexpr std::vector<Point<oper::dimension(domain)>> points() {
-  switch (domain) {
-    case oper::Interval:      return {{0}, {1}};
-    case oper::Quadrilateral: return {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
-    case oper::Triangle:      return {{0, 0}, {1, 0}, {0, 1}};
-    case oper::Tetrahedron:   return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-    case oper::Wedge:         return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0},
-                                      {0, 0, 1}, {1, 0, 1}, {0, 1, 1}};
-    case oper::Hexahedron:    return {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
-                                      {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
-    default:
-      throw std::runtime_error("invalid domain");
-  }
-};
+std::vector<Point<oper::dimension(domain)>> points() {
+  throw std::runtime_error("invalid domain type");
+}
+
+template<>
+std::vector<Point<1>> points<Interval>() {
+  return {{0}, {1}};
+}
+
+template<>
+std::vector<Point<2>> points<Quadrilateral>() {
+  return {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+}
+
+template<>
+std::vector<Point<2>> points<Triangle>() {
+  return {{0, 0}, {1, 0}, {0, 1}};
+}
+
+template<>
+std::vector<Point<3>> points<Wedge>() {
+  return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0},
+          {0, 0, 1}, {1, 0, 1}, {0, 1, 1}};
+}
+
+template<>
+std::vector<Point<3>> points<Tetrahedron>() {
+  return {{0, 0, 0}, {1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+}
+
+template<>
+std::vector<Point<3>> points<Hexahedron>() {
+  return {{0, 0, 0}, {1, 0, 0}, {1, 1, 0}, {0, 1, 0},
+          {0, 0, 1}, {1, 0, 1}, {1, 1, 1}, {0, 1, 1}};
+}
 
 // function to shift reference points
 template<int dim>

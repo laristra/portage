@@ -12,18 +12,19 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 extern "C" {
 #include "wonton/intersect/r3d/r3d.h"
 }
 
-#ifdef HAVE_TANGRAM
+#include "portage/support/portage.h"
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/support/MatPoly.h"
 #endif
 
-
-#include "portage/support/portage.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
 
 
 namespace Portage {
@@ -41,7 +42,7 @@ struct facetedpoly {
   std::vector<Point<3>> points;
 } facetedpoly_t;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 /*!
  @brief Facetizes a 3D MatPoly and converts it to the facetedpoly_t structure
  @param matpoly  3D material polyhedron object to be converted

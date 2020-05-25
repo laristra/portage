@@ -10,7 +10,7 @@ Please see the license file at the root of this repository, or at:
 
 ####################################################################
 
-if (Jali_DIR)
+if (WONTON_ENABLE_Jali)
 
   message(STATUS "Adding swept-face remap tests")
 
@@ -57,7 +57,7 @@ if (Jali_DIR)
   ADD_REMAP_TEST("dim_3_field_linear_order_2_simple")
   ADD_REMAP_TEST("dim_3_field_linear_order_2_vortex")
 
-  if (ENABLE_MPI)
+  if (WONTON_ENABLE_MPI)
     # 2D, constant field, order 2
     ADD_DISTRIB_TEST(2 2 5 "42" 2 const)
     ADD_DISTRIB_TEST(4 2 5 "42" 2 const)
@@ -79,4 +79,4 @@ if (Jali_DIR)
     ADD_DISTRIB_TEST(8 3 5 "x+2y+3z" 2 linear)
   endif()
 
-endif(Jali_DIR)
+endif()
