@@ -162,7 +162,7 @@ int print_usage() {
       "ONLY APPLICABLE FOR INTERNALLY GENERATED MESHES\n\n";
 
   std::cout << "--perturb_source (default = n): " <<
-      "add a shift or pseudorandom perturbation to coordinates of a source mesh\n" <<
+      "add a shift or pseudorandom perturbation to coordinates of a source mesh\n\n";
 
   std::cout << "--material_fields: A comma separated list of quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
