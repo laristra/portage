@@ -944,12 +944,12 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
   // Add perturbations to a source mesh
   if(mesh_perturb != RGMDApp::Mesh_perturb_type::NO) {
-    int const nsrcnodes = sourceMesh->num_nodes<Jali::Entity_type::ALL>();
-    int const nsrccells = sourceMesh->num_cells<Jali::Entity_type::ALL>();
-    double dx = (srchi-srclo)/pow(nsrccells,1.0/dim);
+    int const numsrcnodes = sourceMesh->num_nodes<Jali::Entity_type::ALL>();
+    int const numsrccells = sourceMesh->num_cells<Jali::Entity_type::ALL>();
+    double dx = (srchi-srclo)/pow(numsrccells,1.0/dim);
     std::array<double, dim> pnt;
     std::array<double, dim> new_pnt;
-    for (int i = 0; i < nsrcnodes; i++) {
+    for (int i = 0; i < numsrcnodes; i++) {
       sourceMesh->node_get_coordinates(i, &pnt);
       if (mesh_perturb == RGMDApp::Mesh_perturb_type::PSEUDORANDOM) {
         for (int dir = 0; dir < 2; dir++)
@@ -1335,7 +1335,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         driver.run(executor);
       }
     }
-  } else {
+  } else { // swept face
     if (dim == 2) {
       if (interp_order == 1) {
         Portage::MMDriver<
