@@ -47,6 +47,14 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
     target_link_libraries(momentumapp3D PRIVATE ${VTUNE_LIBS})
   endif()
 
+  #
+  # MM : create 2D binary
+  #
+  if (PORTAGE_HAS_TANGRAM AND WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
+    add_executable(momentumapp2D_mm momentumapp2D_mm.cc)
+    target_link_libraries(momentumapp2D_mm PRIVATE portage)
+  endif()
+
   if(ENABLE_APP_TESTS)
     add_subdirectory(test)
   endif()
