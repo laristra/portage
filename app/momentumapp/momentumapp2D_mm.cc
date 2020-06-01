@@ -168,7 +168,8 @@ int main(int argc, char** argv) {
   MomentumRemap_mm<2, Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper> mr(Method::CCH);
   mr.InitMaterials(srcmesh_wrapper, srcstate_wrapper);
 
-  for (int m = 0; m < mr.mat_names().size(); ++m)
+  int nmat_names = mr.mat_names().size();
+  for (int m = 0; m < nmat_names; ++m)
     trgstate_wrapper.add_material(mr.mat_names()[m], {});
     
   trgstate_wrapper.mat_add_celldata<double>("mat_volfracs");
