@@ -456,9 +456,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
-
   // move few(16) nodes in material 0 of the target mesh in x direction by DX
   //double DX = 0.01;
   double DX = 0.05;
@@ -886,9 +883,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
   //-------------------------------------------------------------------
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
-
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
 
   // move few(8) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
@@ -1337,9 +1331,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
   //-------------------------------------------------------------------
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
-
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
 
   // move few(16) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
