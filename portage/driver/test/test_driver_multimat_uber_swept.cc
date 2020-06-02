@@ -694,8 +694,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   for (int m = 0; m < nmats; m++) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
-
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -1130,7 +1129,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
@@ -1476,7 +1475,7 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
 
-    ASSERT_EQ(matcells_trg[m].size(), nmatcells);
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
     std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
