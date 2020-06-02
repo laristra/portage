@@ -194,7 +194,8 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::SetMass(
 {
   Wonton::Point<D> xyz;
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  int nmat_names = mat_names_.size();
+  for (int m = 0; m < nmat_names; ++m) {
     std::vector<int> matcells;
     state.mat_get_cells(m, &matcells);
     int nmatcells = matcells.size();
@@ -249,7 +250,8 @@ double MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::TotalMass(
 {
   double sum(0.0), sum_glb;
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  int nmat_names = mat_names_.size();
+  for (int m = 0; m < nmat_names; ++m) {
     std::vector<int> matcells;
     state.mat_get_cells(m, &matcells);
     int nmatcells = matcells.size();
@@ -280,7 +282,8 @@ Wonton::Point<D> MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::TotalMomentum
     state.mesh_get_data(Wonton::Entity_kind::CELL, velocity_name_[i], &vel[i]);
   }
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  int nmat_names = mat_names_.size();
+  for (int m = 0; m < nmat_names; ++m) {
     std::vector<int> matcells;
     state.mat_get_cells(m, &matcells);
     int nmatcells = matcells.size();
@@ -418,7 +421,8 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::ErrorDensity(
   *l2err = 0.0;
   *l2norm = 0.0;
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  int nmat_names = mat_names_.size();
+  for (int m = 0; m < nmat_names; ++m) {
     std::vector<int> matcells;
     state.mat_get_cells(m, &matcells);
     int nmatcells = matcells.size();
@@ -487,7 +491,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
 
   // === Step 2 (SGH and CCH)
   // -- compute material-centered density and save it to the state
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  for (int m = 0; m < nmats; ++m) {
     int nmatcells = matcells_src[m].size();
     std::vector<double> density(nmatcells);
 
@@ -505,11 +509,13 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
   std::vector<std::string> field_names({ "density", "momentum_x", "momentum_y"});
   if (D == 3) field_names.push_back("momentum_z");
 
-  for (int i = 0; i < field_names.size(); ++i) {
+  int nfield_names = field_names.size();
+  for (int i = 0; i < nfield_names; ++i) {
     trgstate.template mat_add_celldata<double>(field_names[i]);
   }
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  int nmat_names = mat_names_.size();
+  for (int m = 0; m < nmat_names; ++m) {
     int nmatcells = matcells_src[m].size();
     std::vector<double> momentum(nmatcells);
 
@@ -590,7 +596,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
     for (int i = 0; i < D; ++i) u_trg[i][c] = 0.0;
   }
 
-  for (int m = 0; m < mat_names_.size(); ++m) {
+  for (int m = 0; m < nmat_names; ++m) {
     const double *density, *momentum[D];
 
     trgstate.mat_get_celldata("density", m, &density);
