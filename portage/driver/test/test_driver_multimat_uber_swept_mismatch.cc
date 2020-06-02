@@ -4,13 +4,13 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -131,11 +131,6 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-#ifdef DEBUG
-  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
-                                    Wonton::Point<2>(0.75,0.25),
-                                    Wonton::Point<2>(0.75,0.75)};
-#endif
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -421,7 +416,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
 
     Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-      int const num_matcells = matcells.size();
+    int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
@@ -439,8 +434,6 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
     std::cerr << " Expected mass " << std::setw(3) <<
         matmass[m] << "   Computed mass " << std::setw(3) << mass << "\n";
-    std::cerr << " Expected centroid " << std::setw(6) <<
-        matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
 #endif
   }
@@ -532,9 +525,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.375, 1.0, 3.3750};
-  Wonton::Point<2> matcen[nmats] = {Wonton::Point<2>(0.25,0.5),
-                                    Wonton::Point<2>(0.75,0.25),
-                                    Wonton::Point<2>(0.75,0.75)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -610,7 +600,8 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -786,7 +777,8 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
 
     Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -803,8 +795,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
     std::cerr << " Expected mass " << std::setw(3) <<
         matmass[m] << "   Computed mass " << std::setw(3) << mass << "\n";
-    std::cerr << " Expected centroid " << std::setw(6) <<
-        matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
 #endif
   }
@@ -966,9 +956,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
   double matrho[nmats] = {0.1, 10.0, 100.0};  // material density
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.05, 2.5, 25.0};
-  Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
-                                    Wonton::Point<3>(0.75,0.25,0.5),
-                                    Wonton::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -1045,7 +1032,8 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1310,7 +1298,8 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
 
     Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1327,8 +1316,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
     std::cerr << " Expected mass " << std::setw(3) <<
         matmass[m] << "   Computed mass " << std::setw(3) << mass << "\n";
-    std::cerr << " Expected centroid " << std::setw(6) <<
-        matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
 #endif
   }
@@ -1419,9 +1406,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
 
   double matvol[nmats] = {0.5, 0.25, 0.25};
   double matmass[nmats] = {0.625, 1.5, 4.5};
-  Wonton::Point<3> matcen[nmats] = {Wonton::Point<3>(0.25,0.5,0.5),
-                                    Wonton::Point<3>(0.75,0.25,0.5),
-                                    Wonton::Point<3>(0.75,0.75,0.5)};
 
   std::vector<int> matcells_src[nmats];
   std::vector<double> matvf_src[nmats];
@@ -1498,7 +1482,8 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
     sourceStateWrapper.mat_get_celldata("density", m, &rho);
 
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1675,7 +1660,8 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
 
     Wonton::Point<3> totcen;
     double volume = 0.0, mass = 0.0;
-    for (int ic = 0; ic < matcells.size(); ic++) {
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
@@ -1692,12 +1678,10 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
     std::cerr << " Expected mass " << std::setw(3) <<
         matmass[m] << "   Computed mass " << std::setw(3) << mass << "\n";
-    std::cerr << " Expected centroid " << std::setw(6) <<
-        matcen[m] << "  Computed centroid " << totcen << "\n";
     std::cerr << "\n\n";
 #endif
   }
 
 } //ThreeMat3D_2ndOrder
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM
