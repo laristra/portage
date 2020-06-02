@@ -441,9 +441,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
-
   // move few(16) nodes in material 0 of the target mesh in x direction by DX
   //double DX = 0.01;
   double DX = 0.05;
@@ -789,9 +786,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
-
   // move few(8) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
@@ -995,8 +989,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   for (int c = 0; c < ntrgcells; c++) {
     std::vector<Wonton::Point<3>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
-
-    double cellvol = targetMeshWrapper.cell_volume(c);
 
     Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
@@ -1228,9 +1220,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
   //-------------------------------------------------------------------
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
-
-  int ntrgnodes = targetMesh->num_entities(Jali::Entity_kind::NODE,
-                                          Jali::Entity_type::ALL);
 
   // move few(16) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.01;
