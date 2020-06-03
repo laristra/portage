@@ -1097,8 +1097,6 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
     std::vector<Wonton::Point<3>> ccoords;
     targetMeshWrapper.cell_get_coordinates(c, &ccoords);
 
-    double cellvol = targetMeshWrapper.cell_volume(c);
-
     Wonton::Point<3> cell_lo, cell_hi;
     BOX_INTERSECT::bounding_box<3>(ccoords, &cell_lo, &cell_hi);
 
