@@ -52,6 +52,16 @@ double TOL = 1e-6;
 // three materials have very disparate but constant densities. Given
 // this setup we know the volume, mass and centroid of each material.
 
+// In each of the four tests, the rightmost boundary nodes are moved
+// by some delta amount outside the initial domain of the source mesh.
+// The current behavior of the swept-face based intersection ignores
+// the neighbor of a source cell if that source cell is outside the domain.
+// As a result, the swept-polygon covering the mismatched area is not
+// accounted for in the list of weights for interpolation. Therefore, 
+// the remapped volume fraction is partial and the exact values that
+// are used for comparison accounts for this partial volume fraction. 
+// This needs to be addressed later !!  
+
 TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -456,8 +466,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  // move few(16) nodes in material 0 of the target mesh in x direction by DX
-  //double DX = 0.01;
+  // move few(4) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.05;
   std::array<double, 2> pnt;
   
@@ -647,7 +656,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   d.set_interface_reconstructor_options(false); 
 
   d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
-  //d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -742,6 +750,10 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+    //The second order interpolation is not linearity preserving for the
+    //swept face based remap due to significant deviation in material
+    //centroids after remap. Hence, a very loose tolerance is used for 
+    // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
 
@@ -796,76 +808,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
 #endif
   }
 
-  // dbg dump meshes
- {
-  for (int m = 0; m < nmats; m++) {
-    std::string varname1 = "density_" + matnames[m];
-    std::string varname2 = "density_weighted_" + matnames[m];
-    std::string varname3 = "volume_fraction_" + matnames[m];
-
-    std::vector<double> cell_density(nsrccells, 0.0);
-    std::vector<double> cell_density_wtd(nsrccells, 0.0);
-    std::vector<double> cell_vf(nsrccells, 0.0);
-
-    std::vector<int> current_matcells;
-    sourceStateWrapper.mat_get_cells(m, &current_matcells);
-    int nmatcells = current_matcells.size();
-
-    double *matvec;
-    sourceStateWrapper.mat_get_celldata("density", m, &matvec);
-
-    double *matvolfracs;
-    sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &matvolfracs);
-
-    for (int ic = 0; ic < nmatcells; ic++) {
-     int c = current_matcells[ic];
-     cell_density[c] = matvec[ic];
-     cell_vf[c] = matvolfracs[ic];
-     cell_density_wtd[c] = matvec[ic]*matvolfracs[ic];
-    }
-
-    sourceStateWrapper.mesh_add_data(Portage::CELL, varname1, &(cell_density[0]));
-    sourceStateWrapper.mesh_add_data(Portage::CELL, varname2, &(cell_density_wtd[0]));
-    sourceStateWrapper.mesh_add_data(Portage::CELL, varname3, &(cell_vf[0]));
-   }
-
-    sourceState->export_to_mesh();
-    sourceMesh->write_to_exodus_file("source_mismatch.exo");
- 
-  for (int m = 0; m < nmats; m++) {
-    std::string varname1 = "density_" + matnames[m];
-    std::string varname2 = "density_weighted_" + matnames[m];
-    std::string varname3 = "volume_fraction_" + matnames[m];
-
-    std::vector<double> cell_density(ntrgcells, 0.0);
-    std::vector<double> cell_density_wtd(ntrgcells, 0.0);
-    std::vector<double> cell_vf(ntrgcells, 0.0);
-
-    std::vector<int> current_matcells;
-    targetStateWrapper.mat_get_cells(m, &current_matcells);
-    int nmatcells = current_matcells.size();
-
-    double *matvec;
-    targetStateWrapper.mat_get_celldata("density", m, &matvec);
-
-    double *matvolfracs;
-    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvolfracs);
-
-    for (int ic = 0; ic < nmatcells; ic++) {
-     int c = current_matcells[ic];
-     cell_density[c] = matvec[ic];
-     cell_vf[c] = matvolfracs[ic];
-     cell_density_wtd[c] = matvec[ic]*matvolfracs[ic];
-    }
-
-    targetStateWrapper.mesh_add_data(Portage::CELL, varname1, &(cell_density[0]));
-    targetStateWrapper.mesh_add_data(Portage::CELL, varname2, &(cell_density_wtd[0]));
-    targetStateWrapper.mesh_add_data(Portage::CELL, varname3, &(cell_vf[0]));
-   }
-
-    targetState->export_to_mesh();
-    targetMesh->write_to_exodus_file("target_mismatch.exo");
-  }
 } //ThreeMat2D_2ndOrder
 
 
@@ -1521,7 +1463,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
   d.set_interface_reconstructor_options(false); 
 
   d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
-  //d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1617,12 +1558,12 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+    //The second order interpolation is not linearity preserving for the
+    //swept face based remap due to significant deviation in material
+    //centroids after remap. Hence, a very loose tolerance is used for 
+    // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
-
-    for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
-               <<" density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";

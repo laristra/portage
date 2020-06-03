@@ -441,8 +441,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  // move few(16) nodes in material 0 of the target mesh in x direction by DX
-  //double DX = 0.01;
+  // move few(4) nodes in material 0 of the target mesh in x direction by DX
   double DX = 0.05;
   std::array<double, 2> pnt;
 
@@ -623,7 +622,6 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   d.set_interface_reconstructor_options(false); 
 
   d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
-  //d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -717,6 +715,10 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+    //The second order interpolation is not linearity preserving for the
+    //swept face based remap due to significant deviation in material
+    //centroids after remap. Hence, a very loose tolerance is used for 
+    // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
 
@@ -1402,7 +1404,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
   d.set_interface_reconstructor_options(false); 
 
   d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
-  //d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1498,6 +1499,10 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
+    //The second order interpolation is not linearity preserving for the
+    //swept face based remap due to significant deviation in material
+    //centroids after remap. Hence, a very loose tolerance is used for 
+    // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
 
