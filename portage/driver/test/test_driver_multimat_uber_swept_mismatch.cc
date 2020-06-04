@@ -4,16 +4,12 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 #include "portage/support/portage.h"
-
 #ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include "wonton/support/wonton.h"
-
 #ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
@@ -56,7 +52,21 @@ double TOL = 1e-6;
 // three materials have very disparate but constant densities. Given
 // this setup we know the volume, mass and centroid of each material.
 
-TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
+// In each of the four tests, the rightmost boundary nodes are moved
+// by some delta amount outside the initial domain of the source mesh.
+// The source domain along each direction is from 0.0 to 1.0.
+// The target domain along each direction is from 0.0 to 1.0+DX. 
+//
+// The current behavior of the swept-face based intersection skips the 
+// facet-connected neighbor of a source cell if that facet is on the 
+// domain boundary. As a result, the swept-polygon covering the mismatched 
+// area is not accounted for in the list of weights for interpolation. 
+// Therefore, the remapped volume fraction is partial and the exact values that
+// are used for comparison accounts for this partial volume fraction. 
+// These tests confirm that the swept face remap, in its current form, 
+// still need a mismatch fix. This needs to be addressed later !!  
+
+TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -72,11 +82,20 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   //-------------------------------------------------------------------
 
   // move a single node of the target mesh in x direction by DX
+  double DX = 0.01;
   std::array<double, 2> pnt {};
   targetMesh->node_get_coordinates(5, &pnt);
-  double DX = 0.01;
   pnt[0] += DX;
   targetMesh->node_set_coordinates(5, pnt.data());
+
+  //move the right boundary nodes for the target, so 
+  //that the last layer of target cells are partially
+  //covered by the source mesh
+  for (int i = 0; i < 4; i++) {
+   targetMesh->node_get_coordinates(12+i, &pnt);
+   pnt[0] += DX;
+   targetMesh->node_set_coordinates(12+i, pnt.data());
+  }
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -306,23 +325,25 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   double CELL_VOL = DY*DY;
   double TRIANGLE_VOL = DX*DY/2.;
   double vf_diff = 1./2.-(CELL_VOL/2.-TRIANGLE_VOL)/(CELL_VOL-TRIANGLE_VOL);
+  double partial_vf1 = (DY*DY)/((DY+DX)*DY); 
+  double partial_vf2 = partial_vf1/2.; 
+ 
+  matvf_trg[0].push_back(1.0);              // cell 0
+  matvf_trg[0].push_back(1.0);              // cell 1
+  matvf_trg[0].push_back(1.0);              // cell 2
+  matvf_trg[0].push_back(0.5 - vf_diff);    // cell 3
+  matvf_trg[0].push_back(0.5 - vf_diff);    // cell 4
+  matvf_trg[0].push_back(0.5);              // cell 5
 
-  matvf_trg[0].push_back(1.0);             // cell 0
-  matvf_trg[0].push_back(1.0);             // cell 1
-  matvf_trg[0].push_back(1.0);             // cell 2
-  matvf_trg[0].push_back(0.5 - vf_diff);   // cell 3
-  matvf_trg[0].push_back(0.5 - vf_diff);   // cell 4
-  matvf_trg[0].push_back(0.5);             // cell 5
+  matvf_trg[1].push_back(0.5 + vf_diff);    // cell 3   
+  matvf_trg[1].push_back((0.5+vf_diff)/2.); // cell 4
+  matvf_trg[1].push_back(partial_vf1);      // cell 6
+  matvf_trg[1].push_back(partial_vf2);      // cell 7
 
-  matvf_trg[1].push_back(0.5 + vf_diff);   // cell 3   
-  matvf_trg[1].push_back((0.5+vf_diff)/2.);// cell 4
-  matvf_trg[1].push_back(1.0);             // cell 6
-  matvf_trg[1].push_back(0.5);             // cell 7
-
-  matvf_trg[2].push_back((0.5+vf_diff)/2.);// cell 4
-  matvf_trg[2].push_back(0.5);             // cell 5
-  matvf_trg[2].push_back(0.5);             // cell 7
-  matvf_trg[2].push_back(1.0);             // cell 8
+  matvf_trg[2].push_back((0.5+vf_diff)/2.); // cell 4
+  matvf_trg[2].push_back(0.5);              // cell 5
+  matvf_trg[2].push_back(partial_vf2);      // cell 7
+  matvf_trg[2].push_back(partial_vf1);      // cell 8
 
   //-------------------------------------------------------------------
   // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
@@ -369,12 +390,20 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
+   
+    for (int ic = 0; ic < nmatcells; ic++)
+      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
+               <<" vf: "<<matvf_trg[m][ic]<<" "<<matvf_remap[ic]<<std::endl;
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
+   
+    for (int ic = 0; ic < nmatcells; ic++)
+      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
+               <<" density: "<<matrho[m]<<" "<<density_remap[ic]<<std::endl;
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
@@ -426,7 +455,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
 } //ThreeMat2D_1stOrder
 
 
-TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
+TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -445,11 +474,20 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   // target mesh in x direction by DX
   double DX = 0.05;
   std::array<double, 2> pnt;
-
+  
   for (int i = 0; i < 4; i++) {
    targetMesh->node_get_coordinates(4+i, &pnt);
    pnt[0] += DX;
    targetMesh->node_set_coordinates(4+i, pnt.data());
+  }
+
+  //move the right boundary nodes for the target, so 
+  //that the last layer of target cells are partially
+  //covered by the source mesh
+  for (int i = 0; i < 4; i++) {
+   targetMesh->node_get_coordinates(12+i, &pnt);
+   pnt[0] += DX;
+   targetMesh->node_set_coordinates(12+i, pnt.data());
   }
 
   sourceState = Jali::State::create(sourceMesh);
@@ -693,6 +731,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   for (int m = 0; m < nmats; m++) {
     targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
     int nmatcells = matcells_remap[m].size();
+
     ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
 
     std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
@@ -722,6 +761,10 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
     // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
+               <<" density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
@@ -773,7 +816,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
 } //ThreeMat2D_2ndOrder
 
 
-TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
+TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -797,6 +840,15 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
    targetMesh->node_get_coordinates(20+i, &pnt);
    pnt[0] += DX;
    targetMesh->node_set_coordinates(20+i, pnt.data());
+  }
+
+  //move the right boundary nodes for the target, so 
+  //that the last layer of target cells are partially
+  //covered by the source mesh
+  for (int i = 0; i < 16; i++) {
+   targetMesh->node_get_coordinates(48+i, &pnt);
+   pnt[0] += DX;
+   targetMesh->node_set_coordinates(48+i, pnt.data());
   }
 
   sourceState = Jali::State::create(sourceMesh);
@@ -1055,6 +1107,8 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   double CVOL2 = 2*CVOL1;  
   double vf_diff1 = 1./2.-(CVOL/2.-CVOL1)/(CVOL-CVOL1);
   double vf_diff2 = 1./2.-(CVOL/2.-CVOL2)/(CVOL-CVOL2);
+  double partial_vf1 = (DH*DH*DH)/((DH+DX)*DH*DH); 
+  double partial_vf2 = partial_vf1/2.; 
 
   //mat 0: cells 0, 1, 2, 3, 4, 5, 6, 7, 8 
   //             9, 10, 11, 12, 13, 14, 15, 16, 17
@@ -1085,12 +1139,12 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   matvf_trg[1].push_back((0.5+vf_diff2)/2.);
   matvf_trg[1].push_back((0.5+vf_diff2)/2.);
   matvf_trg[1].push_back((0.5+vf_diff2)/2.);
-  matvf_trg[1].push_back(1.0);             
-  matvf_trg[1].push_back(1.0);             
-  matvf_trg[1].push_back(1.0);             
-  matvf_trg[1].push_back(0.5);            
-  matvf_trg[1].push_back(0.5);            
-  matvf_trg[1].push_back(0.5);            
+  matvf_trg[1].push_back(partial_vf1);             
+  matvf_trg[1].push_back(partial_vf1);             
+  matvf_trg[1].push_back(partial_vf1);             
+  matvf_trg[1].push_back(partial_vf2);             
+  matvf_trg[1].push_back(partial_vf2);             
+  matvf_trg[1].push_back(partial_vf2);             
 
   //mat 0: cells 12, 13, 14, 15, 16, 17, 
   //             21, 22, 23, 24, 25, 26
@@ -1100,12 +1154,12 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   matvf_trg[2].push_back(0.5+vf_diff1);             
   matvf_trg[2].push_back(0.5+vf_diff1);             
   matvf_trg[2].push_back(0.5+vf_diff1);             
-  matvf_trg[2].push_back(0.5);             
-  matvf_trg[2].push_back(0.5);             
-  matvf_trg[2].push_back(0.5);             
-  matvf_trg[2].push_back(1.0);             
-  matvf_trg[2].push_back(1.0);             
-  matvf_trg[2].push_back(1.0);             
+  matvf_trg[2].push_back(partial_vf2);             
+  matvf_trg[2].push_back(partial_vf2);             
+  matvf_trg[2].push_back(partial_vf2);             
+  matvf_trg[2].push_back(partial_vf1);             
+  matvf_trg[2].push_back(partial_vf1);             
+  matvf_trg[2].push_back(partial_vf1);             
 
   //-------------------------------------------------------------------
   // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
@@ -1209,7 +1263,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
 } //ThreeMat3D_1stOrder
 
 
-TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
+TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
   std::shared_ptr<Jali::Mesh> targetMesh;
@@ -1228,11 +1282,20 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
   // material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
-  
+
   for (int i = 0; i < 16; i++) {
    targetMesh->node_get_coordinates(16+i, &pnt);
    pnt[0] += DX;
    targetMesh->node_set_coordinates(16+i, pnt.data());
+  }
+
+  //move the right boundary nodes for the target, so 
+  //that the last layer of target cells are partially
+  //covered by the source mesh
+  for (int i = 0; i < 16; i++) {
+   targetMesh->node_get_coordinates(48+i, &pnt);
+   pnt[0] += DX;
+   targetMesh->node_set_coordinates(48+i, pnt.data());
   }
 
   sourceState = Jali::State::create(sourceMesh);
@@ -1508,10 +1571,6 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
     // checks on cell-wise density values. 
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
-
-    for (int ic = 0; ic < nmatcells; ic++)
-      std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
-               <<" density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
 
 #ifdef DEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
