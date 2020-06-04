@@ -92,7 +92,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_rank(comm_, &commRank);
 
     dim_ = source_mesh.space_dimension();
-    assert(dim_ == target_mesh.space_dimension());
+    assert(dim_ == static_cast<int>(target_mesh.space_dimension()));
 
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
@@ -164,7 +164,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_rank(comm_, &commRank);
 
     int dim = dim_ = source_mesh_flat.space_dimension();
-    assert(dim == target_mesh.space_dimension());
+    assert(dim == static_cast<int>(target_mesh.space_dimension()));
 
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
