@@ -441,7 +441,8 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  // move few(4) nodes in material 0 of the target mesh in x direction by DX
+  // move few(4) nodes (along x=1,y=0:3 w.r.t grid) within material 0 of the 
+  // target mesh in x direction by DX
   double DX = 0.05;
   std::array<double, 2> pnt;
 
@@ -787,7 +788,8 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  // move few(8) nodes in material 0 of the target mesh in x direction by DX
+  // move few(8) nodes (along x=1, y=1,2, z=0:3 w.r.t grid) within 
+  // material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
 
@@ -1222,7 +1224,8 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
   // Shift internal nodes of the targetmesh
   //-------------------------------------------------------------------
 
-  // move few(16) nodes in material 0 of the target mesh in x direction by DX
+  // move few(16) nodes (along x=1, y=0:3, z=0:3 w.r.t grid) within 
+  // material 0 of the target mesh in x direction by DX
   double DX = 0.01;
   std::array<double, 3> pnt;
   
