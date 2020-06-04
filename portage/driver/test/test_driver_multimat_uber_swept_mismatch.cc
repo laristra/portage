@@ -54,13 +54,17 @@ double TOL = 1e-6;
 
 // In each of the four tests, the rightmost boundary nodes are moved
 // by some delta amount outside the initial domain of the source mesh.
-// The current behavior of the swept-face based intersection ignores
-// the neighbor of a source cell if that source cell is outside the domain.
-// As a result, the swept-polygon covering the mismatched area is not
-// accounted for in the list of weights for interpolation. Therefore, 
-// the remapped volume fraction is partial and the exact values that
+// The source domain along each direction is from 0.0 to 1.0.
+// The target domain along each direction is from 0.0 to 1.0+DX. 
+//
+// The current behavior of the swept-face based intersection skips the 
+// facet-connected neighbor of a source cell if that facet is on the 
+// domain boundary. As a result, the swept-polygon covering the mismatched 
+// area is not accounted for in the list of weights for interpolation. 
+// Therefore, the remapped volume fraction is partial and the exact values that
 // are used for comparison accounts for this partial volume fraction. 
-// This needs to be addressed later !!  
+// These tests confirm that the swept face remap, in its current form, 
+// still need a mismatch fix. This needs to be addressed later !!  
 
 TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
   // Source and target meshes
