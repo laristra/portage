@@ -140,6 +140,16 @@ if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM AND TANGRAM_ENABLE_XMOF2D)
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
 
+
+  file(COPY portageapp_rgmd_jali_tjunction_2d_swept.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY gold/GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_rgmd_jali_tjunction_2d_swept
+    COMMAND ./portageapp_rgmd_jali_tjunction_2d_swept.sh)
+  set_property(TEST portageapp_rgmd_jali_tjunction_2d_swept
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
+
 endif ()
 
 ####################################################################
