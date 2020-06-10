@@ -147,6 +147,7 @@ namespace Portage {
       cache_adjacency();
     }
 
+#ifdef PORTAGE_HAS_TANGRAM
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
     //As the constructor with interface reconstructor only sets the variable name
     //for such fields, this method is needed to properly set the multimaterial data local
@@ -158,6 +159,11 @@ namespace Portage {
         state_.mat_get_celldata(variable_name_, material_id_, &values_);
       }
     }
+
+    void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> ir) {
+      interface_reconstructor_ = ir;
+    }
+#endif
 
     /**
      * @brief Set interpolation variable and options.
