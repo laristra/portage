@@ -186,8 +186,8 @@ namespace Portage {
      * @param boundary_limiter_type: the limiter to use at boundary points.
      */
     void set_interpolation_variable(std::string variable_name,
-                                    Limiter_type limiter_type,
-                                    Boundary_Limiter_type boundary_limiter_type) {
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
       variable_name_ = variable_name;
       limiter_type_ = limiter_type;
@@ -511,8 +511,8 @@ namespace Portage {
     void set_material(int material_id) { material_id_ = material_id; }
 
     void set_interpolation_variable(std::string const& variable_name,
-                                    Limiter_type limiter_type,
-                                    Boundary_Limiter_type boundary_limiter_type) {
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
       variable_name_ = variable_name;
       limiter_type_ = limiter_type;
@@ -523,8 +523,10 @@ namespace Portage {
     // for interface compatibility with cell-centered variant
     void cache_adjacency(const Part<Mesh, State>* part) {}
 
+#ifdef PORTAGE_HAS_TANGRAM
     // for interface compatibility with cell-centered variant
     void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> /* unused */) {}
+#endif
 
     // @brief Limited gradient functor implementation for NODE
     Vector<D> operator()(int nodeid) {

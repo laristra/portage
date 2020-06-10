@@ -254,20 +254,22 @@ int main(int argc, char** argv) {
   double curl_src(0.0), curl_trg(0.0);
   std::vector<std::string> vel_names = { "velocity_x", "velocity_y" };
 
+  using Gradient = Portage::Limited_Gradient<2, Wonton::CELL,
+                                             Wonton::Jali_Mesh_Wrapper,
+                                             Wonton::Jali_State_Wrapper>;
+
   { 
     int ncells_src = srcmesh_wrapper.num_owned_cells();
     int ncells_all = ncells_src + srcmesh_wrapper.num_ghost_cells();
     std::vector<Wonton::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
 
     for (int i = 0; i < 2; ++i) {
-      Portage::Limited_Gradient<2, Wonton::Entity_kind::CELL,
-                                Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
-          gradient_kernel(srcmesh_wrapper,srcstate_wrapper,
-                          vel_names[i], limiter, Portage::BND_NOLIMITER);
+      Gradient gradient_kernel(srcmesh_wrapper, srcstate_wrapper);
+      gradient_kernel.set_interpolation_variable(vel_names[i], limiter);
 
-      Portage::transform(srcmesh_wrapper.begin(Wonton::Entity_kind::CELL),
-                         srcmesh_wrapper.end(Wonton::Entity_kind::CELL),
-                         grads_src[i].begin(), gradient_kernel);
+      Wonton::transform(srcmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+                        srcmesh_wrapper.end(Wonton::Entity_kind::CELL),
+                        grads_src[i].begin(), gradient_kernel);
     }
 
     curl_src = EvaluateCurl(srcmesh_wrapper, grads_src);
@@ -279,14 +281,12 @@ int main(int argc, char** argv) {
     std::vector<Portage::vector<Wonton::Vector<2>>> grads_trg(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
 
     for (int i = 0; i < 2; ++i) {
-      Portage::Limited_Gradient<2, Wonton::Entity_kind::CELL,
-                                Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
-          gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
-                          vel_names[i], limiter, Portage::BND_NOLIMITER);
+      Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
+      gradient_kernel.set_interpolation_variable(vel_names[i], limiter);
 
-      Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
-                         trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
-                         grads_trg[i].begin(), gradient_kernel);
+      Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+                        trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
+                        grads_trg[i].begin(), gradient_kernel);
     }
 
     curl_trg = EvaluateCurl(trgmesh_wrapper, grads_trg);
