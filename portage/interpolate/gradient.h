@@ -144,30 +144,7 @@ namespace Portage {
       // ghost layer (even if it is a single layer) will not have
       // neighbors on the outer side and therefore, will not yield the
       // right gradient anyway
-
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
-                                              Entity_type::PARALLEL_OWNED);
-      cell_neighbors_.resize(nb_cells);
-
-      if (part_ == nullptr) /* entire mesh */ {
-        auto collect_neighbors = [this](int c) {
-          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL,
-                                        &(cell_neighbors_[c]));
-        };
-
-        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
-                                      Entity_type::PARALLEL_OWNED),
-                          mesh_.end(Entity_kind::CELL,
-                                    Entity_type::PARALLEL_OWNED),
-                          collect_neighbors);
-      } else /* only on source part */ {
-        auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = part_->get_neighbors(c);
-        };
-
-        auto const& part_cells = part_->cells();
-        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
-      }
+      cache_adjacency();
     }
 
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
@@ -206,6 +183,38 @@ namespace Portage {
       field_type_ = state_.field_type(Entity_kind::CELL, variable_name_);
       if (field_type_ == Field_type::MESH_FIELD) {
         state_.mesh_get_data(Entity_kind::CELL, variable_name_, &values_);
+      }
+    }
+
+    /**
+     * @brief Cache adjacency matrix.
+     *
+     * For mesh remap, it should be invoked once at gradient constructor.
+     * For part-by-part, it should be invoked for each new source part.
+     *
+     * @param part: optional source mesh part entities.
+     */
+    void cache_adjacency(const Part<Mesh, State>* part = nullptr) {
+      // store part pointer
+      part_ = part;
+
+      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+      cell_neighbors_.clear();
+      cell_neighbors_.resize(nb_cells);
+
+      if (part != nullptr) {
+        auto const& cells = part_->cells();
+        // filter neighbors
+        Wonton::for_each(cells.begin(), cells.end(),
+                         [this](int c) { cell_neighbors_[c] = part_->get_neighbors(c); });
+      } else {
+        // retrieve all neighbors
+        Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         [this](int c) {
+                           auto* data = cell_neighbors_[c].data();
+                           mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
+                         });
       }
     }
 
