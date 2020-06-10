@@ -1234,7 +1234,7 @@ TEST(Interpolate_2nd_Order, Cell_Ctr_Lin_BND_NOLIMITER_3D) {
     stdvals[c] = cen[0]+cen[1]+cen[2];
   }
 
-  double TOL = 1e-12;
+  // double TOL = 1e-12;
   for (int c = 0; c < ncells_target; ++c)
     ASSERT_NEAR(stdvals[c], outvals[c], TOL);
 

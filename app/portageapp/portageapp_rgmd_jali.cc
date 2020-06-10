@@ -39,10 +39,11 @@
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-#include "portage/support/portage.h"
 #include "portage/support/mpi_collate.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/support/timer.h"
+#include "portage/search/search_swept_face.h"
+#include "portage/intersect/intersect_swept_face.h"
 
 #include "tangram/utility/get_material_moments.h"
 #include "tangram/utility/rpgtools/cuts.h"
@@ -75,6 +76,9 @@ using Wonton::Jali_Mesh_Wrapper;
 namespace RGMDApp {
   enum Problem_type {
     SRCPURECELLS, TJUNCTION, BALL, ROTOR
+  };
+  enum Mesh_perturb_type {
+    NO, SHIFT, PSEUDORANDOM
   };
 }
 
@@ -121,9 +125,9 @@ int print_usage() {
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
-      "--mesh_min=0. --mesh_max=1. \n" <<
+      "--mesh_min=0. --mesh_max=1. --perturb_source=n|shift|pseudorandom \n" <<
       "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n " <<
-      "--field_filename=string\n\n";
+      "--field_filename=string --intersect=y|n \n\n";
 
   std::cout << "--problem (default = tjunction): defines material distribution in the domain\n\n";
 
@@ -157,6 +161,9 @@ int print_usage() {
       "coordinates (same in x, y, and z) of the upper corner of a mesh\n" <<
       "ONLY APPLICABLE FOR INTERNALLY GENERATED MESHES\n\n";
 
+  std::cout << "--perturb_source (default = n): " <<
+      "add a shift or pseudorandom perturbation to coordinates of a source mesh\n\n";
+
   std::cout << "--material_fields: A comma separated list of quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
       " the expression parser package ExprTk \n" <<
@@ -182,6 +189,10 @@ int print_usage() {
   std::cout << "  If 'y', the source and target meshes are output with the " <<
       "remapped field attached as input.exo and output.exo, \n" <<
       "and interface reconstruction results are output as source_mm.gmv and target_mm.gmv \n\n";
+
+  std::cout << "--intersect (default = y)\n";
+  std::cout << "  If 'y', intersection-based remap is used. Set to 'n' to enable  " <<
+      "swept-face remap \n\n";
   
 #if ENABLE_TIMINGS
   std::cout << "--only_threads (default = n)\n";
@@ -512,7 +523,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool target_convex_cells,
                            Portage::Limiter_type limiter,
                            Portage::Boundary_Limiter_type bnd_limiter,
-                           int interp_order,
+                           int interp_order, bool intersect,
+                           double srclo, double srchi,
+                           RGMDApp::Mesh_perturb_type mesh_perturb,
                            RGMDApp::Problem_type problem,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename,
@@ -545,6 +558,7 @@ int main(int argc, char** argv) {
   }
 
   RGMDApp::Problem_type problem = RGMDApp::Problem_type::TJUNCTION;
+  RGMDApp::Mesh_perturb_type mesh_perturb = RGMDApp::Mesh_perturb_type::NO;
   int nsourcecells = 0, ntargetcells = 0;  // No default
   int dim = 2;
   bool source_convex_cells = true, target_convex_cells = true;
@@ -553,6 +567,7 @@ int main(int argc, char** argv) {
   std::string field_filename;  // No default;
 
   int interp_order = 1;
+  bool intersect = true;
   // since write_to_gmv segfaults in parallel, default to false and force the
   // user to output in serial
   bool mesh_output = false;
@@ -634,11 +649,24 @@ int main(int argc, char** argv) {
       else if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
         bnd_limiter = Portage::Boundary_Limiter_type::BND_BARTH_JESPERSEN;
     } else if (keyword == "mesh_min") {
-      srclo = stof(valueword);
+      srclo = stod(valueword);
     } else if (keyword == "mesh_max") {
-      srchi = stof(valueword);
+      srchi = stod(valueword);
+    } else if (keyword == "perturb_source") {
+      if(valueword == "n")
+        mesh_perturb = RGMDApp::Mesh_perturb_type::NO;
+      else if(valueword == "shift")
+        mesh_perturb = RGMDApp::Mesh_perturb_type::SHIFT;
+      else if (valueword == "pseudorandom")
+        mesh_perturb = RGMDApp::Mesh_perturb_type::PSEUDORANDOM;
+      else {
+        std::cerr << "Unknown mesh perturbation type!\n";
+        MPI_Abort(MPI_COMM_WORLD, -1);
+      }
     } else if (keyword == "output_meshes") {
       mesh_output = (valueword == "y");
+    } else if (keyword == "intersect") {
+      intersect = (valueword == "y");
     } else if (keyword == "convergence_study") {
       n_converge = stoi(valueword);
       if (n_converge <= 0) {
@@ -707,6 +735,12 @@ int main(int argc, char** argv) {
       print_usage();
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
+  if (not intersect) {
+    if (nsourcecells != ntargetcells)
+      std::cerr << "Need the same mesh topology for a swept-face remap\n";
+    if (source_convex_cells)
+      std::cerr << "source_convex_cells should be false with a swept remap\n";
+  }
 
 #if ENABLE_TIMINGS
   auto profiler = std::make_shared<Profiler>();
@@ -798,14 +832,16 @@ int main(int argc, char** argv) {
     switch (dim) {
       case 2:
         run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, bnd_limiter, interp_order,
+               limiter, bnd_limiter, interp_order, intersect,
+               srclo, srchi, mesh_perturb,
                problem, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
-               limiter, bnd_limiter, interp_order,
+               limiter, bnd_limiter, interp_order, intersect,
+               srclo, srchi, mesh_perturb,
                problem, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
@@ -894,7 +930,9 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                    bool target_convex_cells,
                    Portage::Limiter_type limiter,
                    Portage::Boundary_Limiter_type bnd_limiter,
-                   int interp_order,
+                   int interp_order, bool intersect,
+                   double srclo, double srchi,
+                   RGMDApp::Mesh_perturb_type mesh_perturb,
                    RGMDApp::Problem_type problem,
                    std::vector<std::string> material_field_expressions,
                    std::string field_filename, bool mesh_output,
@@ -903,6 +941,32 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                    std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
     std::cout << "starting portageapp_rgmd_jali...\n";
+
+  // Add perturbations to a source mesh
+  if(mesh_perturb != RGMDApp::Mesh_perturb_type::NO) {
+    int const numsrcnodes = sourceMesh->num_nodes<Jali::Entity_type::ALL>();
+    int const numsrccells = sourceMesh->num_cells<Jali::Entity_type::ALL>();
+    double dx = (srchi-srclo)/pow(numsrccells,1.0/dim);
+    std::array<double, dim> pnt;
+    std::array<double, dim> new_pnt;
+    for (int i = 0; i < numsrcnodes; i++) {
+      sourceMesh->node_get_coordinates(i, &pnt);
+      if (mesh_perturb == RGMDApp::Mesh_perturb_type::PSEUDORANDOM) {
+        for (int dir = 0; dir < 2; dir++)
+          new_pnt[dir] = pnt[dir] + dx/20.0 * sin( 2.0*M_PI / (srchi-srclo) *
+                  (pnt[dir]-srclo)*(pnt[(dir+1)%2]-srclo) *
+                  (srchi-pnt[dir])*(srchi-pnt[(dir+1)%2]) * 9001 );
+      }
+      else if (mesh_perturb == RGMDApp::Mesh_perturb_type::SHIFT) { // perturbation ala Misha
+        double alpha = 0.1*dx;
+        new_pnt[0] = (1. - alpha) * pnt[0] + alpha * pnt[0]*pnt[0]*pnt[0];
+        new_pnt[1] = (1. - alpha) * pnt[1] + alpha * pnt[1]*pnt[1];
+      }
+      if (dim==3) new_pnt[2] = pnt[2];
+      sourceMesh->node_set_coordinates(i, new_pnt.data());
+    }
+    if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
+  }
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -1189,85 +1253,169 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                filename);
   }
 
-  if (dim == 2) {
-    if (interp_order == 1) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_1stOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::IR_2D, 
-        Tangram::SplitR2D,
-        Tangram::ClipR2D>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.set_reconstructor_options(source_convex_cells, ims_tols);
-      driver.run(executor);
-    } else if (interp_order == 2) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_2ndOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::IR_2D,
-        Tangram::SplitR2D,
-        Tangram::ClipR2D>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.set_limiter(limiter);
-      driver.set_bnd_limiter(bnd_limiter);
-      driver.set_reconstructor_options(source_convex_cells, ims_tols);
-      driver.run(executor);
+  if(intersect) {
+    if (dim == 2) {
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_1stOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::IR_2D,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      } else if (interp_order == 2) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR2D,
+          Portage::Interpolate_2ndOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::IR_2D,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      }
+    } else {  // 3D
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR3D,
+          Portage::Interpolate_1stOrder,
+          3,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR3D,
+          Tangram::ClipR3D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      } else {  // 2nd order & 3D
+        Portage::MMDriver<
+          Portage::SearchKDTree,
+          Portage::IntersectR3D,
+          Portage::Interpolate_2ndOrder,
+          3,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR3D,
+          Tangram::ClipR3D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      }
     }
-  } else {  // 3D
-    if (interp_order == 1) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR3D,
-        Portage::Interpolate_1stOrder,
-        3,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::MOF,
-        Tangram::SplitR3D,
-        Tangram::ClipR3D>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.set_reconstructor_options(source_convex_cells, ims_tols);
-      driver.run(executor);
-    } else {  // 2nd order & 3D
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR3D,
-        Portage::Interpolate_2ndOrder,
-        3,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper,
-        Tangram::MOF,
-        Tangram::SplitR3D,
-        Tangram::ClipR3D>
-          driver(sourceMeshWrapper, sourceStateWrapper,
-                 targetMeshWrapper, targetStateWrapper);
-      driver.set_remap_var_names(remap_fields);
-      driver.set_limiter(limiter);
-      driver.set_bnd_limiter(bnd_limiter);
-      driver.set_reconstructor_options(source_convex_cells, ims_tols);
-      driver.run(executor);
+  } else { // swept face
+    if (dim == 2) {
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchSweptFace,
+          Portage::IntersectSweptFace2D,
+          Portage::Interpolate_1stOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      } else if (interp_order == 2) {
+        Portage::MMDriver<
+          Portage::SearchSweptFace,
+          Portage::IntersectSweptFace2D,
+          Portage::Interpolate_2ndOrder,
+          2,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR2D,
+          Tangram::ClipR2D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      }
+    } else {  // 3D
+      if (interp_order == 1) {
+        Portage::MMDriver<
+          Portage::SearchSweptFace,
+          Portage::IntersectSweptFace3D,
+          Portage::Interpolate_1stOrder,
+          3,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR3D,
+          Tangram::ClipR3D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      } else {  // 2nd order & 3D
+        Portage::MMDriver<
+          Portage::SearchSweptFace,
+          Portage::IntersectSweptFace3D,
+          Portage::Interpolate_2ndOrder,
+          3,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Wonton::Jali_Mesh_Wrapper,
+          Wonton::Jali_State_Wrapper,
+          Tangram::MOF,
+          Tangram::SplitR3D,
+          Tangram::ClipR3D>
+            driver(sourceMeshWrapper, sourceStateWrapper,
+                   targetMeshWrapper, targetStateWrapper);
+        driver.set_remap_var_names(remap_fields);
+        driver.set_limiter(limiter);
+        driver.set_bnd_limiter(bnd_limiter);
+        driver.set_reconstructor_options(source_convex_cells, ims_tols);
+        driver.run(executor);
+      }
     }
   }
 

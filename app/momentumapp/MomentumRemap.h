@@ -27,6 +27,7 @@ Please see the license file at the root of this repository, or at:
 
 // App includes
 #include "corner_get_centroid.h"
+#include "MomentumRemapDefs.h"
 
 const int SGH = 1;
 const int CCH = 2;

@@ -25,7 +25,7 @@ endif ()
 
 # Simple_Mesh Multi Material test
 if (PORTAGE_ENABLE_TANGRAM)
-  if (TANGRAM_HAS_XMOF2D)
+  if (TANGRAM_ENABLE_XMOF2D)
     add_executable(simple_mesh_mm_app simple_mesh_mm_app.cc)
     target_link_libraries(simple_mesh_mm_app PRIVATE portage)
 

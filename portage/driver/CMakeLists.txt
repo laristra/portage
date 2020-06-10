@@ -142,6 +142,12 @@ if (ENABLE_UNIT_TESTS)
 	   POLICY MPI
 	   THREADS 1)
 
+	 cinch_add_unit(test_driver_multimat_uber_swept_mismatch
+	   SOURCES test/test_driver_multimat_uber_swept_mismatch.cc
+	   LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+	   POLICY MPI
+	   THREADS 1)
+
        cinch_add_unit(test_driver_multimat_distributed
        SOURCES test/test_driver_multimat_distributed.cc
        LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
