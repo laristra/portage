@@ -74,32 +74,7 @@ namespace Portage {
 
         @todo must remove assumption that field is scalar
      */
-    Limited_Gradient(Mesh const& mesh, State const& state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
-
-#ifdef PORTAGE_HAS_TANGRAM
-    Limited_Gradient(Mesh const &mesh, State const &state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
-#endif
+    Limited_Gradient(Mesh const& mesh, State const& state) : mesh_(mesh), state_(state) {}
 
     // Assignment operator (disabled)
     Limited_Gradient& operator = (const Limited_Gradient&) = delete;
@@ -117,7 +92,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
@@ -160,20 +135,9 @@ namespace Portage {
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        part_(part) {
-
+    Limited_Gradient(Mesh const& mesh, State const& state)
+      : mesh_(mesh), state_(state)
+    {
       // Collect and keep the list of neighbors for each OWNED CELL as
       // it is common to gradient computation of any field variable.
       // We don't collect neighbors of GHOST CELLs because the outer
@@ -204,66 +168,7 @@ namespace Portage {
         auto const& part_cells = part_->cells();
         Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
       }
-
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
-
-#ifdef PORTAGE_HAS_TANGRAM
-    // Constructor with interface reconstructor for multimaterial remaps.
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string const& var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        interface_reconstructor_(ir),
-        part_(part) {
-
-      // Collect and keep the list of neighbors for each OWNED CELL as
-      // it is common to gradient computation of any field variable.
-      // We don't collect neighbors of GHOST CELLs because the outer
-      // ghost layer (even if it is a single layer) will not have
-      // neighbors on the outer side and therefore, will not yield the
-      // right gradient anyway
-
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
-                                              Entity_type::PARALLEL_OWNED);
-      cell_neighbors_.resize(nb_cells);
-
-      if (part_ == nullptr) /* entire mesh */ {
-        auto collect_neighbors = [this](int c) {
-          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
-        };
-
-        Wonton::for_each(mesh_.begin(Entity_kind::CELL,
-                                      Entity_type::PARALLEL_OWNED),
-                          mesh_.end(Entity_kind::CELL,
-                                    Entity_type::PARALLEL_OWNED),
-                          collect_neighbors);
-
-      } else /* only on source part */ {
-        auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = part_->get_neighbors(c);
-        };
-
-        auto const& part_cells = part_->cells();
-        Wonton::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
-      }
-
-      //If the field type is a MESH_FIELD, then the corresponding data will
-      //be stored. If the field_type is a MULTIMATERIAL_FIELD, then the constructor
-      //only stores the variable name. The user code must make a call to the method
-      //set_material to store the material-wise data.
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-    }
-#endif
 
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
     //As the constructor with interface reconstructor only sets the variable name
@@ -277,6 +182,18 @@ namespace Portage {
       }
     }
 
+    /**
+     * @brief Set interpolation variable and options.
+     *
+     * If the field type is a MESH_FIELD, then the corresponding data will
+     * be stored. If the field_type is a MULTIMATERIAL_FIELD, then it
+     * only stores the variable name. The user code must make a call to
+     * set_material to store the material-wise data.
+     *
+     * @param variable_name: the name of the variable to remap
+     * @param limiter_type: the limiter to use for internal points.
+     * @param boundary_limiter_type: the limiter to use at boundary points.
+     */
     void set_interpolation_variable(std::string variable_name,
                                     Limiter_type limiter_type,
                                     Boundary_Limiter_type boundary_limiter_type) {
@@ -521,19 +438,9 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {
-
+    Limited_Gradient(Mesh const& mesh, State const& state)
+      : mesh_(mesh), state_(state)
+    {
       auto collect_node_neighbors = [this](int n) {
         this->mesh_.dual_cell_get_node_adj_cells(
           n, Entity_type::ALL, &(node_neighbors_[n])
@@ -585,36 +492,7 @@ namespace Portage {
                         mesh_.end(Entity_kind::NODE,
                                   Entity_type::ALL),
                         collect_node_neighbors);
-
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
-
-#ifdef PORTAGE_HAS_TANGRAM
-    /**
-     * @brief Additional constructor to be consistent with cell-centered version.
-     *
-     * @param mesh: the current mesh.
-     * @param state: the current mesh state for querying field info.
-     * @param var_name: the variable to be remapped.
-     * @param limiter_type: the gradient limiter for internal regions.
-     * @param boundary_limiter_type: the gradient limiter for boundary regions.
-     * @param ir: the interface reconstructor in multi-material context.
-     */
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string const& var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : Limited_Gradient(mesh, state, var_name, limiter_type, boundary_limiter_type) {
-
-      if (part != nullptr) {
-        std::cerr << "Sorry, part-by-part remap is only defined ";
-        std::cerr << "for cell-centered field, will be ignored." << std::endl;
-      }
-    }
-#endif
 
     void set_material(int material_id) { material_id_ = material_id; }
 
@@ -696,14 +574,13 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 
     int material_id_ = 0;
-    std::vector<int> cell_ids_;
     std::vector<std::vector<int>> node_neighbors_;
   };
 }  // namespace Portage
