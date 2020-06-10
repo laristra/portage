@@ -252,7 +252,6 @@ namespace Portage {
       // Include cell where grad is needed as first element
       std::vector<int> neighbors;
       neighbors.emplace_back(cellid);
-
       auto const& list = (part_ == nullptr ? mesh_neighbors_[cellid]
                                            : part_neighbors_[cellid]);
 
@@ -409,7 +408,7 @@ namespace Portage {
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Part<Mesh, State>* part_ = nullptr;
+    const Part<Mesh, State>* part_ = nullptr;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -520,6 +519,12 @@ namespace Portage {
       boundary_limiter_type_ = boundary_limiter_type;
       state_.mesh_get_data(Entity_kind::NODE, variable_name_, &values_);
     }
+
+    // for interface compatibility with cell-centered variant
+    void cache_adjacency(const Part<Mesh, State>* part) {}
+
+    // for interface compatibility with cell-centered variant
+    void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> /* unused */) {}
 
     // @brief Limited gradient functor implementation for NODE
     Vector<D> operator()(int nodeid) {
