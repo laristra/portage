@@ -11,11 +11,15 @@
 #include <map>
 #include "mpi.h" // mandatory
 
+// jali
+#include "MeshFactory.hh"
+#include "LabeledSetRegion.hh"
+#include "GeometricModel.hh"
+
 // meshes and states
 #include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "MeshFactory.hh"
 
 // remap kernels and driver
 #include "portage/search/search_kdtree.h"
@@ -25,6 +29,7 @@
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/driver/coredriver.h"
 #include "portage/support/mpi_collate.h"
+#include "portage/support/timer.h"
 
 // parsers
 #include "json.h"
@@ -32,40 +37,12 @@
 #include "filter.h"
 /* -------------------------------------------------------------------------- */
 namespace entity {
-  auto const cell = Wonton::Entity_kind::CELL;
-
   // entities parts pair data
   struct part {
-    int id;
+    int id = -1;
     std::string source;
     std::string target;
-
-    part(int in_id, std::string in_source, std::string in_target)
-      : id(in_id), source(in_source), target(in_target)
-    {}
   };
-}
-
-/* -------------------------------------------------------------------------- */
-namespace timer {
-  // get rid of long namespaces
-  using time_t = std::chrono::high_resolution_clock::time_point;
-
-  // get current time point
-  inline time_t now() { return std::chrono::high_resolution_clock::now(); }
-
-  // retrieve elapsed time in seconds.
-  inline float elapsed(time_t& tic, bool reset = true) {
-    auto const toc = now();
-    auto secs = static_cast<float>(
-      std::chrono::duration_cast<std::chrono::milliseconds>(toc - tic).count()
-    ) * 1.E-3;
-
-    if (reset)
-      tic = now();
-
-    return secs;
-  }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -75,23 +52,22 @@ struct Params {
   int dimension = 2;       
   bool conformal = true;   
   bool dump = false;       
-  std::string source {};   
-  std::string target {};   
+  std::string source;
+  std::string target;
 
   /* remap */
   int order = 1;
   double tolerance = Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps;
-  Wonton::Entity_kind kind = Wonton::Entity_kind::CELL;
+  Wonton::Entity_kind kind = Wonton::CELL;
   std::map<std::string, std::string> fields {};
   std::map<std::string, std::vector<entity::part>> parts {};
 
   /* fixups */
   int fix_iter = 5;
-  Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
-  Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
-  Portage::Empty_fixup_type empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
-  Portage::Partial_fixup_type partial_fixup =
-    Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
+  Portage::Limiter_type limiter = Portage::NOLIMITER;
+  Portage::Boundary_Limiter_type bnd_limiter = Portage::BND_NOLIMITER;
+  Portage::Empty_fixup_type empty_fixup = Portage::EXTRAPOLATE;
+  Portage::Partial_fixup_type partial_fixup = Portage::SHIFTED_CONSERVATIVE;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -480,7 +456,7 @@ int parse(int argc, char* argv[]) {
         int id = pair["uid"];
         std::string source = pair["source"];
         std::string target = pair["target"];
-        params.parts[field].emplace_back(id, source, target);
+        params.parts[field].push_back({id, source, target});
       }
       assert(not params.parts[field].empty());
     }
@@ -798,7 +774,7 @@ int main(int argc, char* argv[]) {
   MPI_Barrier(comm);
 
   if (my_rank == 0)
-    std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+    std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic, true));
 
   /* ------------------------------------------------------------------------ */
   if (my_rank == 0)
@@ -827,9 +803,9 @@ int main(int argc, char* argv[]) {
   for (auto&& field : params.fields) {
     double* field_data = nullptr;
     // add scalar field to both meshes
-    source_state_wrapper.mesh_add_data<double>(entity::cell, field.first, 0.);
-    target_state_wrapper.mesh_add_data<double>(entity::cell, field.first, 0.);
-    source_state_wrapper.mesh_get_data(entity::cell, field.first, &field_data);
+    source_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
+    target_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
+    source_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
 
     // evaluate field expression and assign it
     user_field_t source_field;
@@ -957,7 +933,7 @@ int main(int argc, char* argv[]) {
   }
 
   if (my_rank == 0)
-    std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+    std::printf("Remap done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic, true));
 
   /* ------------------------------------------------------------------------ */
   if (params.kind == Wonton::Entity_kind::CELL) {
@@ -988,8 +964,8 @@ int main(int argc, char* argv[]) {
         // retrieve field data on both meshes
         double* source_field_data = nullptr;
         double* target_field_data = nullptr;
-        source_state_wrapper.mesh_get_data(entity::cell, field.first, &source_field_data);
-        target_state_wrapper.mesh_get_data(entity::cell, field.first, &target_field_data);
+        source_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &source_field_data);
+        target_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &target_field_data);
 
         // compute total mass on the source mesh to check conservation
         for (int s = 0; s < nb_source_cells; ++s) {
@@ -1034,7 +1010,7 @@ int main(int argc, char* argv[]) {
         MPI_Barrier(comm);
 
         if (my_rank == 0) {
-          std::printf( " done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
+          std::printf( " done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic, true));
           std::printf(" \u2022 L1-norm error     = %lf\n", error_l1);
           std::printf(" \u2022 L2-norm error     = %lf\n", error_l2);
           std::printf(" \u2022 relative L1 error = %.15f\n", relative_error);
@@ -1085,7 +1061,7 @@ int main(int argc, char* argv[]) {
       for (auto c = 0; c < nb_target_cells; ++c)
         local_index[c] = target_mesh->GID(c, Jali::Entity_kind::CELL);
 
-      target_state_wrapper.mesh_get_data(entity::cell, field.first, &field_data);
+      target_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
       std::copy(field_data, field_data + nb_target_cells, local_field.begin());
 
       // append local index and values lists to master rank global lists
