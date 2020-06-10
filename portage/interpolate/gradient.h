@@ -144,7 +144,15 @@ namespace Portage {
       // ghost layer (even if it is a single layer) will not have
       // neighbors on the outer side and therefore, will not yield the
       // right gradient anyway
-      cache_adjacency();
+      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+      mesh_neighbors_.resize(nb_cells);
+      // retrieve all neighbors
+      Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                       mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                       [this](int c) {
+                         auto data = mesh_neighbors_[c].data();
+                         mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
+                       });
     }
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -200,27 +208,18 @@ namespace Portage {
      *
      * @param part: optional source mesh part entities.
      */
-    void cache_adjacency(const Part<Mesh, State>* part = nullptr) {
-      // store part pointer
-      part_ = part;
-
-      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-      cell_neighbors_.clear();
-      cell_neighbors_.resize(nb_cells);
+    void cache_adjacency(const Part<Mesh, State>* part) {
 
       if (part != nullptr) {
+        part_ = part;
         auto const& cells = part_->cells();
-        // filter neighbors
+        // flush lists and filter neighbors
+        int size = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+        part_neighbors_.clear();
+        part_neighbors_.resize(size);
+
         Wonton::for_each(cells.begin(), cells.end(),
-                         [this](int c) { cell_neighbors_[c] = part_->get_neighbors(c); });
-      } else {
-        // retrieve all neighbors
-        Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
-                         mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
-                         [this](int c) {
-                           auto* data = cell_neighbors_[c].data();
-                           mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
-                         });
+                         [this](int c) { part_neighbors_[c] = part_->get_neighbors(c); });
       }
     }
 
@@ -251,13 +250,13 @@ namespace Portage {
       }
 
       // Include cell where grad is needed as first element
-      std::vector<int> neighbors{cellid};
+      std::vector<int> neighbors;
+      neighbors.emplace_back(cellid);
 
-      if (!cell_neighbors_.empty()) {
-        neighbors.insert(std::end(neighbors),
-                         std::begin(cell_neighbors_[cellid]),
-                         std::end(cell_neighbors_[cellid]));
-      }
+      auto const& list = (part_ == nullptr ? mesh_neighbors_[cellid]
+                                           : part_neighbors_[cellid]);
+
+      for (int const& c : list) { neighbors.emplace_back(c); }
 
       std::vector<Point<D>> list_coords;
       std::vector<double> list_values;
@@ -405,7 +404,8 @@ namespace Portage {
 
     int material_id_ = 0;
     std::vector<int> cell_ids_;
-    std::vector<std::vector<int>> cell_neighbors_;
+    std::vector<std::vector<int>> mesh_neighbors_ {};
+    std::vector<std::vector<int>> part_neighbors_ {};
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
