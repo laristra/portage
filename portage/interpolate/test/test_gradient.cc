@@ -63,26 +63,19 @@ TEST(Gradient, Fields_Cell_Ctr) {
   mystate.add("cellvars2", Portage::Entity_kind::CELL, &(data2[0]));
 
   // Create Gradient objects
+  using Gradient = Portage::Limited_Gradient<2, Wonton::CELL,
+                                             Wonton::Simple_Mesh_Wrapper,
+                                             Wonton::Simple_State_Wrapper>;
 
-  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc1(meshwrapper, statewrapper, "cellvars1", 
-                Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  Gradient gradcalc1(meshwrapper, statewrapper);
+  Gradient gradcalc2(meshwrapper, statewrapper);
+  Gradient gradcalc3(meshwrapper, statewrapper);
+  Gradient gradcalc4(meshwrapper, statewrapper);
 
-  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc2(meshwrapper, statewrapper, "cellvars2", 
-                Portage::NOLIMITER, Portage::BND_NOLIMITER);
-
-  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc3(meshwrapper, statewrapper, "cellvars1",
-                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
-
-  Portage::Limited_Gradient<2, Portage::Entity_kind::CELL, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc4(meshwrapper, statewrapper, "cellvars2",
-                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
+  gradcalc1.set_interpolation_variable("cellvars1", Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  gradcalc2.set_interpolation_variable("cellvars2", Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  gradcalc3.set_interpolation_variable("cellvars1", Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
+  gradcalc4.set_interpolation_variable("cellvars2", Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
 
   // Compute the gradient for each of these fields
 
@@ -177,26 +170,19 @@ TEST(Gradient, Fields_Node_Ctr) {
   mystate.add("nodevars2", Portage::Entity_kind::NODE, &(data2[0]));
 
   // Create Gradient calculater objects
+  using Gradient = Portage::Limited_Gradient<2, Wonton::NODE,
+                                             Wonton::Simple_Mesh_Wrapper,
+                                             Wonton::Simple_State_Wrapper>;
 
-  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc1(meshwrapper, statewrapper, "nodevars1", 
-                Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  Gradient gradcalc1(meshwrapper, statewrapper);
+  Gradient gradcalc2(meshwrapper, statewrapper);
+  Gradient gradcalc3(meshwrapper, statewrapper);
+  Gradient gradcalc4(meshwrapper, statewrapper);
 
-  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc2(meshwrapper, statewrapper, "nodevars2", 
-                Portage::NOLIMITER, Portage::BND_NOLIMITER);
-
-  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc3(meshwrapper, statewrapper, "nodevars1",
-                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
-
-  Portage::Limited_Gradient<2, Portage::Entity_kind::NODE, Wonton::Simple_Mesh_Wrapper,
-                            Wonton::Simple_State_Wrapper>
-      gradcalc4(meshwrapper, statewrapper, "nodevars2",
-                Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
+  gradcalc1.set_interpolation_variable("nodevars1", Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  gradcalc2.set_interpolation_variable("nodevars2", Portage::NOLIMITER, Portage::BND_NOLIMITER);
+  gradcalc3.set_interpolation_variable("nodevars1", Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
+  gradcalc4.set_interpolation_variable("nodevars2", Portage::BARTH_JESPERSEN, Portage::BND_NOLIMITER);
 
   // Make sure we retrieved the correct gradient value for each node
   // For field 1, it is a constant

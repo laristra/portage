@@ -92,7 +92,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double* values_ = nullptr;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
@@ -150,7 +150,7 @@ namespace Portage {
       Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
                        mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
                        [this](int c) {
-                         auto data = mesh_neighbors_[c].data();
+                         auto data = &(mesh_neighbors_[c]);
                          mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
                        });
     }
@@ -409,7 +409,7 @@ namespace Portage {
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Part<Mesh, State> const* part_;
+    Part<Mesh, State>* part_ = nullptr;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -589,7 +589,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double* values_ = nullptr;
+    double const* values_;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
