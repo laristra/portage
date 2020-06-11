@@ -262,11 +262,10 @@ int main(int argc, char** argv) {
     int ncells_src = srcmesh_wrapper.num_owned_cells();
     int ncells_all = ncells_src + srcmesh_wrapper.num_ghost_cells();
     std::vector<Wonton::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+    Gradient gradient_kernel(srcmesh_wrapper, srcstate_wrapper);
 
     for (int i = 0; i < 2; ++i) {
-      Gradient gradient_kernel(srcmesh_wrapper, srcstate_wrapper);
-      gradient_kernel.set_interpolation_variable(vel_names[i], limiter);
-
+      gradient_kernel.set_interpolation_variable(vel_names[i], limiter, Portage::BND_NOLIMITER);
       Wonton::transform(srcmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                         srcmesh_wrapper.end(Wonton::Entity_kind::CELL),
                         grads_src[i].begin(), gradient_kernel);
@@ -279,11 +278,10 @@ int main(int argc, char** argv) {
     int ncells_trg = trgmesh_wrapper.num_owned_cells();
     int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
     std::vector<Portage::vector<Wonton::Vector<2>>> grads_trg(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+    Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
 
     for (int i = 0; i < 2; ++i) {
-      Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
-      gradient_kernel.set_interpolation_variable(vel_names[i], limiter);
-
+      gradient_kernel.set_interpolation_variable(vel_names[i], limiter, Portage::BND_NOLIMITER);
       Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                         trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
                         grads_trg[i].begin(), gradient_kernel);

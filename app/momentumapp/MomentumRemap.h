@@ -427,7 +427,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
 
     for (int i = 0; i < num_fields; ++i) {
       Wonton::vector<Wonton::Vector<D>> gradient(ncells_all);
-      gradient_kernel.set_interpolation_variable(field_names[i], limiter);
+      gradient_kernel.set_interpolation_variable(field_names[i], limiter, Portage::BND_NOLIMITER);
       Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
                          gradients[i].begin(), gradient_kernel);
