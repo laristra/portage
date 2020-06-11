@@ -251,6 +251,11 @@ namespace Portage {
         return grad;
       }
 
+      // check that adjacency data are already cached for part-by-part
+      if (part_ != nullptr and part_neighbors_.empty()) {
+        throw std::runtime_error("adjacency data not yet cached for part-by-part");
+      }
+
       // Include cell where grad is needed as first element
       std::vector<int> neighbors;
       neighbors.emplace_back(cellid);
