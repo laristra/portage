@@ -126,7 +126,9 @@ assigned **LA-CC-16-084**.
 
 Below we list copy & paste instructions for several local machines; we
 have a script that parses this README file to execute the examples
-below to ensure they build.
+below to ensure they build. NOTE: If TANGRAM is **DISABLED**, the path
+to WONTON must be specified explicitly using WONTON_ROOT or indicated
+in CMAKE_PREFIX_PATH.
 
 ## Darwin
 
@@ -137,8 +139,8 @@ Execute the following from the portage root directory:
 
 INTEL_VERSION=18.0.3
 MPI_VERSION=3.1.3
-TANGRAM_VERSION=1.1.5
-WONTON_VERSION=0.9.9
+TANGRAM_VERSION=0.9.9
+WONTON_VERSION=1.1.5
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -151,7 +153,6 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D WONTON_ROOT=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_TANGRAM=True \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
@@ -189,9 +190,8 @@ cmake \
     -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
-	-D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_TANGRAM=True \
-	-D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}
+	-D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
 	-D PORTAGE_ENABLE_Jali=True \
 	-D PORTAGE_ENABLE_FleCSI=False \
@@ -221,7 +221,6 @@ cmake \
    -D CMAKE_BUILD_TYPE=Release \
    -D ENABLE_UNIT_TESTS=True \
    -D ENABLE_APP_TESTS=True \
-   -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
    -D PORTAGE_ENABLE_TANGRAM=True \
    -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
    -D PORTAGE_ENABLE_MPI=True \
@@ -257,7 +256,6 @@ cmake \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
-    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_TANGRAM=True \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
