@@ -135,25 +135,30 @@ namespace Portage {
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(Mesh const& mesh, State const& state, bool cache_mesh_adj = true)
-      : mesh_(mesh), state_(state)
+    Limited_Gradient(Mesh const& mesh, State const& state,
+                     const Part<Mesh, State>* part = nullptr)
+      : mesh_(mesh), state_(state), part_(part)
     {
-      if (cache_mesh_adj) {
+      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+      neighbors_.resize(nb_cells);
+
+      if (part == nullptr) {
         // Collect and keep the list of neighbors for each OWNED CELL as
         // it is common to gradient computation of any field variable.
         // We don't collect neighbors of GHOST CELLs because the outer
         // ghost layer (even if it is a single layer) will not have
         // neighbors on the outer side and therefore, will not yield the
         // right gradient anyway
-        int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-        mesh_neighbors_.resize(nb_cells);
-        // retrieve all neighbors
         Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
                          mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
                          [this](int c) {
-                           auto data = &(mesh_neighbors_[c]);
+                           auto* data = neighbors_.data() + c;
                            mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
                          });
+      } else {
+        Wonton::for_each(part->cells().begin(),
+                         part->cells().end(),
+                         [this](int c) { neighbors_[c] = part_->get_neighbors(c); });
       }
     }
 
@@ -202,29 +207,6 @@ namespace Portage {
       }
     }
 
-    /**
-     * @brief Cache adjacency matrix.
-     *
-     * For mesh remap, it should be invoked once at gradient constructor.
-     * For part-by-part, it should be invoked for each new source part.
-     *
-     * @param part: optional source mesh part entities.
-     */
-    void cache_adjacency(const Part<Mesh, State>* part) {
-
-      if (part != nullptr) {
-        part_ = part;
-        auto const& cells = part_->cells();
-        // flush lists and filter neighbors
-        int size = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-        part_neighbors_.clear();
-        part_neighbors_.resize(size);
-
-        Wonton::for_each(cells.begin(), cells.end(),
-                         [this](int c) { part_neighbors_[c] = part_->get_neighbors(c); });
-      }
-    }
-
     // @brief Implementation of Limited_Gradient functor for CELLs
     Vector<D> operator()(int cellid) {
 
@@ -251,18 +233,11 @@ namespace Portage {
         return grad;
       }
 
-      // check that adjacency data are already cached for part-by-part
-      if (part_ != nullptr and part_neighbors_.empty()) {
-        throw std::runtime_error("adjacency data not yet cached for part-by-part");
-      }
-
       // Include cell where grad is needed as first element
       std::vector<int> neighbors;
       neighbors.emplace_back(cellid);
-      auto const& list = (part_ == nullptr ? mesh_neighbors_[cellid]
-                                           : part_neighbors_[cellid]);
 
-      for (int const& c : list) { neighbors.emplace_back(c); }
+      for (int const& c : neighbors_[cellid]) { neighbors.emplace_back(c); }
 
       std::vector<Point<D>> list_coords;
       std::vector<double> list_values;
@@ -410,8 +385,7 @@ namespace Portage {
 
     int material_id_ = 0;
     std::vector<int> cell_ids_;
-    std::vector<std::vector<int>> mesh_neighbors_ {};
-    std::vector<std::vector<int>> part_neighbors_ {};
+    std::vector<std::vector<int>> neighbors_ {};
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
@@ -459,16 +433,11 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(Mesh const& mesh, State const& state, bool cache_mesh_adj = true)
+    Limited_Gradient(Mesh const& mesh, State const& state,
+                     const Part<Mesh, State>* part = nullptr)
       : mesh_(mesh), state_(state)
     {
-      if (cache_mesh_adj) {
-        auto collect_node_neighbors = [this](int n) {
-          this->mesh_.dual_cell_get_node_adj_cells(
-            n, Entity_type::ALL, &(node_neighbors_[n])
-          );
-        };
-
+      if (part == nullptr) {
         // Collect and keep the list of neighbors for each OWNED or
         // GHOST as it is common to gradient computation of any field
         // variable.
@@ -507,10 +476,15 @@ namespace Portage {
         // us from making a grosser error at partition boundaries
 
         int const nnodes = mesh_.num_entities(Wonton::NODE, Wonton::ALL);
-        node_neighbors_.resize(nnodes);
+        neighbors_.resize(nnodes);
         Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
                          mesh_.end(Wonton::NODE, Wonton::ALL),
-                         collect_node_neighbors);
+                         [this](int n) {
+                           auto* data = neighbors_.data() + n;
+                           mesh_.dual_cell_get_node_adj_cells(n, Wonton::ALL, data);
+                         });
+      } else {
+        throw std::runtime_error("part-by-part not supported for nodal remap");
       }
     }
 
@@ -525,9 +499,6 @@ namespace Portage {
       boundary_limiter_type_ = boundary_limiter_type;
       state_.mesh_get_data(Entity_kind::NODE, variable_name_, &values_);
     }
-
-    // for interface compatibility with cell-centered variant
-    void cache_adjacency(const Part<Mesh, State>* part) {}
 
 #ifdef PORTAGE_HAS_TANGRAM
     // for interface compatibility with cell-centered variant
@@ -552,7 +523,7 @@ namespace Portage {
         return grad;
       }
 
-      auto const& neighbors = node_neighbors_[nodeid];
+      auto const& neighbors = neighbors_[nodeid];
       std::vector<Point<D>> node_coords(neighbors.size() + 1);
       std::vector<double> node_values(neighbors.size() + 1);
       mesh_.node_get_coordinates(nodeid, &(node_coords[0]));
@@ -609,7 +580,7 @@ namespace Portage {
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 
     int material_id_ = 0;
-    std::vector<std::vector<int>> node_neighbors_;
+    std::vector<std::vector<int>> neighbors_;
   };
 }  // namespace Portage
 
