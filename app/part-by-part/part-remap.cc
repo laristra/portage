@@ -38,7 +38,7 @@
 /* -------------------------------------------------------------------------- */
 namespace entity {
   // entities parts pair data
-  struct part {
+  struct expr {
     int id = -1;
     std::string source;
     std::string target;
@@ -60,7 +60,9 @@ struct Params {
   double tolerance = Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps;
   Wonton::Entity_kind kind = Wonton::CELL;
   std::map<std::string, std::string> fields {};
-  std::map<std::string, std::vector<entity::part>> parts {};
+  std::map<std::string, std::vector<entity::expr>> parts {};
+  std::map<std::string, std::set<int>> source_cells {};
+  std::map<std::string, std::set<int>> target_cells {};
 
   /* fixups */
   int fix_iter = 5;
@@ -364,7 +366,9 @@ int parse(int argc, char* argv[]) {
       else {
         for (auto&& field : json["remap"]["fields"]) {
           if (not field.count("name")) { return abort("unknown field name"); }
-          if (not field.count("expr")) { return abort("no field expression"); }
+          if (not field.count("internal") or not field["internal"]) {
+            if (not field.count("expr")) { return abort("no field expression"); }
+          }
         }
       }
     }
@@ -393,11 +397,11 @@ int parse(int argc, char* argv[]) {
                 helper.insert(uid);
             }
             // check source list
-            if (not pair.count("source"))
-              return abort("no source entities expression for part");
+            if (not pair.count("source") or not pair.count("source-ids"))
+              return abort("no source entities or expression for part");
             // check target list
-            if (not pair.count("target"))
-              return abort("no target entities expression for part");
+            if (not pair.count("target") or not pair.count("target-ids"))
+              return abort("no target entities or expression for part");
           }
         }
         helper.clear();
@@ -454,9 +458,18 @@ int parse(int argc, char* argv[]) {
       std::string field = entry["field"];
       for (auto&& pair : entry["pairs"]) {
         int id = pair["uid"];
-        std::string source = pair["source"];
-        std::string target = pair["target"];
-        params.parts[field].push_back({id, source, target});
+        if (pair.count("source") and pair.count("target")) {
+          std::string source = pair["source"];
+          std::string target = pair["target"];
+          params.parts[field].push_back({id, source, target});
+        } else if (pair.count("source-ids") and pair.count("target-ids")) {
+          for (int cell : pair["source-ids"]) {
+            params.source_cells[field].insert(cell);
+          }
+          for (int cell : pair["target-ids"]) {
+            params.target_cells[field].insert(cell);
+          }
+        }
       }
       assert(not params.parts[field].empty());
     }
