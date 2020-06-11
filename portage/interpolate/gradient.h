@@ -135,24 +135,26 @@ namespace Portage {
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(Mesh const& mesh, State const& state)
+    Limited_Gradient(Mesh const& mesh, State const& state, bool cache_mesh_adj = true)
       : mesh_(mesh), state_(state)
     {
-      // Collect and keep the list of neighbors for each OWNED CELL as
-      // it is common to gradient computation of any field variable.
-      // We don't collect neighbors of GHOST CELLs because the outer
-      // ghost layer (even if it is a single layer) will not have
-      // neighbors on the outer side and therefore, will not yield the
-      // right gradient anyway
-      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
-      mesh_neighbors_.resize(nb_cells);
-      // retrieve all neighbors
-      Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
-                       mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
-                       [this](int c) {
-                         auto data = &(mesh_neighbors_[c]);
-                         mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
-                       });
+      if (cache_mesh_adj) {
+        // Collect and keep the list of neighbors for each OWNED CELL as
+        // it is common to gradient computation of any field variable.
+        // We don't collect neighbors of GHOST CELLs because the outer
+        // ghost layer (even if it is a single layer) will not have
+        // neighbors on the outer side and therefore, will not yield the
+        // right gradient anyway
+        int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+        mesh_neighbors_.resize(nb_cells);
+        // retrieve all neighbors
+        Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         [this](int c) {
+                           auto data = &(mesh_neighbors_[c]);
+                           mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
+                         });
+      }
     }
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -395,7 +397,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
@@ -452,60 +454,59 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(Mesh const& mesh, State const& state)
+    Limited_Gradient(Mesh const& mesh, State const& state, bool cache_mesh_adj = true)
       : mesh_(mesh), state_(state)
     {
-      auto collect_node_neighbors = [this](int n) {
-        this->mesh_.dual_cell_get_node_adj_cells(
-          n, Entity_type::ALL, &(node_neighbors_[n])
-        );
-      };
+      if (cache_mesh_adj) {
+        auto collect_node_neighbors = [this](int n) {
+          this->mesh_.dual_cell_get_node_adj_cells(
+            n, Entity_type::ALL, &(node_neighbors_[n])
+          );
+        };
 
-      // Collect and keep the list of neighbors for each OWNED or
-      // GHOST as it is common to gradient computation of any field
-      // variable.
-      // NOTE:*******************************************************
-      // The iteration for node (or dual cell) gradients is
-      // purposefully different from that of cells. For cells, we
-      // collect neighbors of only OWNED source cells because we will
-      // compute gradients only over OWNED source cells because our
-      // parallel scheme mandates that any target cell overlap only
-      // OWNED source cells (even if we have to duplicate those source
-      // cells on multiple partitions as we do when we
-      // redistribute). With nodes, we have to compute the gradient
-      // over ALL (OWNED+GHOST) nodes. This is because, even with the
-      // above requirement on overlap of OWNED target and source
-      // cells, the dual cells of a target node can overlap the dual
-      // cell of GHOST source node on a partition boundary and we want
-      // the gradient at that ghost node.
-      //
-      // Anyway, this is a bit moot, because we cannot guarantee
-      // second-order accuracy for remap of node-centered variables in
-      // anything other than uniform regular meshes since the linear
-      // reconstruction is supposed to be over the centroid while our
-      // field variables are at nodes which may not be coincident with
-      // the centroid. [PERHAPS THIS WILL GET FIXED IF WE ARE ABLE TO
-      // DO A CONSERVATIVE RECONSTRUCTION AROUND ANY POINT NOT JUST
-      // THE CENTROID]
-      //
-      // Also, the only node centered variables in the codes we are
-      // dealing with are likely to be velocity and one never remaps
-      // velocity directly anyway - we remap momentum in a
-      // conservative and consistent way by transferring momentum to
-      // cell centers, remapping cell centered momentum and
-      // transferring it back to nodes and backing out velocity.
-      //
-      // Iterating over ALL nodes (or dual control volumes) just keeps
-      // us from making a grosser error at partition boundaries
+        // Collect and keep the list of neighbors for each OWNED or
+        // GHOST as it is common to gradient computation of any field
+        // variable.
+        // NOTE:*******************************************************
+        // The iteration for node (or dual cell) gradients is
+        // purposefully different from that of cells. For cells, we
+        // collect neighbors of only OWNED source cells because we will
+        // compute gradients only over OWNED source cells because our
+        // parallel scheme mandates that any target cell overlap only
+        // OWNED source cells (even if we have to duplicate those source
+        // cells on multiple partitions as we do when we
+        // redistribute). With nodes, we have to compute the gradient
+        // over ALL (OWNED+GHOST) nodes. This is because, even with the
+        // above requirement on overlap of OWNED target and source
+        // cells, the dual cells of a target node can overlap the dual
+        // cell of GHOST source node on a partition boundary and we want
+        // the gradient at that ghost node.
+        //
+        // Anyway, this is a bit moot, because we cannot guarantee
+        // second-order accuracy for remap of node-centered variables in
+        // anything other than uniform regular meshes since the linear
+        // reconstruction is supposed to be over the centroid while our
+        // field variables are at nodes which may not be coincident with
+        // the centroid. [PERHAPS THIS WILL GET FIXED IF WE ARE ABLE TO
+        // DO A CONSERVATIVE RECONSTRUCTION AROUND ANY POINT NOT JUST
+        // THE CENTROID]
+        //
+        // Also, the only node centered variables in the codes we are
+        // dealing with are likely to be velocity and one never remaps
+        // velocity directly anyway - we remap momentum in a
+        // conservative and consistent way by transferring momentum to
+        // cell centers, remapping cell centered momentum and
+        // transferring it back to nodes and backing out velocity.
+        //
+        // Iterating over ALL nodes (or dual control volumes) just keeps
+        // us from making a grosser error at partition boundaries
 
-      int const nnodes = mesh_.num_entities(Entity_kind::NODE,
-                                            Entity_type::ALL);
-      node_neighbors_.resize(nnodes);
-      Wonton::for_each(mesh_.begin(Entity_kind::NODE,
-                                    Entity_type::ALL),
-                        mesh_.end(Entity_kind::NODE,
-                                  Entity_type::ALL),
-                        collect_node_neighbors);
+        int const nnodes = mesh_.num_entities(Wonton::NODE, Wonton::ALL);
+        node_neighbors_.resize(nnodes);
+        Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
+                         mesh_.end(Wonton::NODE, Wonton::ALL),
+                         collect_node_neighbors);
+      }
     }
 
     void set_material(int material_id) { material_id_ = material_id; }
@@ -596,7 +597,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
