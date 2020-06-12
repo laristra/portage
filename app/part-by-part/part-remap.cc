@@ -760,15 +760,67 @@ int main(int argc, char* argv[]) {
   std::shared_ptr<Jali::State> source_state;
   std::shared_ptr<Jali::State> target_state;
 
-  // load both distributed meshes
-  Jali::MeshFactory mesh_factory(comm);
-  mesh_factory.included_entities(Jali::Entity_kind::ALL_KIND);
-  mesh_factory.partitioner(Jali::Partitioner_type::METIS);
+  // mesh regions, geometric models and factories
+  std::set<int> source_regions_indices;
+  std::set<int> target_regions_indices;
+  JaliGeometry::GeometricModelPtr source_model = nullptr;
+  JaliGeometry::GeometricModelPtr target_model = nullptr;
+  Jali::MeshFactory source_factory(comm);
+  Jali::MeshFactory target_factory(comm);
 
-  source_mesh  = mesh_factory(params.source);
-  target_mesh  = mesh_factory(params.target);
+  // concatenate all source regions
+  for (auto&& field : params.parts) {
+    for (auto&& part : field.second) {
+      for (auto&& i : part.source.cells) { source_regions_indices.insert(i); }
+      for (auto&& i : part.target.cells) { target_regions_indices.insert(i); }
+    }
+  }
+
+  // check if we need to create a geometric model so that we could load
+  // part definitions (cell sets) from the file.
+  if (not source_regions_indices.empty()) {
+    JaliGeometry::RegionVector source_regions;
+    for (auto& id : source_regions_indices) {
+      auto region = new JaliGeometry::LabeledSetRegion("part_" + std::to_string(id),
+                                                       id, "Entity_kind::CELL",
+                                                       params.source, "Exodus II",
+                                                       std::to_string(id));
+      source_regions.emplace_back(region);
+    }
+    source_model = new JaliGeometry::GeometricModel(params.dimension, source_regions);
+  }
+
+  if (not target_regions_indices.empty()) {
+    JaliGeometry::RegionVector target_regions;
+    for (auto& id : target_regions_indices) {
+      auto region = new JaliGeometry::LabeledSetRegion("part_" + std::to_string(id),
+                                                       id, "Entity_kind::CELL",
+                                                       params.target, "Exodus II",
+                                                       std::to_string(id));
+      target_regions.emplace_back(region);
+    }
+    source_model = new JaliGeometry::GeometricModel(params.dimension, target_regions);
+  }
+
+  // load both distributed meshes
+  source_factory.included_entities(Jali::Entity_kind::ALL_KIND);
+  source_factory.partitioner(Jali::Partitioner_type::METIS);
+  if (source_model)
+    source_factory.geometric_model(source_model);
+
+  target_factory.included_entities(Jali::Entity_kind::ALL_KIND);
+  target_factory.partitioner(Jali::Partitioner_type::METIS);
+  if (target_model)
+    target_factory.geometric_model(target_model);
+
+  source_mesh  = source_factory(params.source);
+  target_mesh  = target_factory(params.target);
+  source_mesh->init_sets_from_geometric_model(); // needed for querying sets
+  target_mesh->init_sets_from_geometric_model();
   source_state = Jali::State::create(source_mesh);
   target_state = Jali::State::create(target_mesh);
+  source_state->init_from_mesh(); // import any state data from mesh
+
 
   // interfaces with the underlying mesh data structures
   Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
@@ -817,12 +869,14 @@ int main(int argc, char* argv[]) {
     std::printf("\n");
   }
 
-  // assign scalar fields
+  // assign scalar fields - or use existing ones
   for (auto&& field : params.fields) {
     double* field_data = nullptr;
     // add scalar field to both meshes
-    source_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
     target_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
+
+    if (field.)
+    source_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
     source_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
 
     // evaluate field expression and assign it
