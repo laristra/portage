@@ -457,8 +457,10 @@ int parse(int argc, char* argv[]) {
       params.empty_fixup = Portage::Empty_fixup_type::EXTRAPOLATE;
 
     /* parts field */
-    for (auto&& scalar : json["remap"]["fields"])
-      params.fields[scalar["name"]] = scalar["expr"];
+    for (auto&& scalar : json["remap"]["fields"]) {
+      bool is_internal = scalar.count("internal") and scalar["internal"];
+      params.fields[scalar["name"]] = is_internal ? "internal" : scalar["expr"];
+    }
 
     Part part;
     for (auto&& entry : json["parts"]) {
@@ -875,21 +877,22 @@ int main(int argc, char* argv[]) {
     // add scalar field to both meshes
     target_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
 
-    if (field.)
-    source_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
-    source_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
+    if (field.second != "internal") {
+      source_state_wrapper.mesh_add_data<double>(Wonton::CELL, field.first, 0.);
+      source_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
 
-    // evaluate field expression and assign it
-    user_field_t source_field;
-    if(source_field.initialize(params.dimension, field.second)) {
-      for (long c = 0; c < nb_source_cells; c++) {
-        field_data[c] = source_field(source_mesh->cell_centroid(c));
-        #if DEBUG_PART_BY_PART
-          std::printf("field_data[%d]: %.3f\n", c, field_data[c]);
-        #endif
-      }
-    } else
-      return abort("cannot parse numerical field "+ field.second, false);
+      // evaluate field expression and assign it
+      user_field_t source_field;
+      if(source_field.initialize(params.dimension, field.second)) {
+        for (long c = 0; c < nb_source_cells; c++) {
+          field_data[c] = source_field(source_mesh->cell_centroid(c));
+          #if DEBUG_PART_BY_PART
+            std::printf("field_data[%d]: %.3f\n", c, field_data[c]);
+          #endif
+        }
+      } else
+        return abort("cannot parse numerical field "+ field.second, false);
+    } // no need to evaluate otherwise
   }
 
   MPI_Barrier(comm);
@@ -926,7 +929,13 @@ int main(int argc, char* argv[]) {
       target_cells[i].reserve(nb_target_cells);
 
       if (not part.source.cells.empty()) {
-        for (auto&& c : part.source.cells) { source_cells[i].emplace_back(c); }
+        for (auto&& region : part.source.cells) {
+          std::vector<int> cells;
+          source_mesh->get_set_entities("part_"+std::to_string(region),
+                                        Jali::Entity_kind::CELL,
+                                        Jali::Entity_type::ALL, &cells);
+          source_cells[i].insert(source_cells[i].end(), cells.begin(), cells.end());
+        }
       } else {
         assert(not part.source.expr.empty());
         // populate source part entities
@@ -940,8 +949,15 @@ int main(int argc, char* argv[]) {
           return abort("cannot filter source part cells for field " + field, false);
       }
 
+      
       if (not part.target.cells.empty()) {
-        for (auto&& c : part.target.cells) { target_cells[i].emplace_back(c); }
+        for (auto&& region : part.target.cells) {
+          std::vector<int> cells;
+          target_mesh->get_set_entities("part_"+std::to_string(region),
+                                        Jali::Entity_kind::CELL,
+                                        Jali::Entity_type::ALL, &cells);
+          target_cells[i].insert(target_cells[i].end(), cells.begin(), cells.end());
+        }
       } else {
         assert(not part.target.expr.empty());
         // populate target part entities
@@ -1019,6 +1035,8 @@ int main(int argc, char* argv[]) {
   if (params.kind == Wonton::Entity_kind::CELL) {
     // compute error for each field
     for (auto&& field : params.fields) {
+
+      if (field.second == "internal") { continue; }  // not sure about this
 
       double error_l1 = 0;
       double error_l2 = 0;
