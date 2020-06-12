@@ -36,14 +36,11 @@
 #include "user_field.h"
 #include "filter.h"
 /* -------------------------------------------------------------------------- */
-namespace entity {
-  // entities parts pair data
-  struct expr {
-    int id = -1;
-    std::string source;
-    std::string target;
-  };
-}
+struct Part {
+  int id = -1;
+  struct { std::string expr; std::set<int> cells; } source;
+  struct { std::string expr; std::set<int> cells; } target;
+};
 
 /* -------------------------------------------------------------------------- */
 struct Params {
@@ -51,7 +48,8 @@ struct Params {
   /* mesh */
   int dimension = 2;       
   bool conformal = true;   
-  bool dump = false;       
+  bool dump = false;
+  bool internal = false;
   std::string source;
   std::string target;
 
@@ -60,9 +58,7 @@ struct Params {
   double tolerance = Portage::DEFAULT_NUMERIC_TOLERANCES<2>.relative_conservation_eps;
   Wonton::Entity_kind kind = Wonton::CELL;
   std::map<std::string, std::string> fields {};
-  std::map<std::string, std::vector<entity::expr>> parts {};
-  std::map<std::string, std::set<int>> source_cells {};
-  std::map<std::string, std::set<int>> target_cells {};
+  std::map<std::string, std::vector<Part>> parts {};
 
   /* fixups */
   int fix_iter = 5;
@@ -185,7 +181,7 @@ void print_usage() {
     "    },                                                                \n"
     "    \e[32m'fields'\e[0m: [                                            \n"
     "      { \e[32m'name'\e[0m:'density',\e[32m'expr'\e[0m: '<math>' }     \n"
-    "      { \e[32m'name'\e[0m:'temperature', \e[32m'expr'\e[0m: '<math>' }\n"
+    "      { \e[32m'name'\e[0m:'temperature', 'internal': true }           \n"
     "    ]                                                                 \n"
     "  },                                                                  \n"
     "  \e[32m'parts'\e[0m: [                                               \n"
@@ -194,13 +190,13 @@ void print_usage() {
     "      \e[32m'pairs'\e[0m: [                                           \n"
     "        {                                                             \n"
     "          \e[32m'uid'\e[0m: 1,                                        \n"
-    "          \e[32m'source'\e[0m: <math. predicate>,                     \n"
-    "          \e[32m'target'\e[0m: <math. predicate>                      \n"
+    "          \e[32m'source'\e[0m: <math>,                                \n"
+    "          \e[32m'target'\e[0m: <math>                                 \n"
     "        },                                                            \n"
     "        {                                                             \n"
     "          \e[32m'uid'\e[0m: 2,                                        \n"
-    "          \e[32m'source'\e[0m: <math. predicate>,                     \n"
-    "          \e[32m'target'\e[0m: <math. predicate>                      \n"
+    "          \e[32m'source-ids'\e[0m: [1, 2, 3],                         \n"
+    "          \e[32m'target-ids'\e[0m: [4, 5, 6]                          \n"
     "        }                                                             \n"
     "      ]                                                               \n"
     "    }                                                                 \n"
@@ -259,8 +255,17 @@ void print_params(nlohmann::json const& json) {
 
     for (auto&& part : params.parts[field.first]) {
       std::printf("   - [part: \e[32m%d\e[0m,", part.id);
-      std::printf(" source: '\e[32m%s\e[0m',", part.source.data());
-      std::printf(" target: '\e[32m%s\e[0m']\n", part.target.data());
+      if (not part.source.expr.empty() and not part.target.expr.empty()) {
+        std::printf(" source: '\e[32m%s\e[0m',", part.source.expr.data());
+        std::printf(" target: '\e[32m%s\e[0m']\n", part.target.expr.data());
+      } else {
+        assert(not part.source.cells.empty() and not part.target.cells.empty());
+        std::printf(" source: \e[32m");
+        for (int const& c : part.source.cells) { std::printf("%d, ", c); }
+        std::printf("], \e[0m target: \e[32m");
+        for (int const& c : part.target.cells) { std::printf("%d, ", c); }
+        std::printf("]\e[0m");
+      }
     }
     std::printf("\n");
   }
@@ -396,11 +401,12 @@ int parse(int argc, char* argv[]) {
               else
                 helper.insert(uid);
             }
+
             // check source list
-            if (not pair.count("source") or not pair.count("source-ids"))
+            if (not pair.count("source") and not pair.count("source-ids"))
               return abort("no source entities or expression for part");
             // check target list
-            if (not pair.count("target") or not pair.count("target-ids"))
+            if (not pair.count("target") and not pair.count("target-ids"))
               return abort("no target entities or expression for part");
           }
         }
@@ -454,22 +460,21 @@ int parse(int argc, char* argv[]) {
     for (auto&& scalar : json["remap"]["fields"])
       params.fields[scalar["name"]] = scalar["expr"];
 
+    Part part;
     for (auto&& entry : json["parts"]) {
       std::string field = entry["field"];
       for (auto&& pair : entry["pairs"]) {
-        int id = pair["uid"];
+        part.id = pair["uid"];
         if (pair.count("source") and pair.count("target")) {
-          std::string source = pair["source"];
-          std::string target = pair["target"];
-          params.parts[field].push_back({id, source, target});
+          part.source.expr = pair["source"];
+          part.target.expr = pair["target"];
         } else if (pair.count("source-ids") and pair.count("target-ids")) {
-          for (int cell : pair["source-ids"]) {
-            params.source_cells[field].insert(cell);
-          }
-          for (int cell : pair["target-ids"]) {
-            params.target_cells[field].insert(cell);
-          }
+          part.source.cells.clear();
+          part.target.cells.clear();
+          for (int cell : pair["source-ids"]) { part.source.cells.insert(cell); }
+          for (int cell : pair["target-ids"]) { part.target.cells.insert(cell); }
         }
+        params.parts[field].emplace_back(part);
       }
       assert(not params.parts[field].empty());
     }
@@ -866,27 +871,35 @@ int main(int argc, char* argv[]) {
       source_cells[i].reserve(nb_source_cells);
       target_cells[i].reserve(nb_target_cells);
 
-      // populate source part entities
-      if (filter.initialize(params.dimension, part.source)) {
-        for (long s = 0; s < nb_source_cells; ++s) {
-          if (filter(source_mesh->cell_centroid(s)))
-            source_cells[i].push_back(s);
-        }
-        source_cells[i].shrink_to_fit();
+      if (not part.source.cells.empty()) {
+        for (auto&& c : part.source.cells) { source_cells[i].emplace_back(c); }
+      } else {
+        assert(not part.source.expr.empty());
+        // populate source part entities
+        if (filter.initialize(params.dimension, part.source.expr)) {
+          for (long s = 0; s < nb_source_cells; ++s) {
+            if (filter(source_mesh->cell_centroid(s)))
+              source_cells[i].push_back(s);
+          }
+          source_cells[i].shrink_to_fit();
+        } else
+          return abort("cannot filter source part cells for field " + field, false);
       }
-      else
-        return abort("cannot filter source part cells for field "+field, false);
 
-      // populate target part entities
-      if (filter.initialize(params.dimension, part.target)) {
-        for (long t = 0; t < nb_target_cells; ++t) {
-          if (filter(target_mesh->cell_centroid(t)))
-            target_cells[i].push_back(t);
-        }
-        target_cells[i].shrink_to_fit();
+      if (not part.target.cells.empty()) {
+        for (auto&& c : part.target.cells) { target_cells[i].emplace_back(c); }
+      } else {
+        assert(not part.target.expr.empty());
+        // populate target part entities
+        if (filter.initialize(params.dimension, part.target.expr)) {
+          for (long t = 0; t < nb_target_cells; ++t) {
+            if (filter(target_mesh->cell_centroid(t)))
+              target_cells[i].push_back(t);
+          }
+          target_cells[i].shrink_to_fit();
+        } else
+          return abort("cannot filter target part cells for field "+field, false);
       }
-      else
-        return abort("cannot filter target part cells for field "+field, false);
 
       long local_source_part = source_cells[i].size();
       long local_target_part = target_cells[i].size();
