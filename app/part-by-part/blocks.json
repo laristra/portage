@@ -1,6 +1,6 @@
 {
   "mesh": {
-    "dimension": 2,
+    "dimension": 3,
     "source": "../../../test_data/cast_source.exo",
     "target": "../../../test_data/cast_target.exo",
     "conformal": true,
@@ -22,10 +22,10 @@
   },
   "parts": [
     {
-      "field": "density",
-      "pairs": [
-        { "uid": 1, "source-ids": [1, 3, 10001, 100001, 200001], "target-ids": [1] },
-        { "uid": 2, "source-ids": [2], "target-ids": [2] }
+      "field": "temperature",
+      "blocks": [
+        { "source": [1, 3, 10001, 100001, 200001], "target": [1] },
+        { "source": [2], "target": [2] }
       ]
     }
   ]

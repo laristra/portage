@@ -24,16 +24,16 @@
   "parts": [
     {
       "field": "density",
-      "pairs": [
-        { "uid": 1, "source": "sqrt(x*x + y*y) < 3", "target": "sqrt(x*x + y*y) < 3" },
-        { "uid": 2, "source": "sqrt(x*x + y*y) > 3", "target": "sqrt(x*x + y*y) > 3" }
+      "expr": [
+        { "source": "sqrt(x*x + y*y) < 3", "target": "sqrt(x*x + y*y) < 3" },
+        { "source": "sqrt(x*x + y*y) > 3", "target": "sqrt(x*x + y*y) > 3" }
       ]
     },
     {
       "field": "temperature",
-      "pairs": [
-        { "uid": 1, "source": "sqrt(x*x + y*y) < 4", "target": "sqrt(x*x + y*y) < 4" },
-        { "uid": 2, "source": "sqrt(x*x + y*y) > 4", "target": "sqrt(x*x + y*y) > 4" }
+      "expr": [
+        { "source": "sqrt(x*x + y*y) < 4", "target": "sqrt(x*x + y*y) < 4" },
+        { "source": "sqrt(x*x + y*y) > 4", "target": "sqrt(x*x + y*y) > 4" }
       ]
     }
   ]
