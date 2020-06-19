@@ -10,7 +10,7 @@ project(portage_support)
 add_library(portage_support INTERFACE)
 
 target_include_directories(portage_support INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
   $<INSTALL_INTERFACE:include>)
 
@@ -71,28 +71,28 @@ install(TARGETS portage_support
 
 if (WONTON_ENABLE_KOKKOS AND ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_weight
+  portage_add_unittest(test_weight
     SOURCES test/test_weight.cc
     LIBRARIES portage_support
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_basis
+  portage_add_unittest(test_basis
     SOURCES test/test_basis.cc
     LIBRARIES portage_support
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_operator
+  portage_add_unittest(test_operator
     SOURCES test/test_operator.cc
     LIBRARIES portage_support
     POLICY MPI
     THREADS 1
     )
 
-  cinch_add_unit(test_faceted_setup
+  portage_add_unittest(test_faceted_setup
     SOURCES test/test_faceted_setup.cc
     LIBRARIES portage_support
     POLICY SERIAL

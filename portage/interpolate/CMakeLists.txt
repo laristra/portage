@@ -10,7 +10,7 @@ project(portage_interpolate)
 add_library(portage_interpolate INTERFACE)
 
 target_include_directories(portage_interpolate INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
   $<INSTALL_INTERFACE:include>
   )
@@ -52,33 +52,33 @@ install(TARGETS portage_interpolate
 
 if (ENABLE_UNIT_TESTS)
 
-    cinch_add_unit(test_gradient
+    portage_add_unittest(test_gradient
       SOURCES  test/test_gradient.cc
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_first_order
+    portage_add_unittest(test_interpolate_first_order
       SOURCES test/test_interp_1st_order.cc
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_second_order
+    portage_add_unittest(test_interpolate_second_order
       SOURCES test/test_interp_2nd_order.cc
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    cinch_add_unit(test_interpolate_third_order
+    portage_add_unittest(test_interpolate_third_order
       SOURCES test/test_interp_3rd_order.cc
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    cinch_add_unit(test_quadfit
+    portage_add_unittest(test_quadfit
       SOURCES  test/test_quadfit.cc
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
     if (WONTON_ENABLE_Jali)
-      cinch_add_unit(test_interpolate_first_order_gentype
+      portage_add_unittest(test_interpolate_first_order_gentype
         SOURCES test/test_interp_1st_order_gentype.cc
         LIBRARIES portage_interpolate  
         POLICY MPI

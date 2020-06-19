@@ -12,8 +12,6 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-cinch_minimum_required(VERSION 1.0)
-
 if (CMAKE_VERSION_MAJOR GREATER_EQUAL 3.13)
   CMAKE_POLICY(SET CMP0079 NEW)  # allow target_link_libraries to reference
                                  # targets from other directories
@@ -28,7 +26,7 @@ cmake_policy(SET CMP0074 NEW)  # Don't ignore Pkg_ROOT variables
 
 set(PORTAGE_VERSION_MAJOR 2)
 set(PORTAGE_VERSION_MINOR 2)
-set(PORTAGE_VERSION_PATCH 4)
+set(PORTAGE_VERSION_PATCH 5)
 
 
 # Top level target
@@ -40,16 +38,6 @@ add_library(portage INTERFACE)
 
 add_library(portage::portage ALIAS portage)
 set(PORTAGE_LIBRARIES portage::portage)
-
-# cinch extras
-
-cinch_load_extras()
-
-set(CINCH_HEADER_SUFFIXES "\\.h")
-
-# Explicitly turn off module paths inherited from Cinch. When we get rid of
-# Cinch we can delete this line
-set(CMAKE_MODULE_PATH "")
 
 # Find our modules first
 if (CMAKE_VERSION GREATER_EQUAL 3.15)
