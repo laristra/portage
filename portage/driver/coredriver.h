@@ -397,14 +397,14 @@ class CoreDriver {
         std::vector<Weights_t> const& cell_mat_sources_and_weights =
             this_mat_sources_and_wts[c];
         int nwts = cell_mat_sources_and_weights.size();
+        double cell_mat_volume = 0.0;
         for (int s = 0; s < nwts; s++) {
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
-          // Check that the volume of material we are adding to c is not miniscule
-          if (wts[0] > num_tols_.min_absolute_volume) {
-            matcellstgt.push_back(c);
-            break;
-          }
+          cell_mat_volume += wts[0];
         }
+        // Check that the volume of material we are adding to c is not miniscule
+        if (cell_mat_volume > num_tols_.min_absolute_volume)
+          matcellstgt.push_back(c);
       }
 
       // If any processor is adding this material to the target state,
