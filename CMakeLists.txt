@@ -25,8 +25,8 @@ cmake_policy(SET CMP0074 NEW)  # Don't ignore Pkg_ROOT variables
 # tag the central repository.
 
 set(PORTAGE_VERSION_MAJOR 2)
-set(PORTAGE_VERSION_MINOR 2)
-set(PORTAGE_VERSION_PATCH 5)
+set(PORTAGE_VERSION_MINOR 3)
+set(PORTAGE_VERSION_PATCH 0)
 
 
 # Top level target
