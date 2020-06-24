@@ -125,6 +125,7 @@ class CoreDriver {
         target_mesh_(target_mesh),
         source_state_(source_state),
         target_state_(target_state),
+        gradient_(source_mesh, source_state),
         executor_(executor)
   {
 #ifdef WONTON_ENABLE_MPI
@@ -509,7 +510,7 @@ class CoreDriver {
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
     int material_id = 0,
-    const Part<SourceMesh, SourceState>* source_part = nullptr) const {
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
 
     int nallent = 0;
 #ifdef PORTAGE_HAS_TANGRAM
@@ -545,16 +546,13 @@ class CoreDriver {
     }
 #endif
 
-    // instantiate the right kernel according to entity kind (cell/node),
-    // as well as source and target meshes and states types.
-#ifdef PORTAGE_HAS_TANGRAM
-    Gradient kernel(source_mesh_, source_state_, field_name,
-                    limiter_type, boundary_limiter_type,
-                    interface_reconstructor_, source_part);
-#else
-    Gradient kernel(source_mesh_, source_state_, field_name,
-                    limiter_type, boundary_limiter_type, source_part);
-#endif
+    // use stored instance for mesh remap
+    // create a new instance for part-by-part
+    // nb: make_unique or make_shared would copy the object
+    auto kernel = (source_part == nullptr ? &gradient_
+                                          : new Gradient(source_mesh_, source_state_, source_part));
+    // set gradient kernel options
+    kernel->set_interpolation_variable(field_name, limiter_type, boundary_limiter_type);
 
     // create the field (material cell indices have owned and ghost
     // cells mixed together; so we have to have a vector of size
@@ -568,11 +566,12 @@ class CoreDriver {
     if (multimat) {
       // no need for this to be Wonton::vector as it will be copied out
       std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
-      
-      kernel.set_material(material_id);
+
+      kernel->set_material(material_id);
+      kernel->set_interface_reconstructor(interface_reconstructor_);
       Wonton::transform(mat_cells.begin(),
                          mat_cells.end(),
-                         owned_gradient_field.begin(), kernel);
+                         owned_gradient_field.begin(), *kernel);
       int i = 0;
       for (auto const& c : mat_cells) {
         int cm = source_state_.cell_index_in_material(c, material_id);
@@ -582,10 +581,12 @@ class CoreDriver {
 #endif
       Wonton::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          source_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         gradient_field.begin(), kernel);
+                         gradient_field.begin(), *kernel);
 #ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
+    if (source_part != nullptr) { delete kernel; }
+
     return gradient_field;
   }
 
@@ -978,7 +979,7 @@ class CoreDriver {
   TargetMesh const & target_mesh_;
   SourceState const & source_state_;
   TargetState & target_state_;
-
+  Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;

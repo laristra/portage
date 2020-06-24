@@ -421,14 +421,13 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
       field_names.size(), Wonton::vector<Wonton::Vector<D>>(ncells_all));
 
   if (method_ == SGH) {
+    using Gradient = Portage::Limited_Gradient<D, Wonton::CELL,
+                                               Mesh_Wrapper, State_Wrapper>;
+    Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
+
     for (int i = 0; i < num_fields; ++i) {
-      Portage::Limited_Gradient<D, Wonton::Entity_kind::CELL, 
-                                Mesh_Wrapper, State_Wrapper>
-          gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
-                          field_names[i], limiter, Portage::BND_NOLIMITER);
-
       Wonton::vector<Wonton::Vector<D>> gradient(ncells_all);
-
+      gradient_kernel.set_interpolation_variable(field_names[i], limiter, Portage::BND_NOLIMITER);
       Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
                          gradients[i].begin(), gradient_kernel);
