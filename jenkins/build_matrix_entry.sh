@@ -107,7 +107,7 @@ if [[ $build_type != singlemat ]]; then
 fi
 
 if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
-    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=False"  # FleCSI found through Wonton
+    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"  # FleCSI found through Wonton
 fi
 if [[ $build_type != "serial" ]]; then
     jali_flags="-D PORTAGE_ENABLE_Jali:BOOL=True"  # Jali found through Wonton
