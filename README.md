@@ -176,7 +176,7 @@ Execute the following from the portage root directory:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/projects/ngc/private
