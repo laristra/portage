@@ -124,7 +124,18 @@ endif ()
 if (NOT PORTAGE_ENABLE_FleCSI AND WONTON_ENABLE_FleCSI)
   message(FATAL_ERROR "FleCSI not enabled for Portage but Wonton is compiled with FleCSI")
 endif ()
+
+
+if (ENABLE_UNIT_TESTS)
+
+  # This needs to be set in the root directory for tests to be run by
+  # 'make test' or ctest
+  enable_testing()
+
+  include(cmake/unittest.cmake)
   
+endif ()
+
 
 #-----------------------------------------------------------------------------
 # Recurse down the source directories building up dependencies
