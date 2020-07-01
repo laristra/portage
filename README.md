@@ -140,7 +140,7 @@ Execute the following from the portage root directory:
 INTEL_VERSION=18.0.3
 MPI_VERSION=3.1.3
 TANGRAM_VERSION=0.9.9
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -211,7 +211,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
@@ -244,7 +244,7 @@ export MODULEPATH=""
 
 INTEL_VERSION=18.0.1
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/local/codes/ngc/private
