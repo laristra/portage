@@ -31,7 +31,7 @@ fi
 
 # set modules and install paths
 
-wonton_version="dev"
+wonton_version=1.2.0
 tangram_version=0.9.9
  
 
@@ -73,8 +73,8 @@ fi
 
 mpi_flags="-D PORTAGE_ENABLE_MPI=True"
 if [[ $build_type == "serial" ]]; then
-    mpi_flags=
-    mpi_suffix=
+    mpi_flags=""
+    mpi_suffix=""
 fi
 
 cmake_build_type=Release
@@ -82,14 +82,14 @@ if [[ $build_type == "debug" ]]; then
     cmake_build_type=Debug
 fi
 
-thrust_flags=
-thrust_suffix=
+thrust_flags=""
+thrust_suffix=""
 if [[ $build_type == "thrust" ]]; then
     thrust_flags="-D PORTAGE_ENABLE_THRUST=True"
     thrust_suffix="-thrust"
 fi
 
-cov_flags=
+cov_flags=""
 if [[ $build_type == "coverage" ]]; then
     cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
     cmake_build_type=Debug
