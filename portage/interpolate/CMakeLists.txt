@@ -10,8 +10,8 @@ project(portage_interpolate)
 add_library(portage_interpolate INTERFACE)
 
 target_include_directories(portage_interpolate INTERFACE
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
   $<BUILD_INTERFACE:${portage_BINARY_DIR}>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
   $<INSTALL_INTERFACE:include>
   )
 

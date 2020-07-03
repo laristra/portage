@@ -30,8 +30,8 @@ if (WONTON_ENABLE_KOKKOS)
   set(search_SOURCES pairs.cc)
 
   target_include_directories(portage_search PUBLIC
+      $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
       $<BUILD_INTERFACE:${portage_BINARY_DIR}>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
       $<INSTALL_INTERFACE:include>)
 
   target_sources(portage_search PRIVATE "${search_SOURCES}")
@@ -43,8 +43,8 @@ else()
   add_library(portage_search INTERFACE)
 
   target_include_directories(portage_search INTERFACE
+      $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
       $<BUILD_INTERFACE:${portage_BINARY_DIR}>
-      $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
       $<INSTALL_INTERFACE:include>)
 
   target_link_libraries(portage_search INTERFACE portage_support)
