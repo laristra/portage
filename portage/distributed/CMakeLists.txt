@@ -10,8 +10,8 @@ project(portage_distribute)
 add_library(portage_distribute INTERFACE)
 
 target_include_directories(portage_distribute INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<INSTALL_INTERFACE:include>
   )
 
@@ -47,13 +47,13 @@ install(TARGETS portage_distribute
 
 if (ENABLE_UNIT_TESTS)
   if (WONTON_HAS_Jali)
-    cinch_add_unit(test_mpi_bounding_boxes
+    portage_add_unittest(test_mpi_bounding_boxes
                    SOURCES test/test_mpi_bounding_boxes.cc
                    LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
 
-    cinch_add_unit(test_mpi_particle_distribute
+    portage_add_unittest(test_mpi_particle_distribute
                    SOURCES test/test_mpi_particle_distribute.cc
                    LIBRARIES portage_distributed
                    POLICY MPI

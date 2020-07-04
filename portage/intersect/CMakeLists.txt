@@ -10,8 +10,8 @@ project(portage_intersect)
 add_library(portage_intersect INTERFACE)
 
 target_include_directories(portage_intersect INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<INSTALL_INTERFACE:include>
   )
 
@@ -55,39 +55,39 @@ install(TARGETS portage_intersect
 # Add unit test
 if (ENABLE_UNIT_TESTS)
   if (WONTON_ENABLE_Jali)
-    cinch_add_unit(test_intersect_swept_face_2D
+    portage_add_unittest(test_intersect_swept_face_2D
       SOURCES test/test_intersect_swept_face_2D.cc
       LIBRARIES portage_intersect
       POLICY MPI)
 
-    cinch_add_unit(test_intersect_swept_face_3d
+    portage_add_unittest(test_intersect_swept_face_3d
       SOURCES test/test_intersect_swept_face_3D.cc
       LIBRARIES portage_intersect
       POLICY MPI)
   endif ()
 
-  cinch_add_unit(test_intersect_boxes
+  portage_add_unittest(test_intersect_boxes
     SOURCES test/test_intersect_boxes.cc
     LIBRARIES portage_intersect
     POLICY SERIAL)
   
-  cinch_add_unit(test_intersect_r2d
+  portage_add_unittest(test_intersect_r2d
     SOURCES test/test_intersect_r2d.cc
     LIBRARIES portage_intersect
     POLICY SERIAL)
   
-  cinch_add_unit(test_intersect_r3d
+  portage_add_unittest(test_intersect_r3d
     SOURCES test/test_intersect_r3d.cc
     LIBRARIES portage_intersect
     POLICY SERIAL)
   
   if (PORTAGE_HAS_TANGRAM)
-      cinch_add_unit(test_intersect_tangram_2d
+      portage_add_unittest(test_intersect_tangram_2d
         SOURCES test/test_tangram_intersect_2D.cc
         LIBRARIES portage_intersect
         POLICY SERIAL)
       
-      cinch_add_unit(test_intersect_tangram_3d
+      portage_add_unittest(test_intersect_tangram_3d
         SOURCES test/test_tangram_intersect_3D.cc
         LIBRARIES portage_intersect
         POLICY SERIAL)

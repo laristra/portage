@@ -9,8 +9,8 @@ project(portage_accumulate)
 add_library(portage_accumulate INTERFACE)
 
 target_include_directories(portage_accumulate INTERFACE
-  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
-  $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<INSTALL_INTERFACE:include>
   )
 
@@ -48,7 +48,7 @@ install(TARGETS portage_accumulate
 
 if (ENABLE_UNIT_TESTS)
 
-  cinch_add_unit(test_accumulate
+  portage_add_unittest(test_accumulate
     SOURCES test/test_accumulate.cc
     LIBRARIES portage_accumulate
     POLICY MPI
