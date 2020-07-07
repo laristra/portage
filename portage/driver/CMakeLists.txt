@@ -168,24 +168,24 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage_driver
        POLICY MPI
        THREADS 1)
-   endif (WONTON_ENABLE_Jali)
 
-   portage_add_unittest(test_driver_swarm
-     SOURCES test/test_driver_swarm.cc
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+     portage_add_unittest(test_driver_swarm
+       SOURCES test/test_driver_swarm.cc
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
 
-   portage_add_unittest(test_driver_mesh_swarm_mesh
-     SOURCES test/test_driver_mesh_swarm_mesh.cc
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+     portage_add_unittest(test_driver_mesh_swarm_mesh
+       SOURCES test/test_driver_mesh_swarm_mesh.cc
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
 
-   portage_add_unittest(test_driver_part_by_particle
-     SOURCES test/test_driver_part_by_particle
-     LIBRARIES portage_driver
-     POLICY MPI
-     THREADS 1)
+     portage_add_unittest(test_driver_part_by_particle
+       SOURCES test/test_driver_part_by_particle
+       LIBRARIES portage_driver
+       POLICY MPI
+       THREADS 1)
+  endif (WONTON_ENABLE_Jali)
 
 endif (ENABLE_UNIT_TESTS)
