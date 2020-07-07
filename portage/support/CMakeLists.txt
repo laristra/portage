@@ -18,17 +18,12 @@ target_include_directories(portage_support INTERFACE
 set(portage_support_HEADERS
     portage.h
     timer.h
-    mpi_collate.h)
-
-if (WONTON_ENABLE_KOKKOS)
-  set(portage_support_HEADERS
-      ${portage_support_HEADERS}
-      weight.h
-      basis.h
-      operator.h
-      operator_references.h
-      faceted_setup.h)
-endif ()
+    mpi_collate.h
+    weight.h
+    basis.h
+    operator.h
+    operator_references.h
+    faceted_setup.h)
 
 # Not yet allowed for INTERFACE libraries
 # 
@@ -69,35 +64,26 @@ install(TARGETS portage_support
 
 # Unit tests
 
-if (WONTON_ENABLE_KOKKOS AND ENABLE_UNIT_TESTS)
+if (ENABLE_UNIT_TESTS)
 
   portage_add_unittest(test_weight
     SOURCES test/test_weight.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_basis
     SOURCES test/test_basis.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_operator
     SOURCES test/test_operator.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_faceted_setup
     SOURCES test/test_faceted_setup.cc
     LIBRARIES portage_support
-    POLICY SERIAL
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
 endif()

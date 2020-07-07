@@ -51,8 +51,6 @@ if (ENABLE_UNIT_TESTS)
   portage_add_unittest(test_estimate
     SOURCES test/test_estimate.cc
     LIBRARIES portage_estimate
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
 endif (ENABLE_UNIT_TESTS)

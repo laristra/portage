@@ -11,12 +11,8 @@ add_subdirectory(apptest_cmp)
 add_subdirectory(multidef)
 add_subdirectory(distributed_cmp)
 add_subdirectory(simple_mesh_app)
-
-if (WONTON_ENABLE_KOKKOS)
-  add_subdirectory(swarmapp)
-  add_subdirectory(msmapp)
-endif()
-
+add_subdirectory(swarmapp)
+add_subdirectory(msmapp)
 add_subdirectory(momentumapp)
 
 option(ENABLE_APP_TIMINGS "Enable timing in apps" OFF)

@@ -31,7 +31,7 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.1.5
+wonton_version=1.2.0
 tangram_version=0.9.9
  
 
@@ -73,8 +73,8 @@ fi
 
 mpi_flags="-D PORTAGE_ENABLE_MPI=True"
 if [[ $build_type == "serial" ]]; then
-    mpi_flags=
-    mpi_suffix=
+    mpi_flags=""
+    mpi_suffix=""
 fi
 
 cmake_build_type=Release
@@ -82,14 +82,14 @@ if [[ $build_type == "debug" ]]; then
     cmake_build_type=Debug
 fi
 
-thrust_flags=
-thrust_suffix=
+thrust_flags=""
+thrust_suffix=""
 if [[ $build_type == "thrust" ]]; then
     thrust_flags="-D PORTAGE_ENABLE_THRUST=True"
     thrust_suffix="-thrust"
 fi
 
-cov_flags=
+cov_flags=""
 if [[ $build_type == "coverage" ]]; then
     cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
     cmake_build_type=Debug
@@ -107,7 +107,11 @@ if [[ $build_type != singlemat ]]; then
 fi
 
 if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
-    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"  # FleCSI found through Wonton
+  if [[ "${wonton_version}" == "dev" ]]; then
+    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=False"  # FleCSI found through Wonton
+  else
+    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"
+  fi
 fi
 if [[ $build_type != "serial" ]]; then
     jali_flags="-D PORTAGE_ENABLE_Jali:BOOL=True"  # Jali found through Wonton
