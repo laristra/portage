@@ -26,8 +26,8 @@ set(search_HEADERS
 set(search_SOURCES pairs.cc)
 
 target_include_directories(portage_search PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIRECTORY}>
-    $<BUILD_INTERFACE:${PROJECT_BINARY_DIRECTORY}>
+    $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${portage_BINARY_DIR}>
     $<INSTALL_INTERFACE:include>)
 
 target_sources(portage_search PRIVATE "${search_SOURCES}")
