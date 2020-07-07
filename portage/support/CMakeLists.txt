@@ -69,30 +69,21 @@ if (ENABLE_UNIT_TESTS)
   portage_add_unittest(test_weight
     SOURCES test/test_weight.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_basis
     SOURCES test/test_basis.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_operator
     SOURCES test/test_operator.cc
     LIBRARIES portage_support
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
   portage_add_unittest(test_faceted_setup
     SOURCES test/test_faceted_setup.cc
     LIBRARIES portage_support
-    POLICY SERIAL
-    POLICY MPI
-    THREADS 1
-    )
+    POLICY SERIAL)
 
 endif()

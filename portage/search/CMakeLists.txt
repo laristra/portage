@@ -77,21 +77,18 @@ if(ENABLE_UNIT_TESTS)
   portage_add_unittest(test_search_simple_points
     SOURCES test/test_search_simple_points.cc
     LIBRARIES portage_search
-    POLICY MPI
-    THREADS 1)
+    POLICY SERIAL)
 
   portage_add_unittest(test_search_points_by_cells
     SOURCES pairs.cc test/test_search_points_by_cells.cc
     LIBRARIES portage_search
-    POLICY MPI
-    THREADS 1)
+    POLICY SERIAL)
 
   if (nanoflann_FOUND)
     portage_add_unittest(test_search_kdtree_nanoflann
       SOURCES test/test_search_kdtree_nanoflann.cc
       LIBRARIES portage_search 
-      POLICY MPI
-      THREADS 1)
+      POLICY SERIAL)
   endif (nanoflann_FOUND)
 
 
