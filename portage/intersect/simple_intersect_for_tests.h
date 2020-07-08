@@ -29,7 +29,7 @@ void bounding_box(std::vector<Wonton::Point<D>> coords,
   }
 }
 
-template <int D>
+template <int D, class CoordSys = Wonton::DefaultCoordSys>
 bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
                      Wonton::Point<D> min2, Wonton::Point<D> max2,
                      std::vector<double> *xsect_moments) {
@@ -77,15 +77,23 @@ bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
 
   // moments
 
+  auto moments = centroid * vol;
+  CoordSys::modify_volume(vol, intmin, intmax);
+  CoordSys::modify_first_moments(moments, intmin, intmax);
+  // double rhobar = centroid[0];
+  // double drho = intmax[0] - intmin[0];
+  // centroid[0] *= 1.0 + drho*drho/12.0/rhobar/rhobar;
+
   xsect_moments->clear();
   xsect_moments->push_back(vol);
   for (int d = 0; d < D; d++)
-    xsect_moments->push_back(centroid[d]*vol);
+    xsect_moments->push_back(moments[d]);
+    // xsect_moments->push_back(centroid[d]*vol);
 
   return true;
 }
 
-template <int D>
+template <int D, class CoordSys = Wonton::DefaultCoordSys>
 void intersection_moments(std::vector<Wonton::Point<D>> cell_xyz,
                            std::vector<std::vector<Wonton::Point<D>>> candidate_cells_xyz,
                            std::vector<int> *xcells,
@@ -103,7 +111,7 @@ void intersection_moments(std::vector<Wonton::Point<D>> cell_xyz,
     bounding_box<D>(candidate_cells_xyz[c], &cmin2, &cmax2);
 
     std::vector<double> xsect_moments;
-    if (intersect_boxes<D>(cmin, cmax, cmin2, cmax2, &xsect_moments)) {
+    if (intersect_boxes<D,CoordSys>(cmin, cmax, cmin2, cmax2, &xsect_moments)) {
       xwts->push_back(xsect_moments);
       xcells->push_back(c);
     }

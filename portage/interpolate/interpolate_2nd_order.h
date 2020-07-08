@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/CoordinateSystem.h"
@@ -23,6 +24,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
+#include "portage/interpolate/coordinate_system.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
@@ -387,6 +389,13 @@ namespace Portage {
         Point<D> source_centroid;
         if (field_type_ == Field_type::MESH_FIELD) {
           source_mesh_.cell_centroid(src_cell, &source_centroid);
+          // optional re-calculation of centroid for curvilinear coordinate system (expensive)
+          if (std::is_same<CoordSys, Wonton::CylindricalAxisymmetricCoordinates>::value) {
+            source_centroid = cell_centroid_rz<D>(source_mesh_, src_cell);
+            // double rhobar = source_centroid[0];
+            // double drho = 1.0 / 4;
+            // source_centroid[0] *= 1.0 + drho*drho/12.0/rhobar/rhobar;
+          }
         }
 #ifdef PORTAGE_HAS_TANGRAM
         else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
@@ -714,6 +723,7 @@ namespace Portage {
 #endif
   };
   /* ------------------------------------------------------------------------ */
+
 }  // namespace Portage
 
 #endif  // PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
