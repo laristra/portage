@@ -140,7 +140,7 @@ Execute the following from the portage root directory:
 INTEL_VERSION=18.0.3
 MPI_VERSION=3.1.3
 TANGRAM_VERSION=0.9.9
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -154,6 +154,7 @@ cmake \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
     -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
     -D PORTAGE_ENABLE_THRUST=False \
@@ -176,7 +177,7 @@ Execute the following from the portage root directory:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/projects/ngc/private
@@ -191,6 +192,7 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
 	-D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
 	-D PORTAGE_ENABLE_Jali=True \
@@ -211,7 +213,7 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
@@ -222,6 +224,7 @@ cmake \
    -D ENABLE_UNIT_TESTS=True \
    -D ENABLE_APP_TESTS=True \
    -D PORTAGE_ENABLE_TANGRAM=True \
+   -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
    -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
    -D PORTAGE_ENABLE_MPI=True \
    -D PORTAGE_ENABLE_THRUST=True \
@@ -244,7 +247,7 @@ export MODULEPATH=""
 
 INTEL_VERSION=18.0.1
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.1.5
+WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
 TPL_PREFIX=/usr/local/codes/ngc/private
@@ -257,6 +260,7 @@ cmake \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
     -D PORTAGE_ENABLE_MPI=True \
 	-D PORTAGE_ENABLE_Jali=True \

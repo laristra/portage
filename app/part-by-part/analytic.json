@@ -1,0 +1,40 @@
+{
+  "mesh": {
+    "dimension": 2,
+    "source": "../../../test_data/semi2-coarse.exo",
+    "target": "../../../test_data/semi2-fine.exo",
+    "conformal": true,
+    "export": true
+  },
+  "remap": {
+    "kind": "cell",
+    "order": 1,
+    "limiter": false,
+    "bnd_limiter": false,
+    "fixup": {
+      "partial": "shifted_conservative",
+      "empty": "extrapolate",
+      "max-iter": 5
+    },
+    "fields": [
+      { "name": "density", "internal": false, "expr": "sqrt(x*x + y*y) < 3 ? 100 : 1" },
+      { "name": "temperature", "internal": false, "expr": "sqrt(x*x + y*y) < 4 ? 60 : 40" }
+    ]
+  },
+  "parts": [
+    {
+      "field": "density",
+      "expr": [
+        { "source": "sqrt(x*x + y*y) < 3", "target": "sqrt(x*x + y*y) < 3" },
+        { "source": "sqrt(x*x + y*y) > 3", "target": "sqrt(x*x + y*y) > 3" }
+      ]
+    },
+    {
+      "field": "temperature",
+      "expr": [
+        { "source": "sqrt(x*x + y*y) < 4", "target": "sqrt(x*x + y*y) < 4" },
+        { "source": "sqrt(x*x + y*y) > 4", "target": "sqrt(x*x + y*y) > 4" }
+      ]
+    }
+  ]
+}
