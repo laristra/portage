@@ -204,7 +204,7 @@ TEST_P(Order2Test, SimpleMesh) {
 }
 
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
   Order2TestAll,
   Order2Test,
   ::testing::Values(1, 2, 3, 4, 5));

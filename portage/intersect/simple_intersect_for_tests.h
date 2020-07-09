@@ -8,6 +8,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "wonton/support/CoordinateSystem.h"
 
 #include "portage/support/portage.h"
 
@@ -29,7 +30,7 @@ void bounding_box(std::vector<Wonton::Point<D>> coords,
   }
 }
 
-template <int D, class CoordSys = Wonton::DefaultCoordSys>
+template <int D, class CoordSys = Wonton::CartesianCoordinates>
 bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
                      Wonton::Point<D> min2, Wonton::Point<D> max2,
                      std::vector<double> *xsect_moments) {
@@ -89,7 +90,7 @@ bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
   return true;
 }
 
-template <int D, class CoordSys = Wonton::DefaultCoordSys>
+template <int D, class CoordSys = Wonton::CartesianCoordinates>
 void intersection_moments(std::vector<Wonton::Point<D>> cell_xyz,
                            std::vector<std::vector<Wonton::Point<D>>> candidate_cells_xyz,
                            std::vector<int> *xcells,
