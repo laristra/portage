@@ -80,15 +80,11 @@ bool intersect_boxes(Wonton::Point<D> min1, Wonton::Point<D> max1,
   auto moments = centroid * vol;
   CoordSys::modify_volume(vol, intmin, intmax);
   CoordSys::modify_first_moments(moments, intmin, intmax);
-  // double rhobar = centroid[0];
-  // double drho = intmax[0] - intmin[0];
-  // centroid[0] *= 1.0 + drho*drho/12.0/rhobar/rhobar;
 
   xsect_moments->clear();
   xsect_moments->push_back(vol);
   for (int d = 0; d < D; d++)
     xsect_moments->push_back(moments[d]);
-    // xsect_moments->push_back(centroid[d]*vol);
 
   return true;
 }
