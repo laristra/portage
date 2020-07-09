@@ -392,9 +392,6 @@ namespace Portage {
           // optional re-calculation of centroid for curvilinear coordinate system (expensive)
           if (std::is_same<CoordSys, Wonton::CylindricalAxisymmetricCoordinates>::value) {
             source_centroid = cell_centroid_rz<D>(source_mesh_, src_cell);
-            // double rhobar = source_centroid[0];
-            // double drho = 1.0 / 4;
-            // source_centroid[0] *= 1.0 + drho*drho/12.0/rhobar/rhobar;
           }
         }
 #ifdef PORTAGE_HAS_TANGRAM
