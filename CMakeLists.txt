@@ -46,6 +46,16 @@ else ()
   set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake;${CMAKE_MODULE_PATH}")
 endif ()
 
+#------------------------------------------------------------------------------#
+# Enable doxygen
+#------------------------------------------------------------------------------#
+option(ENABLE_DOXYGEN "Enable Doxygen documentation" OFF)
+option(ENABLE_DOXYGEN_WARN "Enable Doxygen warnings" OFF)
+
+if (ENABLE_DOXYGEN)
+  include(cmake/doxygen.cmake)
+  add_doxygen()
+endif()
 
 #----------------------------------------------------------------------------
 # Find packages here and set CMake variables. Set link dependencies
