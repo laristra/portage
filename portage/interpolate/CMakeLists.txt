@@ -62,7 +62,7 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    portage_add_unit(test_interpolate_first_order_rz
+    portage_add_unittest(test_interpolate_first_order_rz
       SOURCES test/test_interp_1st_order_rz.cc
       LIBRARIES portage_interpolate
       POLICY SERIAL)
@@ -72,7 +72,7 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
-    portage_add_unit(test_interpolate_second_order_rz
+    portage_add_unittest(test_interpolate_second_order_rz
       SOURCES test/test_interp_2nd_order_rz.cc
       LIBRARIES portage_interpolate
       POLICY SERIAL)
