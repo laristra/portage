@@ -1199,13 +1199,11 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         } else {
           Tangram::CellMatPoly<dim> const& cellmatpoly =
             source_interface_reconstructor->cell_matpoly_data(c);
-          int nmp = cellmatpoly.num_matpolys();
-          for (int i = 0; i < nmp; i++) {
-            if (cellmatpoly.matpoly_matid(i) == m) {
-              Wonton::Point<dim> mcen = cellmatpoly.matpoly_centroid(i);
-              matData[ic] = mat_fields[m](mcen);
-            }
-          }
+          std::vector<double> cell_mat_moments = cellmatpoly.material_moments(m);
+          Wonton::Point<dim> mcen;
+          for (int dir = 1; dir <= dim; dir++)
+            mcen[dir-1] = cell_mat_moments[dir] / cell_mat_moments[0];
+          matData[ic] = mat_fields[m](mcen);
         }
       }
 
