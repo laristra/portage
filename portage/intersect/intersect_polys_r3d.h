@@ -68,6 +68,12 @@ facetedpoly_t get_faceted_matpoly(const Tangram::MatPoly<3>& matpoly) {
 // triangular facets only) with a bunch of tets forming a target
 // polyhedron
 
+// NOTE: Given that this routine is R3D specific and is called by an
+// R3D specific functor, we should just send in R3D-ized data
+// structures for the source polyhedron and the target tet faces. It
+// will cut down some calls to R3D initialization routines
+// (particularly on the target mesh side)
+
 std::vector<double>
 inline
 intersect_polys_r3d(const facetedpoly_t &srcpoly,
@@ -115,38 +121,6 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     std::copy(srcpoly.facetpoints[i].begin(), srcpoly.facetpoints[i].end(),
               face_vert_ids[i]);
 
-#ifdef DEBUG
-  // Lets check the volume of the source polygon - If its convex or
-  // mildly non-convex, we should get a positive volume
-  
-  // First calculate a center point
-  Point<3> cen(0.0, 0.0, 0.0);
-  for (int i = 0; i < num_verts; i++)
-    cen += srcpoly.points[i];
-  cen /= num_verts;
-
-  // Assume triangular facets only
-  double polyvol = 0.0;
-  for (int i = 0; i < num_faces; i++) {
-    // p0, p1, p2 traversed in order form a triangle whose normal
-    // points out of the source polyhedron
-    const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-    const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-    const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
-
-    Vector<3> v0 = p1-p0;
-    Vector<3> v1 = p2-p0;
-    Vector<3> outnormal = cross(v0, v1);
-    Vector<3> v2 = cen-p0;
-    double tetvol = -dot(v2, outnormal)/6.0;
-    if (tetvol < 0.0)
-      std::cerr << "Wrong orientation of facets or non-convex polyhedron" <<
-          std::endl;
-    polyvol += tetvol;
-  }
-  if (polyvol < 0.0)
-    throw std::runtime_error("Source polyhedron has negative volume");
-#endif
 
   r3d_init_poly(&src_r3dpoly, verts, num_verts, face_vert_ids, face_num_verts,
                 num_faces);
@@ -183,11 +157,6 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
       if (disjoint) continue;
     }
 
-#ifdef DEBUG
-    if (r3d_orient(verts2) < 0)
-      throw std::runtime_error("target_wedge has negative volume");
-#endif
-
     r3d_tet_faces_from_verts(&faces[0], verts2);
 
     // clip the source poly against the faces of the target tet - but
@@ -200,13 +169,6 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     const int POLY_ORDER = 1;
     r3d_real om[R3D_NUM_MOMENTS(POLY_ORDER)];
     r3d_reduce(&src_r3dpoly_copy, om, POLY_ORDER);
-
-    // Check that the returned volume is positive (if the volume is
-    // zero, i.e. abs(om[0]) < eps, then it can sometimes be
-    // slightly negative, like om[0] == -1.24811e-16.
-    // @todo multiply by domain or element size
-    if (om[0] < num_tols.minimal_intersection_volume)
-      throw std::runtime_error("Negative volume");
 
     // Accumulate moments:
     for (int i = 0; i < 4; i++)
