@@ -141,6 +141,8 @@ namespace Portage {
     {
       int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
       neighbors_.resize(nb_cells);
+      stencils_.resize(nb_cells);
+      is_cached_.resize(nb_cells, false);
 
       if (part == nullptr) {
         // Collect and keep the list of neighbors for each OWNED CELL as
@@ -239,84 +241,116 @@ namespace Portage {
 
       for (int const& c : neighbors_[cellid]) { neighbors.emplace_back(c); }
 
-      std::vector<Point<D>> list_coords;
       std::vector<double> list_values;
+      auto& list_coords = list_coords_[cellid];
+      bool not_cached = list_coords.empty();
 
-      // Loop over cell where grad is needed and its neighboring cells
-      for (auto&& neigh_global : neighbors) {
+      if (not_cached) { // populate both 'list_coords' and 'list_values'
+
+        // Loop over cell where grad is needed and its neighboring cells
+        for (auto&& neigh_global : neighbors) {
 #ifdef PORTAGE_HAS_TANGRAM
-        // Field values for each cells in each material are stored according to
-        // the material's cell list. So, get the local index of each neighbor cell
-        // in the material cell list to access the correct field value
-        int const neigh_local = (field_type_ == Field_type::MESH_FIELD)
-          ? neigh_global
-          : state_.cell_index_in_material(neigh_global, material_id_);
+          // Field values for each cells in each material are stored according to
+          // the material's cell list. So, get the local index of each neighbor cell
+          // in the material cell list to access the correct field value
+          int const neigh_local = (field_type_ == Field_type::MESH_FIELD)
+                                  ? neigh_global
+                                  : state_.cell_index_in_material(neigh_global, material_id_);
 
-        // In case of material-data, we need to check that neighbors contain
-        // material of interest (i.e. have valid local id);
-        // in the case of mesh data, this is always true, since local cellid
-        // (neigh_local) is equal to global cellid (neigh_global).
-        // nota bene: cell_index_in_material can return -1.
-        if (neigh_local >= 0) {
-          std::vector<int> cell_mats;
-          state_.cell_get_mats(neigh_global, &cell_mats);
-          int const nb_mats = cell_mats.size();
+          // In case of material-data, we need to check that neighbors contain
+          // material of interest (i.e. have valid local id);
+          // in the case of mesh data, this is always true, since local cellid
+          // (neigh_local) is equal to global cellid (neigh_global).
+          // nota bene: cell_index_in_material can return -1.
+          if (neigh_local >= 0) {
+            std::vector<int> cell_mats;
+            state_.cell_get_mats(neigh_global, &cell_mats);
+            int const nb_mats = cell_mats.size();
 
-          if (nb_mats > 1 && interface_reconstructor_) /* multi-material cell */ {
-            // Get cell's cellmatpoly
-            auto cell_matpoly = interface_reconstructor_->cell_matpoly_data(neigh_global);
+            if (nb_mats > 1 && interface_reconstructor_) /* multi-material cell */ {
+              // Get cell's cellmatpoly
+              auto cell_matpoly = interface_reconstructor_->cell_matpoly_data(neigh_global);
 
-            // Collect all the matpolys in this cell for the material of interest
-            auto matpolys = cell_matpoly.get_matpolys(material_id_);
+              // Collect all the matpolys in this cell for the material of interest
+              auto matpolys = cell_matpoly.get_matpolys(material_id_);
 
-            // If there are multiple matpolys in this cell for the material of interest,
-            // aggregate moments to compute new centroid
-            double mvol = 0.0;
-            Point<D> centroid;
-            for (auto&& poly : matpolys) {
-              auto moments = poly.moments();
-              mvol += moments[0];
-              for (int k = 0; k < D; k++)
-                centroid[k] += moments[k + 1];
-            }
-
-            // There are cases where r3d returns a single zero volume poly which
-            // ultimately produces a nan, so here we are explicitly filtering this
-            // case.
-            if (mvol==0.) continue;
-
-            for (int k = 0; k < D; k++)
-              centroid[k] /= mvol;
-
-            list_coords.push_back(centroid);
-
-            // Populate least squares vectors with centroid for material
-            // of interest and field value in the current cell for that material
-            list_values.push_back(values_[neigh_local]);
-          } else if (nb_mats == 1) /* single-material cell */ {
-
-            // Ensure that the single material is the material of interest
-            if (cell_mats[0] == material_id_) {
-              // Get the cell-centered value for this material
+              // If there are multiple matpolys in this cell for the material of interest,
+              // aggregate moments to compute new centroid
+              double mvol = 0.0;
               Point<D> centroid;
-              mesh_.cell_centroid(neigh_global, &centroid);
+              for (auto&& poly : matpolys) {
+                auto moments = poly.moments();
+                mvol += moments[0];
+                for (int k = 0; k < D; k++)
+                  centroid[k] += moments[k + 1];
+              }
+
+              // There are cases where r3d returns a single zero volume poly which
+              // ultimately produces a nan, so here we are explicitly filtering this
+              // case.
+              if (mvol==0.) continue;
+
+              for (int k = 0; k < D; k++)
+                centroid[k] /= mvol;
+
               list_coords.push_back(centroid);
+
+              // Populate least squares vectors with centroid for material
+              // of interest and field value in the current cell for that material
               list_values.push_back(values_[neigh_local]);
+            } else if (nb_mats == 1) /* single-material cell */ {
+
+              // Ensure that the single material is the material of interest
+              if (cell_mats[0] == material_id_) {
+                // Get the cell-centered value for this material
+                Point<D> centroid;
+                mesh_.cell_centroid(neigh_global, &centroid);
+                list_coords.push_back(centroid);
+                list_values.push_back(values_[neigh_local]);
+              }
             }
           }
-        }
 #endif
-        // If we get here, we must have mesh data which is cell-centered
-        // and not dependent on material, so just get the centroid and value
-        if (field_type_ == Field_type::MESH_FIELD) {
-          Point<D> centroid;
-          mesh_.cell_centroid(neigh_global, &centroid);
-          list_coords.push_back(centroid);
-          list_values.push_back(values_[neigh_global]);
+          // If we get here, we must have mesh data which is cell-centered
+          // and not dependent on material, so just get the centroid and value
+          if (field_type_ == Field_type::MESH_FIELD) {
+            Point<D> centroid;
+            mesh_.cell_centroid(neigh_global, &centroid);
+            list_coords.push_back(centroid);
+            list_values.push_back(values_[neigh_global]);
+          }
+        }
+
+        // compute and store least square matrices
+        stencils_[cellid] = Wonton::build_gradient_stencil_matrices(list_coords, true);
+
+      } else { // populate only 'list_values'
+
+        for (auto&& neigh_global : neighbors) {
+#ifdef PORTAGE_HAS_TANGRAM
+          // field values for each cells in each material are stored according to
+          // the material's cell list. So, get the local index of each neighbor cell
+          // in the material cell list to access the correct field value
+          int const neigh_local = (field_type_ == Field_type::MESH_FIELD)
+                                  ? neigh_global
+                                  : state_.cell_index_in_material(neigh_global, material_id_);
+
+          if (neigh_local >= 0) {
+            list_values.emplace_back(values_[neigh_local]);
+          }
+#endif
+          // if we get here, we must have mesh data which is cell-centered
+          // and not dependent on material, so just get the centroid and value
+          if (field_type_ == Field_type::MESH_FIELD) {
+            list_values.emplace_back(values_[neigh_global]);
+          }
         }
       }
 
-      grad = Wonton::ls_gradient<D, CoordSys>(list_coords, list_values);
+      // compute the gradient using the stored stencil matrices
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[cellid][0],
+                                              stencils_[cellid][1],
+                                              list_values);
 
       // Limit the gradient to enforce monotonicity preservation
       if (apply_limiter) {
@@ -386,6 +420,9 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> neighbors_ {};
+    std::vector<std::vector<Wonton::Matrix>> stencils_ {};
+    std::vector<std::vector<Point<D>>> list_coords_ {};
+
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
@@ -477,6 +514,8 @@ namespace Portage {
 
         int const nnodes = mesh_.num_entities(Wonton::NODE, Wonton::ALL);
         neighbors_.resize(nnodes);
+        stencils_.resize(nnodes);
+        is_cached_.resize(nnodes, false);
         Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
                          mesh_.end(Wonton::NODE, Wonton::ALL),
                          [this](int n) {
@@ -536,7 +575,10 @@ namespace Portage {
         i++;
       }
 
-      grad = Wonton::ls_gradient<D, CoordSys>(node_coords, node_values);
+      // compute the gradient using the stored stencil matrices
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[nodeid][0],
+                                              stencils_[nodeid][1],
+                                              node_values);
 
       if (apply_limiter) {
         // Min and max vals of function (cell centered vals) among neighbors
@@ -581,6 +623,8 @@ namespace Portage {
 
     int material_id_ = 0;
     std::vector<std::vector<int>> neighbors_;
+    std::vector<std::vector<Wonton::Matrix>> stencils_ {};
+    Wonton::vector<bool> is_cached_ {};  // nb: std::vector<bool> is not thread-safe
   };
 }  // namespace Portage
 
