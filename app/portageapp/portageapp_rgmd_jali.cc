@@ -1856,7 +1856,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // User specified fields on target
   std::vector<double> mat_data_exact[nlocal_mats];
   for (int m = 0; m < nlocal_mats; m++) {
-    for (int ic = 0; ic < matcells_exact[m].size() ;ic++) {
+    int nmatcells_ex = matcells_exact[m].size();
+    for (int ic = 0; ic < nmatcells_ex; ic++) {
       int c = matcells_exact[m][ic];
       if (trgex_cell_num_mats[c] == 1) {
         Wonton::Point<dim> ccen;
@@ -1921,7 +1922,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
       //Obtain total volume and mass from exact/close approximation
       //to  material layout
-      for (int ic = 0; ic < matcells_exact[m].size(); ++ic) {
+      int nmatcells_ex = matcells_exact[m].size();
+      for (int ic = 0; ic <nmatcells_ex; ++ic) {
         int mesh_cell_id = matcells_exact[m][ic];
 
         if (trgex_cell_num_mats[mesh_cell_id] == 1) {
@@ -1948,7 +1950,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       }
  
       //Obtain total volume and mass from remapped values
-      for (int ic = 0; ic < current_matcells.size(); ++ic) {
+      int nmatcells_cur = current_matcells.size();
+      for (int ic = 0; ic < nmatcells_cur; ++ic) {
         int state_cell_id = current_matcells[ic];
         int mesh_cell_id = owned2all[state_cell_id];
 
@@ -1975,7 +1978,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
       // Fill out error fields 
       std::cout<<"mat "<<m<<" nmatcells :"<<current_matcells.size()<<std::endl;
-      for (int ic = 0; ic < current_matcells.size(); ++ic) {
+      for (int ic = 0; ic < nmatcells_cur; ++ic) {
         int state_cell_id = current_matcells[ic];
         int mesh_cell_id = owned2all[state_cell_id];
 
