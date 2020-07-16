@@ -481,7 +481,7 @@ class interface_reconstructor_factory<2, MeshWrapper>{
       mesh_(mesh), tols_(tols), all_convex_(all_convex) {};
 
   auto operator()() -> decltype(auto) {
-    return std::make_shared<Tangram::Driver<Tangram::IR_2D, 2, MeshWrapper,
+    return std::make_shared<Tangram::Driver<Tangram::MOF, 2, MeshWrapper,
                                             Tangram::SplitR2D,
                                             Tangram::ClipR2D>>(mesh_, tols_, all_convex_);
   }
@@ -532,6 +532,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            bool mesh_output, int rank, int numpe,
                            Jali::Entity_kind entityKind,
                            double& L1_error, double& L2_error,
+			   int iteration,
                            std::shared_ptr<Profiler> profiler = nullptr);
 
 // Forward declaration of function to run interface reconstruction and
@@ -836,7 +837,7 @@ int main(int argc, char** argv) {
                srclo, srchi, mesh_perturb,
                problem, material_field_expressions,
                field_filename, mesh_output,
-               rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
+               rank, numpe, entityKind, l1_err[i], l2_err[i], i, profiler);
         break;
       case 3:
         run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
@@ -844,7 +845,7 @@ int main(int argc, char** argv) {
                srclo, srchi, mesh_perturb,
                problem, material_field_expressions,
                field_filename, mesh_output,
-               rank, numpe, entityKind, l1_err[i], l2_err[i], profiler);
+               rank, numpe, entityKind, l1_err[i], l2_err[i], i, profiler);
         break;
       default:
         std::cerr << "Dimension not 2 or 3" << std::endl;
@@ -938,6 +939,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                    std::string field_filename, bool mesh_output,
                    int rank, int numpe, Jali::Entity_kind entityKind,
                    double& L1_error, double& L2_error,
+	           int iteration,
                    std::shared_ptr<Profiler> profiler) {
   if (rank == 0)
     std::cout << "starting portageapp_rgmd_jali...\n";
@@ -967,6 +969,53 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
   }
+
+  {//print out some info
+     std::cout<<"\n\nITERATION "<<iteration<<"---->"<<std::endl;
+     std::cout<<"Using intersect-based remap ? "<<intersect<<std::endl;
+     std::cout<<"source_convex_cells ? "<<source_convex_cells<<std::endl;
+     std::cout<<"Problem Type :"<<problem<<std::endl;
+     std::cout<<"AFTER PERTURBATION "<<std::endl;
+     int const numsrccells = sourceMesh->num_cells<Jali::Entity_type::ALL>();
+       
+     int nedges = 0; 
+     double hmax = -std::numeric_limits<double>::max();
+     double hmin = std::numeric_limits<double>::max();
+     double havg = 0.0 ; 
+
+     for (auto c = 0; c < numsrccells; c++){ 
+      std::vector<int> edges, dirs, nodes;
+      sourceMesh->cell_get_faces(c, &edges);
+      int const nb_edges = edges.size();
+      for (int i = 0; i < nb_edges; ++i) {
+        sourceMesh->face_get_nodes(edges[i], &nodes);
+
+        std::array<double,dim> coord1, coord2;
+        sourceMesh->node_get_coordinates(nodes[0], &coord1);
+        sourceMesh->node_get_coordinates(nodes[1], &coord2);
+    
+        double dist = (dim == 2 ? 
+		       (pow(coord1[0]-coord2[0],2) + 
+    		        pow(coord1[1]-coord2[1],2)) : 
+		       (pow(coord1[0]-coord2[0],2) + 
+		        pow(coord1[1]-coord2[1],2) +
+		        pow(coord1[2]-coord2[2],2)));
+
+        dist = sqrt(dist);
+        if (dist > hmax) hmax=dist;  
+        if (dist < hmin) hmin=dist;  
+        havg += dist;
+        nedges ++;        
+       } //nedges
+     }//ncells
+
+     havg = havg/nedges; 
+
+     double dh = (srchi-srclo)/pow(numsrccells,1.0/dim);
+     std::cout<<"NCELLS = "<<numsrccells<<std::endl;
+     std::cout<<"SRC: HMIN = "<<hmin<<", HMAX = "<<hmax<<", HAVG = "<< havg<<std::endl;
+     std::cout<<"TRG: DH = "<<dh<<"\n\n"<<std::endl;
+  }//print info
 
   // Wrappers for interfacing with the underlying mesh data structures.
   Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
@@ -1245,7 +1294,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
 
 
   if (mesh_output) {  
-    std::string filename = "source_mm_" + std::to_string(rank) + ".gmv";
+    std::string filename = "source_mm_" + std::to_string(rank) + 
+                           "_iteration_" + std::to_string(iteration) + ".gmv";
     Portage::write_to_gmv<dim>(sourceMeshWrapper, sourceStateWrapper,
                                source_interface_reconstructor, fieldnames,
                                filename);
@@ -1605,7 +1655,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   target_interface_reconstructor->reconstruct(executor);
 
   if (mesh_output) {  
-    std::string filename = "target_mm_" + std::to_string(rank) + ".gmv";
+    std::string filename = "target_mm_" + std::to_string(rank) + 
+			   "_iteration_" + std::to_string(iteration) + ".gmv";
     Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                                target_interface_reconstructor, fieldnames,
                                filename);
@@ -1709,5 +1760,364 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       "  centroid:(" <<centroid[0]<< ", " << centroid[1] << ")\n";
   }
 #endif
+
+  ///////////////////////////////////////////////////////////////////////////// 
+  //New error computation 
+    
+  //Step 1: Compute the material layout on the target mesh. 
+  std::vector<int> trgex_global_material_IDs;
+  std::vector<int> trgex_cell_num_mats;
+  std::vector<int> trgex_cell_mat_ids;  // flattened 2D array
+  std::vector<double> trgex_cell_mat_volfracs;  // flattened 2D array
+  std::vector<Wonton::Point<dim>> trgex_cell_mat_centroids;  // flattened 2D array
+
+  switch(problem) {
+    case RGMDApp::Problem_type::SRCPURECELLS:
+      srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                            trgex_global_material_IDs,
+                                                            trgex_cell_num_mats,
+                                                            trgex_cell_mat_ids,
+                                                            trgex_cell_mat_volfracs,
+                                                            trgex_cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !target_convex_cells);
+      break;
+    case RGMDApp::Problem_type::TJUNCTION:
+      tjunction_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                         trgex_global_material_IDs,
+                                                         trgex_cell_num_mats,
+                                                         trgex_cell_mat_ids,
+                                                         trgex_cell_mat_volfracs,
+                                                         trgex_cell_mat_centroids,
+                                                         vol_tol,
+                                                         dst_tol,
+                                                         !target_convex_cells);
+      break;
+    case RGMDApp::Problem_type::BALL:
+      ball_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                    trgex_global_material_IDs,
+                                                    trgex_cell_num_mats,
+                                                    trgex_cell_mat_ids,
+                                                    trgex_cell_mat_volfracs,
+                                                    trgex_cell_mat_centroids,
+                                                    vol_tol,
+                                                    dst_tol,
+                                                    !target_convex_cells);
+      break;
+    case RGMDApp::Problem_type::ROTOR:
+      rotor_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                     trgex_global_material_IDs,
+                                                     trgex_cell_num_mats,
+                                                     trgex_cell_mat_ids,
+                                                     trgex_cell_mat_volfracs,
+                                                     trgex_cell_mat_centroids,
+                                                     vol_tol,
+                                                     dst_tol,
+                                                     !target_convex_cells);
+      break;
+    default:
+      std::cerr << "Unknown problem type!\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+  }
+ 
+ //Step 2: Reconstruct interface using the exact material layout on target
+ interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
+    target_IRFactory_Exact(targetMeshWrapper, ims_tols, target_convex_cells);
+  auto target_interface_reconstructor_exact = target_IRFactory_Exact();
+
+  target_interface_reconstructor_exact->set_volume_fractions(trgex_cell_num_mats,
+                                                       trgex_cell_mat_ids,
+                                                       trgex_cell_mat_volfracs,
+                                                       trgex_cell_mat_centroids);
+  target_interface_reconstructor_exact->reconstruct(executor);
+
+  //Step 3: Compute offsets into flattened arrays based on trgex_cell_num_mats
+  std::vector<int> offsets_exact(ntarcells, 0);
+  for (int i = 0; i < ntarcells - 1; i++)
+    offsets_exact[i + 1] = offsets_exact[i] + trgex_cell_num_mats[i];
+
+  //Step 4: Convert data from cell-centric to material-centric form as we
+  // will need it for comparision: vf, centroids, data
+  std::vector<int> matcells_exact[nlocal_mats];
+  std::vector<double> mat_volfracs_exact[nlocal_mats];
+  std::vector<Wonton::Point<dim>> mat_centroids_exact[nlocal_mats];
+  
+  for (int c = 0; c < ntarcells; c++) {
+    int ibeg = offsets_exact[c];
+    for (int j = 0; j < trgex_cell_num_mats[c]; j++) {
+      int mat_id = trgex_cell_mat_ids[ibeg + j];
+      matcells_exact[mat_id].push_back(c);
+      mat_volfracs_exact[mat_id].push_back(trgex_cell_mat_volfracs[ibeg + j]);
+      mat_centroids_exact[mat_id].push_back(trgex_cell_mat_centroids[ibeg + j]);
+    }
+  }
+
+  // User specified fields on target
+  std::vector<double> mat_data_exact[nlocal_mats];
+  for (int m = 0; m < nlocal_mats; m++) {
+    for (int ic = 0; ic < matcells_exact[m].size() ;ic++) {
+      int c = matcells_exact[m][ic];
+      if (trgex_cell_num_mats[c] == 1) {
+        Wonton::Point<dim> ccen;
+        targetMeshWrapper.cell_centroid(c, &ccen);
+        mat_data_exact[m].push_back(mat_fields[m](ccen));
+      } else {
+        // obtain matpoly's for this material
+        Tangram::CellMatPoly<dim> const& cellmatpoly =
+          target_interface_reconstructor_exact->cell_matpoly_data(c);
+        
+        std::vector<double> cell_mat_moments = cellmatpoly.material_moments(m);
+        Wonton::Point<dim> mcen;
+        for (int dir = 1; dir <= dim; dir++)
+          mcen[dir-1] = cell_mat_moments[dir] / cell_mat_moments[0];
+
+        mat_data_exact[m].push_back(mat_fields[m](mcen));
+      }        
+    }
+  } 
+
+
+ // Step 5: Add mesh fields to target state to store volume and mass errors
+ // per material 
+ for (int m = 0; m < nlocal_mats; m++) {
+    std::string field_vol = "error_volume_" + std::to_string(local_material_IDs[m]);
+    targetStateWrapper.mesh_add_data<double>( Portage::CELL, field_vol, 0.0);
+
+    std::string field_mass = "error_mass_" + std::to_string(local_material_IDs[m]);
+    targetStateWrapper.mesh_add_data<double>( Portage::CELL, field_mass, 0.0);
+ } //material loop
+ 
+ //Step 6: Compute error between remapped and material layout over target mesh
+  double L1_error_vol[nlocal_mats], L2_error_vol[nlocal_mats];
+  double L1_error_mass[nlocal_mats], L2_error_mass[nlocal_mats];
+  double totalvol_exact[nlocal_mats], totalmass_exact[nlocal_mats];
+  double totalvol[nlocal_mats], totalmass[nlocal_mats];
+
+  if (!material_field_expressions.empty()) {
+    double const * cellmatvals, *vf;
+    Wonton::Point<dim> *cen;
+    
+    double *error_field_volume, *error_field_mass;
+
+    for (int m = 0; m < nlocal_mats; m++) {
+      totalvol_exact[m] = totalvol[m] = 0.0; 
+      totalmass_exact[m] = totalmass[m] = 0.0; 
+
+      //Get error fields from target state 
+      std::string field_vol = "error_volume_" + std::to_string(local_material_IDs[m]);
+      targetStateWrapper.mesh_get_data<double>( Portage::CELL, field_vol, &error_field_volume);
+
+      std::string field_mass = "error_mass_" + std::to_string(local_material_IDs[m]);
+      targetStateWrapper.mesh_get_data<double>( Portage::CELL, field_mass, &error_field_mass);
+
+      //Get the remapped data from target state
+      int mat_id = local_material_IDs[m];
+      std::vector<int> current_matcells;
+      targetStateWrapper.mat_get_cells(mat_id, &current_matcells);
+      targetStateWrapper.mat_get_celldata("mat_volfracs", mat_id, &vf);
+      targetStateWrapper.mat_get_celldata("mat_centroids", mat_id, &cen);
+      targetStateWrapper.mat_get_celldata("cellmatdata", mat_id, &cellmatvals);
+
+      //Obtain total volume and mass from exact/close approximation
+      //to  material layout
+      for (int ic = 0; ic < matcells_exact[m].size(); ++ic) {
+        int mesh_cell_id = matcells_exact[m][ic];
+
+        if (trgex_cell_num_mats[mesh_cell_id] == 1) {
+          if (trgex_cell_mat_ids[offsets_exact[mesh_cell_id]] == mat_id) {
+            Wonton::Point<dim> ccen;
+            targetMeshWrapper.cell_centroid(mesh_cell_id, &ccen);
+            double cellvol = targetMeshWrapper.cell_volume(mesh_cell_id);
+            totalvol_exact[m] += cellvol;
+            totalmass_exact[m] += mat_data_exact[m][ic]*cellvol; 
+          }
+        } else {
+          Tangram::CellMatPoly<dim> const& cellmatpoly =
+              target_interface_reconstructor_exact->cell_matpoly_data(mesh_cell_id);
+          int nmp = cellmatpoly.num_matpolys();
+          double vol_ex = 0.0; 
+          for (int i = 0; i < nmp; i++) {
+            if (cellmatpoly.matpoly_matid(i) == mat_id) { 
+             vol_ex += cellmatpoly.matpoly_volume(i);
+            }
+          }
+          totalvol_exact[m] += vol_ex;
+          totalmass_exact[m] += mat_data_exact[m][ic]*vol_ex;       
+        }
+      }
+ 
+      //Obtain total volume and mass from remapped values
+      for (int ic = 0; ic < current_matcells.size(); ++ic) {
+        int state_cell_id = current_matcells[ic];
+        int mesh_cell_id = owned2all[state_cell_id];
+
+        if (target_cell_num_mats[mesh_cell_id] == 1) {
+          if (target_cell_mat_ids[offsets[mesh_cell_id]] == mat_id) {
+            double cellvol = targetMeshWrapper.cell_volume(mesh_cell_id);
+            totalvol[m] += cellvol;
+            totalmass[m] += cellmatvals[ic]*cellvol; 
+          }
+        } else {
+          Tangram::CellMatPoly<dim> const& cellmatpoly =
+              target_interface_reconstructor->cell_matpoly_data(mesh_cell_id);
+          int nmp = cellmatpoly.num_matpolys();
+          double vol = 0.0; 
+          for (int i = 0; i < nmp; i++) {
+            if (cellmatpoly.matpoly_matid(i) == mat_id) { 
+             vol += cellmatpoly.matpoly_volume(i);
+            }
+          }
+          totalvol[m] += vol;
+          totalmass[m] += cellmatvals[ic]*vol;    
+        }
+      }
+
+      // Fill out error fields 
+      std::cout<<"mat "<<m<<" nmatcells :"<<current_matcells.size()<<std::endl;
+      for (int ic = 0; ic < current_matcells.size(); ++ic) {
+        int state_cell_id = current_matcells[ic];
+        int mesh_cell_id = owned2all[state_cell_id];
+
+        auto cell_in_mat = std::find(matcells_exact[m].begin(), 
+        matcells_exact[m].end(), mesh_cell_id);
+
+        if (cell_in_mat == matcells_exact[m].end()) {
+          //this target cell after remap doesn't have the current
+          //material when compared to the exact or a close approximation
+          //of the material layout on the target mesh.
+       
+          if (target_cell_num_mats[mesh_cell_id] == 1) {
+            if (target_cell_mat_ids[offsets[mesh_cell_id]] == mat_id) {
+              double cellvol = targetMeshWrapper.cell_volume(mesh_cell_id);
+              error_field_volume[mesh_cell_id] = cellvol; 
+              error_field_mass[mesh_cell_id] = cellvol*cellmatvals[ic]; 
+            }
+          } else {
+             Tangram::CellMatPoly<dim> const& cellmatpoly =
+              target_interface_reconstructor->cell_matpoly_data(mesh_cell_id);
+             int nmp = cellmatpoly.num_matpolys();
+             double matpolyvol=0.0;
+             for (int i = 0; i < nmp; i++) {
+              if (cellmatpoly.matpoly_matid(i) == mat_id) {
+                matpolyvol += cellmatpoly.matpoly_volume(i);  
+              }
+             }
+             error_field_volume[mesh_cell_id] = matpolyvol; 
+             error_field_mass[mesh_cell_id] = cellmatvals[ic]*matpolyvol; 
+          }
+        } else {
+          auto index = std::distance(matcells_exact[m].begin(), cell_in_mat);
+
+          if (target_cell_num_mats[mesh_cell_id] == 1) { 
+            if (target_cell_mat_ids[offsets[mesh_cell_id]] == mat_id) {
+              double cellvol = targetMeshWrapper.cell_volume(mesh_cell_id);
+
+              double vol_ex = 0.0; 
+              if (trgex_cell_num_mats[*cell_in_mat]==1) {
+                 if (trgex_cell_mat_ids[offsets_exact[*cell_in_mat]] == mat_id) {
+                   vol_ex = targetMeshWrapper.cell_volume(*cell_in_mat);
+                 }
+              } else {
+                Tangram::CellMatPoly<dim> const& cellmatpoly =
+                 target_interface_reconstructor_exact->cell_matpoly_data(*cell_in_mat);
+                int nmp = cellmatpoly.num_matpolys();
+                for (int i = 0; i < nmp; i++) {
+                 if (cellmatpoly.matpoly_matid(i) == mat_id) {
+                  vol_ex += cellmatpoly.matpoly_volume(i);  
+                 }
+                }
+              }
+
+              error_field_volume[mesh_cell_id] = cellvol - vol_ex; 
+              error_field_mass[mesh_cell_id] = cellmatvals[ic]*cellvol 
+                                               - mat_data_exact[m][index]*vol_ex; 
+            }
+          } else {
+             Tangram::CellMatPoly<dim> const& cellmatpoly =
+              target_interface_reconstructor->cell_matpoly_data(mesh_cell_id);
+             int nmp = cellmatpoly.num_matpolys();
+             double matpolyvol=0.0;
+             for (int i = 0; i < nmp; i++) {
+              if (cellmatpoly.matpoly_matid(i) == mat_id) {
+                matpolyvol += cellmatpoly.matpoly_volume(i);  
+              }
+             }
+
+             double vol_ex = 0.0; 
+              if (trgex_cell_num_mats[*cell_in_mat]==1) {
+                 if (trgex_cell_mat_ids[offsets_exact[*cell_in_mat]] == mat_id) {
+                   vol_ex = targetMeshWrapper.cell_volume(*cell_in_mat);
+                 }
+              } else {
+                Tangram::CellMatPoly<dim> const& cellmatpoly =
+                 target_interface_reconstructor_exact->cell_matpoly_data(*cell_in_mat);
+                int nmp = cellmatpoly.num_matpolys();
+                for (int i = 0; i < nmp; i++) {
+                 if (cellmatpoly.matpoly_matid(i) == mat_id) {
+                  vol_ex += cellmatpoly.matpoly_volume(i);  
+                 }
+                }
+              }
+
+            error_field_volume[mesh_cell_id] = matpolyvol - vol_ex; 
+            error_field_mass[mesh_cell_id] = cellmatvals[ic]*matpolyvol 
+                                             - mat_data_exact[m][index]*vol_ex; 
+          }
+        }
+      } //cells in the material
+    
+    //Compute L1 and L2 error
+    L1_error_vol[m] = L2_error_vol[m] = 0.0;
+    L1_error_mass[m] = L2_error_mass[m] = 0.0;
+
+    for (auto ic = 0; ic < ntarcells; ic++)
+    {
+       //vol
+       L1_error_vol[m] += fabs(error_field_volume[ic]);
+       L2_error_vol[m] += error_field_volume[ic]*error_field_volume[ic];
+
+       //mass
+       L1_error_mass[m] += fabs(error_field_mass[ic]);
+       L2_error_mass[m] += error_field_mass[ic]*error_field_mass[ic];
+
+     } 
+
+     L2_error_vol[m] = sqrt(L2_error_vol[m]);
+     L2_error_mass[m] = sqrt(L2_error_mass[m]);
+
+     
+     L1_error_vol[m] /= totalvol_exact[m];
+     L1_error_mass[m] /= totalmass_exact[m];
+     
+    } //material loop
+  } //non-empty list of materials
+
+ 
+  if (rank == 0) {
+    std::cout.precision(8);
+    for (int m = 0; m < nlocal_mats; m++) {
+      std::cout<<"\n\nMATERIAL ID "<<m<<std::endl; 
+      std::cout<<" -----> ERRORS: L1 NORM "<<std::endl; 
+      std::cout << "VOLUME  "<< L1_error_vol[m]<< std::endl;
+      std::cout << "MASS  "<< L1_error_mass[m]<< std::endl;
+      std::cout<<" -----> CONSERVATION "<<std::endl; 
+      std::cout<<"Total Volume Exact  "<<totalvol_exact[m]<<std::endl;
+      std::cout<<"Total Volume Remapped  "<<totalvol[m]<<std::endl;
+
+      std::cout<<"Total Mass Exact  "<<totalmass_exact[m]<<std::endl;
+      std::cout<<"Total Mass Remapped  "<<totalmass[m]<<std::endl;
+      std::cout<<std::endl;
+    }
+  }
+
+  if (mesh_output) {  
+    std::string filename = "target_errors_" + std::to_string(rank) + "_iteration_" 
+                           + std::to_string(iteration) + ".exo";
+    targetState->export_to_mesh();
+    targetMesh->write_to_exodus_file(filename);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////// 
 
 }
