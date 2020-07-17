@@ -565,7 +565,8 @@ namespace Portage {
         int const nnodes = mesh_.num_entities(Wonton::NODE, Wonton::ALL);
         neighbors_.resize(nnodes);
         stencils_.resize(nnodes);
-        is_cached_.resize(nnodes, false);
+        reference_.resize(nnodes);
+
         Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
                          mesh_.end(Wonton::NODE, Wonton::ALL),
                          [this](int n) {
@@ -594,6 +595,40 @@ namespace Portage {
     void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> /* unused */) {}
 #endif
 
+    /**
+     * @brief
+     *
+     * @param node
+     * @return
+     */
+    std::vector<Point<D>> compute_stencil_coords(int node) {
+      int const size = neighbors_[node].size() + 1;
+      std::vector<Point<D>> list_coords(size);
+      mesh_.node_get_coordinates(node, &reference_[node]);
+      list_coords[0] = reference_[node];
+      for (int i = 1; i < size; ++i) {
+        mesh_.node_get_coordinates(neighbors_[node][i-1], &list_coords[i]);
+      }
+      return list_coords;
+    }
+
+    /**
+     * @brief
+     *
+     * @param node
+     * @return
+     */
+    std::vector<double> compute_stencil_values(int node) const {
+      int const size = neighbors_[node].size() + 1;
+      std::vector<double> list_values(size);
+      list_values[0] = values_[node];
+      for (int i = 1; i < size; ++i) {
+        int const& neigh = neighbors_[node][i-1];
+        list_values[i] = values_[neigh];
+      }
+      return list_values;
+    }
+
     // @brief Limited gradient functor implementation for NODE
     Vector<D> operator()(int nodeid) {
 
@@ -612,18 +647,12 @@ namespace Portage {
         return grad;
       }
 
-      auto const& neighbors = neighbors_[nodeid];
-      std::vector<Point<D>> node_coords(neighbors.size() + 1);
-      std::vector<double> node_values(neighbors.size() + 1);
-      mesh_.node_get_coordinates(nodeid, &(node_coords[0]));
-      node_values[0] = values_[nodeid];
-
-      int i = 1;
-      for (auto&& current : neighbors) {
-        mesh_.node_get_coordinates(current, &node_coords[i]);
-        node_values[i] = values_[current];
-        i++;
+      if (stencils_[nodeid].empty()) /* not cached */{
+        auto node_coords = compute_stencil_coords(nodeid);
+        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices(node_coords, true);
       }
+
+      auto node_values = compute_stencil_values(nodeid);
 
       // compute the gradient using the stored stencil matrices
       grad = Wonton::ls_gradient<D, CoordSys>(stencils_[nodeid][0],
@@ -650,7 +679,7 @@ namespace Portage {
         mesh_.dual_cell_get_coordinates(nodeid, &dual_cell_coords);
 
         for (auto&& coord : dual_cell_coords) {
-          auto vec = coord - node_coords[0];
+          auto vec = coord - reference_[nodeid];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.0) ? maxval : minval;
           double phi_new = (diff == 0.0) ? 1 : (extremeval - nodeval) / diff;
@@ -674,7 +703,8 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<std::vector<int>> neighbors_;
     std::vector<std::vector<Wonton::Matrix>> stencils_ {};
-    Wonton::vector<bool> is_cached_ {};  // nb: std::vector<bool> is not thread-safe
+    std::vector<Point<D>> reference_ {};
+
   };
 }  // namespace Portage
 
