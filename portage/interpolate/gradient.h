@@ -210,14 +210,17 @@ namespace Portage {
       }
     }
 
-
     /**
      * @brief Compute stencil points.
      *
-     * @param cell: the ID of the cell.
-     * @return the stencil points coordinates.
+     * This is meant to be called only once for each field variable,
+     * and is necessary to build the least square matrices for
+     * approximating the gradient.
+     *
+     * @param cell: the cell ID.
+     * @return stencil points coordinates.
      */
-    std::vector<Point<D>> compute_stencil_coords(int cell) {
+    std::vector<Point<D>> retrieve_stencil_points(int cell) {
 
       int const size = neighbors_[cell].size() + 1;
 
@@ -317,15 +320,15 @@ namespace Portage {
       return list_coords;
     }
 
-
     /**
-     * @brief
+     * @brief Retrieve values of each stencil point.
      *
-     * @param cell
-     * @param neighbors
-     * @return
+     * This is meant to be called for each field variable.
+     *
+     * @param cell: the cell ID.
+     * @return values of each stencil point.
      */
-    std::vector<double> compute_stencil_values(int cell) const {
+    std::vector<double> retrieve_stencil_values(int cell) const {
 
       std::vector<double> list_values;
       for (auto&& neigh : valid_neigh_[cell]) {
@@ -335,7 +338,7 @@ namespace Portage {
     }
 
     /**
-     * @brief Compute the limited gradient for the given cell
+     * @brief Compute the limited gradient for the given cell.
      *
      * @param cellid: the cell ID.
      * @return the field gradient at this cell.
@@ -365,22 +368,13 @@ namespace Portage {
         return grad;
       }
 
+      // retrieve stencil points and compute least square matrices
       if (stencils_[cellid].empty()) /* not cached */ {
-        // retrieve stencil point coordinates and their field values
-        auto list_coords = compute_stencil_coords(cellid);
-        // compute and store least square matrices
+        auto list_coords = retrieve_stencil_points(cellid);
         stencils_[cellid] = Wonton::build_gradient_stencil_matrices(list_coords, true);
-#ifndef DEBUG
-        std::cout << "num_coords: " << list_coords.size() << std::endl;
-#endif
       }
 
-      // populate 'list_values'
-      auto list_values = compute_stencil_values(cellid);
-
-#ifndef DEBUG
-      std::cout << "num_values: " << list_values.size() << std::endl;
-
+#ifdef DEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
         for (int i = 0; i < M.rows(); ++i) {
@@ -395,6 +389,9 @@ namespace Portage {
       print(stencils_[cellid][1], "A^T");
       std::cout << " ------------ " << std::endl;
 #endif
+
+      // retrieve values of each stencil point
+      auto list_values = retrieve_stencil_values(cellid);
 
       // compute the gradient using the stored stencil matrices
       grad = Wonton::ls_gradient<D, CoordSys>(stencils_[cellid][0],
@@ -471,7 +468,7 @@ namespace Portage {
     std::vector<std::vector<int>> neighbors_ {};
     std::vector<std::vector<Wonton::Matrix>> stencils_ {};
     std::vector<std::vector<int>> valid_neigh_ {};
-    std::vector<Point<D>> reference_ {};
+    std::vector<Wonton::Point<D>> reference_ {};
 
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
@@ -596,12 +593,16 @@ namespace Portage {
 #endif
 
     /**
-     * @brief
+     * @brief Compute stencil points.
      *
-     * @param node
-     * @return
+     * This is meant to be called only once for each field variable,
+     * and is necessary to build the least square matrices for
+     * approximating the gradient.
+     *
+     * @param node: the node ID.
+     * @return stencil points coordinates.
      */
-    std::vector<Point<D>> compute_stencil_coords(int node) {
+    std::vector<Point<D>> retrieve_stencil_points(int node) {
       int const size = neighbors_[node].size() + 1;
       std::vector<Point<D>> list_coords(size);
       mesh_.node_get_coordinates(node, &reference_[node]);
@@ -613,12 +614,14 @@ namespace Portage {
     }
 
     /**
-     * @brief
+     * @brief Retrieve values of each stencil point.
      *
-     * @param node
-     * @return
+     * This is meant to be called for each field variable.
+     *
+     * @param cell: the cell ID.
+     * @return values of each stencil point.
      */
-    std::vector<double> compute_stencil_values(int node) const {
+    std::vector<double> retrieve_stencil_values(int node) const {
       int const size = neighbors_[node].size() + 1;
       std::vector<double> list_values(size);
       list_values[0] = values_[node];
@@ -629,7 +632,12 @@ namespace Portage {
       return list_values;
     }
 
-    // @brief Limited gradient functor implementation for NODE
+    /**
+     * @brief Compute the limited gradient for the given node.
+     *
+     * @param nodeid: the node ID.
+     * @return the field gradient at this node.
+     */
     Vector<D> operator()(int nodeid) {
 
       assert(values_);
@@ -647,12 +655,14 @@ namespace Portage {
         return grad;
       }
 
+      // retrieve stencil points and compute least square matrices
       if (stencils_[nodeid].empty()) /* not cached */{
-        auto node_coords = compute_stencil_coords(nodeid);
+        auto node_coords = retrieve_stencil_points(nodeid);
         stencils_[nodeid] = Wonton::build_gradient_stencil_matrices(node_coords, true);
       }
 
-      auto node_values = compute_stencil_values(nodeid);
+      // retrieve values of each stencil point
+      auto node_values = retrieve_stencil_values(nodeid);
 
       // compute the gradient using the stored stencil matrices
       grad = Wonton::ls_gradient<D, CoordSys>(stencils_[nodeid][0],
@@ -703,7 +713,7 @@ namespace Portage {
     int material_id_ = 0;
     std::vector<std::vector<int>> neighbors_;
     std::vector<std::vector<Wonton::Matrix>> stencils_ {};
-    std::vector<Point<D>> reference_ {};
+    std::vector<Wonton::Point<D>> reference_ {};
 
   };
 }  // namespace Portage
