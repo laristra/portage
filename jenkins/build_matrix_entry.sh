@@ -31,7 +31,7 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.0
+wonton_version=dev
 tangram_version=0.9.9
  
 
