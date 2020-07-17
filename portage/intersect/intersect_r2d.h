@@ -12,9 +12,11 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <sstream>
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "wonton/support/Polytope.h"
 
 // portage includes
 extern "C" {
@@ -32,6 +34,31 @@ extern "C" {
 
 
 namespace Portage {
+
+namespace {
+bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
+                     NumericTolerances_t const& num_tols) {
+
+  // Check if target polygon is convex or at least star-convex
+  int npverts = pverts.size();
+  for (int i = 0; i < npverts; i++) {
+    
+    // Compute distance from pverts[i+1] to segment (pverts[i], pverts[i+2])
+    int ifv = i, imv = (i+1)%npverts, isv = (i+2)%npverts;
+    Wonton::Vector<2> normal( pverts[isv][1] - pverts[ifv][1], 
+                             -pverts[isv][0] + pverts[ifv][0]);
+    normal.normalize();
+    Wonton::Vector<2> fv2mv = pverts[imv] - pverts[ifv];
+    double dst = Wonton::dot(fv2mv, normal);
+    
+    if (dst <= -num_tols.min_absolute_distance)
+      return false;
+  }
+
+  return true;
+}
+}
+
 
 ///
 /// \class IntersectR2D  2-D intersection algorithm
@@ -165,6 +192,18 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.cell_get_coordinates(tgt_cell, &target_poly);
 
+    bool trg_convex = poly2_is_convex(target_poly, num_tols_);
+
+#ifdef DEBUG
+    Wonton::Polytope<2> tpoly(target_poly);
+    std::vector<double> tmom = tpoly.moments();
+    if (tmom[0] < 0.0) {
+      std::stringstream sstr;
+      sstr << "intersect_r2d.h: Target cell " << tgt_cell << " has a negative volume";
+      throw std::runtime_error(sstr.str());
+    }
+#endif
+    
     int nsrc = src_cells.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
@@ -189,9 +228,31 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         std::vector<Wonton::Point<2>> source_poly;
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-        this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
-                                              num_tols_);
+#ifdef DEBUG
+        Wonton::Polytope<2> spoly(source_poly);
+        std::vector<double> smom = spoly.moments();
+        if (smom[0] < 0.0) {
+          std::stringstream sstr;
+          sstr << "intersect_r2d.h: Source cell " << s << " has a negative volume";
+          throw std::runtime_error(sstr.str());
+        }
+#endif
 
+        // If target polygon is convex we don't care if the source
+        // polygon is non-convex because R3D can deal with it.
+        if (trg_convex)
+          this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                                num_tols_);
+        else {
+          bool src_convex = poly2_is_convex(source_poly, num_tols_);
+          if (src_convex)  // flip the order of the polygons
+            this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                  num_tols_);
+          else  // indicate that target is non-convex so it can be triangulated
+            this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                  num_tols_, false);
+        }
+        
       } else {  // multi-material case
         // How can I check that I didn't get DummyInterfaceReconstructor
         //
@@ -218,8 +279,11 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             source_poly.reserve(tpnts.size());
             for (auto const & p : tpnts) source_poly.push_back(p);
 
-            std::vector<double> momvec = intersect_polys_r2d(source_poly,
-                                                  target_poly, num_tols_);
+            std::vector<double> momvec;
+            
+            momvec = intersect_polys_r2d(source_poly, target_poly, num_tols_,
+                                         trg_convex);
+
             for (int k = 0; k < 3; k++)
               this_wt.weights[k] += momvec[k];
           }
@@ -229,8 +293,28 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-      this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
-                                            num_tols_);
+#ifdef DEBUG
+      Wonton::Polytope<2> spoly(source_poly);
+      std::vector<double> smom = spoly.moments();
+      if (smom[0] < 0.0) {
+        std::stringstream sstr;
+        sstr << "intersect_r2d.h: Source cell " << src_cell << " has a negative volume";
+        throw std::runtime_error(sstr.str());
+      }
+#endif
+
+      if (trg_convex)
+        this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                              num_tols_);
+      else {
+        src_convex = poly2_is_convex(source_poly, num_tols_);
+        if (src_convex) // flip the two order of the polygons
+          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                num_tols_);
+        else // indicate that target is non-convex so it can be triangulated
+          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                num_tols_, false);
+      }        
 #endif
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
@@ -318,6 +402,19 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     std::vector<Wonton::Point<2>> target_poly;
     targetMeshWrapper.dual_cell_get_coordinates(tgt_node, &target_poly);
 
+    bool trg_convex = poly2_is_convex(target_poly, num_tols_);
+
+#ifdef DEBUG
+    Wonton::Polytope<2> tpoly(target_poly);
+    std::vector<double> tmom = tpoly.moments();
+    if (tmom[0] < 0.0) {
+      std::stringstream sstr;
+      sstr << "intersect_r2d.h: Dual Cell for target node " << tgt_node << " has a negative volume";
+      throw std::runtime_error(sstr.str());
+    }
+#endif
+    
+    
     int nsrc = src_nodes.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
@@ -326,10 +423,30 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.dual_cell_get_coordinates(s, &source_poly);
 
+#ifdef DEBUG
+      Wonton::Polytope<2> spoly(source_poly);
+      std::vector<double> smom = spoly.moments();
+      if (smom[0] < 0.0) {
+        std::stringstream sstr;
+        sstr << "intersect_r2d.h: Dual cell for source node " << s << " has a negative volume";
+        throw std::runtime_error(sstr.str());
+      }
+#endif
+
       Weights_t & this_wt = sources_and_weights[ninserted];
       this_wt.entityID = s;
-      this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
-                                            num_tols_);
+      if (trg_convex)
+        this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                              num_tols_);
+      else {
+        bool src_convex = poly2_is_convex(source_poly, num_tols_);
+        if (src_convex) // flip the two order of the polygons
+          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                num_tols_);
+        else // indicate that target is non-convex so it can be triangulated
+          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                num_tols_, false);
+      }        
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
