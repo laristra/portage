@@ -298,7 +298,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<double> smom = spoly.moments();
       if (smom[0] < 0.0) {
         std::stringstream sstr;
-        sstr << "intersect_r2d.h: Source cell " << src_cell << " has a negative volume";
+        sstr << "intersect_r2d.h: Source cell " << s << " has a negative volume";
         throw std::runtime_error(sstr.str());
       }
 #endif
@@ -307,7 +307,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
                                               num_tols_);
       else {
-        src_convex = poly2_is_convex(source_poly, num_tols_);
+        bool src_convex = poly2_is_convex(source_poly, num_tols_);
         if (src_convex) // flip the two order of the polygons
           this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
                                                 num_tols_);
