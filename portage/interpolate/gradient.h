@@ -142,7 +142,8 @@ namespace Portage {
       int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
       neighbors_.resize(nb_cells);
       stencils_.resize(nb_cells);
-      is_cached_.resize(nb_cells, false);
+      valid_neigh_.resize(nb_cells);
+      reference_.resize(nb_cells);
 
       if (part == nullptr) {
         // Collect and keep the list of neighbors for each OWNED CELL as
@@ -396,7 +397,7 @@ namespace Portage {
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto&& coord : cellcoords) {
-          auto vec = coord - list_coords[0];
+          auto vec = coord - reference_[cellid];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.) ? maxval : minval;
           double phi_new = (diff == 0. ? 1. : (extremeval - cellcenval) / diff);
@@ -421,7 +422,8 @@ namespace Portage {
     std::vector<int> cell_ids_;
     std::vector<std::vector<int>> neighbors_ {};
     std::vector<std::vector<Wonton::Matrix>> stencils_ {};
-    std::vector<std::vector<Point<D>>> list_coords_ {};
+    std::vector<std::vector<int>> valid_neigh_ {};
+    std::vector<Point<D>> reference_ {};
 
 #ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
