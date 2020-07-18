@@ -371,7 +371,7 @@ namespace Portage {
       // retrieve stencil points and compute least square matrices
       if (stencils_[cellid].empty()) /* not cached */ {
         auto list_coords = retrieve_stencil_points(cellid);
-        stencils_[cellid] = Wonton::build_gradient_stencil_matrices(list_coords, true);
+        stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
       }
 
 #ifdef DEBUG
@@ -658,7 +658,7 @@ namespace Portage {
       // retrieve stencil points and compute least square matrices
       if (stencils_[nodeid].empty()) /* not cached */{
         auto node_coords = retrieve_stencil_points(nodeid);
-        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices(node_coords, true);
+        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices<D>(node_coords, true);
       }
 
       // retrieve values of each stencil point
