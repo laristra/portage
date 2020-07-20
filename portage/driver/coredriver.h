@@ -194,7 +194,7 @@ class CoreDriver {
   template<template <Entity_kind, class, class, class,
                      template <class, int, class, class> class,
                      class, class> class Intersect>
-  Wonton::vector<std::vector<Portage::Weights_t>>
+  Wonton::vector<std::vector<Wonton::Weights_t>>
   intersect_meshes(Wonton::vector<std::vector<int>> const& candidates) {
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -229,6 +229,40 @@ class CoreDriver {
     return sources_and_weights;
   }
 
+  /**
+   * @brief Deduce weights for reverse remap by transposing
+   *        the weight matrix used for forward remap.
+   *
+   * @param forward_weights: weights list for forward remap.
+   * @return weights list for reverse remap.
+   */
+  Wonton::vector<std::vector<Wonton::Weights_t>>
+  deduce_reverse_weights(Wonton::vector<std::vector<Wonton::Weights_t>> const& forward_weights) {
+
+    int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
+    int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
+
+    Wonton::vector<std::vector<Wonton::Weights_t>> reverse_weights(num_source_entities);
+
+    Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
+                      source_mesh_.end(ONWHAT, ALL),
+                      reverse_weights.begin(),
+                      [&](int j) {
+                        entity_weights_t entries;
+                        entries.reserve(10);
+                        for (int i = 0; i < num_target_entities; ++i) {
+                          entity_weights_t const& list = forward_weights[i];
+                          for (auto const& weight : list) {
+                            if (weight.entityID == j) {
+                              entries.emplace_back(weight);
+                            }
+                          }
+                        }
+                        return entries;
+                      });
+
+    return reverse_weights;
+  }
 
   /// Set core numerical tolerances
   void set_num_tols(const double min_absolute_distance, 
