@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#if defined(PORTAGE_HAS_TANGRAM) && defined(TANGRAM_ENABLE_XMOF2D)
+#if defined(PORTAGE_HAS_TANGRAM)
 
 #include <sys/time.h>
 #include <cstdio>
@@ -44,7 +44,6 @@
 #include "user_field.h"
 
 #include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 #include "tangram/intersect/split_r3d.h"
@@ -190,7 +189,7 @@ class interface_reconstructor_factory<2, MeshWrapper, true>{
       mesh_(mesh), tols_(tols) {};
 
   auto operator()() -> decltype(auto) {
-    return std::make_shared<Tangram::Driver<Tangram::XMOF2D_Wrapper, 2,
+    return std::make_shared<Tangram::Driver<Tangram::MOF, 2,
                                             MeshWrapper>>(mesh_, tols_, true);
   }
 
@@ -852,7 +851,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::XMOF2D_Wrapper>
+          Tangram::MOF>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -868,7 +867,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
           Wonton::Jali_State_Wrapper,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
-          Tangram::XMOF2D_Wrapper>
+          Tangram::MOF>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1170,4 +1169,4 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
 #endif
 }
 
-#endif // PORTAGE_HAS_TANGRAM and TANGRAM_ENABLE_XMOF2D
+#endif // PORTAGE_HAS_TANGRAM
