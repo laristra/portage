@@ -37,19 +37,57 @@ using Wonton::Vector;
 ///
 /// In this routine, we will utilize the fact that R3d can intersect a
 /// non-convex polyhedron with planar faces with a convex polyhedron
-/// (more precisely, R3D can clip a non-convex polyhedron with a set of
-/// planes). We are given a target polyhedron with possibly non-planar
-/// faces to be intersected with a list of source polyhedra again with
-/// possibly non-planar faces. We will convert the target polyhedron
-/// into a set of convex polyhedra using a symmetric tetrahedral
-/// decomposition (24 tets for a hex). We will convert each source
-/// polyhedron into a faceted non-convex polyhedron where each facet is
-/// a triangle and therefore planar.
+/// (more precisely, R3D can clip a non-convex polyhedron with a set
+/// of planes). We are given a target polyhedron with possibly
+/// non-planar faces to be intersected with a list of source polyhedra
+/// again with possibly non-planar faces. We will convert the target
+/// polyhedron into a set of convex polyhedra using a symmetric
+/// tetrahedral decomposition (24 tets for a hex) or a custom 5/6 tet
+/// decomposition for rectangular meshes. We will convert each source
+/// polyhedron into a faceted non-convex polyhedron where each facet
+/// is a triangle and therefore planar.
 ///
 /// If this class is being adapted for use with a different intersector
 /// and it can only intersect convex polyhedra, both target and source
 /// polyhedra may have to be decomposed into tets
 ///
+
+// There are few criteria that could be used to evaluate whether the
+// polygons/polyhedra are suitable for use in the intersection using
+// R2D/R3D's clipping routines:
+//
+// 1. "VALIDITY" OF SOURCE CELL: The source polyhedron (from a cell, a
+// dual cell or a material polyhedron) can be non-convex since R2D/R3D
+// can clip non-convex cells. We may, however, want to verify that the
+// source polyhedron is "valid" before computing with it (although the
+// way R2D/R3D are written and the interpolate routines are written,
+// there may be nothing to preclude us from computing with negative
+// intersection volumes). We can test the validity of a source
+// polyhedron by (a) checking that its volume computed using
+// divergence theorem (by integrating over its boundary) is positive
+// (b) verifying that it is star-convex i.e. allows a decomposition
+// into positive volume simplices.
+//
+// 2. STAR-CONVEXITY OF TARGET CELL: The target cell can be non-convex
+// but it MUST BE STAR-CONVEX, i.e. allow a decomposition into
+// positive volume simplices. Since each simplex is convex, one can
+// clip the source cell with the planes of each simplex to get the
+// intersection volume between the simplex and the source cell. The
+// intersection volumes from all the simplices of the decomposition
+// can be summed up to get the total intersection volume.
+//
+//
+// Summary: We will use the star-convexity check for both the source
+// and the target polyhedra as it's the more stringent check. For
+// cells or dual cells, this decomposition is already available in the
+// form of wedges. Material polygons/polyhedra from interface
+// reconstruction, on the other hand, are tested using the divergence
+// theorem since they already undergo strict checks in the interface
+// reconstruction procedure. Also, in 3D they are guaranteed to be
+// convex since a non-convex cell is decomposed into simplices and
+// then sliced by the interface plane.
+
+
 
 template <Entity_kind on_what, class SourceMeshType,
           class SourceStateType, class TargetMeshType,
@@ -195,27 +233,43 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                                                rectangular_mesh_);
 
 #ifdef DEBUG
-    int ntets = target_tet_coords.size();
-    for (int i = 0; i < ntets; i++) {
-      // Let's check the volume of the target
-      const Point<3> p0 = target_tet_coords[i][0];
-      const Point<3> p1 = target_tet_coords[i][1];
-      const Point<3> p2 = target_tet_coords[i][2];
-      const Point<3> p3 = target_tet_coords[i][3];
-
-      Vector<3> v0 = p1-p0;
-      Vector<3> v1 = p2-p0;
-      Vector<3> cpvec = cross(v0,v1);
-      Vector<3> v2 = p3-p0;
-      double tetvol = dot(v2, cpvec)/6.0;
-      if (tetvol < 0.0) {
-        // if a tet in target cell decomposition is negative, throw an error
-        std::stringstream sstr;
-        sstr << "In intersect_r3d.h: " <<
-            " Tet in decomposition of target cell " << tgt_cell <<
-            " has negative volume " << tetvol << "\n" <<
-            "The cell may be inside-out or highly non-convex\n";
-        throw std::runtime_error(sstr.str());
+    if (rectangular_mesh_) {  // may have a special decomposition into 5/6 tets
+      int ntets = target_tet_coords.size();
+      for (int i = 0; i < ntets; i++) {
+        // Let's check the volume of the target
+        const Point<3> p0 = target_tet_coords[i][0];
+        const Point<3> p1 = target_tet_coords[i][1];
+        const Point<3> p2 = target_tet_coords[i][2];
+        const Point<3> p3 = target_tet_coords[i][3];
+        
+        Vector<3> v0 = p1-p0;
+        Vector<3> v1 = p2-p0;
+        Vector<3> cpvec = cross(v0,v1);
+        Vector<3> v2 = p3-p0;
+        double wvol = dot(v2, cpvec)/6.0;
+        if (wvol < 0.0) {
+          // if a tet in target cell decomposition is negative, throw an error
+          std::stringstream sstr;
+          sstr << "In intersect_r3d.h: " <<
+              " Tet in decomposition of target cell " << tgt_cell <<
+              " has negative volume " << wvol << "\n" <<
+              "The cell may be inside-out or highly non-convex\n";
+          throw std::runtime_error(sstr.str());
+        }
+      }
+    } else {  // just check the wedges of the cell
+      std::vector<int> wedges;
+      targetMeshWrapper.cell_get_wedges(tgt_cell, &wedges);
+      for (auto const& w : wedges) {
+        double wvol = targetMeshWrapper.wedge_volume(w);
+        if (wvol < 0.0) {
+          std::stringstream sstr;
+          sstr << "In intersect_r3d.h: " <<
+              " Tet in decomposition of target cell " << tgt_cell <<
+              " has negative volume " << wvol << "\n" <<
+              "The cell may be inside-out or highly non-convex\n";
+          throw std::runtime_error(sstr.str());
+        }
       }
     }
 #endif
@@ -247,35 +301,24 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                                                 &srcpoly.points);
 
 #ifdef DEBUG
-        // Lets check the volume of the source polygon - If its convex or
-        // mildly non-convex, we should get a positive volume
+        // Check validity of source cell (unfortunately may be
+        // repeated if it is an intersection candidate for multiple
+        // target cells)
         
-        Point<3> cen(0.0, 0.0, 0.0);
-        sourceMeshWrapper.cell_centroid(s, &cen);
+        std::vector<int> wedges;
+        sourceMeshWrapper.cell_get_wedges(s, &wedges);
 
-        int num_faces = srcpoly.facetpoints.size();
-        for (int i = 0; i < num_faces; i++) {
-          // p0, p1, p2 traversed in order form a triangle whose normal
-          // points out of the source polyhedron
-          const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-          const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-          const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
-
-          Vector<3> v0 = p1-p0;
-          Vector<3> v1 = p2-p0;
-          Vector<3> outnormal = cross(v0, v1);
-          Vector<3> v2 = cen-p0;
-          double tetvol = -dot(v2, outnormal)/6.0;
-          if (tetvol < 0.0) {
-            // if a tet in source polyhedron decomposition is negative, throw
+        for (auto const& w: wedges) {
+          double wvol = sourceMeshWrapper.wedge_volume(w);
+          if (wvol < 0.0) {
             std::stringstream sstr;
             sstr << "In intersect_polys_r3d.h: " <<
-                "Tet in decomposition of SOURCE cell " << s <<
-                " has negative volume " << tetvol << "\n " <<
+                "Tet in decomposition of source cell " << s <<
+                " has negative volume " << wvol << "\n " <<
                 "The cell may be inside-out or highly non-convex\n";
-            throw std::runtime_error(sstr.str());
+            throw std::runtime_error(sstr.str());            
           }
-        }
+        }        
 #endif
 
         this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
@@ -294,44 +337,21 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
         this_wt.weights.resize(4,0.0);
         for (const auto& matpoly : matpolys) {
-          facetedpoly_t srcpoly = get_faceted_matpoly(matpoly);
 
 #ifdef DEBUG
-          // Lets check the volume of the source material polygon - If
-          // it's convex or mildly non-convex, we should get a
-          // positive volume
-          
-          Point<3> cen(0.0, 0.0, 0.0);
-          int npoints = srcpoly.points.size();
-          for (int i = 0; i < npoints; i++)
-            cen += srcpoly.points[i];
-          cen /= npoints;
+          // Lets check the volume of the source material polyhedron
 
-          int num_faces = srcpoly.facetpoints.size();
-          for (int i = 0; i < num_faces; i++) {
-            // p0, p1, p2 traversed in order form a triangle whose normal
-            // points out of the source polyhedron
-            const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-            const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-            const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
-            
-            Vector<3> v0 = p1-p0;
-            Vector<3> v1 = p2-p0;
-            Vector<3> outnormal = cross(v0, v1);
-            Vector<3> v2 = cen-p0;
-            double tetvol = -dot(v2, outnormal)/6.0;
-            if (tetvol < 0.0) {
-              // if a tet in source polyhedron decomposition is negative, throw
-              std::stringstream sstr;
-              sstr << "In intersect_polys_r3d.h: " <<
-                  "Tet in decomposition of SOURCE cell " << s <<
-                  " has negative volume " << tetvol << "\n " <<
-                  "The cell may be inside-out or highly non-convex\n";
-              throw std::runtime_error(sstr.str());
-            }
+          std::vector<double> smom = matpoly.moments();
+          if (smom[0] < 0.0) {
+            std::stringstream sstr;
+            sstr << "In intersect_polys_r3d.h: " <<
+                "Material polygon for material " << matid_ << " in cell " <<
+                s << " has negative volume " << smom[0] << "\n";
+            throw std::runtime_error(sstr.str());
           }
 #endif
           
+          facetedpoly_t srcpoly = get_faceted_matpoly(matpoly);
           std::vector<double> momvec = intersect_polys_r3d(srcpoly,
                                           target_tet_coords, num_tols_);
           for (int k = 0; k < 4; k++)
@@ -339,14 +359,36 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         }
 
       }
-#else
+#else  // No Tangram
       facetedpoly_t srcpoly;
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
 
-      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+#ifdef DEBUG
+        // Check validity of source cell (unfortunately may be
+        // repeated if it is an intersection candidate for multiple
+        // target cells)
+        
+        std::vector<int> wedges;
+        sourceMeshWrapper.cell_get_wedges(s, &wedges);
+
+        for (auto const& w: wedges) {
+          double wvol = sourceMeshWrapper.wedge_volume(w);
+          if (wvol < 0.0) {
+            std::stringstream sstr;
+            sstr << "In intersect_polys_r3d.h: " <<
+                "Tet in decomposition of SOURCE cell " << s <<
+                " has negative volume " << wvol << "\n " <<
+                "The cell may be inside-out or highly non-convex\n";
+            throw std::runtime_error(sstr.str());            
+          }
+        }        
+#endif
+
+        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
                                             num_tols_);
 #endif
+
       // Increment if vol of intersection > 0; otherwise, allow overwrite
       if (!this_wt.weights.empty() && this_wt.weights[0] > 0.0)
         ninserted++;
@@ -441,32 +483,24 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
     std::vector<std::array<Point<3>, 4>> target_tet_coords;
 
-    // We should avoid any decomposition for duall cells of a
+    // We should avoid any decomposition for dual cells of a
     // rectangular mesh but for now we will decompose the target all
     // the time
 
     targetMeshWrapper.dual_wedges_get_coordinates(tgt_node, &target_tet_coords);
 
 #ifdef DEBUG
-    int ntets = target_tet_coords.size();
-    for (int i = 0; i < ntets; i++) {
-      // Let's check the volume of the target
-      const Point<3> p0 = target_tet_coords[i][0];
-      const Point<3> p1 = target_tet_coords[i][1];
-      const Point<3> p2 = target_tet_coords[i][2];
-      const Point<3> p3 = target_tet_coords[i][3];
+    // Lets check if all the wedges in the dual cell are valid
+    std::vector<int> wedges;
+    targetMeshWrapper.node_get_wedges(tgt_node, Entity_type::ALL, &wedges);
 
-      Vector<3> v0 = p1-p0;
-      Vector<3> v1 = p2-p0;
-      Vector<3> cpvec = cross(v0,v1);
-      Vector<3> v2 = p3-p0;
-      double tetvol = dot(v2, cpvec)/6.0;
-      if (tetvol < 0.0) {
-        // if a tet in target dualcell decomposition is negative, throw an error
+    for (auto const& w : wedges) {
+      double wvol = targetMeshWrapper.wedge_volume(w);
+      if (wvol < 0.0) {
         std::stringstream sstr;
         sstr << "In intersect_r3d.h: " <<
             " Tet in decomposition of dual cell of target node " << tgt_node <<
-            " has negative volume " << tetvol << "\n" <<
+            " has nedgative volume " << wvol << "\n" <<
             "The dual cell may be inside-out or highly non-convex\n";
         throw std::runtime_error(sstr.str());
       }
@@ -487,36 +521,20 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
       
 #ifdef DEBUG
-      // Lets check the volume of the source material polygon - If it's
-      // convex or
-      // mildly non-convex, we should get a positive volume
-      
-      Point<3> cen(0.0, 0.0, 0.0);
-      int npoints = srcpoly.points.size();
-      for (int i = 0; i < npoints; i++)
-        cen += srcpoly.points[i];
-      cen /= npoints;
+      // Lets check that the wedges in the source dual cell have
+      // positive volume
 
-      int num_faces = srcpoly.facetpoints.size();
-      for (int i = 0; i < num_faces; i++) {
-        // p0, p1, p2 traversed in order form a triangle whose normal
-        // points out of the source polyhedron
-        const Point<3> &p0 = srcpoly.points[srcpoly.facetpoints[i][0]];
-        const Point<3> &p1 = srcpoly.points[srcpoly.facetpoints[i][1]];
-        const Point<3> &p2 = srcpoly.points[srcpoly.facetpoints[i][2]];
-        
-        Vector<3> v0 = p1-p0;
-        Vector<3> v1 = p2-p0;
-        Vector<3> outnormal = cross(v0, v1);
-        Vector<3> v2 = cen-p0;
-        double tetvol = -dot(v2, outnormal)/6.0;
-        if (tetvol < 0.0) {
-          // if a tet in source polyhedron decomposition is negative, throw
+      std::vector<int> wedges;
+      sourceMeshWrapper.node_get_wedges(s, Entity_type::ALL, &wedges);
+
+      for (auto const& w: wedges) {
+        double wvol = sourceMeshWrapper.wedge_volume(w);
+        if (wvol < 0.0) {
           std::stringstream sstr;
           sstr << "In intersect_polys_r3d.h: " <<
               "Tet in decomposition of dual cell of source node " << s <<
-              " has negative volume " << tetvol << "\n " <<
-            "The dual cell may be inside-out or highly non-convex\n";
+              " has negative volume " << wvol << "\n " <<
+              "The dual cell may be inside-out or highly non-convex\n";
           throw std::runtime_error(sstr.str());
         }
       }
