@@ -26,5 +26,5 @@ mpirun -np 1 ${TESTAPPDIR}/portageapp_rgmd_jali \
     --remap_order=2
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv target_mm_0.gmv 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv target_mm_0_0.gmv 1e-9
 
