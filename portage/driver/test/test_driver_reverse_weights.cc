@@ -27,8 +27,6 @@ TEST(ReverseWeights, SingleMat) {
                                        Wonton::Jali_Mesh_Wrapper,
                                        Wonton::Jali_State_Wrapper>;
 
-  using EntityWeights = std::vector<Wonton::Weights_t>;
-
   MPI_Comm comm = MPI_COMM_WORLD;
   auto source_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 5, 5);
   auto target_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 7, 6);
@@ -47,10 +45,10 @@ TEST(ReverseWeights, SingleMat) {
   auto forward_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
   auto reverse_weights = remapper.deduce_reverse_weights(forward_weights);
 
-#ifndef DEBUG
-  int const num_target_entities = target_mesh_wrapper.num_entities(Wonton::CELL,
-                                                                   Wonton::PARALLEL_OWNED);
-  for (int t = 0; t < num_target_entities; ++t) {
+#ifdef DEBUG
+  int const num_target_cells = target_mesh_wrapper.num_entities(Wonton::CELL,
+                                                                Wonton::PARALLEL_OWNED);
+  for (int t = 0; t < num_target_cells; ++t) {
     std::vector<Wonton::Weights_t> const& list = forward_weights[t];
     std::cout << "forward_weight[target: "<< t <<"]: (";
     for (auto const& weight : list) {
@@ -60,8 +58,23 @@ TEST(ReverseWeights, SingleMat) {
   }
 #endif
 
+  int const num_source_cells = source_mesh_wrapper.num_entities(Wonton::CELL, Wonton::ALL);
+
+#ifdef DEBUG
+  for (int s = 0; s < num_source_cells; ++s) {
+    std::vector<Wonton::Weights_t> const& list = reverse_weights[s];
+    std::cout << "reverse_weight[source: "<< s <<"]: (";
+    for (auto const& weight : list) {
+      std::cout << weight.entityID <<", ";
+    }
+    std::cout << std::endl;
+  }
+#endif
+
+  // check if the given source cell is contained in
+  // the weight list of the target cell for forward remap.
   auto weights_matches = [&](int source, int target) -> bool {
-    EntityWeights const& list = forward_weights[target];
+    std::vector<Wonton::Weights_t> const& list = forward_weights[target];
     bool found = false;
     for (auto&& weight : list) {
       if (weight.entityID == source) {
@@ -72,19 +85,10 @@ TEST(ReverseWeights, SingleMat) {
     return found;
   };
 
-  int const num_source_entities = source_mesh_wrapper.num_entities(Wonton::CELL, Wonton::ALL);
-
-//  for (int s = 0; s < num_source_entities; ++s) {
-//    std::vector<Wonton::Weights_t> const& list = reverse_weights[s];
-//    std::cout << "reverse_weight[source: "<< s <<"]: (";
-//    for (auto const& weight : list) {
-//      std::cout << weight.entityID <<", ";
-//    }
-//    std::cout << std::endl;
-//  }
-
-  for (int s = 0; s < num_source_entities; ++s) {
-    EntityWeights const& list = reverse_weights[s];
+  // check that the reverse weight sparse matrix is a
+  // perfect transposition of the forward weight matrix.
+  for (int s = 0; s < num_source_cells; ++s) {
+    std::vector<Wonton::Weights_t> const& list = reverse_weights[s];
     for (auto const& weight : list) {
       int const& t = weight.entityID;
       ASSERT_TRUE(weights_matches(s, t));
