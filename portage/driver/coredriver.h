@@ -236,8 +236,8 @@ class CoreDriver {
    * @param forward_weights: weights list for forward remap.
    * @return weights list for reverse remap.
    */
-  Wonton::vector<std::vector<Wonton::Weights_t>>
-  deduce_reverse_weights(Wonton::vector<std::vector<Wonton::Weights_t>> const& forward_weights) {
+  Wonton::vector<std::vector<Wonton::Weights_t>> deduce_reverse_weights
+    (Wonton::vector<std::vector<Wonton::Weights_t>> const& forward_weights) const {
 
     int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
     int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
@@ -416,7 +416,7 @@ class CoreDriver {
       // become mixed).
 
 
-      std::vector<std::vector<Weights_t>> this_mat_sources_and_wts(ntargetcells);
+      Wonton::vector<std::vector<Weights_t>> this_mat_sources_and_wts(ntargetcells);
       Wonton::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                          target_mesh_.end(CELL, PARALLEL_OWNED),
                          candidates.begin(),
@@ -549,6 +549,51 @@ class CoreDriver {
       }
     } else
       throw std::runtime_error("interface reconstructor not yet initialized");
+  }
+
+  /**
+   * @brief Deduce reverse material weights by transposing
+   *        the weight matrix used in forward remap for each
+   *        material.
+   *
+   * Here we assume that the source state has already the material
+   * fields and material polytopes moments (volume and centroids).
+   *
+   * @param forward_weights: weights list per material for forward remap.
+   * @return the weights list per material for reverse remap.
+   */
+  std::vector<Wonton::vector<std::vector<Weights_t>>> deduce_reverse_material_weights
+    (std::vector<Wonton::vector<std::vector<Wonton::Weights_t>>> const& forward_weights) {
+
+    int const nmats = forward_weights.size();
+    std::vector<Wonton::vector<std::vector<Weights_t>>> reverse_weights(nmats);
+
+    int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
+
+    for (int m = 0; m < nmats; ++m) {
+      reverse_weights[m].resize(num_source_entities);
+      // number of weights not necessarily equal to the number of target cells
+      int const num_material_weights = forward_weights[m].size();
+
+      Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
+                        source_mesh_.end(ONWHAT, ALL),
+                        reverse_weights[m].begin(),
+                        [&](int s) {
+                          entity_weights_t entries;
+                          entries.reserve(10);
+                          for (int i = 0; i < num_material_weights; ++i) {
+                            entity_weights_t const& list = forward_weights[m][i];
+                            for (auto const& weight : list) {
+                              if (weight.entityID == s) {
+                                entries.emplace_back(weight);
+                              }
+                            }
+                          }
+                          return entries;
+                        });
+    }
+
+    return reverse_weights;
   }
 #endif
 
