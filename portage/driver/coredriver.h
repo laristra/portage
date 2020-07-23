@@ -241,20 +241,22 @@ class CoreDriver {
 
     int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
     int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
+    assert(unsigned(num_target_entities) == forward_weights.size());
 
     Wonton::vector<std::vector<Wonton::Weights_t>> reverse_weights(num_source_entities);
 
     Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
                       source_mesh_.end(ONWHAT, ALL),
                       reverse_weights.begin(),
-                      [&](int j) {
+                      [&](int s) {
                         entity_weights_t entries;
                         entries.reserve(10);
-                        for (int i = 0; i < num_target_entities; ++i) {
-                          entity_weights_t const& list = forward_weights[i];
+                        for (int t = 0; t < num_target_entities; ++t) {
+                          entity_weights_t const& list = forward_weights[t];
                           for (auto const& weight : list) {
-                            if (weight.entityID == j) {
-                              entries.emplace_back(weight);
+                            if (weight.entityID == s) {
+                              entries.emplace_back(t, weight.weights);
+                              break;
                             }
                           }
                         }
@@ -565,15 +567,32 @@ class CoreDriver {
   std::vector<Wonton::vector<std::vector<Weights_t>>> deduce_reverse_material_weights
     (std::vector<Wonton::vector<std::vector<Wonton::Weights_t>>> const& forward_weights) {
 
-    int const nmats = forward_weights.size();
-    std::vector<Wonton::vector<std::vector<Weights_t>>> reverse_weights(nmats);
-
+    int const num_materials = forward_weights.size();
     int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
+    int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
 
-    for (int m = 0; m < nmats; ++m) {
-      reverse_weights[m].resize(num_source_entities);
+    std::vector<Wonton::vector<std::vector<Weights_t>>> reverse_weights(num_materials);
+
+    auto retrieve_valid_target_cells = [&](int m) {
+      std::vector<int> valid_target_cells;
+      for (int c = 0; c < num_target_entities; c++) {
+        entity_weights_t const& forward_moments = forward_weights[m][c];
+        double mat_vol = 0.0;
+        for (auto&& moment : forward_moments) {
+          mat_vol += moment.weights[0];
+        }
+        // Check that the volume of material we are adding to c is not miniscule
+        if (mat_vol > num_tols_.min_absolute_volume)
+          valid_target_cells.emplace_back(c);
+      }
+      return valid_target_cells;
+    };
+
+    for (int m = 0; m < num_materials; ++m) {
       // number of weights not necessarily equal to the number of target cells
-      int const num_material_weights = forward_weights[m].size();
+      reverse_weights[m].resize(num_source_entities);
+      // build list of non degenerated target cells for this material
+      auto const target_material_cells = retrieve_valid_target_cells(m);
 
       Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
                         source_mesh_.end(ONWHAT, ALL),
@@ -581,11 +600,12 @@ class CoreDriver {
                         [&](int s) {
                           entity_weights_t entries;
                           entries.reserve(10);
-                          for (int i = 0; i < num_material_weights; ++i) {
-                            entity_weights_t const& list = forward_weights[m][i];
+                          for (int const& t : target_material_cells) {
+                            entity_weights_t const& list = forward_weights[m][t];
                             for (auto const& weight : list) {
                               if (weight.entityID == s) {
-                                entries.emplace_back(weight);
+                                entries.emplace_back(t, weight.weights);
+                                break;
                               }
                             }
                           }
