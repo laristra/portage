@@ -53,12 +53,7 @@
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 
-#ifdef TANGRAM_ENABLE_XMOF2D
-  #include "tangram/reconstruct/xmof2D_wrapper.h"
-  #define IR_2D XMOF2D_Wrapper
-#else
-  #define IR_2D MOF
-#endif
+#define IR_2D MOF
 
 #include "portage/driver/write_to_gmv.h"
 

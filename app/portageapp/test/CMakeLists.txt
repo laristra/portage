@@ -113,7 +113,7 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
 endif ()
 
 #multi-material tests
-if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM AND TANGRAM_ENABLE_XMOF2D)
+if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
   file(COPY portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY gold/GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ../../../test_data/reg10x10.exo
