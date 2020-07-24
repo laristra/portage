@@ -4,15 +4,14 @@
  * https://github.com/laristra/portage/blob/master/LICENSE
  */
 
+#include "portage/support/portage.h"
+#ifdef PORTAGE_HAS_TANGRAM
 #include <iostream>
 #include "gtest/gtest.h"
 
 #include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/intersect/split_r2d.h"
 
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/intersect_r2d.h"
@@ -22,6 +21,10 @@
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliState.h"
+
+#include "tangram/driver/driver.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/intersect/split_r2d.h"
 
 TEST(ReverseWeights, SingleMat) {
 
@@ -258,3 +261,4 @@ TEST(ReverseWeights, MultiMat) {
     }
   }
 }
+#endif
