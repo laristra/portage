@@ -580,42 +580,25 @@ class CoreDriver {
    * @return the weights list per material for reverse remap.
    */
   std::vector<Wonton::vector<std::vector<Weights_t>>> deduce_reverse_material_weights
-    (std::vector<Wonton::vector<std::vector<Wonton::Weights_t>>> const& forward_weights) {
+    (std::vector<Wonton::vector<std::vector<Wonton::Weights_t>>> const& forward_weights,
+     std::vector<std::vector<int>>& index_mapping) {
 
     int const num_materials = forward_weights.size();
-    int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
-    int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
+    int const num_source_cells = source_mesh_.num_entities(ONWHAT, ALL);
 
     std::vector<Wonton::vector<std::vector<Weights_t>>> reverse_weights(num_materials);
 
-    auto retrieve_valid_target_cells = [&](int m) {
-      std::vector<int> valid_target_cells;
-      for (int c = 0; c < num_target_entities; c++) {
-        entity_weights_t const& forward_moments = forward_weights[m][c];
-        double mat_vol = 0.0;
-        for (auto&& moment : forward_moments) {
-          mat_vol += moment.weights[0];
-        }
-        // Check that the volume of material we are adding to c is not miniscule
-        if (mat_vol > num_tols_.min_absolute_volume)
-          valid_target_cells.emplace_back(c);
-      }
-      return valid_target_cells;
-    };
-
     for (int m = 0; m < num_materials; ++m) {
-      // number of weights not necessarily equal to the number of target cells
-      reverse_weights[m].resize(num_source_entities);
-      // build list of non degenerated target cells for this material
-      auto const target_material_cells = retrieve_valid_target_cells(m);
+      int const num_target_material_cells = forward_weights[m].size();
+      Wonton::vector<std::vector<Weights_t>> reverse_material_weights(num_source_cells);
 
       Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
                         source_mesh_.end(ONWHAT, ALL),
-                        reverse_weights[m].begin(),
+                        reverse_material_weights.begin(),
                         [&](int s) {
                           entity_weights_t entries;
                           entries.reserve(10);
-                          for (int const& t : target_material_cells) {
+                          for (int t = 0; t < num_target_material_cells; ++t) {
                             entity_weights_t const& list = forward_weights[m][t];
                             for (auto const& weight : list) {
                               if (weight.entityID == s) {
@@ -626,6 +609,20 @@ class CoreDriver {
                           }
                           return entries;
                         });
+
+      // filter weight list
+      for (int s = 0; s < num_source_cells; ++s) {
+        entity_weights_t const& weights = reverse_material_weights[s];
+        if (not weights.empty()) {
+          index_mapping[m].emplace_back(s);
+        }
+      }
+
+      reverse_weights[m].resize(index_mapping[m].size());
+      Wonton::transform(index_mapping[m].begin(),
+                        index_mapping[m].end(),
+                        reverse_weights[m].begin(),
+                        [&](int s) { return reverse_material_weights[s]; });
     }
 
     return reverse_weights;
