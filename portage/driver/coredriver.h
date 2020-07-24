@@ -326,6 +326,21 @@ class CoreDriver {
   intersect_materials(Wonton::vector<std::vector<int>> const& candidates) {
 
 #ifdef PORTAGE_HAS_TANGRAM
+    // set numerical tolerance if not already done.
+    // it avoids the necessity of calling 'intersect_meshes',
+    // but should not change anything if it was already set.
+    if (reconstructor_tols_.empty()) {
+      // if the user did NOT set tolerances for Tangram, use Portage tolerances
+      reconstructor_tols_ = {
+        {1000, num_tols_.min_absolute_distance, num_tols_.min_absolute_volume},
+        { 100, num_tols_.min_absolute_distance, num_tols_.min_absolute_distance}
+      };
+    } else if (not num_tols_.user_tolerances) {
+      // if the user has set tolerances for Tangram, but not for Portage,
+      // use Tangram tolerances
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
 
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
