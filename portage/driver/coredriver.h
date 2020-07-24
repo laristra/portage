@@ -577,6 +577,7 @@ class CoreDriver {
    * fields and material polytopes moments (volume and centroids).
    *
    * @param forward_weights: weights list per material for forward remap.
+   * @param index_mapping: source material cells to source cells lookup table.
    * @return the weights list per material for reverse remap.
    */
   std::vector<Wonton::vector<std::vector<Weights_t>>> deduce_reverse_material_weights
@@ -610,7 +611,7 @@ class CoreDriver {
                           return entries;
                         });
 
-      // filter weight list
+      // filtering step
       for (int s = 0; s < num_source_cells; ++s) {
         entity_weights_t const& weights = reverse_material_weights[s];
         if (not weights.empty()) {
