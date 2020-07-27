@@ -28,9 +28,11 @@
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
 #include "tangram/driver/write_to_gmv.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
+#include "tangram/intersect/split_r2d.h"
 #endif
 
 #ifdef WONTON_ENABLE_MPI
@@ -209,9 +211,12 @@ void run(
     std::cout << "   Limiter type is " << limiter << "\n";
     std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
   }
-  std::vector<Tangram::IterativeMethodTolerances_t> tols;
-  tols.push_back({100, 1e-12, 1e-12});
-  Tangram::Driver<Tangram::XMOF2D_Wrapper, 2, Simple_Mesh_Wrapper>
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2);
+  tols[0] = {1000, 1.0e-15, 1.0e-15};
+  tols[1] = {100, 1.0e-15, 1.0e-15};
+  Tangram::Driver<Tangram::MOF, 2, Simple_Mesh_Wrapper,
+                                   Tangram::SplitR2D,
+                                   Tangram::ClipR2D>
       interface_reconstructor{source_mesh_wrapper, tols, true};
 
   // convert from Portage points to Tangram points
@@ -346,10 +351,13 @@ void run(
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
-      Tangram::XMOF2D_Wrapper>
+      Tangram::MOF,
+      Tangram::SplitR2D,
+      Tangram::ClipR2D>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
+    d.set_reconstructor_options(true, tols);
     d.run();  // executor arg defaults to nullptr -> serial run
   } else if (interp_order == 2) {
     Portage::MMDriver<
@@ -361,10 +369,13 @@ void run(
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
-      Tangram::XMOF2D_Wrapper>
+      Tangram::MOF,
+      Tangram::SplitR2D,
+      Tangram::ClipR2D>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
+    d.set_reconstructor_options(true, tols);
     d.set_limiter(limiter);
     d.set_bnd_limiter(bnd_limiter);
     d.run();  // executor arg defaults to nullptr -> serial run
@@ -469,8 +480,10 @@ void run(
 
 
   auto target_interface_reconstructor = std::make_shared<Tangram::Driver<
-                                        Tangram::XMOF2D_Wrapper, 2,
-                                        Simple_Mesh_Wrapper>>
+                                        Tangram::MOF, 2,
+                                        Simple_Mesh_Wrapper,
+                                        Tangram::SplitR2D,
+                                        Tangram::ClipR2D>>
                                         (target_mesh_wrapper, tols, true);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
