@@ -155,6 +155,115 @@ class CoreDriver {
   /// What entity kind is this defined on?
   Entity_kind onwhat() {return ONWHAT;}
 
+#ifdef WONTON_ENABLE_MPI
+  /**
+   * @brief
+   *
+   * @tparam Mesh
+   * @param mesh
+   * @return
+   */
+  template<typename Mesh>
+  std::vector<std::vector<int>> build_communication_matrix(Mesh const& mesh) {
+
+    // some convenient shortcuts
+    auto const& rank = comm_rank_;
+    auto const& num_ranks = nprocs_;
+    auto const& comm = mycomm_;
+
+    // check if the given entity is a ghost one
+    auto is_ghost = [&](int i) -> bool {
+      switch (ONWHAT) {
+        case Wonton::CELL: return mesh.cell_get_type(i) == Wonton::PARALLEL_GHOST;
+        case Wonton::NODE: return mesh.node_get_type(i) == Wonton::PARALLEL_GHOST;
+        default: return false;
+      }
+    };
+
+    std::set<int> owned;
+    std::vector<int> ghosts;
+    int num_ghosts[num_ranks];
+    int offsets[num_ranks];
+    std::vector<std::vector<int>> send(num_ranks);
+    std::vector<int> received;
+
+    // step 1: retrieve ghost entities on current rank
+    int const num_entities = mesh.num_entities(ONWHAT, Wonton::ALL);
+
+    for (int i = 0; i < num_entities; ++i) {
+      int const& global_id = mesh.get_global_id(i, ONWHAT);
+      if (is_ghost(i)) {
+        ghosts.emplace_back(global_id);
+      } else {
+        owned.insert(global_id);
+      }
+    }
+
+    // step 2: gather number of ghosts for all ranks and deduce offsets
+    num_ghosts[rank] = ghosts.size();
+    MPI_Allgather(num_ghosts + rank, 1, MPI_INT, num_ghosts, num_ranks, MPI_INT, comm);
+
+    int const total_ghosts = std::accumulate(num_ghosts, num_ghosts + num_ranks, 0);
+    received.resize(total_ghosts);
+
+    int index = 0;
+    for (int i = 0; i < num_ranks; ++i) {
+      offsets[i] = index;
+      index += num_ghosts[i];
+    }
+
+    // step 3: gather all ghost entities on all ranks
+    MPI_Allgatherv(ghosts.data(), num_ghosts[rank], MPI_INT, received.data(), offsets, MPI_INT, comm);
+
+    // step 4: check received ghost cells and build map
+    for (int i = 0; i < num_ranks; ++i) {
+      if (i != rank) {
+        int const& start = offsets[i];
+        int const& extent = (i < num_ranks - 1 ? offsets[i+1] : total_ghosts);
+        for (int j = start; j < extent; ++j) {
+          int const& current = received[j];
+          if (owned.count(current)) {
+            send[i].emplace_back(current);
+          }
+        }
+      }
+    }
+
+#ifndef DEBUG
+    for (int i = 0; i < num_ranks; ++i) {
+      std::cout << "["<< rank <<"]: received[" << i << "]: (";
+      int const& start = offsets[i];
+      int const& extent = (i < num_ranks - 1 ? offsets[i+1] : total_ghosts);
+      for (int j = start; j < extent; ++j) {
+        int const& current = received[j];
+        std::cout << current;
+        if (j < extent - 1) {
+          std::cout << ", ";
+        }
+      }
+      std::cout << ")" << std::endl;
+    }
+
+    std::cout << " ------------------ " << std::endl;
+
+    for (int i = 0; i < num_ranks; ++i) {
+      std::cout << "["<< rank <<"]: send[" << i << "]: (";
+      int const num_to_send = send[i].size();
+      for (int j = 0; j < num_to_send; ++j) {
+        std::cout << send[i][j];
+        if (j < num_to_send - 1) {
+          std::cout << ", ";
+        }
+      }
+      std::cout << ")" << std::endl;
+    }
+
+    std::cout << " ------------------ " << std::endl;
+#endif
+    return send;
+  }
+#endif
+
   /*!
     Find candidates entities of a particular kind that might
     intersect each target entity of the same kind
