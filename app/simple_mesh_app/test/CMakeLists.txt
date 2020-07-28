@@ -44,7 +44,7 @@ ADD_SIMPLE_MESH_TEST(11)
 
 file(COPY triple_point_3x3_matdata.dat DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-if (WONTON_ENABLE_MPI)
+if (PORTAGE_ENABLE_TANGRAM)
   # copy the shell script and, a file with material distribution and gold
   file(
     COPY simple_mesh_mm_app.sh
