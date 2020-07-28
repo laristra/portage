@@ -180,22 +180,22 @@ class CoreDriver {
       }
     };
 
-    std::set<int> owned;
+    std::map<int, int> owned;
     std::vector<int> ghosts;
     int num_ghosts[num_ranks];
     int offsets[num_ranks];
-    std::vector<std::vector<int>> send(num_ranks);
     std::vector<int> received;
+    std::vector<std::vector<int>> send(num_ranks);
 
     // step 1: retrieve ghost entities on current rank
     int const num_entities = mesh.num_entities(ONWHAT, Wonton::ALL);
 
     for (int i = 0; i < num_entities; ++i) {
-      int const& global_id = mesh.get_global_id(i, ONWHAT);
+      int const& gid = mesh.get_global_id(i, ONWHAT);
       if (is_ghost(i)) {
-        ghosts.emplace_back(global_id);
+        ghosts.emplace_back(gid);
       } else {
-        owned.insert(global_id);
+        owned[gid] = i;
       }
     }
 
@@ -221,9 +221,9 @@ class CoreDriver {
         int const& start = offsets[i];
         int const& extent = (i < num_ranks - 1 ? offsets[i+1] : total_ghosts);
         for (int j = start; j < extent; ++j) {
-          int const& current = received[j];
-          if (owned.count(current)) {
-            send[i].emplace_back(current);
+          int const& gid = received[j];
+          if (owned.count(gid)) {
+            send[i].emplace_back(owned[gid]);
           }
         }
       }
@@ -250,7 +250,7 @@ class CoreDriver {
       std::cout << "["<< rank <<"]: send[" << i << "]: (";
       int const num_to_send = send[i].size();
       for (int j = 0; j < num_to_send; ++j) {
-        std::cout << send[i][j];
+        std::cout << mesh.get_global_id(send[i][j], ONWHAT);
         if (j < num_to_send - 1) {
           std::cout << ", ";
         }
