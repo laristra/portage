@@ -216,6 +216,8 @@ MPI_VERSION=2.1.2
 WONTON_VERSION=1.2.0
 TANGRAM_VERSION=0.9.9
 
+TPL_PREFIX=/usr/projects/ngc/private
+
 module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
 mkdir build-thrust
 cd build-thrust
