@@ -39,6 +39,7 @@ public:
 
     if (num_ranks > 1) {
       send.resize(num_ranks);
+      receive.resize(num_ranks);
       count.resize(num_ranks);
     }
   }
@@ -90,8 +91,9 @@ public:
     // step 3: gather all ghost entities on all ranks
     MPI_Allgatherv(entities.data(), num_ghosts[rank], MPI_INT, received.data(), num_ghosts, offsets, MPI_INT, comm);
 
-    // step 4: check received ghost cells, build map and send GID.
+    // step 4: check received ghost cells, build send matrix and send elems count.
     std::vector<MPI_Request> requests;
+    int num_sent[num_ranks];
 
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank) {
@@ -106,14 +108,9 @@ public:
         }
 
         MPI_Request request;
-        int const num_ghost_sent = send[i].size();
-        MPI_Isend(&num_ghost_sent, 1, MPI_INT, i, 1, comm, &request);
+        num_sent[i] = send[i].size();
+        MPI_Isend(num_sent + i, 1, MPI_INT, i, 1, comm, &request);
         requests.emplace_back(request);
-
-        if (num_ghost_sent) {
-          MPI_Isend(gids[i].data(), num_ghost_sent, MPI_INT, i, 2, comm, &request);
-          requests.emplace_back(request);
-        }
       }
     }
 
@@ -136,9 +133,9 @@ public:
 
   for (int i = 0; i < num_ranks; ++i) {
     std::cout << "["<< rank <<"]: send[" << i << "]: (";
-    int const num_to_send = send_matrix[i].size();
+    int const num_to_send = send[i].size();
     for (int j = 0; j < num_to_send; ++j) {
-      std::cout << mesh.get_global_id(send_matrix[i][j], entity);
+      std::cout << mesh.get_global_id(send[i][j], entity);
       if (j < num_to_send - 1) {
         std::cout << ", ";
       }
@@ -149,16 +146,35 @@ public:
   std::cout << " ------------------ " << std::endl;
 #endif
 
+    // step 5: receive ghost count per rank and send entities GID.
     MPI_Waitall(requests.size(), requests.data(), status);
+    requests.clear();
 
-    // step 5: receive and store expected entities count
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank) {
         MPI_Recv(count.data() + i, 1, MPI_INT, i, 1, comm, status);
-        if (count[i])
-          MPI_Recv(receive.data() + i, count[i], MPI_INT, i, 2, comm, status);
+        if (num_sent[i]) {
+          MPI_Request request;
+          MPI_Isend(gids[i].data(), num_sent[i], MPI_INT, i, 2, comm, &request);
+          requests.emplace_back(request);
+        }
       }
     }
+
+    // step 6: receive expected ghost GID
+    MPI_Waitall(requests.size(), requests.data(), status);
+    requests.clear();
+
+    for (int i = 0; i < num_ranks; ++i) {
+      if (i != rank and count[i]) {
+        MPI_Request request;
+        MPI_Irecv(receive.data() + i, count[i], MPI_INT, i, 2, comm, &request);
+        requests.emplace_back(request);
+      }
+    }
+
+    MPI_Waitall(requests.size(), requests.data(), status);
+    MPI_Barrier(comm);
   }
 
   /**
