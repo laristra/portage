@@ -38,7 +38,7 @@ public:
     MPI_Comm_size(comm, &num_ranks);
 
     if (num_ranks > 1) {
-      send_matrix.resize(num_ranks);
+      send.resize(num_ranks);
       count.resize(num_ranks);
     }
   }
@@ -59,6 +59,7 @@ public:
     int num_ghosts[num_ranks];
     int offsets[num_ranks];
     std::vector<int> received;
+    std::vector<int> gids[num_ranks];
 
     // step 1: retrieve ghost entities on current rank
     int const num_entities = mesh.num_entities(entity, Wonton::ALL);
@@ -89,7 +90,9 @@ public:
     // step 3: gather all ghost entities on all ranks
     MPI_Allgatherv(entities.data(), num_ghosts[rank], MPI_INT, received.data(), num_ghosts, offsets, MPI_INT, comm);
 
-    // step 4: check received ghost cells and build map
+    // step 4: check received ghost cells, build map and send GID.
+    std::vector<MPI_Request> requests;
+
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank) {
         int const& start = offsets[i];
@@ -97,8 +100,19 @@ public:
         for (int j = start; j < extent; ++j) {
           int const& gid = received[j];
           if (owned.count(gid)) {
-            send_matrix[i].emplace_back(owned[gid]);
+            send[i].emplace_back(owned[gid]);
+            gids[i].emplace_back(gid);
           }
+        }
+
+        MPI_Request request;
+        int const num_ghost_sent = send[i].size();
+        MPI_Isend(&num_ghost_sent, 1, MPI_INT, i, 1, comm, &request);
+        requests.emplace_back(request);
+
+        if (num_ghost_sent) {
+          MPI_Isend(gids[i].data(), num_ghost_sent, MPI_INT, i, 2, comm, &request);
+          requests.emplace_back(request);
         }
       }
     }
@@ -134,6 +148,17 @@ public:
 
   std::cout << " ------------------ " << std::endl;
 #endif
+
+    MPI_Waitall(requests.size(), requests.data(), status);
+
+    // step 5: receive and store expected entities count
+    for (int i = 0; i < num_ranks; ++i) {
+      if (i != rank) {
+        MPI_Recv(count.data() + i, 1, MPI_INT, i, 1, comm, status);
+        if (count[i])
+          MPI_Recv(receive.data() + i, count[i], MPI_INT, i, 2, comm, status);
+      }
+    }
   }
 
   /**
@@ -152,61 +177,39 @@ public:
         // todo
       } else /* single material */{
 #endif
-        std::vector<double> send[num_ranks];
-        std::vector<double> recv[num_ranks];
-        std::vector<int> gids[num_ranks];
+        std::vector<double> buffer;
 
-        // step 1: retrieve field values and populate data
+        // step 1: retrieve field values and send them
         double* values = nullptr;
         state.mesh_get_data(entity, &values);
         assert(values != nullptr);
 
         for (int i = 0; i < num_ranks; ++i) {
           if (i != rank) {
-            for (auto&& j : send_matrix[i]) {  // 'j' local entity index
+            buffer.clear();
+            for (auto&& j : send[i]) {  // 'j' local entity index
               assert(not is_ghost(j));
-              send[i].emplace_back(values[j]);
-              gids[i].emplace_back(mesh.get_global_id(j, entity));
+              buffer.emplace_back(values[j]);
             }
-            count[i] = send[i].size();
+            assert(not buffer.empty());
+            MPI_Send(buffer.data(), buffer.size(), MPI_DOUBLE, i, 1, comm);
           }
         }
 
-        // step 2: send them
+        // step 2: receive and store them
         for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank) {
-            MPI_Send(count.data() + i, 1, MPI_INT, i, 0, comm);
-            if (count[i] > 0) {
-              MPI_Send(send[i].data(), count[i], MPI_DOUBLE, i, 1, comm);
-              MPI_Send(gids[i].data(), count[i], MPI_INT, i, 2, comm);
-            }
-          }
-        }
+          if (i != rank and count[i]) {
+            buffer.resize(count[i]);
+            MPI_Recv(buffer.data(), count[i], MPI_DOUBLE, i, 1, comm, status);
 
-        // step 3: receive
-        for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank) {
-            MPI_Status status;
-            MPI_Recv(count.data() + i, 1, MPI_INT, i, 0, comm, &status);
-            if (count[i] > 0) {
-              recv[i].resize(count[i]);
-              gids[i].resize(count[i], -1);  // reset and reuse
-              MPI_Recv(recv[i].data(), count[i], MPI_DOUBLE, i, 1, comm, &status);
-              MPI_Recv(gids[i].data(), count[i], MPI_INT, i, 2, comm, &status);
-            }
-          }
-        }
-
-        // step 4: store them
-        for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank and count[i] > 0) {
             for (int j = 0; j < count[i]; ++j) {
-              int const& gid = gids[i][j];
+              int const& gid = receive[i][j];
               int const& lid = ghost[gid];
-              values[lid] = recv[i][j];
+              values[lid] = buffer[j];
             }
           }
         }
+
 #ifdef PORTAGE_HAS_TANGRAM
       } // if not multimat
 #endif
@@ -224,8 +227,12 @@ private:
   int num_ranks = 1;
   /** MPI communicator */
   MPI_Comm comm = MPI_COMM_NULL;
+  /** MPI status */
+  MPI_Status* status = MPI_STATUS_IGNORE;
   /** list of owned entities to send to each rank */
-  std::vector<std::vector<int>> send_matrix {};
+  std::vector<std::vector<int>> send {};
+  /** list of ghost entities received from each rank */
+  std::vector<std::vector<int>> receive {};
   /** count of received entities from each rank */
   std::vector<int> count {};
   /** owned entities indexed by their GID */
