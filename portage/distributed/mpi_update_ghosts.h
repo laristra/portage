@@ -92,8 +92,9 @@ public:
     MPI_Allgatherv(entities.data(), num_ghosts[rank], MPI_INT, received.data(), num_ghosts, offsets, MPI_INT, comm);
 
     // step 4: check received ghost cells, build send matrix and send elems count.
-    std::vector<MPI_Request> requests;
+    int tag = 0;
     int num_sent[num_ranks];
+    std::vector<MPI_Request> requests[3];
 
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank) {
@@ -109,8 +110,8 @@ public:
 
         MPI_Request request;
         num_sent[i] = send[i].size();
-        MPI_Isend(num_sent + i, 1, MPI_INT, i, 1, comm, &request);
-        requests.emplace_back(request);
+        MPI_Isend(num_sent + i, 1, MPI_INT, i, tag, comm, &request);
+        requests[tag].emplace_back(request);
       }
     }
 
@@ -146,34 +147,40 @@ public:
   std::cout << " ------------------ " << std::endl;
 #endif
 
-    // step 5: receive ghost count per rank and send entities GID.
-    MPI_Waitall(requests.size(), requests.data(), status);
-    requests.clear();
+    // step 5: receive ghost count per rank
+    MPI_Waitall(requests[tag].size(), requests[tag].data(), status);
+    int old = tag++;
 
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank) {
-        MPI_Recv(count.data() + i, 1, MPI_INT, i, 1, comm, status);
-        if (num_sent[i]) {
-          MPI_Request request;
-          MPI_Isend(gids[i].data(), num_sent[i], MPI_INT, i, 2, comm, &request);
-          requests.emplace_back(request);
-        }
+        MPI_Request request;
+        MPI_Irecv(count.data() + i, 1, MPI_INT, i, old, comm, &request);
+        requests[tag].emplace_back(request);
       }
     }
 
-    // step 6: receive expected ghost GID
-    MPI_Waitall(requests.size(), requests.data(), status);
-    requests.clear();
+    // step 6: send owned entities GID.
+    for (int i = 0; i < num_ranks; ++i) {
+      if (i != rank and num_sent[i]) {
+        MPI_Request request;
+        MPI_Isend(gids[i].data(), num_sent[i], MPI_INT, i, tag, comm, &request);
+        requests[tag].emplace_back(request);
+      }
+    }
+
+    // step 7: receive expected ghost GID
+    MPI_Waitall(requests[tag].size(), requests[tag].data(), status);
+    old = tag++;
 
     for (int i = 0; i < num_ranks; ++i) {
       if (i != rank and count[i]) {
         MPI_Request request;
-        MPI_Irecv(receive.data() + i, count[i], MPI_INT, i, 2, comm, &request);
-        requests.emplace_back(request);
+        MPI_Irecv(receive.data() + i, count[i], MPI_INT, i, old, comm, &request);
+        requests[tag].emplace_back(request);
       }
     }
 
-    MPI_Waitall(requests.size(), requests.data(), status);
+    MPI_Waitall(requests[tag].size(), requests[tag].data(), status);
     MPI_Barrier(comm);
   }
 
@@ -193,7 +200,9 @@ public:
         // todo
       } else /* single material */{
 #endif
-        std::vector<double> buffer;
+        std::vector<double> buffer[num_ranks];
+        std::vector<MPI_Request> requests[2];
+        int tag = 0;
 
         // step 1: retrieve field values and send them
         double* values = nullptr;
@@ -202,33 +211,50 @@ public:
 
         for (int i = 0; i < num_ranks; ++i) {
           if (i != rank) {
-            buffer.clear();
+            buffer[i].clear();
             for (auto&& j : send[i]) {  // 'j' local entity index
               assert(not is_ghost(j));
-              buffer.emplace_back(values[j]);
+              buffer[i].emplace_back(values[j]);
             }
-            assert(not buffer.empty());
-            MPI_Send(buffer.data(), buffer.size(), MPI_DOUBLE, i, 1, comm);
+            assert(not buffer[i].empty());
+            MPI_Request request;
+            MPI_Isend(buffer[i].data(), buffer[i].size(), MPI_DOUBLE, i, tag, comm, &request);
+            requests[tag].emplace_back(request);
           }
         }
 
-        // step 2: receive and store them
+        // step 2: receive field data
+        MPI_Waitall(requests[tag].size(), requests[tag].data(), status);
+        int old = tag++;
+
         for (int i = 0; i < num_ranks; ++i) {
           if (i != rank and count[i]) {
-            buffer.resize(count[i]);
-            MPI_Recv(buffer.data(), count[i], MPI_DOUBLE, i, 1, comm, status);
+            buffer[i].resize(count[i]);
+            MPI_Request request;
+            MPI_Irecv(buffer[i].data(), count[i], MPI_DOUBLE, i, old, comm, &request);
+            requests[tag].emplace_back(request);
+          }
+        }
 
+        // step 3: update state
+        MPI_Waitall(requests[tag].size(), requests[tag].data(), status);
+        MPI_Barrier(comm);
+
+        for (int i = 0; i < num_ranks; ++i) {
+          if (i != rank and count[i]) {
             for (int j = 0; j < count[i]; ++j) {
               int const& gid = receive[i][j];
               int const& lid = ghost[gid];
-              values[lid] = buffer[j];
+              values[lid] = buffer[i][j];
             }
+            buffer[i].clear();
           }
         }
 
 #ifdef PORTAGE_HAS_TANGRAM
       } // if not multimat
 #endif
+      MPI_Barrier(comm);
     }
   }
 
