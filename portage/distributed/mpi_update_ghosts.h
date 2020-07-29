@@ -97,7 +97,7 @@ std::vector<std::vector<int>> build_ghost_comm_matrix(Mesh const& mesh,
     }
   }
 
-#ifndef DEBUG
+#ifdef DEBUG
   for (int i = 0; i < num_ranks; ++i) {
     std::cout << "["<< rank <<"]: received[" << i << "]: (";
     int const& start = offsets[i];
@@ -130,6 +130,113 @@ std::vector<std::vector<int>> build_ghost_comm_matrix(Mesh const& mesh,
 #endif
   return send;
 }
+
+/**
+ * @brief
+ *
+ * @tparam Mesh
+ * @param mesh
+ * @param comm_matrix
+ */
+template<typename Mesh,
+         typename State,
+         Wonton::Entity_kind onwhat>
+bool fill_ghost_values(Mesh& mesh,
+                       State& state,
+                       std::vector<std::string> const& fields,
+                       std::vector<std::vector<int>> const& comm_matrix,
+                       MPI_Comm comm) {
+
+  int rank = 0;
+  int num_ranks = 1;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &num_ranks);
+
+  if (num_ranks == 1) {
+    std::cerr << "Warning: serial run, nothing to do." << std::endl;
+    return false;
+  }
+
+  for (auto&& field : fields) {
+#ifdef PORTAGE_HAS_TANGRAM
+    auto field_type = state.field_type(onwhat, field);
+    bool multimat = (onwhat == Wonton::CELL and field_type == Field_type::MULTIMATERIAL_FIELD);
+
+    if (multimat) {
+      // todo
+    } else {
+      std::vector<double> send[num_ranks];
+      std::vector<double> recv[num_ranks];
+      std::vector<int> gids[num_ranks];
+      int count[num_ranks];
+
+      // step 1: retrieve field values and populate data
+      double* values = nullptr;
+      state.mesh_get_data(onwhat, &values);
+      assert(values != nullptr);
+
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank) {
+          for (auto&& j : comm_matrix[i]) {  // 'j' local entity index
+            assert(not is_ghost(mesh, onwhat, j));
+            send[i].emplace_back(values[j]);
+            gids[i].emplace_back(mesh.get_global_id(j, onwhat));
+          }
+          count[i] = send[i].size();
+        }
+      }
+
+      // step 2: send them
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank) {
+          MPI_Send(count + i, 1, MPI_INT, i, 0, comm);
+          if (count[i] > 0) {
+            MPI_Send(send[i].data(), count[i], MPI_DOUBLE, i, 1, comm);
+            MPI_Send(gids[i].data(), count[i], MPI_INT, i, 2, comm);
+          }
+        }
+      }
+
+      // step 3: receive
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank) {
+          MPI_Status status;
+          MPI_Recv(count + i, 1, MPI_INT, i, 0, comm, &status);
+          if (count[i] > 0) {
+            recv[i].resize(count[i]);
+            gids[i].resize(count[i], -1);  // reset and reuse
+            MPI_Recv(recv[i].data(), count[i], MPI_DOUBLE, i, 1, comm, &status);
+            MPI_Recv(gids[i].data(), count[i], MPI_INT, i, 2, comm, &status);
+          }
+        }
+      }
+
+      // step 4: store them
+      std::map<int, int> ghosts;
+      int const num_entities = mesh.num_entities(onwhat, Wonton::ALL);
+      for (int i = 0; i < num_entities; ++i) {
+        if (is_ghost(mesh, onwhat, i)) {
+          int const& gid = mesh.get_global_id(i, onwhat);
+          ghosts[gid] = i;
+        }
+      }
+
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank and count[i] > 0) {
+          for (int j = 0; j < count[i]; ++j) {
+            int const& gid = gids[i][j];
+            int const& lid = ghosts[gid];
+            values[lid] = recv[i][j];
+          }
+        }
+      }
+    }
+#endif
+  }
+
+  return true;
 }
+
+} // namespace Portage
 #endif
 #endif //PORTAGE_MPI_UPDATE_GHOSTS_H
