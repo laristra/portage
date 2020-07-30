@@ -135,6 +135,6 @@ cmake \
   $jali_flags \
   $flecsi_flags \
   ..
-make -j2
-ctest --output-on-failure
+make -j8
+ctest -j36 --output-on-failure
 
