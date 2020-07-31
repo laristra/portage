@@ -208,9 +208,6 @@ private:
     }
 
 #ifdef DEBUG
-    std::cout << "["<< rank <<"]: number of ghosts: " << num_ghosts[rank] << std::endl;
-  MPI_Barrier(comm);
-
   for (int i = 0; i < num_ranks; ++i) {
     if (i != rank) {
       std::cout << "[" << rank << "] -> [" << i << "]: (";
