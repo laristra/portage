@@ -12,6 +12,10 @@ set -e
 # Echo each command
 set -x
 
+echo "--------------------------------------------------------------"
+echo "Running configuration $COMPILER $BUILD_TYPE on `hostname`"
+echo "--------------------------------------------------------------"
+
 compiler=$1
 build_type=$2
 
