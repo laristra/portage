@@ -4,6 +4,7 @@
  * https://github.com/laristra/portage/blob/master/LICENSE
  */
 
+
 #include "gtest/gtest.h"
 
 // wonton
@@ -13,7 +14,11 @@
 
 // portage
 #include "portage/support/portage.h"
+#include "portage/driver/coredriver.h"
 #include "portage/distributed/mpi_update_ghosts.h"
+#include "portage/search/search_kdtree.h"
+#include "portage/intersect/intersect_r2d.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
 
 // jali
 #include "Mesh.hh"
@@ -147,6 +152,59 @@ TEST(GhostManager, CommunicationMatrices) {
 }
 
 TEST(GhostManager, UpdateValuesSingleMat) {
+
+  using GhostManager = Portage::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
+                                                 Wonton::Jali_State_Wrapper,
+                                                 Wonton::CELL>;
+
+  using Remapper = Portage::CoreDriver<2, Wonton::CELL,
+                                       Wonton::Jali_Mesh_Wrapper,
+                                       Wonton::Jali_State_Wrapper>;
+
+  int rank = 0;
+  int num_ranks = 1;
+  MPI_Comm comm = MPI_COMM_WORLD;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &num_ranks);
+  Wonton::MPIExecutor_type executor(comm);
+
+  auto jali_source_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 5, 5);
+  auto jali_target_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 7, 6);
+  auto jali_source_state = Jali::State::create(jali_source_mesh);
+  auto jali_target_state = Jali::State::create(jali_target_mesh);
+
+  Wonton::Jali_Mesh_Wrapper  source_mesh(*jali_source_mesh);
+  Wonton::Jali_Mesh_Wrapper  target_mesh(*jali_target_mesh);
+  Wonton::Jali_State_Wrapper source_state(*jali_source_state);
+  Wonton::Jali_State_Wrapper target_state(*jali_target_state);
+
+  // set temperature fields on states
+  int const num_source_cells = source_mesh.num_entities(Wonton::CELL, Wonton::ALL);
+
+  double source_field[num_source_cells];
+  for (int i = 0; i < num_source_cells; ++i) {
+    Wonton::Point<2> centroid;
+    source_mesh.cell_centroid(i, &centroid);
+    source_field[i] = centroid[0] + 2 * centroid[1];
+  }
+
+  source_state.mesh_add_data<double>(Wonton::CELL, "temperature", source_field);
+  target_state.mesh_add_data<double>(Wonton::CELL, "temperature", 0.0);
+
+  // remap
+  Remapper remapper(source_mesh, source_state, target_mesh, target_state, &executor);
+
+  auto candidates = remapper.search<Portage::SearchKDTree>();
+  auto weights    = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto gradients  = remapper.compute_source_gradient("temperature");
+
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "temperature", "temperature", weights, &gradients
+  );
+
+  // fill ghost values on target mesh
+  GhostManager ghost_manager(target_mesh, target_state, comm);
+  ghost_manager.update_ghost_values({"temperature"});
 
 }
 

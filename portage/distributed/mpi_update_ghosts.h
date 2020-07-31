@@ -73,7 +73,7 @@ public:
 
         // step 1: retrieve field values and send them
         double* values = nullptr;
-        state.mesh_get_data(entity, &values);
+        state.mesh_get_data(entity, field, &values);
         assert(values != nullptr);
 
         for (int i = 0; i < num_ranks; ++i) {
