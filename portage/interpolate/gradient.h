@@ -213,9 +213,9 @@ namespace Portage {
     /**
      * @brief Compute stencil points.
      *
-     * This is meant to be called only once for each field variable,
-     * and is necessary to build the least square matrices for
-     * approximating the gradient.
+     * This is meant to be called only once for all fields,
+     * and is required for the construction of the least square
+     * matrices used to approximate the gradient.
      *
      * @param cell: the cell ID.
      * @return stencil points coordinates.
@@ -595,9 +595,9 @@ namespace Portage {
     /**
      * @brief Compute stencil points.
      *
-     * This is meant to be called only once for each field variable,
-     * and is necessary to build the least square matrices for
-     * approximating the gradient.
+     * This is meant to be called only once for all fields,
+     * and is required for the construction of the least square
+     * matrices used to approximate the gradient.
      *
      * @param node: the node ID.
      * @return stencil points coordinates.
