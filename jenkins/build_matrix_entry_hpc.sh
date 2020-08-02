@@ -37,8 +37,8 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.0
-tangram_version=0.9.9
+wonton_version=1.2.2
+tangram_version=1.0.1
 
 export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
