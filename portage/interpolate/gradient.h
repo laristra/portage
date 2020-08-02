@@ -157,11 +157,15 @@ namespace Portage {
                          [this](int c) {
                            auto* data = neighbors_.data() + c;
                            mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
+                           neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
       } else {
         Wonton::for_each(part->cells().begin(),
                          part->cells().end(),
-                         [this](int c) { neighbors_[c] = part_->get_neighbors(c); });
+                         [this](int c) {
+                           neighbors_[c] = part_->get_neighbors(c);
+                           neighbors_[c].emplace(neighbors_[c].begin(), c);
+                         });
       }
     }
 
@@ -229,14 +233,8 @@ namespace Portage {
       valid_neigh_[cell].clear();
       valid_neigh_[cell].reserve(size);
 
-      // include cell where grad is needed as first element
-      std::vector<int> neighbors;
-      neighbors.reserve(size);
-      neighbors.emplace_back(cell);
-      for (auto&& c : neighbors_[cell]) { neighbors.emplace_back(c); }
-
       // Loop over cell where grad is needed and its neighboring cells
-      for (auto&& neigh_global : neighbors) {
+      for (auto&& neigh_global : neighbors_[cell]) {
 #ifdef PORTAGE_HAS_TANGRAM
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
@@ -569,6 +567,7 @@ namespace Portage {
                          [this](int n) {
                            auto* data = neighbors_.data() + n;
                            mesh_.dual_cell_get_node_adj_cells(n, Wonton::ALL, data);
+                           neighbors_[n].emplace(neighbors_[n].begin(), n);
                          });
       } else {
         throw std::runtime_error("part-by-part not supported for nodal remap");
@@ -603,12 +602,12 @@ namespace Portage {
      * @return stencil points coordinates.
      */
     std::vector<Point<D>> retrieve_stencil_points(int node) {
-      int const size = neighbors_[node].size() + 1;
+      auto const& stencil = neighbors_[node];
+      int const size = stencil.size();
       std::vector<Point<D>> list_coords(size);
       mesh_.node_get_coordinates(node, &reference_[node]);
-      list_coords[0] = reference_[node];
-      for (int i = 1; i < size; ++i) {
-        mesh_.node_get_coordinates(neighbors_[node][i-1], &list_coords[i]);
+      for (int i = 0; i < size; ++i) {
+        mesh_.node_get_coordinates(stencil[i], &list_coords[i]);
       }
       return list_coords;
     }
@@ -622,12 +621,10 @@ namespace Portage {
      * @return values of each stencil point.
      */
     std::vector<double> retrieve_stencil_values(int node) const {
-      int const size = neighbors_[node].size() + 1;
-      std::vector<double> list_values(size);
-      list_values[0] = values_[node];
-      for (int i = 1; i < size; ++i) {
-        int const& neigh = neighbors_[node][i-1];
-        list_values[i] = values_[neigh];
+      auto const& stencil = neighbors_[node];
+      std::vector<double> list_values;
+      for (auto&& i : stencil) {
+        list_values.emplace_back(values_[i]);
       }
       return list_values;
     }
