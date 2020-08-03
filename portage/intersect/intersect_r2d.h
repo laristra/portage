@@ -36,6 +36,10 @@ extern "C" {
 
 namespace Portage {
 
+using Wonton::SIDE;
+using Wonton::WEDGE;
+using Wonton::ALL;
+
 namespace {
 
 // Check if polygon is truly convex (not just star convex)
@@ -244,17 +248,31 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
 #ifdef DEBUG
-    std::vector<int> wedges;
-    targetMeshWrapper.cell_get_wedges(tgt_cell, &wedges);
+    if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
+      std::stringstream sstr;
+      sstr << "In intersect_r2d:" <<
+          " Decomposition of cells into sides not available." <<
+          " Cannot check validity of input.\n" <<
+          " Request sides in mesh wrapper creation or make sure your " <<
+          " mesh framework supports cell_get_sides and side_volume methods";
+      throw std::runtime_error(sstr.str());
+    }
+    
+    std::vector<int> sides;
+    targetMeshWrapper.cell_get_sides(tgt_cell, &sides);
 
-    for (auto const& w : wedges) {
-      double wvol = targetMeshWrapper.wedge_volume(w);
-      if (wvol < 0.0) {
+    for (auto const& sd : sides) {
+      double svol = targetMeshWrapper.side_volume(sd);
+      if (svol < 0.0) {
         std::stringstream sstr;
         sstr << "In intersect_r2d.h: " <<
             "Triangle in decomposition of target cell " << tgt_cell <<
-            " has a negative volume " << wvol << "\n" <<
-            "The cell may be inside-out or highly non-convex\n";
+            " has a negative volume " << svol << "\n";
+        double cvol = targetMeshWrapper.cell_volume(tgt_cell);
+        if (cvol <= 0.0)
+          sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+        else
+          sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
         throw std::runtime_error(sstr.str());
       }
     }
@@ -285,17 +303,31 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
 #ifdef DEBUG
-        std::vector<int> wedges;
-        sourceMeshWrapper.cell_get_wedges(s, &wedges);
-
-        for (auto const& w : wedges) {
-          double wvol = sourceMeshWrapper.wedge_volume(w);
-          if (wvol < 0.0) {
+        if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
+          std::stringstream sstr;
+          sstr << "In intersect_r2d:" <<
+              " Side decomposition of cells not requested." <<
+              " Cannot check validity of input.\n" <<
+              " Request sides in mesh wrapper creation or make sure your " <<
+              " mesh framework supports cell_get_sides and side_volume methods";
+          throw std::runtime_error(sstr.str());
+        }
+    
+        std::vector<int> sides;
+        sourceMeshWrapper.cell_get_sides(s, &sides);
+    
+        for (auto const& sd : sides) {
+          double svol = sourceMeshWrapper.side_volume(sd);
+          if (svol < 0.0) {
             std::stringstream sstr;
             sstr << "In intersect_r2d.h: " <<
-                "Triangle in decomposition of target cell " << tgt_cell <<
-                " has a negative volume " << wvol << "\n" <<
-                "The cell may be inside-out or highly non-convex\n";
+                "Triangle in decomposition of source cell " << s <<
+                " has a negative volume " << svol << "\n";
+            double cvol = sourceMeshWrapper.cell_volume(s);
+            if (cvol <= 0.0)
+              sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+            else
+              sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
             throw std::runtime_error(sstr.str());
           }
         }
@@ -308,12 +340,14 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                                                 num_tols_);
         else {
           bool src_convex = poly2_is_convex(source_poly, num_tols_);
-          if (src_convex)  // flip the order of the polygons
-            this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                  num_tols_);
-          else  // indicate that target is non-convex so it can be triangulated
-            this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                  num_tols_, false);
+
+          // flip the order of the polygons and indicate whether the second
+          // polygon (source masquerading as the target) is non-convex or not
+          // If it is non-convex it will be triangulated and the triangles
+          // intersected with the first polygon
+          
+          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                  num_tols_, src_convex);
         }
         
       } else {  // multi-material case
@@ -366,20 +400,34 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 #else  // No Tangram
 
 #ifdef DEBUG
-    std::vector<int> wedges;
-    sourceMeshWrapper.cell_get_wedges(s, &wedges);
-
-    for (auto const& w : wedges) {
-      double wvol = sourceMeshWrapper.wedge_volume(w);
-      if (wvol < 0.0) {
+      if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
         std::stringstream sstr;
-        sstr << "In intersect_r2d.h: " <<
-            "Triangle in decomposition of source cell " << tgt_cell <<
-            " has a negative volume " << wvol << "\n" <<
-            "The cell may be inside-out or highly non-convex\n";
+        sstr << "In intersect_r2d:" <<
+            " Decomposition of cells into sides not requested." <<
+            " Cannot check validity of input.\n" <<
+            " Request wedges in mesh wrapper creation or make sure your " <<
+            " mesh framework supports cell_get_sides and side_volume methods";
         throw std::runtime_error(sstr.str());
       }
-    }
+      
+      std::vector<int> sides;
+      sourceMeshWrapper.cell_get_sides(s, &sides);
+      
+      for (auto const& sd : sides) {
+        double svol = sourceMeshWrapper.side_volume(sd);
+        if (svol < 0.0) {
+          std::stringstream sstr;
+          sstr << "In intersect_r2d.h: " <<
+              "Triangle in decomposition of source cell " << tgt_cell <<
+              " has a negative volume " << svol << "\n";
+          double cvol = sourceMeshWrapper.cell_volume(s);
+          if (cvol <= 0.0)
+            sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
+          throw std::runtime_error(sstr.str());
+        }
+      }
 #endif
 
       std::vector<Wonton::Point<2>> source_poly;
@@ -390,12 +438,14 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                                               num_tols_);
       else {
         bool src_convex = poly2_is_convex(source_poly, num_tols_);
-        if (src_convex) // flip the two order of the polygons
-          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                num_tols_);
-        else // indicate that target is non-convex so it can be triangulated
-          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                num_tols_, false);
+
+        // flip the order of the polygons and indicate whether the second
+        // polygon (source masquerading as the target) is non-convex or not
+        // If it is non-convex it will be triangulated and the triangles
+        // intersected with the first polygon
+        
+        this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                              num_tols_, src_convex);
       }        
 #endif
 
@@ -487,8 +537,18 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
 #ifdef DEBUG
+    if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
+      std::stringstream sstr;
+      sstr << "In intersect_r2d:" <<
+          " Wedge decomposition of cells not requested." <<
+          " Cannot check validity of input.\n" <<
+          " Request wedges in mesh wrapper creation or make sure your " <<
+          " mesh framework supports node_get_wedges and wedge_volume methods";
+      throw std::runtime_error(sstr.str());
+    }
+    
     std::vector<int> wedges;
-    targetMeshWrapper.node_get_wedges(tgt_node, Entity_type::ALL, &wedges);
+    targetMeshWrapper.node_get_wedges(tgt_node, ALL, &wedges);
 
     for (auto const& w : wedges) {
       double wvol = targetMeshWrapper.wedge_volume(w);
@@ -496,8 +556,12 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
         std::stringstream sstr;
         sstr << "In intersect_r2d.h: " <<
             "Tri in decomposition of Dual Cell for target node " << tgt_node <<
-            " has a negative volume " << wvol << "\n" <<
-            "Dual cell may be inside-out or highly non-convex";
+            " has a negative volume " << wvol << "\n";
+        double dvol = targetMeshWrapper.dual_cell_volume(tgt_node);
+        if (dvol <= 0.0)
+          sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
+        else
+          sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
         throw std::runtime_error(sstr.str());
       }
     }
@@ -513,8 +577,18 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       sourceMeshWrapper.dual_cell_get_coordinates(s, &source_poly);
 
 #ifdef DEBUG
+      if (sourceMeshWrapper.num_entities(WEDGE, ALL) == 0) {
+        std::stringstream sstr;
+        sstr << "In intersect_r2d:" <<
+            " Wedge decomposition of cells not requested." <<
+            " Cannot check validity of input.\n" <<
+            " Request wedges in mesh wrapper creation or make sure your" <<
+            " mesh framework supports node_get_wedges and wedge_volume methods";
+        throw std::runtime_error(sstr.str());
+      }
+      
       std::vector<int> wedges;
-      sourceMeshWrapper.node_get_wedges(s, Entity_type::ALL, &wedges);
+      sourceMeshWrapper.node_get_wedges(s, ALL, &wedges);
 
       for (auto const& w : wedges) {
         double wvol = sourceMeshWrapper.wedge_volume(w);
@@ -522,8 +596,12 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
           std::stringstream sstr;
           sstr << "In intersect_r2d.h: " <<
               "Tri in decomposition of Dual Cell for source node " << s <<
-              " has a negative volume " << wvol << "\n" <<
-              "Dual cell may be inside-out or highly non-convex";
+              " has a negative volume " << wvol << "\n";
+          double dvol = sourceMeshWrapper.dual_cell_volume(s);
+          if (dvol <= 0.0)
+            sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
           throw std::runtime_error(sstr.str());
         }
       }
@@ -536,12 +614,14 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                                               num_tols_);
       else {
         bool src_convex = poly2_is_convex(source_poly, num_tols_);
-        if (src_convex) // flip the two order of the polygons
-          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                num_tols_);
-        else // indicate that target is non-convex so it can be triangulated
-          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                num_tols_, false);
+
+        // flip the order of the polygons and indicate whether the second
+        // polygon (source masquerading as the target) is non-convex or not
+        // If it is non-convex it will be triangulated and the triangles
+        // intersected with the first polygon
+        
+        this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                              num_tols_, src_convex);
       }        
 
       // Increment if vol of intersection > 0; otherwise, allow overwrite
