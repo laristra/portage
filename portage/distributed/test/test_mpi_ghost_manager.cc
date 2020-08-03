@@ -50,8 +50,8 @@ TEST(GhostManager, CommunicationMatrices) {
   std::vector<MPI_Request> requests;              /* list of asynchronous MPI requests */
 
   GhostManager ghost_manager(mesh, state, comm);
-  owned[rank] = ghost_manager.owned_comm_matrix();
-  ghost[rank] = ghost_manager.ghost_comm_matrix();
+  owned[rank] = ghost_manager.owned_matrix();
+  ghost[rank] = ghost_manager.ghost_matrix();
 
   for (int i = 0; i < num_ranks; ++i) {
     num_owned[rank].emplace_back(owned[rank][i].size());
@@ -205,8 +205,8 @@ TEST(GhostManager, UpdateValues) {
   std::vector<int> num_ghost[num_ranks];             /* number of ghost cells receive from each rank */
   std::vector<MPI_Request> requests;                 /* list of asynchronous MPI requests */
 
-  owned[rank] = ghost_manager.cached_owned_values();
-  ghost[rank] = ghost_manager.cached_ghost_values();
+  owned[rank] = ghost_manager.owned_values();
+  ghost[rank] = ghost_manager.ghost_values();
 
   for (int i = 0; i < num_ranks; ++i) {
     num_owned[rank].emplace_back(owned[rank][i].size());
