@@ -17,6 +17,7 @@ Please see the license file at the root of this repository, or at:
 extern "C" {
 #include "wonton/intersect/r3d/r3d.h"
 }
+
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/intersect/intersect_polys_r3d.h"
@@ -31,6 +32,9 @@ namespace Portage {
 
 using Wonton::Point;
 using Wonton::Vector;
+using Wonton::SIDE;
+using Wonton::WEDGE;
+using Wonton::ALL;
 
 ///
 /// \class IntersectR3D  3-D intersection algorithm
@@ -252,22 +256,41 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
           std::stringstream sstr;
           sstr << "In intersect_r3d.h: " <<
               " Tet in decomposition of target cell " << tgt_cell <<
-              " has negative volume " << wvol << "\n" <<
-              "The cell may be inside-out or highly non-convex\n";
+              " has negative volume " << wvol << "\n";
+          double cvol = targetMeshWrapper.cell_volume(tgt_cell);
+          if (cvol <= 0.0)
+            sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << cvol << ") has positive volume";
           throw std::runtime_error(sstr.str());
         }
       }
-    } else {  // just check the wedges of the cell
-      std::vector<int> wedges;
-      targetMeshWrapper.cell_get_wedges(tgt_cell, &wedges);
-      for (auto const& w : wedges) {
-        double wvol = targetMeshWrapper.wedge_volume(w);
-        if (wvol < 0.0) {
+    } else {  // just check the sides of the cell (AuxMeshTopology always enables sides)
+      if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
+        std::stringstream sstr;
+        sstr << "In intersect_r3d:\n" <<
+            " Decomposition of cells into sides not available." <<
+            " Cannot check validity of input.\n" <<
+            " Request wedges in mesh wrapper creation or make sure your " <<
+            " mesh framework supports cell_get_sides and side_volume methods";
+        throw std::runtime_error(sstr.str());
+      }
+    
+      std::vector<int> sides;
+      targetMeshWrapper.cell_get_sides(tgt_cell, &sides);
+
+      for (auto const& sd : sides) {
+        double svol = targetMeshWrapper.side_volume(sd);
+        if (svol < 0.0) {
           std::stringstream sstr;
           sstr << "In intersect_r3d.h: " <<
               " Tet in decomposition of target cell " << tgt_cell <<
-              " has negative volume " << wvol << "\n" <<
-              "The cell may be inside-out or highly non-convex\n";
+              " has negative volume " << svol << "\n";
+          double cvol = targetMeshWrapper.cell_volume(tgt_cell);
+          if (cvol <= 0.0)
+            sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
           throw std::runtime_error(sstr.str());
         }
       }
@@ -305,17 +328,31 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         // repeated if it is an intersection candidate for multiple
         // target cells)
         
-        std::vector<int> wedges;
-        sourceMeshWrapper.cell_get_wedges(s, &wedges);
+        if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
+          std::stringstream sstr;
+          sstr << "In intersect_r3d:" <<
+              " Decomposition of cells into sides not available." <<
+              " Cannot check validity of input.\n" <<
+              " Request sides in mesh wrapper creation or make sure your " <<
+              " mesh framework supports cell_get_sides and side_volume methods";
+          throw std::runtime_error(sstr.str());
+        }
+        
+        std::vector<int> sides;
+        sourceMeshWrapper.cell_get_sides(s, &sides);
 
-        for (auto const& w: wedges) {
-          double wvol = sourceMeshWrapper.wedge_volume(w);
-          if (wvol < 0.0) {
+        for (auto const& sd: sides) {
+          double svol = sourceMeshWrapper.side_volume(sd);
+          if (svol < 0.0) {
             std::stringstream sstr;
             sstr << "In intersect_polys_r3d.h: " <<
                 "Tet in decomposition of source cell " << s <<
-                " has negative volume " << wvol << "\n " <<
-                "The cell may be inside-out or highly non-convex\n";
+                " has negative volume " << svol << "\n ";
+            double cvol = sourceMeshWrapper.cell_volume(s);
+            if (cvol <= 0.0)
+              sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+            else
+              sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
             throw std::runtime_error(sstr.str());            
           }
         }        
@@ -363,29 +400,43 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       facetedpoly_t srcpoly;
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
-
+      
 #ifdef DEBUG
-        // Check validity of source cell (unfortunately may be
-        // repeated if it is an intersection candidate for multiple
-        // target cells)
-        
-        std::vector<int> wedges;
-        sourceMeshWrapper.cell_get_wedges(s, &wedges);
-
-        for (auto const& w: wedges) {
-          double wvol = sourceMeshWrapper.wedge_volume(w);
-          if (wvol < 0.0) {
-            std::stringstream sstr;
-            sstr << "In intersect_polys_r3d.h: " <<
-                "Tet in decomposition of SOURCE cell " << s <<
-                " has negative volume " << wvol << "\n " <<
-                "The cell may be inside-out or highly non-convex\n";
-            throw std::runtime_error(sstr.str());            
-          }
-        }        
+      // Check validity of source cell (unfortunately may be
+      // repeated if it is an intersection candidate for multiple
+      // target cells)
+      
+      if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
+        std::stringstream sstr;
+        sstr << "In intersect_r3d:" <<
+            " Decomposition of cells into sides not available." <<
+            " Cannot check validity of input.\n" <<
+            " Request sides in mesh wrapper creation or make sure your " <<
+            " mesh framework supports cell_get_sides and side_volume methods";
+        throw std::runtime_error(sstr.str());
+      }
+    
+      std::vector<int> sides;
+      sourceMeshWrapper.cell_get_sides(s, &sides);
+      
+      for (auto const& sd: sides) {
+        double svol = sourceMeshWrapper.side_volume(sd);
+        if (svol < 0.0) {
+          std::stringstream sstr;
+          sstr << "In intersect_polys_r3d.h: " <<
+              "Tet in decomposition of SOURCE cell " << s <<
+              " has negative volume " << svol << "\n ";
+          double cvol = sourceMeshWrapper.cell_volume(s);
+          if (cvol <= 0.0)
+            sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
+          throw std::runtime_error(sstr.str());            
+        }
+      }        
 #endif
 
-        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+      this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
                                             num_tols_);
 #endif
 
@@ -490,6 +541,16 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     targetMeshWrapper.dual_wedges_get_coordinates(tgt_node, &target_tet_coords);
 
 #ifdef DEBUG
+    if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
+      std::stringstream sstr;
+      sstr << "In intersect_r3d:" <<
+          " Wedge decomposition of cells not requested." <<
+          " Cannot check validity of input.\n" <<
+          " Request wedges in mesh wrapper creation or make sure your " <<
+          " mesh framework supports node_get_wedges and wedge_volume methods";
+      throw std::runtime_error(sstr.str());
+    }
+    
     // Lets check if all the wedges in the dual cell are valid
     std::vector<int> wedges;
     targetMeshWrapper.node_get_wedges(tgt_node, Entity_type::ALL, &wedges);
@@ -500,8 +561,12 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
         std::stringstream sstr;
         sstr << "In intersect_r3d.h: " <<
             " Tet in decomposition of dual cell of target node " << tgt_node <<
-            " has nedgative volume " << wvol << "\n" <<
-            "The dual cell may be inside-out or highly non-convex\n";
+            " has negative volume " << wvol << "\n";
+        double dvol = targetMeshWrapper.dual_cell_volume(tgt_node);
+        if (dvol <= 0.0)
+          sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
+        else
+          sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
         throw std::runtime_error(sstr.str());
       }
     }
@@ -524,6 +589,16 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       // Lets check that the wedges in the source dual cell have
       // positive volume
 
+      if (sourceMeshWrapper.num_entities(WEDGE, ALL) == 0) {
+        std::stringstream sstr;
+        sstr << "In intersect_r3d:" <<
+            " Wedge decomposition of cells not requested." <<
+            " Cannot check validity of input.\n" <<
+            " Request wedges in mesh wrapper creation or make sure your " <<
+            " mesh framework supports node_get_wedges and wedge_volume methods";
+        throw std::runtime_error(sstr.str());
+      }
+      
       std::vector<int> wedges;
       sourceMeshWrapper.node_get_wedges(s, Entity_type::ALL, &wedges);
 
@@ -533,8 +608,12 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
           std::stringstream sstr;
           sstr << "In intersect_polys_r3d.h: " <<
               "Tet in decomposition of dual cell of source node " << s <<
-              " has negative volume " << wvol << "\n " <<
-              "The dual cell may be inside-out or highly non-convex\n";
+              " has negative volume " << wvol << "\n";
+          double dvol = targetMeshWrapper.dual_cell_volume(s);
+          if (dvol <= 0.0)
+            sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
+          else
+            sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
           throw std::runtime_error(sstr.str());
         }
       }
