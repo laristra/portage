@@ -4,11 +4,13 @@
  * https://github.com/laristra/portage/blob/master/LICENSE
  */
 
-#ifndef PORTAGE_MPI_UPDATE_GHOSTS_H
-#define PORTAGE_MPI_UPDATE_GHOSTS_H
+#ifndef PORTAGE_MPI_GHOST_MANAGER_H
+#define PORTAGE_MPI_GHOST_MANAGER_H
 
+#include <map>
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+#include "portage/support/portage.h"
 
 #ifdef WONTON_ENABLE_MPI
 namespace Portage {
@@ -55,68 +57,80 @@ public:
    * @brief Send and store field values on ghost cells.
    *
    * @param fields: list of remapped fields.
+   * @param cache_values: whether to cache values or not for this field.
    */
-  void update_ghost_values(std::vector<std::string> const& fields) {
+  void update_ghost_values(std::string const& field, bool cache_values = false) {
 
-    for (auto&& field : fields) {
-#ifdef PORTAGE_HAS_TANGRAM
-      auto field_type = state.field_type(entity, field);
-      bool multimat = (entity == Wonton::CELL and field_type == Field_type::MULTIMATERIAL_FIELD);
-
-      if (multimat) {
-        // todo
-      } else /* single material */{
-#endif
-        std::vector<double> buffer[num_ranks];
-        std::vector<MPI_Request> requests;
-
-        // step 1: retrieve field values and send them
-        double* values = nullptr;
-        state.mesh_get_data(entity, field, &values);
-        assert(values != nullptr);
-
-        for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank and not send[i].empty()) {
-            buffer[i].clear();
-            for (auto&& j : send[i]) {  // 'j' local entity index
-              assert(not is_ghost(j));
-              buffer[i].emplace_back(values[j]);
-            }
-            MPI_Request request;
-            MPI_Isend(buffer[i].data(), buffer[i].size(), MPI_DOUBLE, i, 0, comm, &request);
-            requests.emplace_back(request);
-          }
-        }
-
-        // step 2: receive field data
-        for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank and count[i]) {
-            buffer[i].resize(count[i]);
-            MPI_Request request;
-            MPI_Irecv(buffer[i].data(), count[i], MPI_DOUBLE, i, 0, comm, &request);
-            requests.emplace_back(request);
-          }
-        }
-
-        // step 3: update state
-        MPI_Waitall(requests.size(), requests.data(), status);
-
-        for (int i = 0; i < num_ranks; ++i) {
-          if (i != rank and count[i]) {
-            for (int j = 0; j < count[i]; ++j) {
-              int const& gid = receive[i][j];
-              int const& lid = ghost[gid];
-              values[lid] = buffer[i][j];
-            }
-            buffer[i].clear();
-          }
-        }
-
-#ifdef PORTAGE_HAS_TANGRAM
-      } // if not multimat
-#endif
-      MPI_Barrier(comm);
+    if (cache_values) {
+      if (values_owned.empty()) { values_owned.resize(num_ranks); }
+      if (values_ghost.empty()) { values_ghost.resize(num_ranks); }
     }
+
+#ifdef PORTAGE_HAS_TANGRAM
+    auto field_type = state.field_type(entity, field);
+    bool multimat = (entity == Wonton::CELL and field_type == Field_type::MULTIMATERIAL_FIELD);
+
+    if (multimat) {
+      // todo
+    } else /* single material */{
+#endif
+      std::vector<double> buffer[num_ranks];
+      std::vector<MPI_Request> requests;
+
+      // step 1: retrieve field values and send them
+      double* values = nullptr;
+      state.mesh_get_data(entity, field, &values);
+      assert(values != nullptr);
+
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank and not send[i].empty()) {
+          buffer[i].clear();
+          for (auto&& j : send[i]) {  // 'j' local entity index
+            assert(not is_ghost(j));
+            buffer[i].emplace_back(values[j]);
+          }
+          MPI_Request request;
+          MPI_Isend(buffer[i].data(), buffer[i].size(), MPI_DOUBLE, i, 0, comm, &request);
+          requests.emplace_back(request);
+
+          if (cache_values) {
+            values_owned[i].resize(buffer[i].size());
+            std::copy(buffer[i].begin(), buffer[i].end(), values_owned[i].begin());
+          }
+        }
+      }
+
+      // step 2: receive field data
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank and count[i]) {
+          buffer[i].resize(count[i]);
+          MPI_Request request;
+          MPI_Irecv(buffer[i].data(), count[i], MPI_DOUBLE, i, 0, comm, &request);
+          requests.emplace_back(request);
+        }
+      }
+
+      // step 3: update state
+      MPI_Waitall(requests.size(), requests.data(), status);
+
+      for (int i = 0; i < num_ranks; ++i) {
+        if (i != rank and count[i]) {
+          for (int j = 0; j < count[i]; ++j) {
+            int const& gid = receive[i][j];
+            int const& lid = ghost_local[gid];
+            values[lid] = buffer[i][j];
+          }
+          if (cache_values) {
+            values_ghost[i].resize(count[i]);
+            std::copy(buffer[i].begin(), buffer[i].end(), values_ghost[i].begin());
+          }
+          buffer[i].clear();
+        }
+      }
+#ifdef PORTAGE_HAS_TANGRAM
+    } // if not multimat
+#endif
+    MPI_Barrier(comm);
   }
 
   /**
@@ -124,14 +138,28 @@ public:
    *
    * @return the matrix of owned entities to send to each rank.
    */
-  std::vector<std::vector<int>> const& owned_comm_matrix() { return send; }
+  std::vector<std::vector<int>> const& owned_comm_matrix() const { return send; }
 
   /**
    * @brief Retrieve the matrix of ghost entities to receive from each rank.
    *
    * @return the matrix of ghost entities to receive from each rank.
    */
-  std::vector<std::vector<int>> const& ghost_comm_matrix() { return receive; }
+  std::vector<std::vector<int>> const& ghost_comm_matrix() const { return receive; }
+
+  /**
+   * @brief Retrieve values of owned entities sent to each rank.
+   *
+   * @return the matrix of values of owned entities sent to each rank.
+   */
+  std::vector<std::vector<double>> const& cached_owned_values() const { return values_owned; }
+
+  /**
+   * @brief Retrieve values of ghost entities received from each rank.
+   *
+   * @return the matrix of values of ghost entities received from each rank.
+   */
+  std::vector<std::vector<double>> const& cached_ghost_values() const { return values_ghost; }
 
 private:
   /**
@@ -155,9 +183,9 @@ private:
       int const& gid = mesh.get_global_id(i, entity);
       if (is_ghost(i)) {
         entities.emplace_back(gid);
-        ghost[gid] = i;
+        ghost_local[gid] = i;
       } else {
-        owned[gid] = i;
+        owned_local[gid] = i;
       }
     }
 
@@ -187,8 +215,8 @@ private:
         int const& extent = (i < num_ranks - 1 ? offsets[i+1] : total_ghosts);
         for (int j = start; j < extent; ++j) {
           int const& gid = received[j];
-          if (owned.count(gid)) {
-            send[i].emplace_back(owned[gid]);
+          if (owned_local.count(gid)) {
+            send[i].emplace_back(owned_local[gid]);
             gids[i].emplace_back(gid);
           }
         }
@@ -305,9 +333,13 @@ private:
   /** count of received entities from each rank */
   std::vector<int> count {};
   /** owned entities indexed by their GID */
-  std::map<int, int> owned {};
+  std::map<int, int> owned_local {};
   /** ghost entities indexed by their GID */
-  std::map<int, int> ghost {};
+  std::map<int, int> ghost_local {};
+  /** list of owned values sent to each rank */
+  std::vector<std::vector<double>> values_owned {};
+  /** list of ghost values received from each rank */
+  std::vector<std::vector<double>> values_ghost {};
 };
 
 } // namespace Portage
