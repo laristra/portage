@@ -626,7 +626,9 @@ class CoreDriver {
    * @param field_name: the variable name.
    * @param limiter_type: gradient limiter to use on internal regions.
    * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param material_id: material index.
    * @param source_part: the source mesh part to consider if any.
+   * @return the gradient field.
    *
    * Remark: the gradient computation cannot be done in parallel yet
    * for multiple fields due to some side effects. Indeed the same
@@ -729,6 +731,32 @@ class CoreDriver {
     if (source_part != nullptr) { delete kernel; }
 
     return gradient_field;
+  }
+
+  /**
+   * @brief Compute gradient of the field per material.
+   *
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   * @return the gradient field per material.
+   */
+  std::vector<Wonton::vector<Vector<D>>> compute_source_material_gradient(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
+
+    int const num_mats = source_state_.num_materials();
+    std::vector<Wonton::vector<Vector<D>>> gradient_fields(num_mats);
+
+    for (int m = 0; m < num_mats; ++m) {
+      gradient_fields[m] = compute_source_gradient(field_name, limiter_type,
+                                                   boundary_limiter_type, m,
+                                                   source_part);
+    }
+    return gradient_fields;
   }
 
   /**
