@@ -159,13 +159,37 @@ namespace Portage {
                            mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
                            neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
+
+        field_type_ = Wonton::Field_type::MESH_FIELD;
+        
+        auto cache_matrices = [this](int c) {
+          assert(not neighbors_[c].empty());
+          auto points = retrieve_stencil_points(c);
+          if (not points.empty())
+//        assert(not points.empty());
+            stencils_[c] = Wonton::build_gradient_stencil_matrices<D>(points, true);
+        };
+
+        int const nb_all_cells = mesh_.num_entities(Wonton::CELL, Wonton::ALL);
+        for (int c = 0; c < nb_all_cells; ++c) {
+          if (mesh_.cell_get_type(c) == Wonton::PARALLEL_OWNED) {
+            bool is_boundary_cell = mesh_.on_exterior_boundary(Wonton::CELL, c);
+            if (is_boundary_cell && boundary_limiter_type_ == BND_ZERO_GRADIENT) {
+              continue;
+            }
+            cache_matrices(c);
+          }
+        }
+
       } else {
         Wonton::for_each(part->cells().begin(),
                          part->cells().end(),
                          [this](int c) {
-                           neighbors_[c] = part_->get_neighbors(c);
+                           neighbors_[c] = part_->template get_neighbors<Wonton::PARALLEL_OWNED>(c);
                            neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
+
+//        Wonton::for_each(part->cells().begin(), part->cells().end(), cache_matrices);
       }
     }
 
@@ -226,7 +250,7 @@ namespace Portage {
      */
     std::vector<Point<D>> retrieve_stencil_points(int cell) {
 
-      int const size = neighbors_[cell].size() + 1;
+      int const size = neighbors_[cell].size();
 
       std::vector<Point<D>> list_coords;
       list_coords.reserve(size);
@@ -314,7 +338,7 @@ namespace Portage {
           if (neigh_global == cell) { reference_[cell] = centroid; }
         }
       }
-
+      std::cout << "list_coords.size: " << list_coords.size() << ", neighbors_[cell].size: " << neighbors_[cell].size() << std::endl;
       return list_coords;
     }
 
@@ -332,6 +356,8 @@ namespace Portage {
       for (auto&& neigh : valid_neigh_[cell]) {
         list_values.emplace_back(values_[neigh]);
       }
+      std::cout << "list_values: " << list_values.size() << std::endl;
+      std::cout << "valid_neigh_[cell]: " << valid_neigh_[cell].size() << std::endl;
       return list_values;
     }
 
@@ -366,11 +392,11 @@ namespace Portage {
         return grad;
       }
 
-      // retrieve stencil points and compute least square matrices
-      if (stencils_[cellid].empty()) /* not cached */ {
-        auto list_coords = retrieve_stencil_points(cellid);
-        stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
-      }
+//      // retrieve stencil points and compute least square matrices
+//      if (stencils_[cellid].empty()) /* not cached */ {
+//        auto list_coords = retrieve_stencil_points(cellid);
+//        stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
+//      }
 
 #ifndef NDEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
