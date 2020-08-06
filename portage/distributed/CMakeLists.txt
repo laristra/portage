@@ -46,16 +46,16 @@ install(TARGETS portage_distribute
 
 
 if (ENABLE_UNIT_TESTS)
-  if (WONTON_HAS_Jali)
+  if (WONTON_ENABLE_Jali)
     portage_add_unittest(test_mpi_bounding_boxes
                    SOURCES test/test_mpi_bounding_boxes.cc
-                   LIBRARIES portage_distributed
+                   LIBRARIES portage_distribute
                    POLICY MPI
                    THREADS 4)
 
     portage_add_unittest(test_mpi_particle_distribute
                    SOURCES test/test_mpi_particle_distribute.cc
-                   LIBRARIES portage_distributed
+                   LIBRARIES portage_distribute
                    POLICY MPI
                    THREADS 4)
   endif ()

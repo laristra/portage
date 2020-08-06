@@ -12,6 +12,10 @@ set -e
 # Echo each command
 set -x
 
+echo "--------------------------------------------------------------"
+echo "Running configuration $COMPILER $BUILD_TYPE on `hostname`"
+echo "--------------------------------------------------------------"
+
 compiler=$1
 build_type=$2
 
@@ -33,8 +37,8 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.0
-tangram_version=0.9.9
+wonton_version=1.2.2
+tangram_version=1.0.1
 
 export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
@@ -135,6 +139,6 @@ cmake \
   $jali_flags \
   $flecsi_flags \
   ..
-make -j2
-ctest --output-on-failure
+make -j8
+ctest -j36 --output-on-failure
 

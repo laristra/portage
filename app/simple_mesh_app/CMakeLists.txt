@@ -25,18 +25,16 @@ endif ()
 
 # Simple_Mesh Multi Material test
 if (PORTAGE_ENABLE_TANGRAM)
-  if (TANGRAM_ENABLE_XMOF2D)
-    add_executable(simple_mesh_mm_app simple_mesh_mm_app.cc)
-    target_link_libraries(simple_mesh_mm_app PRIVATE portage)
+  add_executable(simple_mesh_mm_app simple_mesh_mm_app.cc)
+  target_link_libraries(simple_mesh_mm_app PRIVATE portage)
 
-    if (ENABLE_APP_TIMINGS)
-      target_compile_definitions(simple_mesh_mm_app PRIVATE ENABLE_TIMINGS=1)
-    endif ()
-    
-    if (ENABLE_PROFILE)
-      target_link_libraries(simple_mesh_mm_app PRIVATE ${VTUNE_LIB})
-      target_include_directories(simple_mesh_mm_app PRIVATE ${VTUNE_INCLUDE_DIR})
-    endif ()
+  if (ENABLE_APP_TIMINGS)
+    target_compile_definitions(simple_mesh_mm_app PRIVATE ENABLE_TIMINGS=1)
+  endif ()
+
+  if (ENABLE_PROFILE)
+    target_link_libraries(simple_mesh_mm_app PRIVATE ${VTUNE_LIB})
+    target_include_directories(simple_mesh_mm_app PRIVATE ${VTUNE_INCLUDE_DIR})
   endif ()
 endif()
 
