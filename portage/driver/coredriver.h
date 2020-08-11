@@ -243,27 +243,23 @@ class CoreDriver {
     int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     assert(unsigned(num_target_entities) == forward_weights.size());
 
-    Wonton::vector<std::vector<Wonton::Weights_t>> reverse_weights(num_source_entities);
+    std::vector<entity_weights_t> reverse_weights(num_source_entities);
 
-    Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
-                      source_mesh_.end(ONWHAT, ALL),
-                      reverse_weights.begin(),
-                      [&](int s) {
-                        entity_weights_t entries;
-                        entries.reserve(10);
-                        for (int t = 0; t < num_target_entities; ++t) {
-                          entity_weights_t const& list = forward_weights[t];
-                          for (auto const& weight : list) {
-                            if (weight.entityID == s) {
-                              entries.emplace_back(t, weight.weights);
-                              break;
-                            }
-                          }
-                        }
-                        return entries;
-                      });
+    for (int t = 0; t < num_target_entities; ++t) {
+      entity_weights_t const& list = forward_weights[t];
+      for (auto const& weight : list) {
+        int const& s = weight.entityID;
+        reverse_weights[s].emplace_back(t, weight.weights);
+      }
+    }
 
+#ifdef WONTON_ENABLE_THRUST
+    Wonton::vector<entity_weights_t> result(num_source_entities);
+    std::copy(reverse_weights.begin(), reverse_weights.end(), result.begin());
+    return result;
+#else
     return reverse_weights;
+#endif
   }
 
   /// Set core numerical tolerances
@@ -587,29 +583,19 @@ class CoreDriver {
     int const num_materials = forward_weights.size();
     int const num_source_cells = source_mesh_.num_entities(ONWHAT, ALL);
 
-    std::vector<Wonton::vector<std::vector<Weights_t>>> reverse_weights(num_materials);
+    std::vector<Wonton::vector<entity_weights_t>> reverse_weights(num_materials);
 
     for (int m = 0; m < num_materials; ++m) {
       int const num_target_material_cells = forward_weights[m].size();
-      Wonton::vector<std::vector<Weights_t>> reverse_material_weights(num_source_cells);
 
-      Wonton::transform(source_mesh_.begin(ONWHAT, ALL),
-                        source_mesh_.end(ONWHAT, ALL),
-                        reverse_material_weights.begin(),
-                        [&](int s) {
-                          entity_weights_t entries;
-                          entries.reserve(10);
-                          for (int t = 0; t < num_target_material_cells; ++t) {
-                            entity_weights_t const& list = forward_weights[m][t];
-                            for (auto const& weight : list) {
-                              if (weight.entityID == s) {
-                                entries.emplace_back(t, weight.weights);
-                                break;
-                              }
-                            }
-                          }
-                          return entries;
-                        });
+      std::vector<entity_weights_t> reverse_material_weights(num_source_cells);
+      for (int t = 0; t < num_target_material_cells; ++t) {
+        entity_weights_t const& list = forward_weights[m][t];
+        for (auto const& weight : list) {
+          int const& s = weight.entityID;
+          reverse_material_weights[s].emplace_back(t, weight.weights);
+        }
+      }
 
       // filtering step
       for (int s = 0; s < num_source_cells; ++s) {
