@@ -92,7 +92,7 @@ fi
 
 cov_flags=
 if [[ $build_type == "coverage" ]]; then
-    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
+    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage' -D CMAKE_EXE_LINKER_FLAGS=-coverage"
     cmake_build_type=Debug
     export PATH=$NGC/private/bin:${PATH}
 fi
@@ -138,7 +138,14 @@ cmake \
   $thrust_flags \
   $jali_flags \
   $flecsi_flags \
+  $cov_flags \
   ..
 make -j8
-ctest -j36 --output-on-failure
-
+ctest -j36 --output-on-failure  && true #keep going if tests fail so that we get coverage report 
+status=$?
+if [[ $build_type == "coverage" ]]; then                     
+    echo 'building coverage reports'
+    export PYTHONPATH=/usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/lib/python2.7/site-packages
+    /usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/bin/gcovr -f "$(readlink -f ..)" -e '.*googletest' -x > coverage.xml
+fi
+exit $status #return the status of the ctest build so that jenkins knows whether tests past or fail

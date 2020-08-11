@@ -9,8 +9,11 @@ BUILD_TYPE:
   - serial
   - thrust
   - readme
+  - coverage
 
 exclude:
   - COMPILER: gcc7
     BUILD_TYPE: readme
-
+  
+  - COMPILER: intel18
+    BUILD_TYPE: coverage
