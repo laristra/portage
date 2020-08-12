@@ -146,9 +146,9 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
       std::runtime_error("intersect_polys_r2d.h: Could not find a valid center point to triangulate non-convex polygon");
     
     
+    verts2[0].xy[0] = cen[0];
+    verts2[0].xy[1] = cen[1];
     for (int i = 0; i < size2; ++i) {
-      verts2[0].xy[0] = cen[0];
-      verts2[0].xy[1] = cen[1];
       verts2[1].xy[0] = target_poly[i][0];
       verts2[1].xy[1] = target_poly[i][1];
       verts2[2].xy[0] = target_poly[(i+1)%size2][0];

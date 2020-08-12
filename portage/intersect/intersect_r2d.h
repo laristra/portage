@@ -12,7 +12,9 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#ifdef DEBUG
 #include <sstream>
+#endif
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
@@ -43,11 +45,11 @@ using Wonton::ALL;
 namespace {
 
 // Check if polygon is truly convex (not just star convex)
+// Move to Wonton
 
 bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
                      NumericTolerances_t const& num_tols) {
 
-  // Check if target polygon is convex or at least star-convex
   int npverts = pverts.size();
   for (int i = 0; i < npverts; i++) {
     
@@ -105,15 +107,18 @@ bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
 // can be summed up to get the total intersection volume.
 //
 //
-// Summary: We will use the star-convexity check for both the source
-// and the target polyhedra as it's the more stringent check. For
-// cells or dual cells, this decomposition is already available in the
-// form of wedges. Material polygons/polyhedra from interface
-// reconstruction, on the other hand, are tested using the divergence
-// theorem since they already undergo strict checks in the interface
-// reconstruction procedure. Also, in 3D they are guaranteed to be
-// convex since a non-convex cell is decomposed into simplices and
-// then sliced by the interface plane.
+// Summary: For the general code flow we will use the divergence
+// theorem check in poly2_is_convex to determine if we should swap
+// source and target polygons. In DEBUG mode, however, we will use the
+// star-convexity check for both the source and the target polyhedra
+// as it's the more stringent check. For cells or dual cells, this
+// decomposition is already available in the form of wedges. Material
+// polygons/polyhedra from interface reconstruction, on the other
+// hand, are tested using the divergence theorem since they already
+// undergo strict checks in the interface reconstruction
+// procedure. Also, in 3D they are guaranteed to be convex since a
+// non-convex cell is decomposed into simplices and then sliced by the
+// interface plane.
 
 
 
