@@ -146,6 +146,6 @@ status=$?
 if [[ $build_type == "coverage" ]]; then                     
     echo 'building coverage reports'
     export PYTHONPATH=/usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/lib/python2.7/site-packages
-    /usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/bin/gcovr -f "$(readlink -f ..)" -e '.*googletest' -x > coverage.xml
+    /usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/bin/gcovr -f "$(readlink -f ..)"  -e '.*googletest' -e '.*exprtk.hpp' -e '.*json.h' > gcov.out 
 fi
 exit $status #return the status of the ctest build so that jenkins knows whether tests past or fail
