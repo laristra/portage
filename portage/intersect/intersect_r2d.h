@@ -67,6 +67,29 @@ bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
 
   return true;
 }
+
+#ifdef DEBUG
+void throw_validity_error_2d(Wonton::Entity_kind ekind, int entity_id,
+                             bool in_source_mesh,
+                             double tri_area, double entity_area) {
+  std::stringstream sstr;
+  std::string ekind_str;
+  std::string mesh_str = in_source_mesh ? "source" : "target";
+  if (ekind == Wonton::CELL)
+    ekind_str = "cell";
+  else if (ekind == Wonton::NODE)
+    ekind_str = "dual cell";
+
+  sstr << "In intersect_r2d.h: " <<
+      "Triangle in decomposition of " << mesh_str << " " << ekind_str <<
+      " " << entity_id << " has a negative area of " << tri_area << "\n";
+  if (entity_area <= 0.0)
+    sstr << "The " << ekind_str << " (area = " << entity_area << ") is inside out or degenerate";
+  else
+    sstr << "The " << ekind_str << " (area = " << entity_area << ") may be highly non-convex";
+  throw std::runtime_error(sstr.str());
+}  // throw_validity_error_2d
+#endif
 }
 
 
@@ -269,16 +292,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     for (auto const& sd : sides) {
       double svol = targetMeshWrapper.side_volume(sd);
       if (svol < 0.0) {
-        std::stringstream sstr;
-        sstr << "In intersect_r2d.h: " <<
-            "Triangle in decomposition of target cell " << tgt_cell <<
-            " has a negative volume " << svol << "\n";
         double cvol = targetMeshWrapper.cell_volume(tgt_cell);
-        if (cvol <= 0.0)
-          sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
-        else
-          sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
-        throw std::runtime_error(sstr.str());
+        throw_validity_error_2d(Wonton::CELL, tgt_cell, false, svol, cvol);
       }
     }
 #endif
@@ -324,16 +339,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         for (auto const& sd : sides) {
           double svol = sourceMeshWrapper.side_volume(sd);
           if (svol < 0.0) {
-            std::stringstream sstr;
-            sstr << "In intersect_r2d.h: " <<
-                "Triangle in decomposition of source cell " << s <<
-                " has a negative volume " << svol << "\n";
             double cvol = sourceMeshWrapper.cell_volume(s);
-            if (cvol <= 0.0)
-              sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
-            else
-              sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
-            throw std::runtime_error(sstr.str());
+            throw_validity_error_2d(Wonton::CELL, s, true, svol, cvol);
           }
         }
 #endif
@@ -421,16 +428,8 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       for (auto const& sd : sides) {
         double svol = sourceMeshWrapper.side_volume(sd);
         if (svol < 0.0) {
-          std::stringstream sstr;
-          sstr << "In intersect_r2d.h: " <<
-              "Triangle in decomposition of source cell " << tgt_cell <<
-              " has a negative volume " << svol << "\n";
-          double cvol = sourceMeshWrapper.cell_volume(s);
-          if (cvol <= 0.0)
-            sstr << "The cell (vol = " << cvol << ") is inside out or degenerate";
-          else
-            sstr << "The cell (vol = " << cvol << ") may be highly non-convex";
-          throw std::runtime_error(sstr.str());
+          double cvol = targetMeshWrapper.cell_volume(tgt_cell);
+          throw_validity_error_2d(Wonton::CELL, tgt_cell, false, svol, cvol);
         }
       }
 #endif
@@ -558,16 +557,8 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     for (auto const& w : wedges) {
       double wvol = targetMeshWrapper.wedge_volume(w);
       if (wvol < 0.0) {
-        std::stringstream sstr;
-        sstr << "In intersect_r2d.h: " <<
-            "Tri in decomposition of Dual Cell for target node " << tgt_node <<
-            " has a negative volume " << wvol << "\n";
         double dvol = targetMeshWrapper.dual_cell_volume(tgt_node);
-        if (dvol <= 0.0)
-          sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
-        else
-          sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
-        throw std::runtime_error(sstr.str());
+        throw_validity_error_2d(Wonton::CELL, tgt_node, false, wvol, dvol);
       }
     }
 #endif
@@ -598,16 +589,8 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       for (auto const& w : wedges) {
         double wvol = sourceMeshWrapper.wedge_volume(w);
         if (wvol < 0.0) {
-          std::stringstream sstr;
-          sstr << "In intersect_r2d.h: " <<
-              "Tri in decomposition of Dual Cell for source node " << s <<
-              " has a negative volume " << wvol << "\n";
           double dvol = sourceMeshWrapper.dual_cell_volume(s);
-          if (dvol <= 0.0)
-            sstr << "The cell (vol = " << dvol << ") is inside out or degenerate";
-          else
-            sstr << "The cell (vol = " << dvol << ") may be highly non-convex";
-          throw std::runtime_error(sstr.str());
+          throw_validity_error_2d(Wonton::NODE, s, true, wvol, dvol);
         }
       }
 #endif
