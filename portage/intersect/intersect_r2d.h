@@ -47,6 +47,12 @@ namespace {
 // Check if polygon is truly convex (not just star convex)
 // Move to Wonton
 
+// gcc 7.3.0 doesn't recognize that this function is used in the code 
+// so use the compiler specific attribute to turn off the warning (since we
+// use -Werror and cannot get past compilation)
+#if defined(__GNUC__) && (__GNUC__ == 7 && __GNUC_MINOR__ == 3)
+__attribute__ ((unused))
+#endif
 bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
                      NumericTolerances_t const& num_tols) {
 
