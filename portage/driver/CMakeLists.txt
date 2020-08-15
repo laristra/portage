@@ -126,17 +126,19 @@ if (ENABLE_UNIT_TESTS)
          POLICY MPI
          THREADS 1)
 
-       portage_add_unittest(test_driver_multimat_uber_swept
-         SOURCES test/test_driver_multimat_uber_swept.cc
-         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
-         POLICY MPI
-         THREADS 1)
+       if (TANGRAM_ENABLE_XMOF2D)
+	 portage_add_unittest(test_driver_multimat_uber_swept
+           SOURCES test/test_driver_multimat_uber_swept.cc
+           LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+           POLICY MPI
+           THREADS 1)
 
-       portage_add_unittest(test_driver_multimat_uber_swept_mismatch
-         SOURCES test/test_driver_multimat_uber_swept_mismatch.cc
-         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
-         POLICY MPI
-         THREADS 1)
+	 portage_add_unittest(test_driver_multimat_uber_swept_mismatch
+           SOURCES test/test_driver_multimat_uber_swept_mismatch.cc
+           LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+           POLICY MPI
+           THREADS 1)
+       endif ()
 
        portage_add_unittest(test_driver_multimat_distributed
        SOURCES test/test_driver_multimat_distributed.cc

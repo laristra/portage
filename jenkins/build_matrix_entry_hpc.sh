@@ -129,6 +129,7 @@ cd build
 
 cmake \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
+  -D CMAKE_CXX_FLAGS="-Wall -Werror" \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
