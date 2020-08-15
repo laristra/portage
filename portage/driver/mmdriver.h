@@ -176,7 +176,7 @@ class MMDriver {
     source_target_varname_map_.clear();
 
     int nvars = source_remap_var_names.size();
-#ifdef DEBUG
+#ifndef NDEBUG
     for (int i = 0; i < nvars; ++i) {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
       Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
@@ -532,7 +532,7 @@ class MMDriver {
           std::string *errmsg = nullptr) {
     std::string message;
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     auto tic = timer::now();
 
     int comm_rank = 0;
@@ -545,7 +545,7 @@ class MMDriver {
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
-#ifdef ENABLE_DEBUG      
+#ifndef NDEBUG      
       MPI_Comm_rank(mycomm, &comm_rank);
 #endif
       int nprocs = 0;
@@ -555,7 +555,7 @@ class MMDriver {
     }
 #endif
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -610,7 +610,7 @@ class MMDriver {
     if (distributed) {
       MPI_Bounding_Boxes distributor(mpiexecutor);
       if (distributor.is_redistribution_needed(source_mesh_, target_mesh_)) {
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
         tic = timer::now();
 #endif
         
@@ -628,7 +628,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -778,7 +778,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &trg_matvar_names,
                            Wonton::Executor_type const *executor) {
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   int comm_rank = 0;
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
@@ -790,7 +790,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 #endif
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -835,7 +835,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // SEARCH
   auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
 #ifdef PORTAGE_HAS_TANGRAM
@@ -849,7 +849,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_cell.template intersect_meshes<Intersect>(candidates);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
@@ -862,7 +862,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tic = timer::now();
 
   if (comm_rank == 0) {
@@ -912,7 +912,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_interp += timer::elapsed(tic, true);
 #endif
 
@@ -955,7 +955,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
@@ -1004,7 +1004,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &trg_meshvar_names,
                            Wonton::Executor_type const *executor) {
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   int comm_rank = 0;
 
 #ifdef WONTON_ENABLE_MPI
@@ -1017,7 +1017,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 #endif
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -1061,7 +1061,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // SEARCH
 
   auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
   //--------------------------------------------------------------------
@@ -1071,7 +1071,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_node.template intersect_meshes<Intersect>(candidates);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
@@ -1084,7 +1084,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tic = timer::now();
 
   if (comm_rank == 0) {
@@ -1133,7 +1133,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 

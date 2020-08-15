@@ -416,7 +416,7 @@ namespace Portage {
 
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-#ifdef DEBUG
+#ifndef NDEBUG
       //Face group should be associated with one of the cell's faces
       int nfaces = cfaces.size();
       assert(cface_id != nfaces);
@@ -526,7 +526,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
       int const nb_edges = edges.size();
 
-#ifdef DEBUG
+#ifndef NDEBUG
       // ensure that we have the same face/edge index for source and target.
       std::vector<int> target_edges, target_dirs, target_nodes;
       target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
@@ -545,7 +545,7 @@ namespace Portage {
         nodes.clear();
         source_mesh_.face_get_nodes(edges[i], &nodes);
 
-#ifdef DEBUG
+#ifndef NDEBUG
         // ensure that we have the same nodal indices for source and target.
         target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
         int const nb_source_nodes = nodes.size();
@@ -920,7 +920,7 @@ namespace Portage {
 
       int cface_id = std::distance(
         cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-#ifdef DEBUG
+#ifndef NDEBUG
       //Face group should be associated with one of the cell's faces
       int nfaces = cfaces.size();
       assert(cface_id != nfaces);
@@ -1038,7 +1038,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &faces, &dirs);
       int const nb_faces = faces.size();
 
-#if DEBUG
+#ifndef NDEBUG
         // ensure that we have the same face index for source and target.
         std::vector<int> target_faces, target_dirs, target_nodes;
         target_mesh_.cell_get_faces_and_dirs(target_id, &target_faces, &target_dirs);
@@ -1059,7 +1059,7 @@ namespace Portage {
         int const nb_poly_nodes = 2 * nb_face_nodes;
         int const nb_poly_faces = nb_poly_nodes + 2;
 
-#if DEBUG
+#ifndef NDEBUG
           // ensure that we have the same nodal indices for source and target.
           target_mesh_.face_get_nodes(target_faces[i], &target_nodes);
           int const nb_source_nodes = nodes.size();

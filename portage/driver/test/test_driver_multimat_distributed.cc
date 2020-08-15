@@ -632,7 +632,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
       mass += rho[ic]*cellvol;
     }
   
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr<<std::setprecision(13)<<"On rank "<<commRank<<" Mat "<<m
     <<": volume = "<<volume<<", mass = "<<mass<<std::endl;  
  

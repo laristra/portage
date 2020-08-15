@@ -107,7 +107,7 @@ public:
     int nb_target_points = target_swarm.num_particles(Wonton::PARALLEL_OWNED);
     int nb_source_points = source_swarm.num_particles(Wonton::PARALLEL_OWNED);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (center == Meshfree::WeightCenter::Gather) {
       assert(smoothing_lengths.size() == unsigned(nb_target_points));
       assert(target_extents.size()    == unsigned(nb_target_points));

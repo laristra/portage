@@ -155,7 +155,7 @@ void run(
         material_filename, cell_num_mats, cell_mat_ids, cell_mat_volfracs,
     cell_mat_centroids);
 
-  #ifdef DEBUG
+  #ifndef NDEBUG
   // debug info
   std::cout<<"\n\nSource Mesh: \n"<<std::endl;
   std::cout<<"cell_num_mats: ";
@@ -454,7 +454,7 @@ void run(
 
   }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   // debug info
   std::cout << "\n\nTarget Mesh: \n" << std::endl;
   std::cout << "target_cell_num_mats: ";

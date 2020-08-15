@@ -164,7 +164,7 @@ int main(int argc, char** argv) {
     return -1;
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   struct timeval begin {};
   struct timeval end {};
   struct timeval diff {};
@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   gettimeofday(&begin, nullptr);
 #endif
 
@@ -368,7 +368,7 @@ int main(int argc, char** argv) {
       }
     }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     gettimeofday(&end, nullptr);
     timersub(&end, &begin, &diff);
     float seconds = static_cast<float>(diff.tv_sec + 1.0E-6*diff.tv_usec);
@@ -448,7 +448,7 @@ int main(int argc, char** argv) {
         min_vol = fmin( min_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
         max_vol = fmax( max_vol, fabs( sourceMeshWrapper.cell_volume(j) - 1./double(nsourcecells*nsourcecells) ) );
       }
-#if ENABLE_DEBUG
+#ifndef NDEBUG
       std::cout << std::endl << std::endl << "CYCLIC REMAP RELATIVE ERROR = "
                 << cyclic_error/cyclic_error_norm << " , NORM =  " <<
                 cyclic_error_norm << " , MAX BOUND VIOLATION (RELATIVE) = " <<
@@ -458,7 +458,7 @@ int main(int argc, char** argv) {
       std::cout << "min_vol, max_vol = " << min_vol << " " << max_vol << std::endl;
 #endif
     }
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     else {
       std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
@@ -485,7 +485,7 @@ int main(int argc, char** argv) {
     nsourcecells *= 2;
     ntargetcells *= 2;
   }
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   for (int i = 1; i < n_converge; i++) {
     std::cout << "Error ratio L1(" << i-1 << ")/L1(" << i << ") is " <<
         l1_err[i-1]/l1_err[i] << std::endl;
@@ -523,7 +523,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   const int nsrcnodes = sourceMeshWrapper.num_owned_nodes() +
       sourceMeshWrapper.num_ghost_nodes();
   const int ntarnodes = targetMeshWrapper.num_owned_nodes();
-#ifdef ENABLE_DEBUG 
+#ifndef NDEBUG 
   if (rank == 0) {
     std::cout << "starting portageapp_jali...\n";
     std::cout << "All fields on" << entityKind << "including "
@@ -698,7 +698,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                         &cellvecout);
     sourceStateWrapper.mesh_get_data<double>(Portage::CELL, "celldata",
                                         &cellvecin);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     if (numpe == 1 && ntarcells < 10)
       std::cout << "celldata vector on target mesh after remapping is:"
                 << std::endl;
@@ -745,7 +745,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                         &nodevecout);
     sourceStateWrapper.mesh_get_data<double>(Portage::NODE, "nodedata",
                                         &nodevecin);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     if (numpe == 1 && ntarnodes < 10)
       std::cout << "nodedata vector on target mesh after remapping is:"
                 << std::endl;
@@ -797,7 +797,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
   err_norm = err_l1 / err_norm;
   *L2_error = sqrt(*L2_error);
-#ifdef ENABLE_DEBUG 
+#ifndef NDEBUG 
   if (!remap_back) {
     std::printf("\n\nL1 NORM OF ERROR (excluding boundary) = %lf\n", *L1_error);
     std::printf("L2 NORM OF ERROR (excluding boundary) = %lf\n\n", *L2_error);
