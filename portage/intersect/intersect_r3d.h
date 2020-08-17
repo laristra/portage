@@ -11,7 +11,7 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <sstream>
 #endif
 
@@ -38,8 +38,8 @@ using Wonton::SIDE;
 using Wonton::WEDGE;
 using Wonton::ALL;
 
-namespace {
-#ifdef DEBUG
+#ifndef NDEBUG
+static
 void throw_validity_error_3d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
                              double tet_vol, double entity_vol) {
@@ -61,7 +61,7 @@ void throw_validity_error_3d(Wonton::Entity_kind ekind, int entity_id,
   throw std::runtime_error(sstr.str());
 }  // throw_validity_error_3d
 #endif
-}
+
 
 ///
 /// \class IntersectR3D  3-D intersection algorithm
@@ -263,7 +263,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     targetMeshWrapper.decompose_cell_into_tets(tgt_cell, &target_tet_coords,
                                                rectangular_mesh_);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     // Check the tetrahedral sides of the cell
     if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
       std::stringstream sstr;
@@ -313,7 +313,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                                 &srcpoly.points);
 
-#ifdef DEBUG
+#ifndef NDEBUG
         // Check validity of source cell (unfortunately may be
         // repeated if it is an intersection candidate for multiple
         // target cells)
@@ -357,7 +357,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         this_wt.weights.resize(4,0.0);
         for (const auto& matpoly : matpolys) {
 
-#ifdef DEBUG
+#ifndef NDEBUG
           // Lets check the volume of the source material polyhedron
 
           std::vector<double> smom = matpoly.moments();
@@ -383,7 +383,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
       
-#ifdef DEBUG
+#ifndef NDEBUG
       // Check validity of source cell (unfortunately may be
       // repeated if it is an intersection candidate for multiple
       // target cells)
@@ -514,7 +514,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
     targetMeshWrapper.dual_wedges_get_coordinates(tgt_node, &target_tet_coords);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r3d:" <<
@@ -551,7 +551,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                                                    &srcpoly.points);
 
       
-#ifdef DEBUG
+#ifndef NDEBUG
       // Lets check that the wedges in the source dual cell have
       // positive volume
 

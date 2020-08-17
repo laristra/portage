@@ -846,7 +846,7 @@ int main(int argc, char** argv) {
         std::cerr << "Dimension not 2 or 3" << std::endl;
         MPI_Abort(MPI_COMM_WORLD, -1);
     }
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     std::cout << "L1 norm of error for iteration " << i << " is " <<
         l1_err[i] << std::endl;
     std::cout << "L2 norm of error for iteration " << i << " is " <<
@@ -856,7 +856,7 @@ int main(int argc, char** argv) {
     nsourcecells *= 2;
     ntargetcells *= 2;
   }
-#ifdef ENABLE_DEBUG 
+#ifndef NDEBUG 
   for (int i = 1; i < n_converge; i++) {
     std::cout << "Error ratio L1(" << i - 1 << ")/L1(" << i << ") is " <<
         l1_err[i - 1]/l1_err[i] << std::endl;
@@ -1132,7 +1132,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     offsets[i + 1] = offsets[i] + cell_num_mats[i];
 
   // Output some information for the user
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   if (rank == 0) {
     std::cout << "Source mesh has " << nsrccells << " cells\n";
     std::cout << "Target mesh has " << ntarcells << " cells\n";
@@ -1255,7 +1255,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   if (rank == 0) {
     std::cout << "***Registered fieldnames:\n";
     for (auto & field_name: sourceStateWrapper.names()) 
@@ -1514,7 +1514,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     }
   }
 
-#if ENABLE_DEBUG
+#ifndef NDEBUG
   // Output some information for the user
   for (int m = 0; m < nglobal_mats; m++) {
     std::vector<int> matcells;
@@ -1737,7 +1737,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
     write_field(field_filename_, targetMeshWrapper, targetStateWrapper);
   } 
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   // debug diagnostics   
   std::cout << "\n----source owned cell global id's on rank " << rank << ":\n";
   for (int ic = 0; ic < sourceMeshWrapper.num_owned_cells(); ic++) {

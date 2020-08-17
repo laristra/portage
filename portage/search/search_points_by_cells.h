@@ -68,7 +68,7 @@ public:
     int const nb_target = target_swarm_.num_particles();
     bool const do_scatter = (center == Scatter);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     // check sizes
     if (do_scatter) {
       assert(unsigned(nb_source) == source_extents_.size());

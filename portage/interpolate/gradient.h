@@ -372,7 +372,7 @@ namespace Portage {
         stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
       }
 
-#ifdef DEBUG
+#ifndef NDEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
         for (int i = 0; i < M.rows(); ++i) {

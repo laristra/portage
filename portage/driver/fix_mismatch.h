@@ -253,7 +253,7 @@ class MismatchFixer {
         std::cerr << "\n** MESH MISMATCH -" <<
             " some source cells are not fully covered by the target mesh\n";
 
-#ifdef DEBUG
+#ifndef NDEBUG
       // Find one source cell (or dual cell) that is not fully covered
       // by the target mesh and output its ID. Unfortunately, that means
       // processing all source cells. We initialize each source cell to
@@ -298,7 +298,7 @@ class MismatchFixer {
         std::cerr << "\n** MESH MISMATCH -" <<
             " some target cells are not fully covered by the source mesh\n";
 
-#ifdef DEBUG
+#ifndef NDEBUG
       // Find one target cell that is not fully covered by the source mesh and
       // output its ID
       for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
@@ -492,7 +492,7 @@ class MismatchFixer {
           }
           if (nave)
             aveval /= nave;
-#ifdef DEBUG
+#ifndef NDEBUG
           else
             std::cerr <<
                 "No owned neighbors of empty entity to extrapolate data from\n";
@@ -756,7 +756,7 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
 
     int global_nempty = nempty;
 #ifdef WONTON_ENABLE_MPI

@@ -295,7 +295,7 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << std::endl;
@@ -348,7 +348,7 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::boundary_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -396,7 +396,7 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::corner_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -477,7 +477,7 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::internal_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -530,7 +530,7 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::boundary_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -582,7 +582,7 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::corner_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -670,7 +670,7 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::internal_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -715,7 +715,7 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::boundary_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;
@@ -757,7 +757,7 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::corner_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << std::endl;

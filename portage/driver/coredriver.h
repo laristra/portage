@@ -709,7 +709,7 @@ class CoreDriver {
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
     int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 

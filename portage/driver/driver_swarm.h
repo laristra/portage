@@ -187,7 +187,7 @@ public:
 
    int const swarm_size = get_swarm_size();
 
-#ifdef DEBUG
+#ifndef NDEBUG
    int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
    int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
 
@@ -268,7 +268,7 @@ public:
     operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
     operator_data_    = operator_data;
-#ifdef DEBUG
+#ifndef NDEBUG
     if (operator_spec_ != oper::LastOperator) {
       unsigned const num_target_particles = target_swarm_.num_owned_particles();
       assert(operator_domains_.size() == num_target_particles);
@@ -560,7 +560,7 @@ protected:
    * @param weight_center: weight center type.
    */
   void check_sizes(WeightCenter const weight_center) {
-#ifdef DEBUG
+#ifndef NDEBUG
     unsigned const swarm_size = get_swarm_size();
     assert(smoothing_lengths_.size() == swarm_size);
     assert(kernel_types_.size() == swarm_size);

@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
-#ifdef DEBUG
+#ifndef NDEBUG
 #include <sstream>
 #endif
 
@@ -42,17 +42,10 @@ using Wonton::SIDE;
 using Wonton::WEDGE;
 using Wonton::ALL;
 
-namespace {
-
 // Check if polygon is truly convex (not just star convex)
 // Move to Wonton
 
-// gcc 7.3.0 doesn't recognize that this function is used in the code 
-// so use the compiler specific attribute to turn off the warning (since we
-// use -Werror and cannot get past compilation)
-#if defined(__GNUC__) && (__GNUC__ == 7 && __GNUC_MINOR__ == 3)
-__attribute__ ((unused))
-#endif
+static
 bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
                      NumericTolerances_t const& num_tols) {
 
@@ -74,7 +67,8 @@ bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
   return true;
 }
 
-#ifdef DEBUG
+#ifndef NDEBUG
+static
 void throw_validity_error_2d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
                              double tri_area, double entity_area) {
@@ -96,7 +90,7 @@ void throw_validity_error_2d(Wonton::Entity_kind ekind, int entity_id,
   throw std::runtime_error(sstr.str());
 }  // throw_validity_error_2d
 #endif
-}
+
 
 
 ///
@@ -281,7 +275,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r2d:" <<
@@ -328,7 +322,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         std::vector<Wonton::Point<2>> source_poly;
         sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-#ifdef DEBUG
+#ifndef NDEBUG
         if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
           std::stringstream sstr;
           sstr << "In intersect_r2d:" <<
@@ -390,7 +384,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
           this_wt.weights.resize(3, 0.0);
           for (auto& matpoly : matpolys) {
 
-#ifdef DEBUG
+#ifndef NDEBUG
           // Lets check the volume of the source material polygon
 
           std::vector<double> smom = matpoly.moments();
@@ -417,7 +411,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       }
 #else  // No Tangram
 
-#ifdef DEBUG
+#ifndef NDEBUG
       if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
         std::stringstream sstr;
         sstr << "In intersect_r2d:" <<
@@ -546,7 +540,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r2d:" <<
@@ -578,7 +572,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.dual_cell_get_coordinates(s, &source_poly);
 
-#ifdef DEBUG
+#ifndef NDEBUG
       if (sourceMeshWrapper.num_entities(WEDGE, ALL) == 0) {
         std::stringstream sstr;
         sstr << "In intersect_r2d:" <<
