@@ -45,7 +45,7 @@ using Wonton::ALL;
 // Check if polygon is truly convex (not just star convex)
 // Move to Wonton
 
-static
+static inline
 bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
                      NumericTolerances_t const& num_tols) {
 
@@ -68,7 +68,7 @@ bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
 }
 
 #ifndef NDEBUG
-static
+static inline
 void throw_validity_error_2d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
                              double tri_area, double entity_area) {
