@@ -39,7 +39,7 @@ using Wonton::WEDGE;
 using Wonton::ALL;
 
 #ifndef NDEBUG
-static
+static inline
 void throw_validity_error_3d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
                              double tet_vol, double entity_vol) {
