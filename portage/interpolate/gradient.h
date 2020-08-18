@@ -148,7 +148,9 @@ namespace Portage {
 
       for (int m = 0; m < nb_mats; ++m) {
         if (m > 0) {
-          int num_mat_cells = state_.mat_get_num_cells(m - 1);
+          std::vector<int> mat_cells;
+          state_.mat_get_cells(m - 1, &mat_cells);
+          int const num_mat_cells = mat_cells.size();
           stencils_[m].resize(num_mat_cells);
           valid_neigh_[m].resize(num_mat_cells);
           reference_[m].resize(num_mat_cells);
@@ -408,7 +410,7 @@ namespace Portage {
 //        auto list_coords = retrieve_stencil_points(cellid);
 //        stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
 //      }
-
+      int const m = material_id_ + 1;
 #ifndef NDEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
@@ -420,11 +422,10 @@ namespace Portage {
         std::cout << "]" << std::endl;
       };
 
-      print(stencils_[cellid][0], "(A^T.A)^-1");
-      print(stencils_[cellid][1], "A^T");
+      print(stencils_[m][cellid][0], "(A^T.A)^-1");
+      print(stencils_[m][cellid][1], "A^T");
       std::cout << " ------------ " << std::endl;
 #endif
-      int const m = material_id_ + 1;
 
       // retrieve values of each stencil point
       auto list_values = retrieve_stencil_values(cellid, m);
