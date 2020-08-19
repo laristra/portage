@@ -496,6 +496,19 @@ class CoreDriver {
 
   }
 
+  void cache_gradient_stencils(Field_type field_type = Field_type::MESH_FIELD) {
+
+    if (field_type == Field_type::MULTIMATERIAL_FIELD) {
+      // make sure that the interface reconstructor is initialized.
+      // it is only done after the intersection step
+      // this check enforces that this method is called only after that step.
+      if (interface_reconstructor_) {
+        gradient_.set_interface_reconstructor(interface_reconstructor_);
+      } else
+        throw std::runtime_error("interface reconstructor not yet initialized");
+    }
+    gradient_.cache_matrices(field_type);
+  }
 
   /**
    * @brief Compute the gradient field of the given variable on source mesh.
@@ -569,6 +582,7 @@ class CoreDriver {
 
       kernel->set_material(material_id);
       kernel->set_interface_reconstructor(interface_reconstructor_);
+
       Wonton::transform(mat_cells.begin(),
                          mat_cells.end(),
                          owned_gradient_field.begin(), *kernel);
