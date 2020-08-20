@@ -496,18 +496,18 @@ class CoreDriver {
 
   }
 
-  void cache_gradient_stencils(Field_type field_type = Field_type::MESH_FIELD) {
-
-    if (field_type == Field_type::MULTIMATERIAL_FIELD) {
-      // make sure that the interface reconstructor is initialized.
-      // it is only done after the intersection step
-      // this check enforces that this method is called only after that step.
-      if (interface_reconstructor_) {
+  void cache_multimat_gradient_stencils() {
+    // make sure that the interface reconstructor is initialized.
+    // it is only done after the intersection step
+    // this check enforces that this method is called only after that step.
+    if (interface_reconstructor_) {
+      if (not cached_multimat_stenc_) {
         gradient_.set_interface_reconstructor(interface_reconstructor_);
-      } else
-        throw std::runtime_error("interface reconstructor not yet initialized");
-    }
-    gradient_.cache_matrices(field_type);
+        gradient_.cache_matrices(Field_type::MULTIMATERIAL_FIELD);
+        cached_multimat_stenc_ = true;
+      }
+    } else
+      throw std::runtime_error("interface reconstructor not yet initialized");
   }
 
   /**
@@ -538,6 +538,9 @@ class CoreDriver {
     std::vector<int> mat_cells;
 
     if (multimat) {
+      // cache gradient stencil first
+      if (not cached_multimat_stenc_) { cache_multimat_gradient_stencils(); }
+
       if (interface_reconstructor_) {
         std::vector<int> mat_cells_all;
         source_state_.mat_get_cells(material_id, &mat_cells_all);
@@ -1006,6 +1009,7 @@ class CoreDriver {
 #endif
 
 #ifdef PORTAGE_HAS_TANGRAM
+  bool cached_multimat_stenc_ = false;
 
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the

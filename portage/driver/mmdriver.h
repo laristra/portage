@@ -879,10 +879,6 @@ int MMDriver<Search, Intersect, Interpolate, D,
                                    double, InterfaceReconstructorType,
                                    Matpoly_Splitter, Matpoly_Clipper>;
 
-  if (Interpolator::order == 2) {
-    coredriver_cell.cache_gradient_stencils(Field_type::MESH_FIELD);
-  }
-
   for (int i = 0; i < nvars; ++i) {
     std::string const& srcvar = src_meshvar_names[i];
     std::string const& trgvar = trg_meshvar_names[i];
@@ -928,9 +924,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     auto source_ents_and_weights_mat =
         coredriver_cell.template intersect_materials<Intersect>(candidates);
 
-    if (Interpolator::order == 2) {
-      coredriver_cell.cache_gradient_stencils(Field_type::MULTIMATERIAL_FIELD);
-    }
+    if (Interpolator::order == 2) { coredriver_cell.cache_multimat_gradient_stencils(); }
     
     int nmatvars = src_matvar_names.size();
     std::vector<Wonton::vector<Vector<D>>> matgradients(nmats);

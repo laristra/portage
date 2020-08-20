@@ -185,6 +185,13 @@ namespace Portage {
                            neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
       }
+      // cache stencil matrices for mesh field.
+      // unfortunately it cannot be done yet for
+      // multimaterial fields since it requires the
+      // interface reconstructor and its options to
+      // be already set (which is only done during
+      // the material intersection step in the driver).
+      cache_matrices(Field_type::MESH_FIELD);
     }
 
     /**
@@ -210,7 +217,7 @@ namespace Portage {
      *
      * @param field_type
      */
-    void cache_matrices(Field_type field_type = Field_type::MESH_FIELD) {
+    void cache_matrices(Field_type field_type) {
 
       auto kernel = [this](int c, int m = 0) {
         auto const& p = retrieve_stencil_points(c, m);
@@ -647,12 +654,29 @@ namespace Portage {
                            mesh_.dual_cell_get_node_adj_cells(n, Wonton::ALL, data);
                            neighbors_[n].emplace(neighbors_[n].begin(), n);
                          });
+        // cache stencil matrices
+        cache_matrices(Field_type::MESH_FIELD);
       } else {
         throw std::runtime_error("part-by-part not supported for nodal remap");
       }
     }
 
-    void cache_matrices() {}
+    /**
+     * @brief
+     *
+     * @param field_type
+     */
+    void cache_matrices(Field_type field_type) {
+      if (field_type == Field_type::MESH_FIELD) {
+        Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
+                         mesh_.end(Wonton::NODE, Wonton::ALL),
+                         [this](int n) {
+                           auto const& points = retrieve_stencil_points(n);
+                           stencils_[n] = Wonton::build_gradient_stencil_matrices<D>(points, true);
+                         });
+      } else
+        throw std::runtime_error("incorrect field type");
+    }
 
     void set_material(int material_id) { material_id_ = material_id; }
 
@@ -732,11 +756,11 @@ namespace Portage {
         return grad;
       }
 
-      // retrieve stencil points and compute least square matrices
-      if (stencils_[nodeid].empty()) /* not cached */{
-        auto node_coords = retrieve_stencil_points(nodeid);
-        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices<D>(node_coords, true);
-      }
+//      // retrieve stencil points and compute least square matrices
+//      if (stencils_[nodeid].empty()) /* not cached */{
+//        auto node_coords = retrieve_stencil_points(nodeid);
+//        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices<D>(node_coords, true);
+//      }
 
       // retrieve values of each stencil point
       auto node_values = retrieve_stencil_values(nodeid);
