@@ -194,9 +194,12 @@ namespace Portage {
      * @param field_type
      * @return
      */
-    int local_index(int c, Field_type field_type, int m) const {
+    int get_relative_index(int c, int m) const {
 #ifdef PORTAGE_HAS_TANGRAM
-      return (field_type == Field_type::MESH_FIELD ? c : state_.cell_index_in_material(c, m - 1));
+      if (m < 0)
+        throw std::runtime_error("invalid mesh/material index");
+      else
+        return (m == 0 ? c : state_.cell_index_in_material(c, m - 1));
 #else
       return c;
 #endif
@@ -209,9 +212,9 @@ namespace Portage {
      */
     void cache_matrices(Field_type field_type = Field_type::MESH_FIELD) {
 
-      auto kernel = [this, field_type](int c, int m = 0) {
-        auto const& p = retrieve_stencil_points(c, field_type, m);
-        int const cell = local_index(c, field_type, m);
+      auto kernel = [this](int c, int m = 0) {
+        auto const& p = retrieve_stencil_points(c, m);
+        int const cell = get_relative_index(c, m);
         stencils_[m][cell] = Wonton::build_gradient_stencil_matrices<D>(p, true);
       };
 
@@ -303,15 +306,13 @@ namespace Portage {
      * @param cell: the cell ID.
      * @return stencil points coordinates.
      */
-    std::vector<Point<D>> retrieve_stencil_points(int c,
-                                                  Wonton::Field_type field_type,
-                                                  int m = 0) {
+    std::vector<Point<D>> retrieve_stencil_points(int c, int m = 0) {
 
       int const size = neighbors_[c].size();
 
       std::vector<Point<D>> list_coords;
       list_coords.reserve(size);
-      int const cell = local_index(c, field_type, m);
+      int const cell = get_relative_index(c, m);
       valid_neigh_[m][cell].clear();
       valid_neigh_[m][cell].reserve(size);
 
@@ -321,9 +322,7 @@ namespace Portage {
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
         // in the material cell list to access the correct field value
-        int const neigh_local = (field_type == Field_type::MESH_FIELD)
-                                ? neigh_global
-                                : state_.cell_index_in_material(neigh_global, m - 1);
+        int const neigh_local = get_relative_index(neigh_global, m);
 
         // In case of material-data, we need to check that neighbors contain
         // material of interest (i.e. have valid local id);
@@ -387,7 +386,7 @@ namespace Portage {
 #endif
         // If we get here, we must have mesh data which is cell-centered
         // and not dependent on material, so just get the centroid and value
-        if (field_type == Field_type::MESH_FIELD) {
+        if (m == 0) {
           Point<D> centroid;
           mesh_.cell_centroid(neigh_global, &centroid);
           list_coords.emplace_back(centroid);
@@ -409,8 +408,7 @@ namespace Portage {
      */
     std::vector<double> retrieve_stencil_values(int c, int m) const {
       std::vector<double> list_values;
-      int const cell = local_index(c, field_type_, m);
-      for (auto&& neigh : valid_neigh_[m][cell]) {
+      for (auto&& neigh : valid_neigh_[m][c]) {
         list_values.emplace_back(values_[neigh]);
       }
       return list_values;
@@ -448,7 +446,7 @@ namespace Portage {
       }
 
       int const m = material_id_ + 1;
-      int const refcell = local_index(cellid, field_type_, m);
+      int const c = get_relative_index(cellid, m);
 #ifndef NDEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
@@ -460,17 +458,17 @@ namespace Portage {
         std::cout << "]" << std::endl;
       };
 
-      print(stencils_[m][cellid][0], "(A^T.A)^-1");
-      print(stencils_[m][cellid][1], "A^T");
+      print(stencils_[m][c][0], "(A^T.A)^-1");
+      print(stencils_[m][c][1], "A^T");
       std::cout << " ------------ " << std::endl;
 #endif
 
       // retrieve values of each stencil point
-      auto list_values = retrieve_stencil_values(cellid, m);
+      auto list_values = retrieve_stencil_values(c, m);
 
       // compute the gradient using the stored stencil matrices
-      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[m][refcell][0],
-                                              stencils_[m][refcell][1],
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[m][c][0],
+                                              stencils_[m][c][1],
                                               list_values);
 
       // Limit the gradient to enforce monotonicity preservation
@@ -517,7 +515,7 @@ namespace Portage {
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto&& coord : cellcoords) {
-          auto vec = coord - reference_[m][refcell];
+          auto vec = coord - reference_[m][c];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.) ? maxval : minval;
           double phi_new = (diff == 0. ? 1. : (extremeval - cellcenval) / diff);
