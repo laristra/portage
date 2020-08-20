@@ -148,18 +148,18 @@ namespace Portage {
       neighbors_.resize(nb_cells);
 
       for (int m = 0; m < nb_mats; ++m) {
-        // todo resize to num_mat_cells
-        stencils_[m].resize(nb_cells);
-        valid_neigh_[m].resize(nb_cells);
-        reference_[m].resize(nb_cells);
-//        if (m > 0) {
-//          std::vector<int> mat_cells;
-//          state_.mat_get_cells(m - 1, &mat_cells);
-//          int const num_mat_cells = mat_cells.size();
-//          valid_neigh_[m].resize(num_mat_cells);
-//          reference_[m].resize(num_mat_cells);
-//        } else {
-//        }
+        if (m > 0) {
+          std::vector<int> mat_cells;
+          state_.mat_get_cells(m - 1, &mat_cells);
+          int const count = mat_cells.size();
+          stencils_[m].resize(count);
+          valid_neigh_[m].resize(count);
+          reference_[m].resize(count);
+        } else {
+          stencils_[m].resize(nb_cells);
+          valid_neigh_[m].resize(nb_cells);
+          reference_[m].resize(nb_cells);
+        }
       }
 
       if (part == nullptr) {
@@ -190,13 +190,29 @@ namespace Portage {
     /**
      * @brief
      *
+     * @param c
+     * @param field_type
+     * @return
+     */
+    int local_index(int c, Field_type field_type, int m) const {
+#ifdef PORTAGE_HAS_TANGRAM
+      return (field_type == Field_type::MESH_FIELD ? c : state_.cell_index_in_material(c, m - 1));
+#else
+      return c;
+#endif
+    }
+
+    /**
+     * @brief
+     *
      * @param field_type
      */
     void cache_matrices(Field_type field_type = Field_type::MESH_FIELD) {
 
       auto kernel = [this, field_type](int c, int m = 0) {
         auto const& p = retrieve_stencil_points(c, field_type, m);
-        stencils_[m][c] = Wonton::build_gradient_stencil_matrices<D>(p, true);
+        int const cell = local_index(c, field_type, m);
+        stencils_[m][cell] = Wonton::build_gradient_stencil_matrices<D>(p, true);
       };
 
       if (part_ == nullptr) {
@@ -206,19 +222,22 @@ namespace Portage {
                            [&](int c) { kernel(c); });
 
         } else {
-          assert(interface_reconstructor_);
-          int const nb_mats = state_.num_materials();
-          for (int m = 0; m < nb_mats; ++m) {
-            std::vector<int> buffer, cells;
-            state_.mat_get_cells(m, &buffer);
-            for (int const& c : buffer) {
-              if (mesh_.cell_get_type(c) == Wonton::PARALLEL_OWNED) {
-                cells.emplace_back(c);
+          if (interface_reconstructor_) {
+            int const nb_mats = state_.num_materials();
+            for (int m = 0; m < nb_mats; ++m) {
+              // filter material cells
+              std::vector<int> buffer, cells;
+              state_.mat_get_cells(m, &buffer);
+              for (int const& c : buffer) {
+                if (mesh_.cell_get_type(c) == Wonton::PARALLEL_OWNED) {
+                  cells.emplace_back(c);
+                }
               }
+              // retrieve matrices
+              std::for_each(cells.begin(), cells.end(), [&](int c) { kernel(c, m + 1); });
             }
-
-            std::for_each(cells.begin(), cells.end(), [&](int c) { kernel(c, m + 1); });
-          }
+          } else
+            throw std::runtime_error("interface reconstructor not set");
         }
       } else {
         assert(field_type == Field_type::MESH_FIELD);
@@ -284,19 +303,20 @@ namespace Portage {
      * @param cell: the cell ID.
      * @return stencil points coordinates.
      */
-    std::vector<Point<D>> retrieve_stencil_points(int cell,
+    std::vector<Point<D>> retrieve_stencil_points(int c,
                                                   Wonton::Field_type field_type,
                                                   int m = 0) {
 
-      int const size = neighbors_[cell].size();
+      int const size = neighbors_[c].size();
 
       std::vector<Point<D>> list_coords;
       list_coords.reserve(size);
+      int const cell = local_index(c, field_type, m);
       valid_neigh_[m][cell].clear();
       valid_neigh_[m][cell].reserve(size);
 
       // Loop over cell where grad is needed and its neighboring cells
-      for (auto&& neigh_global : neighbors_[cell]) {
+      for (auto&& neigh_global : neighbors_[c]) {
 #ifdef PORTAGE_HAS_TANGRAM
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
@@ -348,7 +368,7 @@ namespace Portage {
             // mark as valid
             valid_neigh_[m][cell].emplace_back(neigh_local);
             // save cell centroid as a reference point of the stencil
-            if (neigh_global == cell) { reference_[m][cell] = centroid; }
+            if (neigh_global == c) { reference_[m][cell] = centroid; }
 
           } else if (nb_mats == 1) /* single-material cell */ {
 
@@ -360,7 +380,7 @@ namespace Portage {
               list_coords.emplace_back(centroid);
               valid_neigh_[m][cell].emplace_back(neigh_local);
               // save cell centroid as a reference point of the stencil
-              if (neigh_global == cell) { reference_[m][cell] = centroid; }
+              if (neigh_global == c) { reference_[m][cell] = centroid; }
             }
           }
         }
@@ -373,7 +393,7 @@ namespace Portage {
           list_coords.emplace_back(centroid);
           valid_neigh_[m][cell].emplace_back(neigh_global);
           // save cell centroid as a reference point of the stencil
-          if (neigh_global == cell) { reference_[m][cell] = centroid; }
+          if (neigh_global == c) { reference_[m][cell] = centroid; }
         }
       }
       return list_coords;
@@ -387,8 +407,9 @@ namespace Portage {
      * @param cell: the cell ID.
      * @return values of each stencil point.
      */
-    std::vector<double> retrieve_stencil_values(int cell, int m) const {
+    std::vector<double> retrieve_stencil_values(int c, int m) const {
       std::vector<double> list_values;
+      int const cell = local_index(c, field_type_, m);
       for (auto&& neigh : valid_neigh_[m][cell]) {
         list_values.emplace_back(values_[neigh]);
       }
@@ -427,6 +448,7 @@ namespace Portage {
       }
 
       int const m = material_id_ + 1;
+      int const refcell = local_index(cellid, field_type_, m);
 #ifndef NDEBUG
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
@@ -447,8 +469,8 @@ namespace Portage {
       auto list_values = retrieve_stencil_values(cellid, m);
 
       // compute the gradient using the stored stencil matrices
-      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[m][cellid][0],
-                                              stencils_[m][cellid][1],
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[m][refcell][0],
+                                              stencils_[m][refcell][1],
                                               list_values);
 
       // Limit the gradient to enforce monotonicity preservation
@@ -495,7 +517,7 @@ namespace Portage {
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto&& coord : cellcoords) {
-          auto vec = coord - reference_[m][cellid];
+          auto vec = coord - reference_[m][refcell];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.) ? maxval : minval;
           double phi_new = (diff == 0. ? 1. : (extremeval - cellcenval) / diff);
