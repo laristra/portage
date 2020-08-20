@@ -176,12 +176,11 @@ namespace Portage {
                            mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
                            neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
-
       } else {
         Wonton::for_each(part->cells().begin(),
                          part->cells().end(),
                          [this](int c) {
-                           neighbors_[c] = part_->template get_neighbors<Wonton::PARALLEL_OWNED>(c);
+                           neighbors_[c] = part_->get_neighbors(c);
                            neighbors_[c].emplace(neighbors_[c].begin(), c);
                          });
       }
@@ -195,11 +194,15 @@ namespace Portage {
     }
 
     /**
-     * @brief
+     * @brief Retrieve the relative index of a given cell.
      *
-     * @param c
-     * @param field_type
-     * @return
+     * For a mesh field, it is equivalent to its absolute index.
+     * For a material field, it is the index in the material cell
+     * list.
+     *
+     * @param c: cell absolute index.
+     * @param m: mesh/material index.
+     * @return its relative index.
      */
     int get_relative_index(int c, int m) const {
 #ifdef PORTAGE_HAS_TANGRAM
@@ -213,9 +216,9 @@ namespace Portage {
     }
 
     /**
-     * @brief
+     * @brief Cache matrices involved in least square approximation.
      *
-     * @param field_type
+     * @param field_type: the field type.
      */
     void cache_matrices(Field_type field_type) {
 
@@ -662,9 +665,12 @@ namespace Portage {
     }
 
     /**
-     * @brief
+     * @brief Cache matrices involved in least square approximation.
      *
-     * @param field_type
+     * The field type is only given to keep the same interface with the
+     * cell-centered field variant.
+     *
+     * @param field_type: the field type.
      */
     void cache_matrices(Field_type field_type) {
       if (field_type == Field_type::MESH_FIELD) {
@@ -755,12 +761,6 @@ namespace Portage {
         grad.zero();
         return grad;
       }
-
-//      // retrieve stencil points and compute least square matrices
-//      if (stencils_[nodeid].empty()) /* not cached */{
-//        auto node_coords = retrieve_stencil_points(nodeid);
-//        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices<D>(node_coords, true);
-//      }
 
       // retrieve values of each stencil point
       auto node_values = retrieve_stencil_values(nodeid);

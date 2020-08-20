@@ -496,6 +496,12 @@ class CoreDriver {
 
   }
 
+  /**
+   * @brief Cache gradient stencil matrices for multi-material fields.
+   *        It cannot be invoked directly in the constructor since
+   *        the interface reconstructor is only initialized after
+   *        the intersection step.
+   */
   void cache_multimat_gradient_stencils() {
     // make sure that the interface reconstructor is initialized.
     // it is only done after the intersection step
@@ -539,7 +545,14 @@ class CoreDriver {
 
     if (multimat) {
       // cache gradient stencil first
-      if (not cached_multimat_stenc_) { cache_multimat_gradient_stencils(); }
+      if (not cached_multimat_stenc_) {
+        std::cerr << "Warning: gradient stencil matrices for ";
+        std::cerr << "multi-material fields were not cached yet." << std::endl;
+        std::cerr << "Please invoke 'cache_multimat_gradient_stencils' ";
+        std::cerr << "prior to 'compute_source_gradient' for optimized runs.";
+        std::cerr << std::endl;
+        cache_multimat_gradient_stencils();
+      }
 
       if (interface_reconstructor_) {
         std::vector<int> mat_cells_all;
@@ -585,7 +598,6 @@ class CoreDriver {
 
       kernel->set_material(material_id);
       kernel->set_interface_reconstructor(interface_reconstructor_);
-
       Wonton::transform(mat_cells.begin(),
                          mat_cells.end(),
                          owned_gradient_field.begin(), *kernel);
