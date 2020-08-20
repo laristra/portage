@@ -389,10 +389,6 @@ namespace Portage {
         Point<D> source_centroid;
         if (field_type_ == Field_type::MESH_FIELD) {
           source_mesh_.cell_centroid(src_cell, &source_centroid);
-          // optional re-calculation of centroid for curvilinear coordinate system (expensive)
-          if (std::is_same<CoordSys, Wonton::CylindricalAxisymmetricCoordinates>::value) {
-            source_centroid = cell_centroid_rz<D>(source_mesh_, src_cell);
-          }
         }
 #ifdef PORTAGE_HAS_TANGRAM
         else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
@@ -681,7 +677,7 @@ namespace Portage {
 
         Vector<D> gradient = gradient_field[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
-        CoordSys::modify_line_element(dr, source_coord);
+        CoordSys::template modify_line_element<D>(dr, source_coord);
 
         double value = source_values_[src_node] + dot(gradient, dr);
         value *= intersect_volume;

@@ -10,8 +10,9 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 
 // wonton includes
-#include "wonton/support/wonton.h"
+#include "wonton/support/CoordinateSystem.h"
 #include "wonton/support/Point.h"
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
@@ -28,7 +29,7 @@ class Order2Test : public ::testing::TestWithParam<int> {
   int itest;
 };
 
-/// Second order interpolation of constant cell-centered field in 2D
+/// Second order interpolation of cell-centered field in 2D
 using CoordSys = Wonton::CylindricalAxisymmetricCoordinates;
 
 TEST_P(Order2Test, SimpleMesh) {
@@ -38,7 +39,7 @@ TEST_P(Order2Test, SimpleMesh) {
   double TOL_L8(1e-12), TOL_L2(1e-12);
   std::vector<double> coefs(4);
   if (itest == 1) {
-    coefs = { 1.25, 0.0, 0.0, 0.0 }; 
+    coefs = { 1.25, 0.0, 0.0, 0.0 };  // constant function
   } else if (itest == 2) {
     coefs = { 0.0, 1.0, 0.0, 0.0 }; 
     TOL_L8 = 0.01;
@@ -46,7 +47,7 @@ TEST_P(Order2Test, SimpleMesh) {
   } else { 
     mx *= std::pow(2, itest - 3);
     nx *= std::pow(2, itest - 3);
-    coefs = { 0.0, 0.0, 0.0, 1.0 }; 
+    coefs = { 0.0, 0.0, 0.0, 1.0 };  // cubic function
     TOL_L8 = 0.8 / nx / nx;
     TOL_L2 = 0.4 / nx / nx;
   }
@@ -58,8 +59,8 @@ TEST_P(Order2Test, SimpleMesh) {
     std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, nx, nx);
 
   // Create mesh wrappers
-  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh, true, true, true, Wonton::CoordSys::CylindricalAxisymmetric);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh, true, true, true, Wonton::CoordSys::CylindricalAxisymmetric);
 
   const int ncells_source = sourceMeshWrapper.num_owned_cells();
   const int ncells_target = targetMeshWrapper.num_owned_cells();
@@ -69,29 +70,19 @@ TEST_P(Order2Test, SimpleMesh) {
   Wonton::Simple_State target_state(target_mesh);
 
   // Define a state vector with constant value and add it to the source state
-  double vol1, vol0, mass0(0.0);
+  double vol, mass0(0.0);
   Wonton::Point<2> xc, xmin, xmax;
   std::vector<double> data(ncells_source);
 
   for (int c = 0; c < ncells_source; ++c) {
     sourceMeshWrapper.cell_centroid(c, &xc);
-    vol0 = sourceMeshWrapper.cell_volume(c);
-
-    // volume and centroid in RZ coordinates
-    std::vector<Wonton::Point<2> > coords;
-    sourceMeshWrapper.cell_get_coordinates(c, &coords);
-    BOX_INTERSECT::bounding_box(coords, &xmin, &xmax);
-
-    vol1 = vol0;
-    CoordSys::modify_volume(vol1, xmin, xmax);
-    CoordSys::modify_first_moments(xc, xmin, xmax);
-    xc *= vol0 / vol1;
+    vol = sourceMeshWrapper.cell_volume(c);
 
     data[c] = coefs[0] 
             + coefs[1] * xc[0] + coefs[2] * xc[1] 
             + coefs[3] * xc[0] * xc[1] * xc[1];
 
-    mass0 += data[c] * vol1;
+    mass0 += data[c] * vol;
   }
   source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
@@ -176,24 +167,14 @@ TEST_P(Order2Test, SimpleMesh) {
   double stdval, mass1(0.0), errl2(0.0);
   for (int c = 0; c < ncells_target; ++c) {
     targetMeshWrapper.cell_centroid(c, &xc);
-    vol0 = targetMeshWrapper.cell_volume(c);
-
-    // volume and centroid in RZ coordinates
-    std::vector<Wonton::Point<2> > coords;
-    targetMeshWrapper.cell_get_coordinates(c, &coords);
-    BOX_INTERSECT::bounding_box(coords, &xmin, &xmax);
-
-    vol1 = vol0;
-    CoordSys::modify_volume(vol1, xmin, xmax);
-    CoordSys::modify_first_moments(xc, xmin, xmax);
-    xc *= vol0 / vol1;
+    vol = targetMeshWrapper.cell_volume(c);
 
     stdval = coefs[0]
            + coefs[1] * xc[0] + coefs[2] * xc[1] 
            + coefs[3] * xc[0] * xc[1] * xc[1];
     ASSERT_NEAR(stdval, outvals[c], TOL_L8);
 
-    mass1 += outvals[c] * vol1;
+    mass1 += outvals[c] * vol;
     errl2 += std::pow(stdval - outvals[c], 2);
   }
 
