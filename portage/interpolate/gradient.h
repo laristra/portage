@@ -147,6 +147,7 @@ namespace Portage {
       reference_.resize(nb_mats);
       neighbors_.resize(nb_cells);
 
+#ifdef PORTAGE_HAS_TANGRAM
       for (int m = 0; m < nb_mats; ++m) {
         if (m > 0) {
           std::vector<int> mat_cells;
@@ -161,6 +162,12 @@ namespace Portage {
           reference_[m].resize(nb_cells);
         }
       }
+#else
+      assert(nb_mats == 1);
+      stencils_[0].resize(nb_cells);
+      valid_neigh_[0].resize(nb_cells);
+      reference_[0].resize(nb_cells);
+#endif
 
       if (part == nullptr) {
         // Collect and keep the list of neighbors for each OWNED CELL as
@@ -235,6 +242,7 @@ namespace Portage {
                            [&](int c) { kernel(c); });
 
         } else {
+#ifdef PORTAGE_HAS_TANGRAM
           if (interface_reconstructor_) {
             int const nb_mats = state_.num_materials();
             for (int m = 0; m < nb_mats; ++m) {
@@ -251,6 +259,7 @@ namespace Portage {
             }
           } else
             throw std::runtime_error("interface reconstructor not set");
+#endif
         }
       } else {
         assert(field_type == Field_type::MESH_FIELD);

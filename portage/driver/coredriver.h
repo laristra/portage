@@ -496,6 +496,7 @@ class CoreDriver {
 
   }
 
+#ifdef PORTAGE_HAS_TANGRAM
   /**
    * @brief Cache gradient stencil matrices for multi-material fields.
    *        It cannot be invoked directly in the constructor since
@@ -515,6 +516,7 @@ class CoreDriver {
     } else
       throw std::runtime_error("interface reconstructor not yet initialized");
   }
+#endif
 
   /**
    * @brief Compute the gradient field of the given variable on source mesh.
