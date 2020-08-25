@@ -352,7 +352,7 @@ TEST(ReverseWeights, Redistributed) {
       if (matvol > volume_tolerance) {
         material_cells[m].emplace_back(c);
         volume_fractions[m].emplace_back(matvol / cellvol);
-        centroids[m].emplace_back(matcen[1] / matvol, matcen[2] / matvol);
+        centroids[m].emplace_back(matcen[0] / matvol, matcen[1] / matvol);
       }
     }
   }
