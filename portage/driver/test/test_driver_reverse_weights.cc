@@ -87,10 +87,8 @@ TEST(ReverseWeights, SingleMat) {
   // the weight list of the target cell for forward remap.
   auto weights_matches = [&](int source, int target) -> bool {
     std::vector<Wonton::Weights_t> const& list = forward_weights[target];
-    for (auto&& weight : list) {
-      if (weight.entityID == source) { return true; }
-    }
-    return false;
+    return std::any_of(list.begin(), list.end(),
+                       [source](auto const& weight) { return weight.entityID == source; });
   };
 
   // check that the reverse weight sparse matrix is a
@@ -241,10 +239,8 @@ TEST(ReverseWeights, MultiMat) {
   // the weight list of the target cell for forward remap.
   auto weights_matches = [&](int m, int s, int t) -> bool {
     std::vector<Wonton::Weights_t> const& list = forward_weights[m][t];
-    for (auto&& weight : list) {
-      if (weight.entityID == s) { return true; }
-    }
-    return false;
+    return std::any_of(list.begin(), list.end(),
+                       [s](auto const& weight) { return weight.entityID == s; });
   };
 
   // check that the reverse weight sparse matrix is a
