@@ -15,6 +15,8 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/interpolate/quadfit.h"
 #include "portage/driver/parts.h"
@@ -84,7 +86,7 @@ class Interpolate_3rdOrder {
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
 
     // Extract the field data from the statemanager
@@ -105,12 +107,12 @@ class Interpolate_3rdOrder {
     // the cells and compute a "limited" quadfit of the field on the
     // cells (for transform definition, see portage.h)
 
-    // Even though we defined Portage::transform (to be
+    // Even though we defined Wonton::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
+    // confused. So we will explicitly state that this is Wonton::transform
 
-    Portage::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
+    Wonton::transform(source_mesh_.begin(on_what), source_mesh_.end(on_what),
                        quadfits_.begin(), limqfit);
   }
 
@@ -151,9 +153,9 @@ class Interpolate_3rdOrder {
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
-  // Portage::vector is generalization of std::vector and
+  // Wonton::vector is generalization of std::vector and
   // Wonton::Vector<D*(D+3)/2> is a geometric vector
-  Portage::vector<Vector<D*(D+3)/2>> quadfits_;
+  Wonton::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
 
@@ -202,7 +204,7 @@ class Interpolate_3rdOrder<
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 
@@ -222,12 +224,12 @@ class Interpolate_3rdOrder<
     // the cells and compute a "limited" quadfit of the field on the
     // cells (for transform definition, see portage.h)
 
-    // Even though we defined Portage::transform (to be
+    // Even though we defined Wonton::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
+    // confused. So we will explicitly state that this is Wonton::transform
 
-    Portage::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
+    Wonton::transform(source_mesh_.begin(Entity_kind::CELL), source_mesh_.end(Entity_kind::CELL),
                        quadfits_.begin(), limqfit);
   }
 
@@ -269,7 +271,7 @@ class Interpolate_3rdOrder<
 
     int nsrccells = sources_and_weights.size();
     if (!nsrccells) {
-#ifdef DEBUG
+#ifndef NDEBUG
       std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
 #endif
@@ -336,9 +338,9 @@ class Interpolate_3rdOrder<
   NumericTolerances_t num_tols_;
   Parts const* parts_;
 
-  // Portage::vector is generalization of std::vector and
+  // Wonton::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
-  Portage::vector<Vector<D*(D+3)/2>> quadfits_;
+  Wonton::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 
 //////////////////////////////////////////////////////////////////////////////
@@ -390,7 +392,7 @@ class Interpolate_3rdOrder<
   void set_interpolation_variable(std::string const & interp_var_name,
                                   Limiter_type limiter_type = NOLIMITER,
                                   Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-                                  Portage::vector<Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     interp_var_name_ = interp_var_name;
 
@@ -410,12 +412,12 @@ class Interpolate_3rdOrder<
     // the cells and compute a "limited" quadfit of the field on the
     // cells (for transform definition, see portage.h)
 
-    // Even though we defined Portage::transform (to be
+    // Even though we defined Wonton::transform (to be
     // thrust::transform or boost::transform) in portage.h, the
     // compiler is not able to disambiguate this call and is getting
-    // confused. So we will explicitly state that this is Portage::transform
+    // confused. So we will explicitly state that this is Wonton::transform
 
-    Portage::transform(source_mesh_.begin(Entity_kind::NODE), source_mesh_.end(Entity_kind::NODE),
+    Wonton::transform(source_mesh_.begin(Entity_kind::NODE), source_mesh_.end(Entity_kind::NODE),
                        quadfits_.begin(), limqfit);
   }
 
@@ -453,7 +455,7 @@ class Interpolate_3rdOrder<
 
     int nsrcnodes = sources_and_weights.size();
     if (!nsrcnodes) {
-#ifdef DEBUG
+#ifndef NDEBUG
       std::cerr << "WARNING: No source nodes contribute to target node." <<
         std::endl;
 #endif
@@ -520,9 +522,9 @@ class Interpolate_3rdOrder<
   double const * source_vals_;
   NumericTolerances_t num_tols_;
 
-  // Portage::vector is generalization of std::vector and
+  // Wonton::vector is generalization of std::vector and
   // Wonton::Vector<D> is a geometric vector
-  Portage::vector<Vector<D*(D+3)/2>> quadfits_;
+  Wonton::vector<Vector<D*(D+3)/2>> quadfits_;
 };
 }  // namespace Portage
 

@@ -6,13 +6,14 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/search/search_simple.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/support/Point.h"
+
+// portage includes
+#include "portage/search/search_simple.h"
 
 TEST(search_simple, case1) {
   Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};

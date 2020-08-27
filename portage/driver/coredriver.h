@@ -18,16 +18,18 @@
 #include <memory>
 #include <limits>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/CoordinateSystem.h"
 
-#ifdef HAVE_TANGRAM
+#include "portage/support/portage.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/interpolate/gradient.h"
-#include "portage/support/portage.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/CoordinateSystem.h"
 #include "portage/driver/parts.h"
 #include "portage/driver/fix_mismatch.h"
 
@@ -49,404 +51,6 @@ using Wonton::Entity_type;
 using Wonton::PARALLEL_OWNED;
 using Wonton::ALL;
 using Wonton::Point;
-
-// Forward declaration of remap driver on particular entity kind
-
-template <int D,
-          Entity_kind ONWHAT,
-          class SourceMesh, class SourceState,
-          class TargetMesh, class TargetState,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper,
-          class CoordSys
-          >
-class CoreDriver;
-
-
-/*!
-  @class CoreDriverBase "coredriver.h"
-
-  @brief CoreDriverBase - Base class for core driver that is
-  agnostic to the Entity_kind
-
-  @tparam SourceMesh A lightweight wrapper to a specific input mesh
-  implementation that provides certain functionality.
-
-  @tparam SourceState A lightweight wrapper to a specific input state
-  manager implementation that provides certain functionality.
-
-  @tparam TargetMesh A lightweight wrapper to a specific target mesh
-  implementation that provides certain functionality.
-
-  @tparam TargetState A lightweight wrapper to a specific target state
-  manager implementation that provides certain functionality.
-
-  @tparam InterfaceReconstructorType An interface reconstruction class
-  that takes the raw interface reconstruction method, the dimension of
-  the problem and the source mesh class as template parameters
-
-  @tparam Matpoly_Splitter A polygon/polyhedron splitting class (returns both pieces of the polygon)
-
-  @tparam Matpoly_Clipper A polygon/polyhedron clipping class (returns only the piece below/behind the clipping plane)
-
-  @tparam CoordinateSystem 
-
-*/
-
-template<int D,
-         class SourceMesh, class SourceState,
-         class TargetMesh, class TargetState,
-         template <class, int, class, class> class InterfaceReconstructorType,
-         class Matpoly_Splitter,
-         class Matpoly_Clipper,
-         class CoordSys
-         >
-class CoreDriverBase {
-
-  template<Entity_kind ONWHAT>
-  using CoreDriverType = CoreDriver<D, ONWHAT, SourceMesh, SourceState,
-                                    TargetMesh, TargetState,
-                                    InterfaceReconstructorType,
-                                    Matpoly_Splitter, Matpoly_Clipper,
-                                    CoordSys>;
-  
- public:
-  CoreDriverBase() = default;
-  virtual ~CoreDriverBase() = default;  // Necessary
-  
-  // Entity kind that a derived class is defined on
-  virtual Entity_kind onwhat() = 0;
-
-  /*! @brief search for candidate source entities whose control volumes
-    (cells, dual cells) overlap the control volumes of target cells
-     
-    @tparam Entity_kind  what kind of entity are we searching on/for
-
-    @tparam Search       search functor
-
-    @returns    vector of intersection candidates for each target entity
-  */
-
-  template<Entity_kind ONWHAT,
-           template <int, Entity_kind, class, class> class Search>
-  Portage::vector<std::vector<int>>
-  search() {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->template search<Search>();
-  }
-    
-
-  /*! @brief intersect target entities with candidate source entities
-
-    @tparam Entity_kind  what kind of entity are we searching on/for
-
-    @tparam Intersect    intersect functor
-
-    @param[in] intersection_candidates  vector of intersection candidates for each target entity
-
-    @returns  vector of intersection moments for each target entity
-  */
-
-  template<
-    Entity_kind ONWHAT,
-    template <Entity_kind, class, class, class,
-              template <class, int, class, class> class,
-              class, class> class Intersect
-    >
-  Portage::vector<std::vector<Portage::Weights_t>>
-  intersect_meshes(Portage::vector<std::vector<int>> const& intersection_candidates) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->template intersect_meshes<Intersect>(intersection_candidates);
-  }
-    
-
-
-
-  /*! intersect target cells with source material polygons
-
-    @tparam Intersect   intersect functor
-
-    @param[in] intersection_candidates vector of intersection
-    candidates for each target entity
-
-    @returns material-wise vector of intersection moments for each
-    target cell
-  */
-
-  template<
-    template <Entity_kind, class, class, class,
-              template <class, int, class, class> class,
-              class, class> class Intersect
-    >
-  std::vector<Portage::vector<std::vector<Portage::Weights_t>>>
-  intersect_materials(Portage::vector<std::vector<int>> const& intersection_candidates) {
-    assert(onwhat() == CELL);
-    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
-    return derived_class_ptr->template intersect_materials<Intersect>(intersection_candidates);
-  }
-
-  /**
-   * @brief Compute the gradient field of the given variable on source mesh.
-   *
-   * @tparam ONWHAT: entity kind (cell or node).
-   * @param field_name: the variable name.
-   * @param limiter_type: gradient limiter to use on internal regions.
-   * @param boundary_limiter_type: gradient limiter to use on boundary.
-   * @param source_part: the source mesh part to consider if any.
-   */
-  template<Entity_kind ONWHAT>
-  Portage::vector<Vector<D>> compute_source_gradient(
-    std::string const field_name,
-    Limiter_type limiter_type = NOLIMITER,
-    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
-    int material_id = 0,
-    const Part<SourceMesh, SourceState>* source_part = nullptr) {
-
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->compute_source_gradient(field_name, limiter_type,
-                                               boundary_limiter_type,
-                                               material_id, source_part);
-  }
-
-  /*!
-
-    Interpolate a mesh variable of type T residing on entity kind
-    ONWHAT using previously computed intersection weights
-
-    @tparam T   type of variable
-
-    @tparam ONWHAT  Entity_kind that field resides on
-
-    @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
-
-    @param[in] srcvarname   Variable name on source mesh
-
-    @param[in] trgvarname   Variable name on target mesh
-
-    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
-  */
-  
-  template<typename T = double,
-           Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class, class,
-                    template <class, int, class, class> class,
-                    class, class, class> class Interpolate
-           >
-  void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            Portage::vector<Vector<D>>* gradients = nullptr) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    derived_class_ptr->
-        template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
-                                                      sources_and_weights,
-                                                      gradients);
-  }
-
-  /*!
-
-    (Part-by-part) Interpolate a cell variable of type T residing on
-    entity kind ONWHAT using previously computed intersection weights
-
-    @tparam T   type of variable
-
-    @tparam ONWHAT  Entity_kind that field resides on (enabled only for CELLs)
-
-    @tparam Interpolate  Functor for doing the interpolate from mesh to mesh
-
-    @param[in] srcvarname   Variable name on source mesh
-
-    @param[in] trgvarname   Variable name on target mesh
-
-    @param[in] parts_pair   Pair of parts between which we have to remap
-
-    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
-
-    Enabled only for cells using SFINAE
-  */
-  
-  template<typename T = double,
-           Entity_kind ONWHAT,
-           template<int, Entity_kind, class, class, class, class, class,
-                    template <class, int, class, class> class,
-                    class, class, class> class Interpolate>
-  typename std::enable_if<ONWHAT == CELL, void>
-  interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            const PartPair<D, SourceMesh, SourceState,
-                            TargetMesh, TargetState>* parts_pair,
-                            Portage::vector<Vector<D>>* gradients = nullptr) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    derived_class_ptr->
-        template interpolate_mesh_var<T, Interpolate>(srcvarname, trgvarname,
-                                                      sources_and_weights,
-                                                      parts_pair,
-                                                      gradients);
-  }
-
-
-  /*!
-    Interpolate a (multi-)material variable of type T residing on CELLs
-    
-    @param[in] srcvarname   Variable name on source mesh
-
-    @param[in] trgvarname   Variable name on target mesh
-
-    @param[in] gradients    Gradients of variable on source mesh (can be nullptr for 1st order remap)
-  */
-  
-  template <typename T = double,
-            template<int, Entity_kind, class, class, class, class, class,
-                     template <class, int, class, class> class,
-                     class, class, class> class Interpolate>
-  void interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                           std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                           std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
-
-    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
-     derived_class_ptr->
-         template interpolate_mat_var<T, Interpolate>(srcvarname,
-                                                      trgvarname,
-                                                      sources_and_weights_by_mat,
-                                                      gradients);
-  }
-
-
-  /*!
-    @brief Check if meshes are mismatched (don't cover identical
-    portions of space)
-
-    @tparam Entity_kind  What kind of entity are we performing intersection of
-
-    @param[in] sources_weights  Intersection sources and moments (vols, centroids) 
-    @returns   Whether the meshes are mismatched
-  */
-
-  template<Entity_kind ONWHAT>
-  bool 
-  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->check_mismatch(source_weights);
-  }
-
-
-  /*!
-    @brief Return if meshes are mismatched (check_mismatch must already have been
-    called)
-
-    @returns   Whether the meshes are mismatched
-  */
-
-  template<Entity_kind ONWHAT>
-  bool 
-  has_mismatch() {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->has_mismatch();
-  }
-
-
-  /*!
-    @brief Return if meshes are mismatched (check_mismatch must already have been
-    called)
-
-    @returns   Whether the meshes are mismatched
-  */
-
-  template<Entity_kind ONWHAT>
-  bool 
-  fix_mismatch(std::string const & src_var_name,
-               std::string const & trg_var_name,
-               double global_lower_bound = -std::numeric_limits<double>::max(),
-               double global_upper_bound = std::numeric_limits<double>::max(),
-               double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
-               int maxiter = 5,
-               Partial_fixup_type partial_fixup_type =
-               Partial_fixup_type::SHIFTED_CONSERVATIVE,
-               Empty_fixup_type empty_fixup_type =
-               Empty_fixup_type::EXTRAPOLATE) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    return derived_class_ptr->fix_mismatch(src_var_name,
-               trg_var_name,
-               global_lower_bound,
-               global_upper_bound,
-               conservation_tol,
-               maxiter,
-               partial_fixup_type,
-               empty_fixup_type);
-}
-
-
-  /*!
-    @brief Set numerical tolerances for small distances and volumes
-
-    @param Entity_kind  what kind of entity are we setting for
-
-    @param min_absolute_distance selected minimal distance
-
-    @param min_absolute_volume selected minimal volume
-  */
-
-  template<Entity_kind ONWHAT>
-  void
-  set_num_tols(const double min_absolute_distance, 
-               const double min_absolute_volume) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    derived_class_ptr->set_num_tols(min_absolute_distance, min_absolute_volume);
-  }
-
-  /*!
-    @brief Set numerical tolerances for small volumes, distances, etc.
-
-    @tparam Entity_kind  what kind of entity are we setting for
-
-    @tparam num_tols     struct of selected numerical tolerances
-  */
-
-  template<Entity_kind ONWHAT>
-  void
-  set_num_tols(const NumericTolerances_t& num_tols) {
-    assert(ONWHAT == onwhat());
-    auto derived_class_ptr = static_cast<CoreDriverType<ONWHAT> *>(this);
-    derived_class_ptr->set_num_tols(num_tols);
-  }
-
-
-#ifdef HAVE_TANGRAM
-  /*!
-    @brief set options for interface reconstructor driver
-    @param all_convex Should be set to false if the source mesh contains
-    non-convex cells.
-    @param tols The vector of tolerances for each moment during reconstruction.
-    By default, the values are chosen based on tolerances specified for Portage
-    in NumericTolerances_t struct. If both the tolerances for Portage and for
-    Tangram are explicitly set by a user, they need to make sure that selected
-    values are synced. If only the tolerances for Tangram are set by a user,
-    then values in Portage's NumericTolerances_t are set based on the tols
-    argument.
-  */
-  void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
-    assert(onwhat() == CELL);
-    auto derived_class_ptr = static_cast<CoreDriverType<CELL> *>(this);
-    derived_class_ptr->set_interface_reconstructor_options(all_convex, tols);
-  }
-
-#endif
-
-};
-
-
-
 
 /*!
   @class CoreDriver "driver_core.h"
@@ -490,13 +94,7 @@ template <int D,
           class Matpoly_Clipper = void,
           class CoordSys = Wonton::DefaultCoordSys
           >
-class CoreDriver : public CoreDriverBase<D,
-                                         SourceMesh, SourceState,
-                                         TargetMesh, TargetState,
-                                         InterfaceReconstructorType,
-                                         Matpoly_Splitter,
-                                         Matpoly_Clipper,
-                                         CoordSys> {
+class CoreDriver {
 
   // useful alias
   using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
@@ -527,9 +125,10 @@ class CoreDriver : public CoreDriverBase<D,
         target_mesh_(target_mesh),
         source_state_(source_state),
         target_state_(target_state),
+        gradient_(source_mesh, source_state),
         executor_(executor)
   {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     mycomm_ = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -563,7 +162,7 @@ class CoreDriver : public CoreDriverBase<D,
   */
 
   template<template<int, Entity_kind, class, class> class Search>
-  Portage::vector<std::vector<int>>
+  Wonton::vector<std::vector<int>>
   search() {
     // Get an instance of the desired search algorithm type
     const Search<D, ONWHAT, SourceMesh, TargetMesh>
@@ -572,9 +171,9 @@ class CoreDriver : public CoreDriverBase<D,
     int ntarget_ents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
 
     // initialize search candidate vector
-    Portage::vector<std::vector<int>> candidates(ntarget_ents);
+    Wonton::vector<std::vector<int>> candidates(ntarget_ents);
 
-    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+    Wonton::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                        candidates.begin(), search_functor);
 
@@ -595,10 +194,10 @@ class CoreDriver : public CoreDriverBase<D,
   template<template <Entity_kind, class, class, class,
                      template <class, int, class, class> class,
                      class, class> class Intersect>
-  Portage::vector<std::vector<Portage::Weights_t>>
-  intersect_meshes(Portage::vector<std::vector<int>> const& candidates) {
+  Wonton::vector<std::vector<Portage::Weights_t>>
+  intersect_meshes(Wonton::vector<std::vector<int>> const& candidates) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
@@ -615,13 +214,13 @@ class CoreDriver : public CoreDriverBase<D,
 #endif
 
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
-    Portage::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
+    Wonton::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
       
     Intersect<ONWHAT, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
         intersector(source_mesh_, source_state_, target_mesh_, num_tols_);
 
-    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+    Wonton::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                        candidates.begin(),
                        sources_and_weights.begin(),
@@ -644,7 +243,7 @@ class CoreDriver : public CoreDriverBase<D,
     num_tols_ = num_tols;
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver
     @param all_convex Should be set to false if the source mesh contains
@@ -687,10 +286,10 @@ class CoreDriver : public CoreDriverBase<D,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
-  std::vector<Portage::vector<std::vector<Weights_t>>>
-  intersect_materials(Portage::vector<std::vector<int>> const& candidates) {
+  std::vector<Wonton::vector<std::vector<Weights_t>>>
+  intersect_materials(Wonton::vector<std::vector<int>> const& candidates) {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
@@ -750,7 +349,7 @@ class CoreDriver : public CoreDriverBase<D,
     // Assume (with no harm for sizing purposes) that all materials
     // in source made it into target
 
-    std::vector<Portage::vector<std::vector<Weights_t>>>
+    std::vector<Wonton::vector<std::vector<Weights_t>>>
         source_weights_by_mat(nmats);
 
     for (int m = 0; m < nmats; m++) {
@@ -784,7 +383,7 @@ class CoreDriver : public CoreDriverBase<D,
 
 
       std::vector<std::vector<Weights_t>> this_mat_sources_and_wts(ntargetcells);
-      Portage::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
+      Wonton::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                          target_mesh_.end(CELL, PARALLEL_OWNED),
                          candidates.begin(),
                          this_mat_sources_and_wts.begin(),
@@ -799,14 +398,14 @@ class CoreDriver : public CoreDriverBase<D,
         std::vector<Weights_t> const& cell_mat_sources_and_weights =
             this_mat_sources_and_wts[c];
         int nwts = cell_mat_sources_and_weights.size();
+        double cell_mat_volume = 0.0;
         for (int s = 0; s < nwts; s++) {
           std::vector<double> const& wts = cell_mat_sources_and_weights[s].weights;
-          // Check that the volume of material we are adding to c is not miniscule
-          if (wts[0] > num_tols_.min_absolute_volume) {
-            matcellstgt.push_back(c);
-            break;
-          }
+          cell_mat_volume += wts[0];
         }
+        // Check that the volume of material we are adding to c is not miniscule
+        if (cell_mat_volume > num_tols_.min_absolute_volume)
+          matcellstgt.push_back(c);
       }
 
       // If any processor is adding this material to the target state,
@@ -814,7 +413,7 @@ class CoreDriver : public CoreDriverBase<D,
 
       int nmatcells = matcellstgt.size();
       int nmatcells_global = nmatcells;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (mycomm_!= MPI_COMM_NULL)
         MPI_Allreduce(&nmatcells, &nmatcells_global, 1, MPI_INT, MPI_SUM,
                       mycomm_);
@@ -892,7 +491,7 @@ class CoreDriver : public CoreDriverBase<D,
 
     return source_weights_by_mat;
 #else
-    return std::vector<Portage::vector<std::vector<Weights_t>>>();
+    return std::vector<Wonton::vector<std::vector<Weights_t>>>();
 #endif
 
   }
@@ -906,15 +505,15 @@ class CoreDriver : public CoreDriverBase<D,
    * @param boundary_limiter_type: gradient limiter to use on boundary.
    * @param source_part: the source mesh part to consider if any.
    */
-  Portage::vector<Vector<D>> compute_source_gradient(
+  Wonton::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
     Limiter_type limiter_type = NOLIMITER,
     Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
     int material_id = 0,
-    const Part<SourceMesh, SourceState>* source_part = nullptr) const {
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
 
     int nallent = 0;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // enable part-by-part only for cell-based remap
     auto const field_type = source_state_.field_type(ONWHAT, field_name);
 
@@ -943,38 +542,36 @@ class CoreDriver : public CoreDriverBase<D,
     } else /* single material */ {
 #endif
       nallent = source_mesh_.num_entities(ONWHAT, ALL);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
 
-    // instantiate the right kernel according to entity kind (cell/node),
-    // as well as source and target meshes and states types.
-#ifdef HAVE_TANGRAM
-    Gradient kernel(source_mesh_, source_state_, field_name,
-                    limiter_type, boundary_limiter_type,
-                    interface_reconstructor_, source_part);
-#else
-    Gradient kernel(source_mesh_, source_state_, field_name,
-                    limiter_type, boundary_limiter_type, source_part);
-#endif
+    // use stored instance for mesh remap
+    // create a new instance for part-by-part
+    // nb: make_unique or make_shared would copy the object
+    auto kernel = (source_part == nullptr ? &gradient_
+                                          : new Gradient(source_mesh_, source_state_, source_part));
+    // set gradient kernel options
+    kernel->set_interpolation_variable(field_name, limiter_type, boundary_limiter_type);
 
     // create the field (material cell indices have owned and ghost
     // cells mixed together; so we have to have a vector of size
     // owned+ghost and fill in the right entries; the ghost entries
     // are zeroed out)
     Vector<D> zerovec;
-    Portage::vector<Vector<D>> gradient_field(nallent, zerovec);
+    Wonton::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     if (multimat) {
-      // no need for this to be Portage::vector as it will be copied out
+      // no need for this to be Wonton::vector as it will be copied out
       std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
-      
-      kernel.set_material(material_id);
-      Portage::transform(mat_cells.begin(),
+
+      kernel->set_material(material_id);
+      kernel->set_interface_reconstructor(interface_reconstructor_);
+      Wonton::transform(mat_cells.begin(),
                          mat_cells.end(),
-                         owned_gradient_field.begin(), kernel);
+                         owned_gradient_field.begin(), *kernel);
       int i = 0;
       for (auto const& c : mat_cells) {
         int cm = source_state_.cell_index_in_material(c, material_id);
@@ -982,12 +579,14 @@ class CoreDriver : public CoreDriverBase<D,
       }
     } else {
 #endif
-      Portage::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+      Wonton::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                          source_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         gradient_field.begin(), kernel);
-#ifdef HAVE_TANGRAM
+                         gradient_field.begin(), *kernel);
+#ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
+    if (source_part != nullptr) { delete kernel; }
+
     return gradient_field;
   }
 
@@ -1005,8 +604,8 @@ class CoreDriver : public CoreDriverBase<D,
     class, class, class> class Interpolate
   >
   void interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                            Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
-                            Portage::vector<Vector<D>>* gradients = nullptr) {
+                            Wonton::vector<std::vector<Weights_t>> const& sources_and_weights,
+                            Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -1031,8 +630,8 @@ class CoreDriver : public CoreDriverBase<D,
     T* target_mesh_field = nullptr;
     target_state_.mesh_get_data(ONWHAT, trgvarname, &target_mesh_field);
 
-    Portage::pointer<T> target_field(target_mesh_field);
-    Portage::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
+    Wonton::pointer<T> target_field(target_mesh_field);
+    Wonton::transform(target_mesh_.begin(ONWHAT, PARALLEL_OWNED),
                        target_mesh_.end(ONWHAT, PARALLEL_OWNED),
                        sources_and_weights.begin(),
                        target_field, interpolator);
@@ -1073,10 +672,10 @@ class CoreDriver : public CoreDriverBase<D,
            typename = typename std::enable_if<ONWHAT1 == CELL>::type>
   void
   interpolate_mesh_var(std::string srcvarname, std::string trgvarname,
-                       Portage::vector<std::vector<Weights_t>> const& sources_and_weights,
+                       Wonton::vector<std::vector<Weights_t>> const& sources_and_weights,
                        const PartPair<D, SourceMesh, SourceState,
                        TargetMesh, TargetState>* partition,
-                       Portage::vector<Vector<D>>* gradients = nullptr) {
+                       Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
@@ -1110,15 +709,15 @@ class CoreDriver : public CoreDriverBase<D,
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
     int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
-    Portage::for_each(source_part.cells().begin(),
+    Wonton::for_each(source_part.cells().begin(),
                       source_part.cells().end(),
                       [&](int current){ assert(current <= max_source_id); });
 
-    Portage::for_each(target_part.cells().begin(),
+    Wonton::for_each(target_part.cells().begin(),
                       target_part.cells().end(),
                       [&](int current){ assert(current <= max_target_id); });
 #endif
@@ -1152,8 +751,8 @@ class CoreDriver : public CoreDriverBase<D,
       return heap;
     };
 
-    Portage::vector<entity_weights_t> parts_weights(target_part_size);
-    Portage::transform(target_part.cells().begin(),
+    Wonton::vector<entity_weights_t> parts_weights(target_part_size);
+    Wonton::transform(target_part.cells().begin(),
                        target_part.cells().end(),
                        parts_weights.begin(), filter_weights);
 
@@ -1164,9 +763,9 @@ class CoreDriver : public CoreDriverBase<D,
     // and not to the target mesh. Hence we need to copy them back in the
     // target state at their correct (absolute index) memory locations.
     T temporary_storage[target_part_size];
-    Portage::pointer<T> target_part_field(temporary_storage);
+    Wonton::pointer<T> target_part_field(temporary_storage);
 
-    Portage::transform(target_part.cells().begin(),
+    Wonton::transform(target_part.cells().begin(),
                        target_part.cells().end(),
                        parts_weights.begin(), target_part_field, interpolator);
 
@@ -1177,7 +776,7 @@ class CoreDriver : public CoreDriverBase<D,
   }
   
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   
   /*! CoreDriver::interpolate_mat_var
 
@@ -1216,8 +815,8 @@ class CoreDriver : public CoreDriverBase<D,
            typename = typename std::enable_if<ONWHAT1 == CELL>::type>
   void
   interpolate_mat_var(std::string srcvarname, std::string trgvarname,
-                      std::vector<Portage::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
-                      std::vector<Portage::vector<Vector<D>>>* gradients = nullptr) {
+                      std::vector<Wonton::vector<std::vector<Weights_t>>> const& sources_and_weights_by_mat,
+                      std::vector<Wonton::vector<Vector<D>>>* gradients = nullptr) {
     
     using Interpolator = Interpolate<D, ONWHAT,
                                      SourceMesh, TargetMesh,
@@ -1258,9 +857,9 @@ class CoreDriver : public CoreDriverBase<D,
       target_state_.mat_get_celldata(trgvarname, m, &target_field_raw);
       assert (target_field_raw != nullptr);
 
-      Portage::pointer<T> target_field(target_field_raw);
+      Wonton::pointer<T> target_field(target_field_raw);
 
-      Portage::transform(matcellstgt.begin(), matcellstgt.end(),
+      Wonton::transform(matcellstgt.begin(), matcellstgt.end(),
                          sources_and_weights_by_mat[m].begin(),
                          target_field, interpolator);
 
@@ -1275,7 +874,7 @@ class CoreDriver : public CoreDriverBase<D,
 
   }  // CoreDriver::interpolate_mat_var
 
-#endif  // HAVE_TANGRAM
+#endif  // PORTAGE_HAS_TANGRAM
 
 
   /*! 
@@ -1287,7 +886,7 @@ class CoreDriver : public CoreDriverBase<D,
     @returns   Whether the meshes are mismatched
   */
   bool
-  check_mismatch(Portage::vector<std::vector<Weights_t>> const& source_weights) {
+  check_mismatch(Wonton::vector<std::vector<Weights_t>> const& source_weights) {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
@@ -1380,7 +979,7 @@ class CoreDriver : public CoreDriverBase<D,
   TargetMesh const & target_mesh_;
   SourceState const & source_state_;
   TargetState & target_state_;
-
+  Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;
@@ -1388,11 +987,11 @@ class CoreDriver : public CoreDriverBase<D,
 
   Wonton::Executor_type const *executor_;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the
@@ -1504,86 +1103,6 @@ class CoreDriver : public CoreDriverBase<D,
                                 TargetMesh, TargetState>> mismatch_fixer_;
 
 };  // CoreDriver
-
-
-// Core Driver Factory
-
-template <int D,
-          class SourceMesh, class SourceState,
-          class TargetMesh, class TargetState,
-          template <class, int, class, class> class InterfaceReconstructorType,
-          class Matpoly_Splitter,
-          class Matpoly_Clipper,
-          class CoordSys>
-std::unique_ptr<CoreDriverBase<D, SourceMesh, SourceState,
-                               TargetMesh, TargetState,
-                               InterfaceReconstructorType,
-                               Matpoly_Splitter, Matpoly_Clipper,
-                               CoordSys>
-                >
-make_core_driver(Entity_kind onwhat,
-                 SourceMesh const & source_mesh,
-                 SourceState const & source_state,
-                 TargetMesh const & target_mesh,
-                 TargetState & target_state,
-                 Wonton::Executor_type const *executor) {
-  switch (onwhat) {
-    case CELL:
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // return std::make_unique<CoreDriver<D, CELL,
-      //                                        SourceMesh, SourceState,
-      //                                        TargetMesh, TargetState,
-      //                                        InterfaceReconstructorType,
-      //                                        Matpoly_Splitter, Matpoly_Clipper,
-      //                                        CoordSys>>
-      //     (source_mesh, source_state, target_mesh, target_state, executor);
-
-      return std::unique_ptr<CoreDriver<D, CELL,
-                                        SourceMesh, SourceState,
-                                        TargetMesh, TargetState,
-                                        InterfaceReconstructorType,
-                                        Matpoly_Splitter, Matpoly_Clipper,
-                                        CoordSys>>(
-                                            new CoreDriver<D, CELL,
-                                            SourceMesh, SourceState,
-                                            TargetMesh, TargetState,
-                                            InterfaceReconstructorType,
-                                            Matpoly_Splitter, Matpoly_Clipper,
-                                            CoordSys>
-                                            (source_mesh, source_state, 
-                                             target_mesh, target_state,
-                                             executor)
-                                                        );
-    case NODE:
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // return std::make_unique<CoreDriver<D, NODE,
-      //                                        SourceMesh, SourceState,
-      //                                        TargetMesh, TargetState,
-      //                                        InterfaceReconstructorType,
-      //                                        Matpoly_Splitter, Matpoly_Clipper,
-      //                                        CoordSys>>
-      //     (source_mesh, source_state, target_mesh, target_state, executor);
-      return std::unique_ptr<CoreDriver<D, CELL,
-                                        SourceMesh, SourceState,
-                                        TargetMesh, TargetState,
-                                        InterfaceReconstructorType,
-                                        Matpoly_Splitter, Matpoly_Clipper,
-                                        CoordSys>>(
-                                            new CoreDriver<D, CELL,
-                                            SourceMesh, SourceState,
-                                            TargetMesh, TargetState,
-                                            InterfaceReconstructorType,
-                                            Matpoly_Splitter, Matpoly_Clipper,
-                                            CoordSys>
-                                            (source_mesh, source_state, 
-                                             target_mesh, target_state,
-                                             executor)
-                                                   );
-    default:
-      throw std::runtime_error("Remapping on "+Wonton::to_string(onwhat)+" not implemented");
-  }
-}  // make_core_driver
-
 
 }  // namespace Portage
 

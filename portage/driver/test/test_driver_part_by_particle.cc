@@ -16,9 +16,17 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+// wonton includes
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
 
 // portage includes
 #include "portage/driver/driver_mesh_swarm_mesh.h"
@@ -26,12 +34,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
-
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
 
 namespace {
 

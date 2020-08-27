@@ -5,8 +5,11 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include <vector>
-#include "portage/support/portage.h"
+
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+
+#include "portage/support/portage.h"
 
 
 namespace BOX_INTERSECT {

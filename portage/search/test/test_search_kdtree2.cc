@@ -8,12 +8,13 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-// portage includes
-#include "portage/search/search_kdtree.h"
-
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+
+// portage includes
+#include "portage/search/search_kdtree.h"
 
 TEST(search_kdtree2, cell) {
   Wonton::Simple_Mesh sm{0, 0, 1, 1, 3, 3};

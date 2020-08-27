@@ -11,9 +11,11 @@ Please see the license file at the root of this repository, or at:
 #include <array>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 namespace Portage { namespace Meshfree { namespace basis {
 
@@ -118,7 +120,7 @@ shift(Wonton::Point<dim> x, Wonton::Point<dim> y) {
   auto ijet = inverse_jet<type, dim>(x);
   auto by   = function<type, dim>(y);
   int const n = Traits<type, dim>::function_size;
-  std::array<double, Traits<type, dim>::function_size> r{0.0};
+  std::array<double, Traits<type, dim>::function_size> r {};
 
   for (int i = 0; i < n; i++) {
     r[i] = 0.;
@@ -298,7 +300,7 @@ template<>
 inline
 std::array<double, Traits<Unitary, 1>::function_size>
 function<Unitary, 1>(Wonton::Point<1> x) {
-  std::array<double, Traits<Unitary, 1>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 1>::function_size> r {};
   r[0] = 1.;
   return r;
 }
@@ -307,7 +309,7 @@ template<>
 inline
 std::array<double, Traits<Unitary, 2>::function_size>
 function<Unitary, 2>(Wonton::Point<2> x) {
-  std::array<double, Traits<Unitary, 2>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 2>::function_size> r {};
   r[0] = 1.;
   return r;
 }
@@ -316,7 +318,7 @@ template<>
 inline
 std::array<double, Traits<Unitary, 3>::function_size>
 function<Unitary, 3>(Wonton::Point<3> x) {
-  std::array<double, Traits<Unitary, 3>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 3>::function_size> r {};
   r[0] = 1.;
   return r;
 }
@@ -333,7 +335,8 @@ jet<Unitary, 1>(Wonton::Point<1> x) {
   std::array<
     std::array<double, Traits<Unitary, 1>::function_size>,
     Traits<Unitary, 1>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -348,7 +351,8 @@ jet<Unitary, 2>(Wonton::Point<2> x) {
   std::array<
     std::array<double, Traits<Unitary, 2>::function_size>,
     Traits<Unitary, 2>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -363,7 +367,8 @@ jet<Unitary, 3>(Wonton::Point<3> x) {
   std::array<
     std::array<double, Traits<Unitary, 3>::function_size>,
     Traits<Unitary, 3>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -380,7 +385,8 @@ inverse_jet<Unitary, 1>(Wonton::Point<1> x) {
   std::array<
     std::array<double, Traits<Unitary, 1>::function_size>,
     Traits<Unitary, 1>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -395,7 +401,8 @@ inverse_jet<Unitary, 2>(Wonton::Point<2> x) {
   std::array<
     std::array<double, Traits<Unitary, 2>::function_size>,
     Traits<Unitary, 2>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -410,7 +417,8 @@ inverse_jet<Unitary, 3>(Wonton::Point<3> x) {
   std::array<
     std::array<double, Traits<Unitary, 3>::function_size>,
     Traits<Unitary, 3>::function_size
-  > r{0.0};
+  > r {};
+  r.fill({}); // zero-init
   r[0][0] = 1.;
   return r;
 }
@@ -421,7 +429,8 @@ template<>
 inline
 std::array<double, Traits<Unitary, 1>::function_size>
 shift<Unitary, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
-  std::array<double, Traits<Unitary, 1>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 1>::function_size> r {};
+  r.fill({}); // zero-init
   r[0] = 1.;
   return r;
 }
@@ -430,7 +439,8 @@ template<>
 inline
 std::array<double, Traits<Unitary, 2>::function_size>
 shift<Unitary, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
-  std::array<double, Traits<Unitary, 2>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 2>::function_size> r {};
+  r.fill({}); // zero-init
   r[0] = 1.;
   return r;
 }
@@ -439,7 +449,8 @@ template<>
 inline
 std::array<double, Traits<Unitary, 3>::function_size>
 shift<Unitary, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
-  std::array<double, Traits<Unitary, 3>::function_size> r{0.0};
+  std::array<double, Traits<Unitary, 3>::function_size> r {};
+  r.fill({}); // zero-init
   r[0] = 1.;
   return r;
 }
@@ -478,7 +489,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 1>::function_size>
 function<Linear, 1>(Wonton::Point<1> x) {
-  std::array<double, Traits<Linear, 1>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 1>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   return r;
@@ -488,7 +499,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 2>::function_size>
 function<Linear, 2>(Wonton::Point<2> x) {
-  std::array<double, Traits<Linear, 2>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 2>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -499,7 +510,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 3>::function_size>
 function<Linear, 3>(Wonton::Point<3> x) {
-  std::array<double, Traits<Linear, 3>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 3>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -519,7 +530,7 @@ jet<Linear, 1>(Wonton::Point<1> x) {
   std::array<
     std::array<double, Traits<Linear, 1>::function_size>,
     Traits<Linear, 1>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[0][1] = 0.;
@@ -537,7 +548,7 @@ jet<Linear, 2>(Wonton::Point<2> x) {
   std::array<
     std::array<double, Traits<Linear, 2>::function_size>,
     Traits<Linear, 2>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -560,7 +571,7 @@ jet<Linear, 3>(Wonton::Point<3> x) {
   std::array<
     std::array<double, Traits<Linear, 3>::function_size>,
     Traits<Linear, 3>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -592,7 +603,7 @@ inverse_jet<Linear, 1>(Wonton::Point<1> x) {
   std::array<
     std::array<double, Traits<Linear, 1>::function_size>,
     Traits<Linear, 1>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[0][1] = 0.;
@@ -610,7 +621,7 @@ inverse_jet<Linear, 2>(Wonton::Point<2> x) {
   std::array<
     std::array<double, Traits<Linear, 2>::function_size>,
     Traits<Linear, 2>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[2][0] = -x[1];
@@ -633,7 +644,7 @@ inverse_jet<Linear, 3>(Wonton::Point<3> x) {
   std::array<
     std::array<double, Traits<Linear, 3>::function_size>,
     Traits<Linear, 3>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = -x[0];
   r[2][0] = -x[1];
@@ -659,7 +670,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 1>::function_size>
 shift<Linear, 1>(Wonton::Point<1> x, Wonton::Point<1> y) {
-  std::array<double, Traits<Linear, 1>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 1>::function_size> r {};
   r[0] = 1.;
   r[1] = y[0] - x[0];
   return r;
@@ -669,7 +680,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 2>::function_size>
 shift<Linear, 2>(Wonton::Point<2> x, Wonton::Point<2> y) {
-  std::array<double, Traits<Linear, 2>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 2>::function_size> r {};
   r[0] = 1.;
   r[1] = y[0] - x[0];
   r[2] = y[1] - x[1];
@@ -680,7 +691,7 @@ template<>
 inline
 std::array<double, Traits<Linear, 3>::function_size>
 shift<Linear, 3>(Wonton::Point<3> x, Wonton::Point<3> y) {
-  std::array<double, Traits<Linear, 3>::function_size> r{0.0};
+  std::array<double, Traits<Linear, 3>::function_size> r {};
   r[0] = 1.;
   r[1] = y[0] - x[0];
   r[2] = y[1] - x[1];
@@ -748,7 +759,7 @@ template<>
 inline
 std::array<double, Traits<Quadratic, 1>::function_size>
 function<Quadratic, 1>(Wonton::Point<1> x) {
-  std::array<double, Traits<Quadratic, 1>::function_size> r{0.0};
+  std::array<double, Traits<Quadratic, 1>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = .5 * x[0] * x[0];
@@ -759,7 +770,7 @@ template<>
 inline
 std::array<double, Traits<Quadratic, 2>::function_size>
 function<Quadratic, 2>(Wonton::Point<2> x) {
-  std::array<double, Traits<Quadratic, 2>::function_size> r{0.0};
+  std::array<double, Traits<Quadratic, 2>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -773,7 +784,7 @@ template<>
 inline
 std::array<double, Traits<Quadratic, 3>::function_size>
 function<Quadratic, 3>(Wonton::Point<3> x) {
-  std::array<double, Traits<Quadratic, 3>::function_size> r{0.0};
+  std::array<double, Traits<Quadratic, 3>::function_size> r {};
   r[0] = 1.;
   r[1] = x[0];
   r[2] = x[1];
@@ -799,7 +810,7 @@ jet<Quadratic, 1>(Wonton::Point<1> x) {
   std::array<
     std::array<double, Traits<Quadratic, 1>::function_size>,
     Traits<Quadratic, 1>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
 
   r[1][0] = x[0];
@@ -821,7 +832,7 @@ jet<Quadratic, 2>(Wonton::Point<2> x) {
   std::array<
     std::array<double, Traits<Quadratic, 2>::function_size>,
     Traits<Quadratic, 2>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];
@@ -852,7 +863,7 @@ jet<Quadratic, 3>(Wonton::Point<3> x) {
   std::array<
     std::array<double, Traits<Quadratic, 3>::function_size>,
     Traits<Quadratic, 3>::function_size
-  > r{0.0};
+  > r {};
   r[0][0] = 1.;
   r[1][0] = x[0];
   r[2][0] = x[1];

@@ -19,6 +19,8 @@
 #include <type_traits>
 #include <limits>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 #include "portage/driver/fix_mismatch.h"
 
@@ -185,7 +187,7 @@ namespace Portage {
         bool const use_masks = masks != nullptr;
 
         // compute the volume of each entity of the part
-        Portage::for_each(cells_.begin(), cells_.end(), [&](int s) {
+        Wonton::for_each(cells_.begin(), cells_.end(), [&](int s) {
           auto const& i = index_[s];
           auto const& volume = mesh_.cell_volume(s);
           volumes_[i] = (use_masks ? masks[s] * volume : volume);
@@ -263,7 +265,7 @@ public:
   ) : source_(source_mesh, source_state, source_entities),
       target_(target_mesh, target_state, target_entities)
   {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       distributed_ = true;
@@ -281,7 +283,7 @@ public:
     int nb_masks = source_.mesh().num_owned_cells();
 
     source_entities_masks_.resize(nb_masks, 1);
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       get_unique_entity_masks<Entity_kind::CELL, SourceMesh>(
         source_.mesh(), &source_entities_masks_, mycomm_
@@ -332,12 +334,12 @@ public:
    * @return the total intersection volume.
    */
   double compute_intersect_volumes
-    (Portage::vector<entity_weights_t> const& source_weights) {
+    (Wonton::vector<entity_weights_t> const& source_weights) {
     // retrieve target entities list
     auto const& target_entities = target_.cells();
 
     // compute the intersected volume of each target part entity
-    Portage::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
+    Wonton::for_each(target_entities.begin(), target_entities.end(), [&](int t) {
       auto const& i = target_.index(t);
       // accumulate moments
       entity_weights_t const moments = source_weights[t];
@@ -380,7 +382,7 @@ public:
    * @param source... source entities ID and weights for each target entity.
    * @return true if a mismatch has been identified, false otherwise.
    */
-  bool check_mismatch(Portage::vector<entity_weights_t> const& source_weights) {
+  bool check_mismatch(Wonton::vector<entity_weights_t> const& source_weights) {
 
     // ------------------------------------------
     // COMPUTE VOLUMES ON SOURCE AND TARGET PARTS
@@ -394,7 +396,7 @@ public:
     global_target_volume_    = target_volume;
     global_intersect_volume_ = intersect_volume;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       MPI_Allreduce(&source_volume, &global_source_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
       MPI_Allreduce(&target_volume, &global_target_volume_, 1, MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -478,7 +480,7 @@ public:
     int nb_empty = empty_entities.size();
     int global_nb_empty = nb_empty;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_) {
       global_nb_empty = 0;
       MPI_Reduce(&nb_empty, &global_nb_empty, 1, MPI_INT, MPI_SUM, 0, mycomm_);
@@ -740,7 +742,7 @@ public:
       double global_source_sum = source_sum;
       double global_target_sum = target_sum;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_) {
         MPI_Allreduce(
           &source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM, mycomm_
@@ -781,7 +783,7 @@ public:
           }
         }
         global_covered_target_volume = covered_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &covered_target_volume, &global_covered_target_volume,
@@ -861,7 +863,7 @@ public:
         }
 
         global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM, mycomm_
@@ -878,7 +880,7 @@ public:
         absolute_diff = global_target_sum - global_source_sum;
         global_adj_target_volume = adj_target_volume;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_) {
           MPI_Allreduce(
             &adj_target_volume, &global_adj_target_volume,
@@ -951,7 +953,7 @@ private:
   int rank_         = 0;
   int nprocs_       = 1;
   bool distributed_ = false;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 };

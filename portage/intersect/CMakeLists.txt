@@ -5,10 +5,18 @@ Please see the license file at the root of this repository, or at:
 ]]
 #-----------------------------------------------------------------------------~#
 
+project(portage_intersect)
+
+add_library(portage_intersect INTERFACE)
+
+target_include_directories(portage_intersect INTERFACE
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
+  $<INSTALL_INTERFACE:include>
+  )
+
 # Add header files
-set(intersect_HEADERS
-        clipper.hpp
-        intersect_clipper.h
+set(portage_intersect_HEADERS
         intersect_boxes.h
         intersect_polys_r2d.h
         intersect_r2d.h
@@ -17,57 +25,73 @@ set(intersect_HEADERS
         intersect_rNd.h
         intersect_swept_face.h
         dummy_interface_reconstructor.h
-        PARENT_SCOPE
         )
 
-# Add source files
-set(intersect_SOURCES clipper.cpp PARENT_SCOPE)
+
+# Not yet allowed for INTERFACE libraries
+# 
+# set_target_properties(portage_intersect PROPERTIES
+#   PUBLIC_HEADER "${portage_intersect_HEADERS}")
+#
+# Directly install files instead
+#
+install(FILES ${portage_intersect_HEADERS} DESTINATION include/portage/intersect)
+
+target_link_libraries(portage_intersect INTERFACE portage_support)
+
+target_link_libraries(portage INTERFACE portage_intersect)
+
+install(TARGETS portage_intersect
+  EXPORT portage_LIBRARIES
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/portage/intersect
+  INCLUDES DESTINATION include/portage/intersect
+  )
+
+      
 
 # Add unit test
 if (ENABLE_UNIT_TESTS)
-    if (Jali_DIR)
-        cinch_add_unit(test_intersect_clipper
-                SOURCES test/test_intersect_clipper.cc clipper.cpp
-                LIBRARIES ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-                POLICY MPI)
+  if (WONTON_ENABLE_Jali)
+    portage_add_unittest(test_intersect_swept_face_2D
+      SOURCES test/test_intersect_swept_face_2D.cc
+      LIBRARIES portage_intersect
+      POLICY MPI)
 
-        cinch_add_unit(test_intersect_swept_face_2d
-                SOURCES test/test_intersect_swept_face_2D.cc
-                LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-                POLICY MPI)
+    portage_add_unittest(test_intersect_swept_face_3d
+      SOURCES test/test_intersect_swept_face_3D.cc
+      LIBRARIES portage_intersect
+      POLICY MPI)
+  endif ()
 
-        cinch_add_unit(test_intersect_swept_face_3d
-                SOURCES test/test_intersect_swept_face_3D.cc
-                LIBRARIES portage ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
-                POLICY MPI)
-    endif (Jali_DIR)
+  portage_add_unittest(test_intersect_boxes
+    SOURCES test/test_intersect_boxes.cc
+    LIBRARIES portage_intersect
+    POLICY SERIAL)
+  
+  portage_add_unittest(test_intersect_r2d
+    SOURCES test/test_intersect_r2d.cc
+    LIBRARIES portage_intersect
+    POLICY SERIAL)
+  
+  portage_add_unittest(test_intersect_r3d
+    SOURCES test/test_intersect_r3d.cc
+    LIBRARIES portage_intersect
+    POLICY SERIAL)
+  
+  if (PORTAGE_HAS_TANGRAM)
+      portage_add_unittest(test_intersect_tangram_2d
+        SOURCES test/test_tangram_intersect_2D.cc
+        LIBRARIES portage_intersect
+        POLICY SERIAL)
+      
+      portage_add_unittest(test_intersect_tangram_3d
+        SOURCES test/test_tangram_intersect_3D.cc
+        LIBRARIES portage_intersect
+        POLICY SERIAL)
+  endif ()
 
-    cinch_add_unit(test_intersect_boxes
-            SOURCES test/test_intersect_boxes.cc
-            LIBRARIES wonton
-            POLICY SERIAL)
-
-    cinch_add_unit(test_intersect_r2d
-            SOURCES test/test_intersect_r2d.cc
-            LIBRARIES wonton
-            POLICY SERIAL)
-
-    cinch_add_unit(test_intersect_r3d
-            SOURCES test/test_intersect_r3d.cc
-            LIBRARIES portage wonton
-            POLICY SERIAL)
-
-    if (TANGRAM_FOUND AND XMOF2D_FOUND)
-        include_directories(${TANGRAM_INCLUDE_DIRS})
-        cinch_add_unit(test_intersect_tangram_2d
-                SOURCES test/test_tangram_intersect_2D
-                LIBRARIES portage
-                POLICY SERIAL)
-
-        cinch_add_unit(test_intersect_tangram_3d
-                SOURCES test/test_tangram_intersect_3D
-                LIBRARIES portage
-                POLICY SERIAL)
-    endif (TANGRAM_FOUND AND XMOF2D_FOUND)
 endif (ENABLE_UNIT_TESTS)
 

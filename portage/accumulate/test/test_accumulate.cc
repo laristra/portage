@@ -8,14 +8,17 @@ Please see the license file at the root of this repository, or at:
 #include <portage/driver/driver_swarm.h>
 #include "gtest/gtest.h"
 
-#include "portage/swarm/swarm.h"
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+
 #include "portage/accumulate/accumulate.h"
 #include "portage/support/portage.h"
 #include "portage/support/operator_references.h"
-#include "wonton/support/Point.h"
 
 using namespace Portage::Meshfree;
 using Wonton::Point;
+using Wonton::Swarm;
 
 using namespace Portage::Meshfree::reference;
 
@@ -31,8 +34,8 @@ void test_accumulate(EstimateType etype, basis::Type btype, WeightCenter center)
   const double smoothing = 2.5*deltax;
   const double jitter = 0.2;
 
-  Portage::vector<Point<dim>> source_points(npoints);
-  Portage::vector<Point<dim>> target_points(npoints);
+  Wonton::vector<Point<dim>> source_points(npoints);
+  Wonton::vector<Point<dim>> target_points(npoints);
 
   // set the random engine and generator
   std::random_device device;
@@ -60,8 +63,8 @@ void test_accumulate(EstimateType etype, basis::Type btype, WeightCenter center)
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> src_swarm(source_points);
   Swarm<dim> tgt_swarm(target_points);
-  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Wonton::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Wonton::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
 
   std::vector<std::vector<double>> default_length(1, std::vector<double>(dim, smoothing));
   SmoothingLengths smoothing_h(npoints, default_length);
@@ -133,7 +136,7 @@ void test_operator(WeightCenter center) {
 
   using Accumulator = Accumulate<dim, Swarm<dim>, Swarm<dim>>;
 
-  Portage::vector<Point<dim>> source_points(npoints);
+  Wonton::vector<Point<dim>> source_points(npoints);
 
   for (size_t i = 0; i < npoints; i++) {
     size_t offset = 0, index;
@@ -149,8 +152,8 @@ void test_operator(WeightCenter center) {
   }
 
   // create the target swarm input geometry data based on integration domains.
-  Portage::vector<Point<dim>> target_points(1);
-  Portage::vector<std::vector<Point<dim>>> domain_points(1);
+  Wonton::vector<Point<dim>> target_points(1);
+  Wonton::vector<std::vector<Point<dim>>> domain_points(1);
   domain_points[0] = reference::points<domain>();
   auto reference_point = reference::points<domain>();
   int const num_reference_points = reference_point.size();
@@ -170,15 +173,15 @@ void test_operator(WeightCenter center) {
     target_points[0] = pt;
   }
 
-  Portage::vector<oper::Domain> domains(1);
+  Wonton::vector<oper::Domain> domains(1);
   domains[0] = domain;
 
   // create source+target swarms, kernels, geometries, and smoothing lengths
   Swarm<dim> source_swarm(source_points);
   Swarm<dim> target_swarm(target_points);
-  Portage::vector<Weight::Kernel> kernels(npoints, Weight::B4);
-  Portage::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
-  Portage::vector<std::vector<std::vector<double>>> smoothing_h
+  Wonton::vector<Weight::Kernel> kernels(npoints, Weight::B4);
+  Wonton::vector<Weight::Geometry> geometries(npoints, Weight::TENSOR);
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_h
     (npoints, std::vector<std::vector<double>>(1, std::vector<double>(dim, smoothing)));
 
   // create the accumulator

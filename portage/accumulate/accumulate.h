@@ -10,15 +10,15 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Matrix.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/support/operator.h"
-#include "portage/swarm/swarm.h"
-
-// wonton includes
-#include "wonton/support/Matrix.h"
 
 namespace Portage { namespace Meshfree {
 
@@ -70,12 +70,12 @@ class Accumulate {
    */
   Accumulate(SourceSwarm const& source, TargetSwarm const& target,
              EstimateType estimate, WeightCenter center,
-             Portage::vector<Weight::Kernel> const& kernels,
-             Portage::vector<Weight::Geometry> const& geometries,
-             Portage::vector<std::vector<std::vector<double>>> const& smoothing,
+             Wonton::vector<Weight::Kernel> const& kernels,
+             Wonton::vector<Weight::Geometry> const& geometries,
+             Wonton::vector<std::vector<std::vector<double>>> const& smoothing,
              basis::Type basis, oper::Type operator_spec = oper::LastOperator,
-             Portage::vector<oper::Domain> const& operator_domain = {},
-             Portage::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
+             Wonton::vector<oper::Domain> const& operator_domain = {},
+             Wonton::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
     : source_(source),
       target_(target),
       estimate_(estimate),
@@ -88,7 +88,7 @@ class Accumulate {
       operator_domain_(operator_domain),
       operator_data_(operator_data)
   {
-#ifdef DEBUG
+#ifndef NDEBUG
     // check sizes of inputs are consistent
     size_t n_particles = (center == Gather ? target_.num_owned_particles()
                                            : source_.num_particles());
@@ -251,13 +251,13 @@ class Accumulate {
   TargetSwarm const& target_;
   EstimateType estimate_;
   WeightCenter center_;
-  Portage::vector<Weight::Kernel> const& kernels_;
-  Portage::vector<Weight::Geometry> const& geometries_;
-  Portage::vector<std::vector<std::vector<double>>> const& smoothing_;
+  Wonton::vector<Weight::Kernel> const& kernels_;
+  Wonton::vector<Weight::Geometry> const& geometries_;
+  Wonton::vector<std::vector<std::vector<double>>> const& smoothing_;
   basis::Type basis_;
   oper::Type operator_spec_;
-  Portage::vector<oper::Domain> operator_domain_;
-  Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
+  Wonton::vector<oper::Domain> operator_domain_;
+  Wonton::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 }}

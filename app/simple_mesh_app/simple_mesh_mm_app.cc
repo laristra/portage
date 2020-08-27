@@ -12,6 +12,8 @@
 #include <string>
 #include <memory>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/state/state_vector_multi.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
@@ -24,14 +26,15 @@
 #include "read_material_data.h"
 #include "user_field.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
 #include "tangram/driver/write_to_gmv.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
+#include "tangram/intersect/split_r2d.h"
 #endif
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include <mpi.h>
 #endif
 
@@ -152,7 +155,7 @@ void run(
         material_filename, cell_num_mats, cell_mat_ids, cell_mat_volfracs,
     cell_mat_centroids);
 
-  #ifdef DEBUG
+  #ifndef NDEBUG
   // debug info
   std::cout<<"\n\nSource Mesh: \n"<<std::endl;
   std::cout<<"cell_num_mats: ";
@@ -207,9 +210,12 @@ void run(
     std::cout << "   Limiter type is " << limiter << "\n";
     std::cout << "   Boundary limiter type is " << bnd_limiter << "\n";
   }
-  std::vector<Tangram::IterativeMethodTolerances_t> tols;
-  tols.push_back({100, 1e-12, 1e-12});
-  Tangram::Driver<Tangram::XMOF2D_Wrapper, 2, Simple_Mesh_Wrapper>
+  std::vector<Tangram::IterativeMethodTolerances_t> tols(2);
+  tols[0] = {1000, 1.0e-15, 1.0e-15};
+  tols[1] = {100, 1.0e-15, 1.0e-15};
+  Tangram::Driver<Tangram::MOF, 2, Simple_Mesh_Wrapper,
+                                   Tangram::SplitR2D,
+                                   Tangram::ClipR2D>
       interface_reconstructor{source_mesh_wrapper, tols, true};
 
   // convert from Portage points to Tangram points
@@ -344,10 +350,13 @@ void run(
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
-      Tangram::XMOF2D_Wrapper>
+      Tangram::MOF,
+      Tangram::SplitR2D,
+      Tangram::ClipR2D>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
+    d.set_reconstructor_options(true, tols);
     d.run();  // executor arg defaults to nullptr -> serial run
   } else if (interp_order == 2) {
     Portage::MMDriver<
@@ -359,10 +368,13 @@ void run(
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
-      Tangram::XMOF2D_Wrapper>
+      Tangram::MOF,
+      Tangram::SplitR2D,
+      Tangram::ClipR2D>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
+    d.set_reconstructor_options(true, tols);
     d.set_limiter(limiter);
     d.set_bnd_limiter(bnd_limiter);
     d.run();  // executor arg defaults to nullptr -> serial run
@@ -420,9 +432,9 @@ void run(
 
     // get the vector of material ids,volume fraction and centroid
     // with thrust turned on, these need to be portage vectors, not std::vectors
-    const Portage::vector<int> mats{map_target_cell_materials.at(c)};
-    const Portage::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
-    const Portage::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
+    const Wonton::vector<int> mats{map_target_cell_materials.at(c)};
+    const Wonton::vector<double> volfracs{map_target_cell_mat_volfracs.at(c)};
+    const Wonton::vector<Wonton::Point<2>> centroids{map_target_cell_mat_centroids.at(c)};
     int const num_mats = mats.size();
 
     // push the size onto the number of mats
@@ -442,7 +454,7 @@ void run(
 
   }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   // debug info
   std::cout << "\n\nTarget Mesh: \n" << std::endl;
   std::cout << "target_cell_num_mats: ";
@@ -467,8 +479,10 @@ void run(
 
 
   auto target_interface_reconstructor = std::make_shared<Tangram::Driver<
-                                        Tangram::XMOF2D_Wrapper, 2,
-                                        Simple_Mesh_Wrapper>>
+                                        Tangram::MOF, 2,
+                                        Simple_Mesh_Wrapper,
+                                        Tangram::SplitR2D,
+                                        Tangram::ClipR2D>>
                                         (target_mesh_wrapper, tols, true);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
@@ -554,7 +568,7 @@ void run(
 
 int main(int argc, char** argv) {
 
-  #ifdef PORTAGE_ENABLE_MPI
+  #ifdef WONTON_ENABLE_MPI
     MPI_Init(&argc, &argv);
     MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -681,7 +695,7 @@ int main(int argc, char** argv) {
   auto seconds = diff.tv_sec + 1.0E-6*diff.tv_usec;
   std::cout << "Remap Time: " << seconds << std::endl;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
 

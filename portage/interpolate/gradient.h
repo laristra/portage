@@ -13,16 +13,17 @@
 #include <vector>
 #include <iostream>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/lsfits.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
 
-#include "wonton/support/lsfits.h"
-#include "wonton/support/Point.h"
-#include "wonton/support/Vector.h"
-
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/support/MatPoly.h"
@@ -52,7 +53,7 @@ namespace Portage {
   class Limited_Gradient {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -73,32 +74,7 @@ namespace Portage {
 
         @todo must remove assumption that field is scalar
      */
-    Limited_Gradient(Mesh const& mesh, State const& state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
-
-#ifdef HAVE_TANGRAM
-    Limited_Gradient(Mesh const &mesh, State const &state,
-                     std::string const var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {}
-#endif
+    Limited_Gradient(Mesh const& mesh, State const& state) : mesh_(mesh), state_(state) {}
 
     // Assignment operator (disabled)
     Limited_Gradient& operator = (const Limited_Gradient&) = delete;
@@ -116,7 +92,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
@@ -149,7 +125,7 @@ namespace Portage {
   > {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, Mesh,
@@ -159,111 +135,41 @@ namespace Portage {
 
   public:
     //Constructor for single material remap
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
+    Limited_Gradient(Mesh const& mesh, State const& state,
                      const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        part_(part) {
+      : mesh_(mesh), state_(state), part_(part)
+    {
+      int nb_cells = mesh_.num_entities(Wonton::CELL, Wonton::PARALLEL_OWNED);
+      neighbors_.resize(nb_cells);
+      stencils_.resize(nb_cells);
+      valid_neigh_.resize(nb_cells);
+      reference_.resize(nb_cells);
 
-      // Collect and keep the list of neighbors for each OWNED CELL as
-      // it is common to gradient computation of any field variable.
-      // We don't collect neighbors of GHOST CELLs because the outer
-      // ghost layer (even if it is a single layer) will not have
-      // neighbors on the outer side and therefore, will not yield the
-      // right gradient anyway
-
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
-                                              Entity_type::PARALLEL_OWNED);
-      cell_neighbors_.resize(nb_cells);
-
-      if (part_ == nullptr) /* entire mesh */ {
-        auto collect_neighbors = [this](int c) {
-          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL,
-                                        &(cell_neighbors_[c]));
-        };
-
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
-                                      Entity_type::PARALLEL_OWNED),
-                          mesh_.end(Entity_kind::CELL,
-                                    Entity_type::PARALLEL_OWNED),
-                          collect_neighbors);
-      } else /* only on source part */ {
-        auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = part_->get_neighbors(c);
-        };
-
-        auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
+      if (part == nullptr) {
+        // Collect and keep the list of neighbors for each OWNED CELL as
+        // it is common to gradient computation of any field variable.
+        // We don't collect neighbors of GHOST CELLs because the outer
+        // ghost layer (even if it is a single layer) will not have
+        // neighbors on the outer side and therefore, will not yield the
+        // right gradient anyway
+        Wonton::for_each(mesh_.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         mesh_.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                         [this](int c) {
+                           auto* data = neighbors_.data() + c;
+                           mesh_.cell_get_node_adj_cells(c, Wonton::ALL, data);
+                           neighbors_[c].emplace(neighbors_[c].begin(), c);
+                         });
+      } else {
+        Wonton::for_each(part->cells().begin(),
+                         part->cells().end(),
+                         [this](int c) {
+                           neighbors_[c] = part_->get_neighbors(c);
+                           neighbors_[c].emplace(neighbors_[c].begin(), c);
+                         });
       }
-
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
     }
 
-#ifdef HAVE_TANGRAM
-    // Constructor with interface reconstructor for multimaterial remaps.
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string const& var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type),
-        interface_reconstructor_(ir),
-        part_(part) {
-
-      // Collect and keep the list of neighbors for each OWNED CELL as
-      // it is common to gradient computation of any field variable.
-      // We don't collect neighbors of GHOST CELLs because the outer
-      // ghost layer (even if it is a single layer) will not have
-      // neighbors on the outer side and therefore, will not yield the
-      // right gradient anyway
-
-      int const nb_cells = mesh_.num_entities(Entity_kind::CELL,
-                                              Entity_type::PARALLEL_OWNED);
-      cell_neighbors_.resize(nb_cells);
-
-      if (part_ == nullptr) /* entire mesh */ {
-        auto collect_neighbors = [this](int c) {
-          mesh_.cell_get_node_adj_cells(c, Entity_type::ALL, &(cell_neighbors_[c]));
-        };
-
-        Portage::for_each(mesh_.begin(Entity_kind::CELL,
-                                      Entity_type::PARALLEL_OWNED),
-                          mesh_.end(Entity_kind::CELL,
-                                    Entity_type::PARALLEL_OWNED),
-                          collect_neighbors);
-
-      } else /* only on source part */ {
-        auto filter_neighbors = [this](int c) {
-          cell_neighbors_[c] = part_->get_neighbors(c);
-        };
-
-        auto const& part_cells = part_->cells();
-        Portage::for_each(part_cells.begin(), part_cells.end(), filter_neighbors);
-      }
-
-      //If the field type is a MESH_FIELD, then the corresponding data will
-      //be stored. If the field_type is a MULTIMATERIAL_FIELD, then the constructor
-      //only stores the variable name. The user code must make a call to the method
-      //set_material to store the material-wise data.
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-    }
-#endif
-
+#ifdef PORTAGE_HAS_TANGRAM
     //This method should be called by the user if the field type is MULTIMATERIAL_FIELD.
     //As the constructor with interface reconstructor only sets the variable name
     //for such fields, this method is needed to properly set the multimaterial data local
@@ -276,9 +182,26 @@ namespace Portage {
       }
     }
 
+    void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> ir) {
+      interface_reconstructor_ = ir;
+    }
+#endif
+
+    /**
+     * @brief Set interpolation variable and options.
+     *
+     * If the field type is a MESH_FIELD, then the corresponding data will
+     * be stored. If the field_type is a MULTIMATERIAL_FIELD, then it
+     * only stores the variable name. The user code must make a call to
+     * set_material to store the material-wise data.
+     *
+     * @param variable_name: the name of the variable to remap
+     * @param limiter_type: the limiter to use for internal points.
+     * @param boundary_limiter_type: the limiter to use at boundary points.
+     */
     void set_interpolation_variable(std::string variable_name,
-                                    Limiter_type limiter_type,
-                                    Boundary_Limiter_type boundary_limiter_type) {
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
       variable_name_ = variable_name;
       limiter_type_ = limiter_type;
@@ -291,53 +214,34 @@ namespace Portage {
       }
     }
 
-    // @brief Implementation of Limited_Gradient functor for CELLs
-    Vector<D> operator()(int cellid) {
+    /**
+     * @brief Compute stencil points.
+     *
+     * This is meant to be called only once for all fields,
+     * and is required for the construction of the least square
+     * matrices used to approximate the gradient.
+     *
+     * @param cell: the cell ID.
+     * @return stencil points coordinates.
+     */
+    std::vector<Point<D>> retrieve_stencil_points(int cell) {
 
-      assert(values_);
-      assert(mesh_.cell_get_type(cellid) == Entity_type::PARALLEL_OWNED);
-
-      double phi = 1.0;
-      Vector<D> grad;
-
-      // check that cell is within the part if part-by-part requested
-      if (part_ != nullptr && !part_->contains(cellid)) {
-        grad.zero();
-        return grad;
-      }
-
-      // useful predicates
-      bool is_boundary_cell = mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
-      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN &&
-                           (!is_boundary_cell || boundary_limiter_type_ == BND_BARTH_JESPERSEN);
-
-      // Limit the boundary gradient to enforce monotonicity preservation
-      if (is_boundary_cell && boundary_limiter_type_ == BND_ZERO_GRADIENT) {
-        grad.zero();
-        return grad;
-      }
-
-      // Include cell where grad is needed as first element
-      std::vector<int> neighbors{cellid};
-
-      if (!cell_neighbors_.empty()) {
-        neighbors.insert(std::end(neighbors),
-                         std::begin(cell_neighbors_[cellid]),
-                         std::end(cell_neighbors_[cellid]));
-      }
+      int const size = neighbors_[cell].size() + 1;
 
       std::vector<Point<D>> list_coords;
-      std::vector<double> list_values;
+      list_coords.reserve(size);
+      valid_neigh_[cell].clear();
+      valid_neigh_[cell].reserve(size);
 
       // Loop over cell where grad is needed and its neighboring cells
-      for (auto&& neigh_global : neighbors) {
-#ifdef HAVE_TANGRAM
+      for (auto&& neigh_global : neighbors_[cell]) {
+#ifdef PORTAGE_HAS_TANGRAM
         // Field values for each cells in each material are stored according to
         // the material's cell list. So, get the local index of each neighbor cell
         // in the material cell list to access the correct field value
         int const neigh_local = (field_type_ == Field_type::MESH_FIELD)
-          ? neigh_global
-          : state_.cell_index_in_material(neigh_global, material_id_);
+                                ? neigh_global
+                                : state_.cell_index_in_material(neigh_global, material_id_);
 
         // In case of material-data, we need to check that neighbors contain
         // material of interest (i.e. have valid local id);
@@ -375,11 +279,15 @@ namespace Portage {
             for (int k = 0; k < D; k++)
               centroid[k] /= mvol;
 
-            list_coords.push_back(centroid);
+            list_coords.emplace_back(centroid);
 
             // Populate least squares vectors with centroid for material
             // of interest and field value in the current cell for that material
-            list_values.push_back(values_[neigh_local]);
+            // mark as valid
+            valid_neigh_[cell].emplace_back(neigh_local);
+            // save cell centroid as a reference point of the stencil
+            if (neigh_global == cell) { reference_[cell] = centroid; }
+
           } else if (nb_mats == 1) /* single-material cell */ {
 
             // Ensure that the single material is the material of interest
@@ -387,8 +295,10 @@ namespace Portage {
               // Get the cell-centered value for this material
               Point<D> centroid;
               mesh_.cell_centroid(neigh_global, &centroid);
-              list_coords.push_back(centroid);
-              list_values.push_back(values_[neigh_local]);
+              list_coords.emplace_back(centroid);
+              valid_neigh_[cell].emplace_back(neigh_local);
+              // save cell centroid as a reference point of the stencil
+              if (neigh_global == cell) { reference_[cell] = centroid; }
             }
           }
         }
@@ -398,12 +308,93 @@ namespace Portage {
         if (field_type_ == Field_type::MESH_FIELD) {
           Point<D> centroid;
           mesh_.cell_centroid(neigh_global, &centroid);
-          list_coords.push_back(centroid);
-          list_values.push_back(values_[neigh_global]);
+          list_coords.emplace_back(centroid);
+          valid_neigh_[cell].emplace_back(neigh_global);
+          // save cell centroid as a reference point of the stencil
+          if (neigh_global == cell) { reference_[cell] = centroid; }
         }
       }
 
-      grad = Wonton::ls_gradient<D, CoordSys>(list_coords, list_values);
+      return list_coords;
+    }
+
+    /**
+     * @brief Retrieve values of each stencil point.
+     *
+     * This is meant to be called for each field variable.
+     *
+     * @param cell: the cell ID.
+     * @return values of each stencil point.
+     */
+    std::vector<double> retrieve_stencil_values(int cell) const {
+
+      std::vector<double> list_values;
+      for (auto&& neigh : valid_neigh_[cell]) {
+        list_values.emplace_back(values_[neigh]);
+      }
+      return list_values;
+    }
+
+    /**
+     * @brief Compute the limited gradient for the given cell.
+     *
+     * @param cellid: the cell ID.
+     * @return the field gradient at this cell.
+     */
+    Vector<D> operator()(int cellid) {
+
+      assert(values_);
+      assert(mesh_.cell_get_type(cellid) == Entity_type::PARALLEL_OWNED);
+
+      double phi = 1.0;
+      Vector<D> grad;
+
+      // check that cell is within the part if part-by-part requested
+      if (part_ != nullptr && !part_->contains(cellid)) {
+        grad.zero();
+        return grad;
+      }
+
+      // useful predicates
+      bool is_boundary_cell = mesh_.on_exterior_boundary(Entity_kind::CELL, cellid);
+      bool apply_limiter = limiter_type_ == BARTH_JESPERSEN &&
+                           (!is_boundary_cell || boundary_limiter_type_ == BND_BARTH_JESPERSEN);
+
+      // Limit the boundary gradient to enforce monotonicity preservation
+      if (is_boundary_cell && boundary_limiter_type_ == BND_ZERO_GRADIENT) {
+        grad.zero();
+        return grad;
+      }
+
+      // retrieve stencil points and compute least square matrices
+      if (stencils_[cellid].empty()) /* not cached */ {
+        auto list_coords = retrieve_stencil_points(cellid);
+        stencils_[cellid] = Wonton::build_gradient_stencil_matrices<D>(list_coords, true);
+      }
+
+#ifndef NDEBUG
+      auto print = [](Wonton::Matrix const& M, std::string const& desc) {
+        std::cout << desc << ": [";
+        for (int i = 0; i < M.rows(); ++i) {
+          for (int j = 0; j < M.columns(); ++j) {
+            std::cout << M[i][j] <<", ";
+          }
+        }
+        std::cout << "]" << std::endl;
+      };
+
+      print(stencils_[cellid][0], "(A^T.A)^-1");
+      print(stencils_[cellid][1], "A^T");
+      std::cout << " ------------ " << std::endl;
+#endif
+
+      // retrieve values of each stencil point
+      auto list_values = retrieve_stencil_values(cellid);
+
+      // compute the gradient using the stored stencil matrices
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[cellid][0],
+                                              stencils_[cellid][1],
+                                              list_values);
 
       // Limit the gradient to enforce monotonicity preservation
       if (apply_limiter) {
@@ -449,7 +440,7 @@ namespace Portage {
         mesh_.cell_get_coordinates(cellid, &cellcoords);
 
         for (auto&& coord : cellcoords) {
-          auto vec = coord - list_coords[0];
+          auto vec = coord - reference_[cellid];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.) ? maxval : minval;
           double phi_new = (diff == 0. ? 1. : (extremeval - cellcenval) / diff);
@@ -464,7 +455,7 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
@@ -472,11 +463,15 @@ namespace Portage {
 
     int material_id_ = 0;
     std::vector<int> cell_ids_;
-    std::vector<std::vector<int>> cell_neighbors_;
-#ifdef HAVE_TANGRAM
+    std::vector<std::vector<int>> neighbors_ {};
+    std::vector<std::vector<Wonton::Matrix>> stencils_ {};
+    std::vector<std::vector<int>> valid_neigh_ {};
+    std::vector<Wonton::Point<D>> reference_ {};
+
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
-    Part<Mesh, State> const* part_;
+    const Part<Mesh, State>* part_ = nullptr;
   };
 
   ///////////////////////////////////////////////////////////////////////////////
@@ -502,7 +497,7 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper, CoordSys
   > {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
     Tangram::Driver<
       InterfaceReconstructorType, D, Mesh,
@@ -520,106 +515,70 @@ namespace Portage {
 
       @todo must remove assumption that field is scalar
     */
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
+    Limited_Gradient(Mesh const& mesh, State const& state,
                      const Part<Mesh, State>* part = nullptr)
-      : mesh_(mesh),
-        state_(state),
-        values_(nullptr),
-        variable_name_(var_name),
-        limiter_type_(limiter_type),
-        boundary_limiter_type_(boundary_limiter_type) {
+      : mesh_(mesh), state_(state)
+    {
+      if (part == nullptr) {
+        // Collect and keep the list of neighbors for each OWNED or
+        // GHOST as it is common to gradient computation of any field
+        // variable.
+        // NOTE:*******************************************************
+        // The iteration for node (or dual cell) gradients is
+        // purposefully different from that of cells. For cells, we
+        // collect neighbors of only OWNED source cells because we will
+        // compute gradients only over OWNED source cells because our
+        // parallel scheme mandates that any target cell overlap only
+        // OWNED source cells (even if we have to duplicate those source
+        // cells on multiple partitions as we do when we
+        // redistribute). With nodes, we have to compute the gradient
+        // over ALL (OWNED+GHOST) nodes. This is because, even with the
+        // above requirement on overlap of OWNED target and source
+        // cells, the dual cells of a target node can overlap the dual
+        // cell of GHOST source node on a partition boundary and we want
+        // the gradient at that ghost node.
+        //
+        // Anyway, this is a bit moot, because we cannot guarantee
+        // second-order accuracy for remap of node-centered variables in
+        // anything other than uniform regular meshes since the linear
+        // reconstruction is supposed to be over the centroid while our
+        // field variables are at nodes which may not be coincident with
+        // the centroid. [PERHAPS THIS WILL GET FIXED IF WE ARE ABLE TO
+        // DO A CONSERVATIVE RECONSTRUCTION AROUND ANY POINT NOT JUST
+        // THE CENTROID]
+        //
+        // Also, the only node centered variables in the codes we are
+        // dealing with are likely to be velocity and one never remaps
+        // velocity directly anyway - we remap momentum in a
+        // conservative and consistent way by transferring momentum to
+        // cell centers, remapping cell centered momentum and
+        // transferring it back to nodes and backing out velocity.
+        //
+        // Iterating over ALL nodes (or dual control volumes) just keeps
+        // us from making a grosser error at partition boundaries
 
-      auto collect_node_neighbors = [this](int n) {
-        this->mesh_.dual_cell_get_node_adj_cells(
-          n, Entity_type::ALL, &(node_neighbors_[n])
-        );
-      };
+        int const nnodes = mesh_.num_entities(Wonton::NODE, Wonton::ALL);
+        neighbors_.resize(nnodes);
+        stencils_.resize(nnodes);
+        reference_.resize(nnodes);
 
-      // Collect and keep the list of neighbors for each OWNED or
-      // GHOST as it is common to gradient computation of any field
-      // variable.
-      // NOTE:*******************************************************
-      // The iteration for node (or dual cell) gradients is
-      // purposefully different from that of cells. For cells, we
-      // collect neighbors of only OWNED source cells because we will
-      // compute gradients only over OWNED source cells because our
-      // parallel scheme mandates that any target cell overlap only
-      // OWNED source cells (even if we have to duplicate those source
-      // cells on multiple partitions as we do when we
-      // redistribute). With nodes, we have to compute the gradient
-      // over ALL (OWNED+GHOST) nodes. This is because, even with the
-      // above requirement on overlap of OWNED target and source
-      // cells, the dual cells of a target node can overlap the dual
-      // cell of GHOST source node on a partition boundary and we want
-      // the gradient at that ghost node.
-      //
-      // Anyway, this is a bit moot, because we cannot guarantee
-      // second-order accuracy for remap of node-centered variables in
-      // anything other than uniform regular meshes since the linear
-      // reconstruction is supposed to be over the centroid while our
-      // field variables are at nodes which may not be coincident with
-      // the centroid. [PERHAPS THIS WILL GET FIXED IF WE ARE ABLE TO
-      // DO A CONSERVATIVE RECONSTRUCTION AROUND ANY POINT NOT JUST
-      // THE CENTROID]
-      //
-      // Also, the only node centered variables in the codes we are
-      // dealing with are likely to be velocity and one never remaps
-      // velocity directly anyway - we remap momentum in a
-      // conservative and consistent way by transferring momentum to
-      // cell centers, remapping cell centered momentum and
-      // transferring it back to nodes and backing out velocity.
-      //
-      // Iterating over ALL nodes (or dual control volumes) just keeps
-      // us from making a grosser error at partition boundaries
-
-      int const nnodes = mesh_.num_entities(Entity_kind::NODE,
-                                            Entity_type::ALL);
-      node_neighbors_.resize(nnodes);
-      Portage::for_each(mesh_.begin(Entity_kind::NODE,
-                                    Entity_type::ALL),
-                        mesh_.end(Entity_kind::NODE,
-                                  Entity_type::ALL),
-                        collect_node_neighbors);
-
-      set_interpolation_variable(var_name, limiter_type, boundary_limiter_type);
-    }
-
-#ifdef HAVE_TANGRAM
-    /**
-     * @brief Additional constructor to be consistent with cell-centered version.
-     *
-     * @param mesh: the current mesh.
-     * @param state: the current mesh state for querying field info.
-     * @param var_name: the variable to be remapped.
-     * @param limiter_type: the gradient limiter for internal regions.
-     * @param boundary_limiter_type: the gradient limiter for boundary regions.
-     * @param ir: the interface reconstructor in multi-material context.
-     */
-    Limited_Gradient(Mesh const& mesh,
-                     State const& state,
-                     std::string const& var_name,
-                     Limiter_type limiter_type,
-                     Boundary_Limiter_type boundary_limiter_type,
-                     std::shared_ptr<InterfaceReconstructor> ir,
-                     const Part<Mesh, State>* part = nullptr)
-      : Limited_Gradient(mesh, state, var_name, limiter_type, boundary_limiter_type) {
-
-      if (part != nullptr) {
-        std::cerr << "Sorry, part-by-part remap is only defined ";
-        std::cerr << "for cell-centered field, will be ignored." << std::endl;
+        Wonton::for_each(mesh_.begin(Wonton::NODE, Wonton::ALL),
+                         mesh_.end(Wonton::NODE, Wonton::ALL),
+                         [this](int n) {
+                           auto* data = neighbors_.data() + n;
+                           mesh_.dual_cell_get_node_adj_cells(n, Wonton::ALL, data);
+                           neighbors_[n].emplace(neighbors_[n].begin(), n);
+                         });
+      } else {
+        throw std::runtime_error("part-by-part not supported for nodal remap");
       }
     }
-#endif
 
     void set_material(int material_id) { material_id_ = material_id; }
 
     void set_interpolation_variable(std::string const& variable_name,
-                                    Limiter_type limiter_type,
-                                    Boundary_Limiter_type boundary_limiter_type) {
+                                    Limiter_type limiter_type = NOLIMITER,
+                                    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER) {
 
       variable_name_ = variable_name;
       limiter_type_ = limiter_type;
@@ -627,7 +586,55 @@ namespace Portage {
       state_.mesh_get_data(Entity_kind::NODE, variable_name_, &values_);
     }
 
-    // @brief Limited gradient functor implementation for NODE
+#ifdef PORTAGE_HAS_TANGRAM
+    // for interface compatibility with cell-centered variant
+    void set_interface_reconstructor(std::shared_ptr<InterfaceReconstructor> /* unused */) {}
+#endif
+
+    /**
+     * @brief Compute stencil points.
+     *
+     * This is meant to be called only once for all fields,
+     * and is required for the construction of the least square
+     * matrices used to approximate the gradient.
+     *
+     * @param node: the node ID.
+     * @return stencil points coordinates.
+     */
+    std::vector<Point<D>> retrieve_stencil_points(int node) {
+      auto const& stencil = neighbors_[node];
+      int const size = stencil.size();
+      std::vector<Point<D>> list_coords(size);
+      mesh_.node_get_coordinates(node, &reference_[node]);
+      for (int i = 0; i < size; ++i) {
+        mesh_.node_get_coordinates(stencil[i], &list_coords[i]);
+      }
+      return list_coords;
+    }
+
+    /**
+     * @brief Retrieve values of each stencil point.
+     *
+     * This is meant to be called for each field variable.
+     *
+     * @param cell: the cell ID.
+     * @return values of each stencil point.
+     */
+    std::vector<double> retrieve_stencil_values(int node) const {
+      auto const& stencil = neighbors_[node];
+      std::vector<double> list_values;
+      for (auto&& i : stencil) {
+        list_values.emplace_back(values_[i]);
+      }
+      return list_values;
+    }
+
+    /**
+     * @brief Compute the limited gradient for the given node.
+     *
+     * @param nodeid: the node ID.
+     * @return the field gradient at this node.
+     */
     Vector<D> operator()(int nodeid) {
 
       assert(values_);
@@ -645,20 +652,19 @@ namespace Portage {
         return grad;
       }
 
-      auto const& neighbors = node_neighbors_[nodeid];
-      std::vector<Point<D>> node_coords(neighbors.size() + 1);
-      std::vector<double> node_values(neighbors.size() + 1);
-      mesh_.node_get_coordinates(nodeid, &(node_coords[0]));
-      node_values[0] = values_[nodeid];
-
-      int i = 1;
-      for (auto&& current : neighbors) {
-        mesh_.node_get_coordinates(current, &node_coords[i]);
-        node_values[i] = values_[current];
-        i++;
+      // retrieve stencil points and compute least square matrices
+      if (stencils_[nodeid].empty()) /* not cached */{
+        auto node_coords = retrieve_stencil_points(nodeid);
+        stencils_[nodeid] = Wonton::build_gradient_stencil_matrices<D>(node_coords, true);
       }
 
-      grad = Wonton::ls_gradient<D, CoordSys>(node_coords, node_values);
+      // retrieve values of each stencil point
+      auto node_values = retrieve_stencil_values(nodeid);
+
+      // compute the gradient using the stored stencil matrices
+      grad = Wonton::ls_gradient<D, CoordSys>(stencils_[nodeid][0],
+                                              stencils_[nodeid][1],
+                                              node_values);
 
       if (apply_limiter) {
         // Min and max vals of function (cell centered vals) among neighbors
@@ -680,7 +686,7 @@ namespace Portage {
         mesh_.dual_cell_get_coordinates(nodeid, &dual_cell_coords);
 
         for (auto&& coord : dual_cell_coords) {
-          auto vec = coord - node_coords[0];
+          auto vec = coord - reference_[nodeid];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.0) ? maxval : minval;
           double phi_new = (diff == 0.0) ? 1 : (extremeval - nodeval) / diff;
@@ -695,15 +701,17 @@ namespace Portage {
   private:
     Mesh const& mesh_;
     State const& state_;
-    double const* values_;
+    double const* values_ = nullptr;
     std::string variable_name_ = "";
     Limiter_type limiter_type_ = DEFAULT_LIMITER;
     Boundary_Limiter_type boundary_limiter_type_ = DEFAULT_BND_LIMITER;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
 
     int material_id_ = 0;
-    std::vector<int> cell_ids_;
-    std::vector<std::vector<int>> node_neighbors_;
+    std::vector<std::vector<int>> neighbors_;
+    std::vector<std::vector<Wonton::Matrix>> stencils_ {};
+    std::vector<Wonton::Point<D>> reference_ {};
+
   };
 }  // namespace Portage
 

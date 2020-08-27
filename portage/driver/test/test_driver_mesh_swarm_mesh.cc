@@ -15,9 +15,21 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+// wonton includes
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
+
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_mm_wrapper.h"
+#include "wonton/state/state_vector_uni.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+
 
 // portage includes
 #include "portage/driver/mmdriver.h"
@@ -30,14 +42,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
-
-// wonton includes
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_mm_wrapper.h"
-#include "wonton/state/state_vector_uni.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
 
 namespace {
 // avoid long namespaces
@@ -166,7 +170,7 @@ public:
     mesh_remap.run();  // run in serial (executor argument defaults to nullptr)
 
     // Set up the operator information if needed
-    Portage::vector<std::vector<Wonton::Point<dim>>> data;
+    Wonton::vector<std::vector<Wonton::Point<dim>>> data;
     std::vector<double> exact;
     oper::Domain domain_types[3] = {oper::Interval,
                                     oper::Quadrilateral,
@@ -230,7 +234,7 @@ public:
 
     // Check the answer
     double toterr = 0.;
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     auto& cell_field1 = target_state_one.get<Field>("celldata")->get_data();
     auto& node_field1 = target_state_one.get<Field>("nodedata")->get_data();
 #endif
@@ -247,7 +251,7 @@ public:
         double const value = compute_initial_field(c);
         double const swarm_error = cell_field2[i] - value;
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           double const mesh_error  = cell_field1[i] - value;
           //  dump diagnostics for each cell
           switch (dim) {
@@ -263,7 +267,7 @@ public:
         toterr = std::max(toterr, std::abs(swarm_error));
       }
 
-      #if ENABLE_DEBUG
+      #ifndef NDEBUG
         std::printf("\n\nL^inf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
       #endif
       ASSERT_LT(toterr, epsilon);
@@ -276,7 +280,7 @@ public:
           double const value = compute_initial_field(p);
           double const swarm_error = node_field2[i] - value;
 
-          #if ENABLE_DEBUG
+          #ifndef NDEBUG
             double const mesh_error  = node_field1[i] - value;
 
             //  dump diagnostics for each node
@@ -293,7 +297,7 @@ public:
           toterr = std::max(toterr, std::abs(swarm_error));
         }
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           std::printf("\n\nL^inf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
         #endif
         ASSERT_LT(toterr, epsilon);
@@ -305,7 +309,7 @@ public:
         target_flat_mesh.cell_centroid(i, &c);
         double const error = cell_field2[i] - exact[i];
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           switch (dim) {
             case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
             case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
@@ -317,7 +321,7 @@ public:
         toterr = std::max(toterr, std::abs(error));
       }
 
-      #if ENABLE_DEBUG
+      #ifndef NDEBUG
         std::printf("\n\nL^inf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
       #endif
       ASSERT_LT(toterr, epsilon);
@@ -337,7 +341,7 @@ protected:
   Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
 
   // Operator domains and data
-  Portage::vector<oper::Domain> domains_;
+  Wonton::vector<oper::Domain> domains_;
 };
 
 // Class which constructs a pair of simple 2-D meshes, target

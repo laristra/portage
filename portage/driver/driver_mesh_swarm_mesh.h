@@ -19,6 +19,12 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
+
 // portage includes
 #include "portage/support/timer.h"
 #include "portage/support/portage.h"
@@ -26,13 +32,11 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/weight.h"
 #include "portage/support/operator.h"
 #include "portage/support/faceted_setup.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/driver/driver_swarm.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -159,9 +163,9 @@ public:
                            Meshfree::EstimateType const& estimator_type = Meshfree::LocalRegression,
                            Meshfree::basis::Type const& basis_type = Meshfree::basis::Unitary,
                            Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
-                           Portage::vector<Meshfree::oper::Domain> const& operator_domains = {},
-                           Portage::vector<std::vector<Point<dim>>> const& operator_data = {}) {
-#ifdef DEBUG
+                           Wonton::vector<Meshfree::oper::Domain> const& operator_domains = {},
+                           Wonton::vector<std::vector<Point<dim>>> const& operator_data = {}) {
+#ifndef NDEBUG
     assert(source_vars.size() == target_vars.size());
 
     int nvars = source_vars.size();
@@ -209,12 +213,12 @@ public:
     using namespace Meshfree;
     // useful aliases
     using SwarmRemap = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                   Swarm<dim>, SwarmState<dim>>;
+                                   Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     int rank = 0;
     int nprocs = 1;
     
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -228,7 +232,7 @@ public:
       }
     }
 #endif
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     if (rank == 0)
       std::cout << "in MSM_Driver::run() ... " << std::endl;
 
@@ -257,16 +261,16 @@ public:
     // Collect all cell based variables and remap them
     if (not source_cellvar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
-      Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
-      SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
-      SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
+      Wonton::Swarm<dim> source_swarm(source_mesh_, Wonton::CELL);
+      Wonton::Swarm<dim> target_swarm(target_mesh_, Wonton::CELL);
+      Wonton::SwarmState<dim> source_swarm_state(source_state_, Wonton::CELL);
+      Wonton::SwarmState<dim> target_swarm_state(target_state_, Wonton::CELL);
 
       // set up smoothing lengths and extents
-      Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
+      Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths;
       std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
-      Portage::vector<Wonton::Point<dim>> weight_extents, other_extents;
-      Portage::vector<std::vector<std::vector<double>>> part_smoothing; // only for faceted,scatter,parts
+      Wonton::vector<Wonton::Point<dim>> weight_extents, other_extents;
+      Wonton::vector<std::vector<std::vector<double>>> part_smoothing; // only for faceted,scatter,parts
 
       if (geometry_ == Weight::FACETED) {
         using Weight::faceted_setup_cell;
@@ -286,7 +290,7 @@ public:
             default: break;
           }
         } else {
-          Portage::vector<Wonton::Point<dim>> dummy_extents;
+          Wonton::vector<Wonton::Point<dim>> dummy_extents;
           switch (center_) {
             case Scatter:
               // Set smoothing_factor to 1/4 to make weight support exactly equal to cell volume.
@@ -386,13 +390,13 @@ public:
 
     if (not source_nodevar_names.empty()) {
       // convert mesh and state wrappers to swarm ones
-      Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
-      Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
-      SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
-      SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
+      Wonton::Swarm<dim> source_swarm(source_mesh_, Wonton::NODE);
+      Wonton::Swarm<dim> target_swarm(target_mesh_, Wonton::NODE);
+      Wonton::SwarmState<dim> source_swarm_state(source_state_, Wonton::NODE);
+      Wonton::SwarmState<dim> target_swarm_state(target_state_, Wonton::NODE);
 
       // create smoothing lengths
-      Portage::vector<std::vector<std::vector<double>>> smoothing_lengths;
+      Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths;
       std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
 
       if (geometry_ == Weight::FACETED) {
@@ -440,7 +444,7 @@ public:
       }
     }
 
-#if ENABLE_DEBUG
+#ifndef NDEBUG
     float elapsed = timer::elapsed(tic);
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif
@@ -463,8 +467,8 @@ private:
   Meshfree::EstimateType estimate_ {};
   Meshfree::basis::Type basis_ {};
   Meshfree::oper::Type operator_spec_ {};
-  Portage::vector<Meshfree::oper::Domain> operator_domains_ {};
-  Portage::vector<std::vector<Point<dim>>> operator_data_ {};
+  Wonton::vector<Meshfree::oper::Domain> operator_domains_ {};
+  Wonton::vector<std::vector<Point<dim>>> operator_data_ {};
   int dim_ = 2;
 };  // class MSM_Driver
 

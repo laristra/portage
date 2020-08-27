@@ -138,8 +138,7 @@ void CellPairFinder::init(vpile const& in_x, vpile const& in_y,
       bool outside = false;
       pile xi(dim);
       for (int m = 0; m < dim; m++) {
-        if (x[m][i] <= cminmax[0][m]) outside = true;
-        if (x[m][i] >= cminmax[1][m]) outside = true;
+        if (x[m][i] <= cminmax[0][m] or x[m][i] >= cminmax[1][m]) { outside = true; }
         xi[m] = x[m][i];
       }
       if (outside) continue;

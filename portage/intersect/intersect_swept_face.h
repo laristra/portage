@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include "portage/support/portage.h"
-#include "portage/intersect/dummy_interface_reconstructor.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Polytope.h"
 
-#ifdef HAVE_TANGRAM
+#include "portage/support/portage.h"
+#include "portage/intersect/dummy_interface_reconstructor.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/driver/driver.h"
   #include "tangram/support/MatPoly.h"
@@ -47,7 +49,7 @@ namespace Portage {
   class IntersectSweptFace {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructorDriver = Tangram::Driver<
       InterfaceReconstructor, dim, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper>;
@@ -61,7 +63,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -129,7 +131,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -173,7 +175,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructorDriver> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace
@@ -201,7 +203,7 @@ namespace Portage {
                            Matpoly_Splitter, Matpoly_Clipper> {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor2D = Tangram::Driver<
       InterfaceReconstructor, 2, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper>;
@@ -215,7 +217,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -382,7 +384,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -398,23 +400,27 @@ namespace Portage {
       int const cell_id,
       int const face_group_id,
       double const swept_volume) const {
-      
-      std::vector<int> cfaces, cfdirs;
-      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-
-      int cface_id = std::distance(
-        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-#ifdef DEBUG
-      //Face group should be associated with one of the cell's faces
-      int nfaces = cfaces.size();
-      assert(cface_id != nfaces);
-#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
         interface_reconstructor->iterative_methods_tolerances();
       double dst_tol = ims_tols[0].arg_eps;
       double vol_tol = ims_tols[0].fun_eps;
+
+      if (swept_volume < vol_tol) {
+        throw std::runtime_error("Volume taken out of the face group shold NOT be below the volume tolerance used during interface reconstruction!");
+      }
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+
+      int cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifndef NDEBUG
+      //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
+      assert(cface_id != nfaces);
+#endif
 
       //Create a MatPoly for the cell
       Tangram::MatPoly<2> cell_mp;
@@ -423,18 +429,20 @@ namespace Portage {
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<2>> face_group_polys;
       Tangram::Plane_t<2> cutting_plane;
+      //Normals to MatPoly faces always point outward, so we have to reverse them
+      //in order to clip the corresponding face group
       cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+        -cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
 
       //Find the cutting distance for the given swept volume
       Tangram::CuttingDistanceSolver<2, Matpoly_Clipper> cds(face_group_polys,
         cutting_plane.normal, ims_tols[0], true);
 
-      cds.set_target_volume(std::fabs(swept_volume));
+      cds.set_target_volume(swept_volume);
       std::vector<double> cds_res = cds();
 
       //Check if we had enough volume in the face group
-      if (cds_res[1] < std::fabs(swept_volume) - vol_tol) {
+      if (cds_res[1] < swept_volume - vol_tol) {
         throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
       }
 
@@ -451,11 +459,6 @@ namespace Portage {
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
-
-      //Weights need to be subtracted from a cell for negative swept regions
-      if(swept_volume < 0.0)
-         for(double& moment : moments)
-            moment *= -1;
 
       return moments;
     }
@@ -484,7 +487,7 @@ namespace Portage {
       // For the single material case, add the moments of the source cell id.
       // For the multimaterial case, add only the moments for the material
       // the intersector is working on. 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
@@ -502,7 +505,7 @@ namespace Portage {
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       } else if (source_cell_mat) {
         // mixed cell should contain this material
         assert(interface_reconstructor != nullptr);
@@ -523,7 +526,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &edges, &dirs);
       int const nb_edges = edges.size();
 
-#ifdef DEBUG
+#ifndef NDEBUG
       // ensure that we have the same face/edge index for source and target.
       std::vector<int> target_edges, target_dirs, target_nodes;
       target_mesh_.cell_get_faces_and_dirs(target_id, &target_edges, &target_dirs);
@@ -542,7 +545,7 @@ namespace Portage {
         nodes.clear();
         source_mesh_.face_get_nodes(edges[i], &nodes);
 
-#ifdef DEBUG
+#ifndef NDEBUG
         // ensure that we have the same nodal indices for source and target.
         target_mesh_.face_get_nodes(target_edges[i], &target_nodes);
         int const nb_source_nodes = nodes.size();
@@ -584,14 +587,21 @@ namespace Portage {
           // if the computed swept face area is negative then assign its
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           if (single_mat_src_cell) {
 #endif          
             swept_moments.emplace_back(source_id, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else if (source_cell_mat) {
-            swept_moments.emplace_back(source_id, 
-              compute_face_group_moments(source_id, edges[i], moments[0]));
+            //The volume we take out of the source cell's face group should be positive
+            double clip_volume = -moments[0];
+            //Update the moments with values only for the material with material_id_
+            //contained in the face group
+            moments = compute_face_group_moments(source_id, edges[i], clip_volume);
+            //The weights in this case should be negative, so we reverse the sign
+            for(double& moment : moments) moment *= -1;
+
+            swept_moments.emplace_back(source_id, moments);
           }
 #endif            
         } else {
@@ -613,7 +623,7 @@ namespace Portage {
             throw std::runtime_error("invalid target mesh for swept face");
           }
           // append to list as current neighbor moment.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
@@ -629,13 +639,14 @@ namespace Portage {
           if (single_mat_adj_cell) {
 #endif
             swept_moments.emplace_back(neigh, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else {
             //Skip if the neighboring cell doesn't contain material_id_
             if (!adj_cell_mat)
               continue;
-            
-            //Compute and append moments for the neighbor
+
+            //Compute moments only for the material with material_id_
+            //contained in the face group of the neighboring cell
             swept_moments.emplace_back(neigh, 
               compute_face_group_moments(neigh, edges[i], moments[0]));
           }
@@ -653,7 +664,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor2D> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace::2D::CELL
@@ -680,7 +691,7 @@ namespace Portage {
     Matpoly_Splitter, Matpoly_Clipper> {
 
     // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor3D = Tangram::Driver<
       InterfaceReconstructor, 3, SourceMesh,
       Matpoly_Splitter, Matpoly_Clipper
@@ -697,7 +708,7 @@ namespace Portage {
      */
     IntersectSweptFace() = delete;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
     /**
      * @brief Constructor for multi-material case.
@@ -877,7 +888,7 @@ namespace Portage {
      */
     void toggle_displacement_check(bool enable) { displacement_check = enable; }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief For a given cell and its face finds the moments associated with the
      * intersection of the swept region and MatPoly's with material_id_ that belong
@@ -893,23 +904,27 @@ namespace Portage {
       int const cell_id,
       int const face_group_id,
       double const swept_volume) const {
-      
-      std::vector<int> cfaces, cfdirs;
-      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
-
-      int cface_id = std::distance(
-        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
-#ifdef DEBUG
-      //Face group should be associated with one of the cell's faces
-      int nfaces = cfaces.size();
-      assert(cface_id != nfaces);
-#endif
 
       //Retrieve tolerance used by the interface reconstructor
       const std::vector<Tangram::IterativeMethodTolerances_t>& ims_tols = 
         interface_reconstructor->iterative_methods_tolerances();
       double dst_tol = ims_tols[0].arg_eps;
       double vol_tol = ims_tols[0].fun_eps;
+
+      if (swept_volume < vol_tol) {
+        throw std::runtime_error("Volume taken out of the face group shold NOT be below the volume tolerance used during interface reconstruction!");
+      }
+      
+      std::vector<int> cfaces, cfdirs;
+      source_mesh_.cell_get_faces_and_dirs(cell_id, &cfaces, &cfdirs);
+
+      int cface_id = std::distance(
+        cfaces.begin(), std::find(cfaces.begin(), cfaces.end(), face_group_id));
+#ifndef NDEBUG
+      //Face group should be associated with one of the cell's faces
+      int nfaces = cfaces.size();
+      assert(cface_id != nfaces);
+#endif
 
       //Create a MatPoly for the cell
       Tangram::MatPoly<3> cell_mp;
@@ -918,18 +933,20 @@ namespace Portage {
       //Get the face normal and MatPoly's in the face's group
       std::vector<Tangram::MatPoly<3>> face_group_polys;
       Tangram::Plane_t<3> cutting_plane;
+      //Normals to MatPoly faces always point outward, so we have to reverse them
+      //in order to clip the corresponding face group
       cutting_plane.normal = 
-        cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
+        -cell_mp.face_normal_and_group(cface_id, face_group_id, &face_group_polys);
 
       //Find the cutting distance for the given swept volume
       Tangram::CuttingDistanceSolver<3, Matpoly_Clipper> cds(face_group_polys,
         cutting_plane.normal, ims_tols[0], true);
 
-      cds.set_target_volume(std::fabs(swept_volume));
+      cds.set_target_volume(swept_volume);
       std::vector<double> cds_res = cds();
 
       //Check if we had enough volume in the face group
-      if (cds_res[1] < std::fabs(swept_volume) - vol_tol) {
+      if (cds_res[1] < swept_volume - vol_tol) {
         throw std::runtime_error("Mesh displacement is too big for the implemented swept-face method");
       }
 
@@ -946,10 +963,6 @@ namespace Portage {
       clip_matpolys.set_matpolys(group_mat_polys, true);
       clip_matpolys.set_plane(cutting_plane);
       std::vector<double> moments = clip_matpolys();
-
-      if(swept_volume < 0.0)
-         for(double& moment : moments)
-            moment *= -1;
 
       return moments;
     }
@@ -988,7 +1001,7 @@ namespace Portage {
 
       std::vector<Weights_t> swept_moments;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       int const nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
@@ -1006,7 +1019,7 @@ namespace Portage {
         // add source cell moments in the first place
         swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
       } else if (source_cell_mat) {
         // mixed cell should contain this material
         assert(interface_reconstructor != nullptr);
@@ -1025,7 +1038,7 @@ namespace Portage {
       source_mesh_.cell_get_faces_and_dirs(source_id, &faces, &dirs);
       int const nb_faces = faces.size();
 
-#if DEBUG
+#ifndef NDEBUG
         // ensure that we have the same face index for source and target.
         std::vector<int> target_faces, target_dirs, target_nodes;
         target_mesh_.cell_get_faces_and_dirs(target_id, &target_faces, &target_dirs);
@@ -1046,7 +1059,7 @@ namespace Portage {
         int const nb_poly_nodes = 2 * nb_face_nodes;
         int const nb_poly_faces = nb_poly_nodes + 2;
 
-#if DEBUG
+#ifndef NDEBUG
           // ensure that we have the same nodal indices for source and target.
           target_mesh_.face_get_nodes(target_faces[i], &target_nodes);
           int const nb_source_nodes = nodes.size();
@@ -1155,18 +1168,25 @@ namespace Portage {
           // just skip if the swept region is almost flat.
           // it may occur when the cell is shifted only in one direction.
           continue;
-        } else if (moments[0] < 0.) {
+        } else if (moments[0] < 0.0) {
           // if the computed swept region volume is negative then assign its
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           if (single_mat_src_cell) {
 #endif              
             swept_moments.emplace_back(source_id, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else if (source_cell_mat) {
-            swept_moments.emplace_back(source_id, 
-              compute_face_group_moments(source_id, faces[i], moments[0]));
+            //The volume we take out of the source cell's face group should be positive
+            double clip_volume = -moments[0];
+            //Update the moments with values only for the material with material_id_
+            //contained in the face group
+            moments = compute_face_group_moments(source_id, faces[i], clip_volume);
+            //The weights in this case should be negative, so we reverse the sign
+            for(double& moment : moments) moment *= -1;
+
+            swept_moments.emplace_back(source_id, moments);            
           }
 #endif              
         } else {
@@ -1183,7 +1203,7 @@ namespace Portage {
             throw std::runtime_error("invalid stencil for source cell" + id);
           }
           // append to list as current neighbor moment.
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
@@ -1199,13 +1219,14 @@ namespace Portage {
           if (single_mat_adj_cell) {
 #endif
             swept_moments.emplace_back(neigh, moments);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
           } else {
             //Skip if the neighboring cell doesn't contain material_id_
             if (!adj_cell_mat)
               continue;
             
-            //Compute and append moments for the neighbor
+            //Compute moments only for the material with material_id_
+            //contained in the face group of the neighboring cell
             swept_moments.emplace_back(neigh, 
               compute_face_group_moments(neigh, faces[i], moments[0]));
           }
@@ -1226,7 +1247,7 @@ namespace Portage {
     int material_id_ = -1;
     NumericTolerances_t num_tols_ {};
     bool displacement_check = false;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor3D> interface_reconstructor;
 #endif
   }; // class IntersectSweptFace::3D::CELL

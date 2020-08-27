@@ -6,20 +6,27 @@
 
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#include "wonton/support/wonton.h"
+#ifdef WONTON_ENABLE_MPI
   #include "mpi.h"
 #endif
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/intersect/intersect_swept_face.h"
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
-#ifdef HAVE_TANGRAM
+
+#include "portage/support/portage.h"
+#ifdef PORTAGE_HAS_TANGRAM
+  #include "tangram/driver/CellMatPoly.h"  // TEMPORARY till we fix Tangram
   #include "tangram/intersect/split_r3d.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
+
+#include "portage/intersect/intersect_swept_face.h"
+
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
+
 /**
  * @brief Fixture class for swept volume moments computation tests.
  *
@@ -32,7 +39,7 @@
 class IntersectSweptBase3D : public testing::Test {
 
 protected:
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,
@@ -279,7 +286,7 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-    #if DEBUG
+    #ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::internal_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
@@ -348,7 +355,7 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::boundary_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
@@ -407,7 +414,7 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "forward::corner_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2];
@@ -495,7 +502,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::internal_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
@@ -564,7 +571,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::boundary_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
@@ -634,7 +641,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "backward::corner_swept_centroid["<< moments.entityID <<"]: ";
       std::cout << centroid[0] <<", "<< centroid[1] << ", " << centroid[2];
@@ -737,7 +744,7 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::internal_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;
@@ -785,7 +792,7 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::boundary_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;
@@ -829,7 +836,7 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   for (auto const& moments : weights_corner) {
     auto const volume = std::abs(moments.weights[0]);
     auto const centroid = deduce_centroid(moments);
-#if DEBUG
+#ifndef NDEBUG
     if (verbose) {
       std::cout << "one-axis::corner_swept_centroid[" << moments.entityID << "]: ";
       std::cout << centroid[0] << ", " << centroid[1] << ", " << centroid[2] << std::endl;

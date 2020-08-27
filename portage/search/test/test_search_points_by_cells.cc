@@ -11,23 +11,24 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+
 #include "portage/support/portage.h"
-#include "portage/swarm/swarm.h"
 #include "portage/search/search_simple_points.h"
 #include "portage/search/search_points_by_cells.h"
 
-#include "wonton/support/Point.h"
-
 TEST(search_by_cells, scatter_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -77,14 +78,14 @@ TEST(search_by_cells, scatter_2d) {
 
 TEST(search_by_cells, gather_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -134,14 +135,14 @@ TEST(search_by_cells, gather_2d) {
 
 TEST(search_by_cells, scatter_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
@@ -204,14 +205,14 @@ TEST(search_by_cells, scatter_3d) {
 
 TEST(search_by_cells, gather_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
@@ -274,13 +275,13 @@ TEST(search_by_cells, gather_3d) {
 
 void test_scatter_2d_random(int nsrc, int ntgt) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<2>> source_points(nsrc);
-  Portage::vector<Wonton::Point<2>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<2>> target_points(ntgt);
-  Portage::vector<Wonton::Point<2>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<2>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<2>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<2>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<2>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -308,8 +309,8 @@ void test_scatter_2d_random(int nsrc, int ntgt) {
   Portage::SearchSimplePoints<2, Swarm<2>, Swarm<2>>
     simplesearch(source_swarm, target_swarm, source_extent, target_extent);
 
-  Portage::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::vector<std::vector<int>> candidates(ntgt);
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -351,13 +352,13 @@ TEST(search_by_cells, scatter_2d_random_case3)
 
 void test_scatter_3d_random(int nsrc, int ntgt, bool check=true) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<3>> source_points(nsrc);
-  Portage::vector<Wonton::Point<3>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<3>> target_points(ntgt);
-  Portage::vector<Wonton::Point<3>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<3>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<3>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<3>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<3>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -383,8 +384,8 @@ void test_scatter_3d_random(int nsrc, int ntgt, bool check=true) {
   Portage::SearchPointsByCells<3, Swarm<3>, Swarm<3>>
     cellsearch(source_swarm, target_swarm, source_extent, target_extent);
 
-  Portage::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::vector<std::vector<int>> candidates(ntgt);
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -435,14 +436,14 @@ TEST(search_by_cells, scatter_3d_random_case3_nocheck)
 void test_gather_2d_random(const int nsrc, const int ntgt) {
   // random point sets and test against SearchSimplePoints
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
   using Portage::Meshfree::Gather;
 
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<2>> source_points(nsrc);
-  Portage::vector<Wonton::Point<2>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<2>> target_points(ntgt);
-  Portage::vector<Wonton::Point<2>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<2>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<2>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<2>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<2>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -469,8 +470,8 @@ void test_gather_2d_random(const int nsrc, const int ntgt) {
   Portage::SearchSimplePoints<2, Swarm<2>, Swarm<2>>
     simplesearch(source_swarm, target_swarm, source_extent, target_extent, Gather);
 
-  Portage::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::vector<std::vector<int>> candidates(ntgt);
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
@@ -512,14 +513,14 @@ TEST(search_by_cells, gather_2d_random_case3)
 void test_gather_3d_random(const int nsrc, const int ntgt, bool check = true) {
 
   // random point sets and test against SearchSimplePoints
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
   using Portage::Meshfree::Gather;
 
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<3>> source_points(nsrc);
-  Portage::vector<Wonton::Point<3>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<3>> target_points(ntgt);
-  Portage::vector<Wonton::Point<3>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<3>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<3>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<3>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<3>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -545,14 +546,14 @@ void test_gather_3d_random(const int nsrc, const int ntgt, bool check = true) {
   Portage::SearchPointsByCells<3, Swarm<3>, Swarm<3>>
     cellsearch(source_swarm, target_swarm, source_extent, target_extent, Gather);
 
-  Portage::vector<std::vector<int>> candidates(ntgt);
-  Portage::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
+  Wonton::vector<std::vector<int>> candidates(ntgt);
+  Wonton::transform(target_swarm.begin(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      target_swarm.end(Portage::Entity_kind::PARTICLE, Portage::Entity_type::PARALLEL_OWNED),
                      candidates.begin(), cellsearch);
 
   if (check) {
     Portage::SearchSimplePoints<
-      3, Portage::Meshfree::Swarm<3>, Portage::Meshfree::Swarm<3>>
+      3, Wonton::Swarm<3>, Wonton::Swarm<3>>
       simplesearch(source_swarm, target_swarm, source_extent, target_extent, Portage::Meshfree::Gather);
 
     for (int tp = 0; tp < ntgt; tp++) {
@@ -597,15 +598,15 @@ TEST(search_by_cells, gather_3d_random_case1_nocheck)
 
 TEST(search_by_cells, scatter_2d_random_disjoint) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   int const nsrc = 256;
   int const ntgt = 128;
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<2>> source_points(nsrc);
-  Portage::vector<Wonton::Point<2>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<2>> target_points(ntgt);
-  Portage::vector<Wonton::Point<2>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<2>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<2>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<2>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<2>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -644,16 +645,16 @@ TEST(search_by_cells, scatter_2d_random_disjoint) {
 
 TEST(search_by_cells, scatter_2d_random_edge) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   int const nsrc = 256;
   int const ntgt = 128;
 
   // random point sets and test against SearchSimplePoints
-  Portage::vector<Wonton::Point<2>> source_points(nsrc);
-  Portage::vector<Wonton::Point<2>> source_extent(nsrc);
-  Portage::vector<Wonton::Point<2>> target_points(ntgt);
-  Portage::vector<Wonton::Point<2>> target_extent(ntgt);
+  Wonton::vector<Wonton::Point<2>> source_points(nsrc);
+  Wonton::vector<Wonton::Point<2>> source_extent(nsrc);
+  Wonton::vector<Wonton::Point<2>> target_points(ntgt);
+  Wonton::vector<Wonton::Point<2>> target_extent(ntgt);
 
   for (int j = 0; j < nsrc; ++j) {
     double x = 1.2 * rand()/RAND_MAX-.1;
@@ -675,11 +676,11 @@ TEST(search_by_cells, scatter_2d_random_edge) {
   Swarm<2> target_swarm(target_points);
 
   Portage::SearchPointsByCells<
-  2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
+  2, Wonton::Swarm<2>, Wonton::Swarm<2>>
   cellsearch(source_swarm, target_swarm, source_extent, target_extent);
 
   Portage::SearchSimplePoints<
-  2, Portage::Meshfree::Swarm<2>, Portage::Meshfree::Swarm<2>>
+  2, Wonton::Swarm<2>, Wonton::Swarm<2>>
   simplesearch(source_swarm, target_swarm, source_extent, target_extent);
 
   for (int tp = 0; tp < ntgt; tp++) {

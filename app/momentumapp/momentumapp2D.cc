@@ -8,17 +8,18 @@ Please see the license file at the root of this repository, or at:
 #include <sstream>
 #include <vector>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
 
 // app includes
 #include "user_field.h"
 #include "MomentumRemap.h"
-
-// wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
-#include "wonton/support/Point.h"
 
 // Jali includes
 #include "MeshFactory.hh"
@@ -43,7 +44,7 @@ Please see the license file at the root of this repository, or at:
     B. Conservative remap of momentum
     C. Verification of output data: cell-centered massed and velocities
 
-  Assumptions: meshes are matching.
+  Assumptions: meshes occupy the same domain.
 */
 
 

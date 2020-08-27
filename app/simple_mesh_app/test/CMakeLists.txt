@@ -44,3 +44,28 @@ ADD_SIMPLE_MESH_TEST(11)
 
 file(COPY triple_point_3x3_matdata.dat DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+if (PORTAGE_ENABLE_TANGRAM)
+  # copy the shell script and, a file with material distribution and gold
+  file(
+    COPY simple_mesh_mm_app.sh
+         ../../../test_data/non_convex.bvf
+         GOLD_simple_mm_test.gmv
+    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+  )
+
+  # add the test
+  add_test(
+    NAME simple_mesh_mm_app_2d_MOF
+    COMMAND ./simple_mesh_mm_app.sh
+  )
+
+  # set environment variables for the script
+  set_property(
+    TEST simple_mesh_mm_app_2d_MOF
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp
+  )
+
+endif ()
+

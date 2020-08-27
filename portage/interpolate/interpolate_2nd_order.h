@@ -15,15 +15,16 @@ Please see the license file at the root of this repository, or at:
 #include <utility>
 #include <vector>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/CoordinateSystem.h"
+
 #include "portage/support/portage.h"
 #include "portage/interpolate/gradient.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
 
-#include "wonton/support/CoordinateSystem.h"
-
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
   #include "tangram/driver/CellMatPoly.h"
   #include "tangram/support/MatPoly.h"
@@ -69,7 +70,7 @@ namespace Portage {
   >
   class Interpolate_2ndOrder {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor =
       Tangram::Driver<
         InterfaceReconstructorType, D, SourceMeshType,
@@ -97,7 +98,7 @@ namespace Portage {
       source_values_(nullptr),
       num_tols_(num_tols) { CoordSys::template verify_coordinate_system<D>(); }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief Constructor with interface reconstructor.
      *
@@ -151,7 +152,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
       std::cerr << "Interpolation is available for only cells and nodes";
       std::cerr << std::endl;
     }
@@ -190,9 +191,9 @@ namespace Portage {
     T const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> const* gradients_;
+    Wonton::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
   };
@@ -243,7 +244,7 @@ namespace Portage {
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor = Tangram::Driver<
       InterfaceReconstructorType, D, SourceMeshType,
       Matpoly_Splitter, Matpoly_Clipper
@@ -272,7 +273,7 @@ namespace Portage {
         num_tols_(num_tols),
         parts_(parts) { CoordSys::template verify_coordinate_system<D>(); }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief Constructor with interface reconstructor.
      *
@@ -327,7 +328,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field
      */
     void set_interpolation_variable(std::string const& variable_name,
-                                    const Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
       gradients_ = gradient_field;
@@ -387,7 +388,7 @@ namespace Portage {
         if (field_type_ == Field_type::MESH_FIELD) {
           source_mesh_.cell_centroid(src_cell, &source_centroid);
         }
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
         else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
           int const nb_mats = source_state_.cell_get_num_mats(src_cell);
           std::vector<int> cellmats;
@@ -476,9 +477,9 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Wonton::Vector<D>> const* gradients_;
+    Wonton::vector<Wonton::Vector<D>> const* gradients_;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
     Parts const* parts_;
@@ -524,7 +525,7 @@ namespace Portage {
       Matpoly_Splitter, Matpoly_Clipper, CoordSys
     >;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     using InterfaceReconstructor = Tangram::Driver<
       InterfaceReconstructorType, D, SourceMeshType,
       Matpoly_Splitter, Matpoly_Clipper
@@ -555,7 +556,7 @@ namespace Portage {
       source_values_(nullptr),
       num_tols_(num_tols) {}
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     /**
      * @brief Constructor with interface reconstructor.
      *
@@ -607,7 +608,7 @@ namespace Portage {
      * @param[in] gradient_field: the gradient field to use
      */
     void set_interpolation_variable(std::string const variable_name,
-                                    Portage::vector<Vector<D>>* gradient_field = nullptr) {
+                                    Wonton::vector<Vector<D>>* gradient_field = nullptr) {
 
       variable_name_ = variable_name;
       gradients_ = gradient_field;
@@ -706,9 +707,9 @@ namespace Portage {
     double const* source_values_;
     NumericTolerances_t num_tols_;
     int material_id_ = 0;
-    Portage::vector<Vector<D>>* gradients_ = nullptr;
+    Wonton::vector<Vector<D>>* gradients_ = nullptr;
     Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
   };

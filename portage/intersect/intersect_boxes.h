@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "wonton/support/wonton.h"
 #include "wonton/support/CoordinateSystem.h"
 #include "wonton/support/Point.h"
 

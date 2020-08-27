@@ -42,52 +42,50 @@ Portage uses standard C++11 features, so a fairly modern compiler is
 needed.  We regularly test with Intel 18.0.1, GCC 6.4.0, and GCC 7.3.0.  
 Utilizing the full capabilities of portage will require an MPI implementation; 
 we regularly test with OpenMPI 2.1.2 The build system _requires_ CMake
-version 3.0+.
+version 3.13+.
 
 The following libraries are also _required_ (see examples below):
 
-- LAPACKE (3.8.0+)
+- [Wonton](https://github.com/laristra/wonton)
 
-- **__Either__** Boost (1.68.0+) **__or__** Thrust (1.6.0+):
-  We wrap some features of either one of these packages.  If you would
-  like to run with OpenMP or TBB threads, then you _must_ use Thrust.
+  Wonton is a utility library for Portage containing some commonly
+  used classes like Point, Vector, etc., some abstractions for on-node
+  parallelism and also some mesh and state wrappers. Wonton itself has
+  dependencies - the highly recommended one is LAPACKE
+  (3.8.0+). On-node parallelism in Portage requires that Wonton be
+  built with NVidia Thrust or Kokkos. Distributed parallelism requires
+  that Wonton be built with MPI enabled. In the absence of the Thrust
+  library, the Boost library must be linked into Wonton. See the
+  Wonton README for details.
+  
+  If you specify, `PORTAGE_ENABLE_TANGRAM` and `TANGRAM_ROOT`,
+  Wonton will be picked up automatically as Wonton is a dependency of
+  Tangram as well. If not, you must specify the path to Wonton as
+  `WONTON_ROOT`
+  
+  
+The following libraries are _required if multi-material remapping is to be enabled_:
 
-Portage provides wrappers for a few third-party mesh types.  Building
-support for these is _optional_:
+- [Tangram](https://github.com/laristra/tangram)
 
-- [Jali](http://github.com/lanl/jali):
+  Tangram is a material interface reconstruction library that is used
+  to correctly remap between meshes with fractional amounts of
+  multiple materials in some cells. In the future Tangram may become a
+  required component of Portage.
 
-  We regularly test with verison 1.0.0.  You will need to set the
-  `Jali_Dir` CMake variable if you wish to build support for Jali and
-  its tests (see examples below).
-
-- [FleCSI Burton Specialization](http://github.com/laristra/flecsi-sp):
-
-  The Burton specialization in the `flecsi-sp` repository is built on
-  top of [FleCSI](http://github.com/laristra/flecsi).  You will need
-  _both_ projects to build support for the Burton mesh specialization
-  and its tests.  You will need to set `ENABLE_FleCSI=True` and add
-  the FleCSI and FleCSI-sp install paths to the `CMAKE_PREFIX_PATH`;
-  see examples below.  Both FleCSI packages are under constant
-  development.  This version of portage is known to work with hash
-  `374b56b` of the FleCSI _stable_ branch, and hash `e78c594` of the
-  FleCSI-SP _stable_ branch.
-
-The [documentation](http://portage.lanl.gov) is built using doxygen (1.8+).
+The [documentation](https://portage.lanl.gov) is built using doxygen (1.8+).
 
 For more details regarding CMake settings, see
-the [documentation](http://portage.lanl.gov) page.
+the [documentation](https://portage.lanl.gov) page.
 
 ### Installing
 
-In the simplest case where you have the appropriate versions mentioned
-above and Boost and LAPACKE are in the usual locations that CMake
-searches, then the build step is:
+In the simplest case the build step is:
 
 ```sh
 portage $ mkdir build
 portage $ cd build
-portage/build $ cmake -DENABLE_APP_TESTS=True ..
+portage/build $ cmake -DENABLE_APP_TESTS=True -DWONTON_ROOT:/path/to/wonton/installation ..
 portage/build $ make
 ```
 
@@ -128,38 +126,40 @@ assigned **LA-CC-16-084**.
 
 Below we list copy & paste instructions for several local machines; we
 have a script that parses this README file to execute the examples
-below to ensure they build.
+below to ensure they build. NOTE: If TANGRAM is **DISABLED**, the path
+to WONTON must be specified explicitly using WONTON_ROOT or indicated
+in CMAKE_PREFIX_PATH.
 
 ## Darwin
 
 Execute the following from the portage root directory:
 
-```c++
+```sh
 # machine=darwin-fe
 
-# VERSION NUMBERS
 INTEL_VERSION=18.0.3
 MPI_VERSION=3.1.3
-JALI_VERSION=1.0.5
-TANGRAM_VERSION=0.9.8
-XMOF2D_VERSION=0.9.5
-BOOST_VERSION=1.68.0
+TANGRAM_VERSION=1.0.1
+WONTON_VERSION=1.2.2
 
-BUILD_PREFIX=/usr/projects/ngc/private
+TPL_PREFIX=/usr/projects/ngc/private
 
 # load the correct boost, compiler, and openmpi
 module purge
-module load cmake openmpi/${MPI_VERSION}-intel_${INTEL_VERSION} boost/${BOOST_VERSION}
+module load cmake/3.15.3 openmpi/${MPI_VERSION}-intel_${INTEL_VERSION} boost/${BOOST_VERSION}
 
 cmake \
     -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
     -D ENABLE_MPI=True \
-    -D Jali_DIR:FILEPATH=${BUILD_PREFIX}/jali/${JALI_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}/lib \
-    -D TANGRAM_DIR:FILEPATH=${BUILD_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
-    -D XMOF2D_DIR:FILEPATH=${BUILD_PREFIX}/xmof2d/${XMOF2D_VERSION}-intel-${INTEL_VERSION}/share/cmake \
-    -D LAPACKE_DIR=${BUILD_PREFIX}/lapack/3.8.0-patched-intel-${INTEL_VERSION} \
+    -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D PORTAGE_ENABLE_MPI=True \
+    -D PORTAGE_ENABLE_THRUST=False \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 
 make -j16
@@ -171,25 +171,32 @@ ctest -j16 --output-on-failure
 
 Execute the following from the portage root directory:
 
-```c++
+```sh
 # machine=sn-fey
 . /usr/share/lmod/lmod/init/sh
-module load intel/18.0.5 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.5-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.8-intel-18.0.5-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.5-intel-18.0.5
-LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
+
+INTEL_VERSION=18.0.5
+MPI_VERSION=2.1.2
+WONTON_VERSION=1.2.2
+TANGRAM_VERSION=1.0.1
+
+TPL_PREFIX=/usr/projects/ngc/private
+
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
+
+
 mkdir build
 cd build
 cmake \
     -D CMAKE_BUILD_TYPE=Release \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
-    -D ENABLE_MPI=True \
-    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
-    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-    -D LAPACKE_DIR=$LAPACKE_DIR \
+    -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+	-D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D PORTAGE_ENABLE_MPI=True \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 make -j4
 ctest -j4 --output-on-failure
@@ -200,29 +207,31 @@ ctest -j4 --output-on-failure
 If you want to build an app for performance testing, you should include
 Thrust and TCMalloc in your build.  The cmake command for this is:
 
-```c++
+```sh
 # machine=sn-fey::thrust
 . /usr/share/lmod/lmod/init/sh
-module load intel/18.0.5 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/projects/ngc/private/jali/1.0.5-intel-18.0.5-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/projects/ngc/private/tangram/0.9.8-intel-18.0.5-openmpi-2.1.2-thrust
-XMOF2D_INSTALL_PREFIX=/usr/projects/ngc/private/xmof2d/0.9.5-intel-18.0.5
-LAPACKE_DIR=/usr/projects/ngc/private/lapack/3.8.0-patched-intel-18.0.5
+
+INTEL_VERSION=18.0.5
+MPI_VERSION=2.1.2
+WONTON_VERSION=1.2.2
+TANGRAM_VERSION=1.0.1
+
+TPL_PREFIX=/usr/projects/ngc/private
+
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.6
 mkdir build-thrust
 cd build-thrust
 cmake \
    -D CMAKE_BUILD_TYPE=Release \
    -D ENABLE_UNIT_TESTS=True \
    -D ENABLE_APP_TESTS=True \
-   -D ENABLE_MPI=True \
-   -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-   -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
-   -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-   -D ENABLE_THRUST=True \
-   -D THRUST_DIR:FILEPATH=/usr/projects/ngc/private/include \
-   -D ENABLE_TCMALLOC=True \
-   -D TCMALLOC_LIB:FILEPATH=/usr/lib64/libtcmalloc.so \
-   -D LAPACKE_DIR=$LAPACKE_DIR \
+   -D PORTAGE_ENABLE_TANGRAM=True \
+   -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
+   -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION}-thrust \
+   -D PORTAGE_ENABLE_MPI=True \
+   -D PORTAGE_ENABLE_THRUST=True \
+   -D PORTAGE_ENABLE_Jali=True \
+   -D PORTAGE_ENABLE_FleCSI=False \
    ..
 make -j4
 ctest -j4 --output-on-failure
@@ -233,67 +242,35 @@ ctest -j4 --output-on-failure
 
 Execute the following from the portage root directory:
 
-```c++
+```sh
 # machine=varan
 export MODULEPATH=""
 . /opt/local/packages/Modules/default/init/sh
-module load intel/18.0.1 openmpi/2.1.2 cmake
-JALI_INSTALL_PREFIX=/usr/local/codes/ngc/private/jali/1.0.5-intel-18.0.1-openmpi-2.1.2
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.8-intel-18.0.1-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.5-intel-18.0.1
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-intel-18.0.1/
-LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
-LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
+
+INTEL_VERSION=18.0.1
+MPI_VERSION=2.1.2
+WONTON_VERSION=1.2.2
+TANGRAM_VERSION=1.0.1
+
+TPL_PREFIX=/usr/local/codes/ngc/private
+
+module load intel/${INTEL_VERSION} openmpi/${MPI_VERSION} cmake/3.14.0
 mkdir build
 cd build
 cmake \
     -D CMAKE_BUILD_TYPE=Debug \
     -D ENABLE_UNIT_TESTS=True \
     -D ENABLE_APP_TESTS=True \
-    -D ENABLE_MPI=True \
-    -D Jali_DIR:FILEPATH=$JALI_INSTALL_PREFIX/lib \
-    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
-    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-    -D LAPACKE_DIR=$LAPACKE_DIR \
+    -D PORTAGE_ENABLE_TANGRAM=True \
+    -D WONTON_ROOT:FILEPATH=${TPL_PREFIX}/wonton/${WONTON_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D TANGRAM_ROOT:FILEPATH=${TPL_PREFIX}/tangram/${TANGRAM_VERSION}-intel-${INTEL_VERSION}-openmpi-${MPI_VERSION} \
+    -D PORTAGE_ENABLE_MPI=True \
+	-D PORTAGE_ENABLE_Jali=True \
+	-D PORTAGE_ENABLE_FleCSI=False \
     ..
 make -j2
 ctest -j2 --output-on-failure
 ```
-
 ---
 
-If you want to build an app that uses
-[FleCSI](https://github.com/losalamos/flecsi), you can link against a built
-verison of FleCSI on Varan.  An example is below:
-
-```c++
-# machine=varan::flecsi
-export MODULEPATH=""
-. /opt/local/packages/Modules/default/init/sh
-module load gcc/6.4.0 openmpi/2.1.2 cmake
-FLECSI_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi/374b56b-gcc-6.4.0
-FLECSISP_INSTALL_PREFIX=/usr/local/codes/ngc/private/flecsi-sp/e78c594-gcc-6.4.0
-TANGRAM_INSTALL_PREFIX=/usr/local/codes/ngc/private/tangram/0.9.8-gcc-6.4.0-openmpi-2.1.2
-XMOF2D_INSTALL_PREFIX=/usr/local/codes/ngc/private/xmof2d/0.9.5-gcc-6.4.0
-LAPACKE_DIR=/usr/local/codes/ngc/private/lapack/3.8.0-patched-gcc-6.4.0
-LAPACKE_INCLUDE_DIR=$LAPACKE_DIR/include
-LAPACKE_LIBRARY_DIR=$LAPACKE_DIR
-mkdir build-flecsi
-cd build-flecsi
-cmake \
-    -D CMAKE_C_COMPILER=`which mpicc` \
-    -D CMAKE_CXX_COMPILER=`which mpiCC` \
-    -D CMAKE_BUILD_TYPE=Debug \
-    -D ENABLE_UNIT_TESTS=True \
-    -D ENABLE_APP_TESTS=True \
-    -D ENABLE_MPI=True \
-    -D ENABLE_FleCSI=True \
-    -D CMAKE_PREFIX_PATH="$FLECSI_INSTALL_PREFIX;$FLECSISP_INSTALL_PREFIX" \
-    -D TANGRAM_DIR:FILEPATH=$TANGRAM_INSTALL_PREFIX \
-    -D XMOF2D_DIR:FILEPATH=$XMOF2D_INSTALL_PREFIX/share/cmake \
-    -D LAPACKE_DIR=$LAPACKE_DIR \
-    ..
-make -j2
-ctest -j2 --output-on-failure
-```
 

@@ -8,9 +8,11 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/weight.h"
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
 
 using Portage::Meshfree::Weight::Geometry;
 using Portage::Meshfree::Weight::ELLIPTIC;
@@ -176,12 +178,12 @@ TEST_P(WeightTest, check_weights_3D) {
   checkWeight<3>(std::get<0>(GetParam()), std::get<1>(GetParam()));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     GeoKernelCombos,
     WeightTest,
     Combine(Values(ELLIPTIC, TENSOR),
             Values(B4, SQUARE, EPANECHNIKOV, INVSQRT, COULOMB)));
 
-INSTANTIATE_TEST_CASE_P(FacetedSupport, WeightTest,
+INSTANTIATE_TEST_SUITE_P(FacetedSupport, WeightTest,
                         Combine(Values(FACETED), Values(POLYRAMP, STEP)));
 

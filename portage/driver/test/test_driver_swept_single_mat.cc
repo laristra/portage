@@ -4,28 +4,39 @@ Please see the license file at the root of this repository, or at:
     https://github.com/laristra/portage/blob/master/LICENSE
 */
 
+// this should be included prior to the use of Portage macros
+#include "portage/support/portage.h"
 
-#include <iostream>
-#include <memory>
-
+#ifdef PORTAGE_HAS_TANGRAM
+// system
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
+// wonton
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
-#include "portage/search/search_swept_face.h"
-#include "portage/intersect/intersect_swept_face.h"
-#include "portage/interpolate/interpolate_1st_order.h"
-#include "portage/interpolate/interpolate_2nd_order.h"
+
+// jali
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+// portage
 #include "portage/driver/coredriver.h"
-#include "portage/support/portage.h"
+#include "portage/search/search_swept_face.h"
+#include "portage/intersect/intersect_swept_face.h"
+#include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
+
+// tangram
+#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_r3d.h"
+#include "tangram/reconstruct/MOF.h"
 
 // Integrated tests for single material swept-face remap
 
@@ -59,7 +70,7 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   // node coordinate modification has to be done in Jali (the mesh wrappers
   // are query only)
   for (int i = 0; i < ntrgnodes; i++) {
-    std::array<double, 2> pnt;
+    std::array<double, 2> pnt {};
     targetMesh->node_get_coordinates(i, &pnt);
 
     // Move only the internal nodes because we don't want to mess with
@@ -126,8 +137,14 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, default mismatch fixup options
 
+  // IMPORTANT: we need to set the right tangram options even in single material
+  // since we explicitly use MatPoly_clipper in face_group_moments.
+  // It will trigger a compilation error otherwise - even in single material setting.
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -205,7 +222,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   // node coordinate modification has to be done in Jali (the mesh wrappers
   // are query only)
   for (int i = 0; i < ntrgnodes; i++) {
-    std::array<double, 2> pnt;
+    std::array<double, 2> pnt {};
     targetMesh->node_get_coordinates(i, &pnt);
 
     // Move only the internal nodes because we don't want to mess with
@@ -272,8 +289,14 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, default mismatch fixup options
 
+  // IMPORTANT: we need to set the right tangram options even in single material
+  // since we explicitly use MatPoly_clipper in face_group_moments.
+  // It will trigger a compilation error otherwise - even in single material setting.
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
-                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -338,14 +361,17 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
 TEST(SweptFaceRemap, 3D_2ndOrder) {
 
   // useful constants
-  static constexpr double const min = 0.0;
-  static constexpr double const max = 1.0;
-  static constexpr auto const CELL = Wonton::Entity_kind::CELL;
+  double const p_min = 0.0;
+  double const p_max = 1.0;
+  using Wonton::CELL;
 
-  // useful shortcuts
+  // IMPORTANT: we need to set the right tangram options even in single material
+  // since we explicitly use MatPoly_clipper in face_group_moments.
+  // It will trigger a compilation error otherwise - even in single material setting.
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
-                                       Wonton::Jali_Mesh_Wrapper,
-                                       Wonton::Jali_State_Wrapper>;
+                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                        Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
 
   // create meshes and related states
   auto source_mesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
@@ -358,8 +384,8 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   // check if a point is on boundary
   auto is_boundary = [&](auto const& point) -> bool {
     for (int d = 0; d < 3; ++d) {
-      if (std::abs(point[d] - min) < 1.E-16
-       or std::abs(max - point[d]) < 1.E-16)
+      if (std::abs(point[d] - p_min) < 1.E-16
+       or std::abs(p_max - point[d]) < 1.E-16)
         return false;
     }
     return true;
@@ -432,3 +458,130 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   // check for integral quantities conservation.
   ASSERT_DOUBLE_EQ(source_integral, target_integral);
 }
+
+TEST(SweptFaceRemap, MassConservationConstantField2D) {
+
+  using Wonton::CELL;
+  using Wonton::ALL;
+
+  // IMPORTANT: we need to set the right tangram options even in single material
+  // since we explicitly use MatPoly_clipper in face_group_moments.
+  // It will trigger a compilation error otherwise - even in single material setting.
+  using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
+                                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  auto source_mesh  = Jali::MeshFactory(comm)(0.0,0.0,1.0,1.0,5,5);
+  auto target_mesh  = Jali::MeshFactory(comm)(0.5,0.5,1.5,1.5,5,5);
+  auto source_state = Jali::State::create(source_mesh);
+  auto target_state = Jali::State::create(target_mesh);
+
+  Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper source_state_wrapper(*source_state);
+  Wonton::Jali_State_Wrapper target_state_wrapper(*target_state);
+
+  int const nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
+  int const nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
+
+  double source_density[nb_source_cells];
+  double* target_density = nullptr;
+
+  double source_mass = 0.0;
+  for (int c = 0; c < nb_source_cells; c++) {
+    source_density[c] = 42;
+    double const area = source_mesh_wrapper.cell_volume(c);
+    source_mass += source_density[c] * area;
+  }
+
+  source_state_wrapper.mesh_add_data<double>(CELL, "density", source_density);
+  target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.0);
+  target_state_wrapper.mesh_get_data<double>(CELL, "density", &target_density);
+
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  auto candidates = remapper.search<Portage::SearchSweptFace>();
+  auto gradients  = remapper.compute_source_gradient("density");
+  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace2D>(candidates);
+
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "density", "density", weights, &gradients
+  );
+
+  double target_mass = 0.0;
+
+  for (int c = 0; c < nb_target_cells; c++) {
+    double const area = target_mesh_wrapper.cell_volume(c);
+    target_mass += target_density[c] * area;
+  }
+
+  ASSERT_DOUBLE_EQ(source_mass, target_mass);
+}
+
+TEST(SweptFaceRemap, MassConservationConstantField3D) {
+
+  using Wonton::CELL;
+  using Wonton::ALL;
+
+  // IMPORTANT: we need to set the right tangram options even in single material
+  // since we explicitly use MatPoly_clipper in face_group_moments.
+  // It will trigger a compilation error otherwise - even in single material setting.
+  using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
+                                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
+                                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
+
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  auto source_mesh  = Jali::MeshFactory(comm)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
+  auto target_mesh  = Jali::MeshFactory(comm)(0.5,0.5,0.5,1.5,1.5,1.5,5,5,5);
+  auto source_state = Jali::State::create(source_mesh);
+  auto target_state = Jali::State::create(target_mesh);
+
+  Wonton::Jali_Mesh_Wrapper  source_mesh_wrapper(*source_mesh);
+  Wonton::Jali_Mesh_Wrapper  target_mesh_wrapper(*target_mesh);
+  Wonton::Jali_State_Wrapper source_state_wrapper(*source_state);
+  Wonton::Jali_State_Wrapper target_state_wrapper(*target_state);
+
+  int const nb_source_cells = source_mesh_wrapper.num_entities(CELL, ALL);
+  int const nb_target_cells = target_mesh_wrapper.num_entities(CELL, ALL);
+
+  double source_density[nb_source_cells];
+  double* target_density = nullptr;
+
+  double source_mass = 0.0;
+  for (int c = 0; c < nb_source_cells; c++) {
+    source_density[c] = 42;
+    double const volume = source_mesh_wrapper.cell_volume(c);
+    source_mass += source_density[c] * volume;
+  }
+
+  source_state_wrapper.mesh_add_data<double>(CELL, "density", source_density);
+  target_state_wrapper.mesh_add_data<double>(CELL, "density", 0.0);
+  target_state_wrapper.mesh_get_data<double>(CELL, "density", &target_density);
+
+  Remapper remapper(source_mesh_wrapper, source_state_wrapper,
+                    target_mesh_wrapper, target_state_wrapper);
+
+  auto candidates = remapper.search<Portage::SearchSweptFace>();
+  auto gradients  = remapper.compute_source_gradient("density");
+  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
+
+  remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
+    "density", "density", weights, &gradients
+  );
+
+  double target_mass = 0.0;
+
+  for (int c = 0; c < nb_target_cells; c++) {
+    auto const volume = target_mesh_wrapper.cell_volume(c);
+    target_mass += target_density[c] * volume;
+  }
+
+  ASSERT_DOUBLE_EQ(source_mass, target_mass);
+}
+#endif

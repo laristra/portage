@@ -35,7 +35,7 @@ for line in open(infile):
 
 retcode = 0
 for host in scripts:
-    if(host.startswith(machine)):
+    if(host == machine):
         print "HOST " + host
         print scripts[host]
         sshHost = host.split(':')[0]

@@ -27,6 +27,7 @@ Please see the license file at the root of this repository, or at:
 #include <cassert>
 #include <limits>
 
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/Vector.h"
 #include "portage/support/portage.h"
