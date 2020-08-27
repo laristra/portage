@@ -525,6 +525,13 @@ class CoreDriver {
    * @param limiter_type: gradient limiter to use on internal regions.
    * @param boundary_limiter_type: gradient limiter to use on boundary.
    * @param source_part: the source mesh part to consider if any.
+   *
+   * Remark: the gradient computation cannot be done in parallel yet
+   * for multiple fields due to some side effects. Indeed the same
+   * instance is used for multiple fields but limiter options
+   * are specified at runtime for each field. Besides, if the stencil
+   * matrices used for the least square approximation are not yet cached
+   * then it will be done at this step.
    */
   Wonton::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
