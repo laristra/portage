@@ -743,6 +743,9 @@ public:
     assert(nb_mats > 0);
 
     if (Interpolator::order == 2) {
+      // cache gradient stencils first
+      driver_cell_->cache_multimat_gradient_stencils();
+
       std::vector<Wonton::vector<Vector<D>>> gradients(nb_mats);
       for (int i = 0; i < nb_mats; ++i) {
         gradients[i] = driver_cell_->compute_source_gradient(srcvarname, limiter,

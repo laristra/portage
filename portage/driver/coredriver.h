@@ -496,6 +496,27 @@ class CoreDriver {
 
   }
 
+#ifdef PORTAGE_HAS_TANGRAM
+  /**
+   * @brief Cache gradient stencil matrices for multi-material fields.
+   *        It cannot be invoked directly in the constructor since
+   *        the interface reconstructor is only initialized after
+   *        the intersection step.
+   */
+  void cache_multimat_gradient_stencils() {
+    // make sure that the interface reconstructor is initialized.
+    // it is only done after the intersection step
+    // this check enforces that this method is called only after that step.
+    if (interface_reconstructor_) {
+      if (not cached_multimat_stenc_) {
+        gradient_.set_interface_reconstructor(interface_reconstructor_);
+        gradient_.cache_matrices(Field_type::MULTIMATERIAL_FIELD);
+        cached_multimat_stenc_ = true;
+      }
+    } else
+      throw std::runtime_error("interface reconstructor not yet initialized");
+  }
+#endif
 
   /**
    * @brief Compute the gradient field of the given variable on source mesh.
@@ -504,6 +525,13 @@ class CoreDriver {
    * @param limiter_type: gradient limiter to use on internal regions.
    * @param boundary_limiter_type: gradient limiter to use on boundary.
    * @param source_part: the source mesh part to consider if any.
+   *
+   * Remark: the gradient computation cannot be done in parallel yet
+   * for multiple fields due to some side effects. Indeed the same
+   * instance is used for multiple fields but limiter options
+   * are specified at runtime for each field. Besides, if the stencil
+   * matrices used for the least square approximation are not yet cached
+   * then it will be done at this step.
    */
   Wonton::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
@@ -525,6 +553,16 @@ class CoreDriver {
     std::vector<int> mat_cells;
 
     if (multimat) {
+      // cache gradient stencil first
+      if (not cached_multimat_stenc_) {
+        std::cerr << "Warning: gradient stencil matrices for ";
+        std::cerr << "multi-material fields were not cached yet." << std::endl;
+        std::cerr << "Please invoke 'cache_multimat_gradient_stencils' ";
+        std::cerr << "prior to 'compute_source_gradient' for optimized runs.";
+        std::cerr << std::endl;
+        cache_multimat_gradient_stencils();
+      }
+
       if (interface_reconstructor_) {
         std::vector<int> mat_cells_all;
         source_state_.mat_get_cells(material_id, &mat_cells_all);
@@ -992,6 +1030,7 @@ class CoreDriver {
 #endif
 
 #ifdef PORTAGE_HAS_TANGRAM
+  bool cached_multimat_stenc_ = false;
 
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the

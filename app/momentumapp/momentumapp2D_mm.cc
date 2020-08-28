@@ -258,32 +258,34 @@ int main(int argc, char** argv) {
                                              Wonton::Jali_Mesh_Wrapper,
                                              Wonton::Jali_State_Wrapper>;
 
-  { 
+  {
+    // gradient field computation is only supported on owned cells,
+    // besides the curl operator uses the gradient on owned cells (line 75).
     int ncells_src = srcmesh_wrapper.num_owned_cells();
-    int ncells_all = ncells_src + srcmesh_wrapper.num_ghost_cells();
-    std::vector<Wonton::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+    std::vector<Wonton::vector<Wonton::Vector<2>>> grads_src(2, Portage::vector<Wonton::Vector<2>>(ncells_src));
     Gradient gradient_kernel(srcmesh_wrapper, srcstate_wrapper);
 
     for (int i = 0; i < 2; ++i) {
       gradient_kernel.set_interpolation_variable(vel_names[i], limiter, Portage::BND_NOLIMITER);
-      Wonton::transform(srcmesh_wrapper.begin(Wonton::Entity_kind::CELL),
-                        srcmesh_wrapper.end(Wonton::Entity_kind::CELL),
+      Wonton::transform(srcmesh_wrapper.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                        srcmesh_wrapper.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
                         grads_src[i].begin(), gradient_kernel);
     }
 
     curl_src = EvaluateCurl(srcmesh_wrapper, grads_src);
   }
 
-  { 
+  {
+    // gradient field computation is only supported on owned cells,
+    // besides the curl operator uses the gradient on owned cells (line 75).
     int ncells_trg = trgmesh_wrapper.num_owned_cells();
-    int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
-    std::vector<Portage::vector<Wonton::Vector<2>>> grads_trg(2, Portage::vector<Wonton::Vector<2>>(ncells_all));
+    std::vector<Portage::vector<Wonton::Vector<2>>> grads_trg(2, Portage::vector<Wonton::Vector<2>>(ncells_trg));
     Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
 
     for (int i = 0; i < 2; ++i) {
       gradient_kernel.set_interpolation_variable(vel_names[i], limiter, Portage::BND_NOLIMITER);
-      Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
-                        trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
+      Wonton::transform(trgmesh_wrapper.begin(Wonton::CELL, Wonton::PARALLEL_OWNED),
+                        trgmesh_wrapper.end(Wonton::CELL, Wonton::PARALLEL_OWNED),
                         grads_trg[i].begin(), gradient_kernel);
     }
 

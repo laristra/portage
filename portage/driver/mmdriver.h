@@ -924,6 +924,8 @@ int MMDriver<Search, Intersect, Interpolate, D,
     
     auto source_ents_and_weights_mat =
         coredriver_cell.template intersect_materials<Intersect>(candidates);
+
+    if (Interpolator::order == 2) { coredriver_cell.cache_multimat_gradient_stencils(); }
     
     int nmatvars = src_matvar_names.size();
     std::vector<Wonton::vector<Vector<D>>> matgradients(nmats);
