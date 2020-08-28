@@ -6,20 +6,20 @@
 
 if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
 
-  # copy exodus files in build directory
-  file(COPY ../../../test_data/cast_source.exo DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(COPY ../../../test_data/cast_target.exo DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(COPY ../../../test_data/semi2-coarse.exo DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-  file(COPY ../../../test_data/semi2-fine.exo DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  # copy run script and exodus files in build directory
+  file(COPY "run.sh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY "../../../test_data/cast_source.exo" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY "../../../test_data/cast_target.exo" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY "../../../test_data/semi2-coarse.exo" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY "../../../test_data/semi2-fine.exo" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
   # macro to compare remapped values with reference ones
   macro(ADD_REMAP_TEST SUFFIX)
     # copy run script, gold files and input data in build directory
-    file(COPY "run_${SUFFIX}.sh" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(COPY "gold/gold_${SUFFIX}.dat" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
     file(COPY "input_${SUFFIX}.json" DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
-    add_test(NAME "test_part-by-part_${SUFFIX}" COMMAND "./run_${SUFFIX}.sh")
+    add_test(NAME "test_part-by-part_${SUFFIX}" COMMAND ./run.sh ${SUFFIX})
 
     set_property(TEST "test_part-by-part_${SUFFIX}"
         PROPERTY ENVIRONMENT
