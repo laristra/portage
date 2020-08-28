@@ -11,7 +11,7 @@ suffix=${1}
 epsilon=1.e-10
 
 # run test
-mpirun -np 4 ./part-remap "input_${suffix}.json"
+mpirun -np 4 ${ROOT_DIR}/part-remap "${ROOT_DIR}/test/input_${suffix}.json"
 
 # compare values with related gold file
 ${COMPARE} \
