@@ -15,11 +15,13 @@ mpirun -np 4 ./part-remap "input_${suffix}.json"
 
 # compare values with related gold file
 ${COMPARE} \
-  "gold_${suffix}_density.dat" \
-  "data_${suffix}_density.dat" \
-  ${epsilon}
-
-${COMPARE} \
   "gold_${suffix}_temperature.dat" \
   "data_${suffix}_temperature.dat" \
   ${epsilon}
+
+if [[ ! "${suffix}" =~ "blocks" ]]; then
+  ${COMPARE} \
+    "gold_${suffix}_density.dat" \
+    "data_${suffix}_density.dat" \
+    ${epsilon}
+fi
