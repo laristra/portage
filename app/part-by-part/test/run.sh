@@ -7,21 +7,21 @@
 set -e
 set -x
 
-suffix=${1}
+test_case=${1}
 epsilon=1.e-10
 
 # run test
-mpirun -np 4 ${ROOT_DIR}/part-remap "${ROOT_DIR}/test/input_${suffix}.json"
+mpirun -np 4 ${ROOT_DIR}/part-remap "${ROOT_DIR}/test/input_${test_case}.json"
 
-# compare values with related gold file
+# compare values with gold file
 ${COMPARE} \
-  "gold_${suffix}_temperature.dat" \
-  "data_${suffix}_temperature.dat" \
+  "gold_${test_case}_temperature.dat" \
+  "data_${test_case}_temperature.dat" \
   ${epsilon}
 
-if [[ ! "${suffix}" =~ "blocks" ]]; then
+if [[ ! "${test_case}" =~ "blocks" ]]; then
   ${COMPARE} \
-    "gold_${suffix}_density.dat" \
-    "data_${suffix}_density.dat" \
+    "gold_${test_case}_density.dat" \
+    "data_${test_case}_density.dat" \
     ${epsilon}
 fi
