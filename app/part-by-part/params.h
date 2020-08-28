@@ -72,6 +72,8 @@ public:
   std::string source;
   /** target mesh file */
   std::string target;
+  /** results prefix */
+  std::string results;
   /** remap order */
   int order = 1;
   /** numerical tolerance for remap */
@@ -140,6 +142,9 @@ public:
 
         if (not json["mesh"].count("export"))
           return abort("must precise if export results or not");
+
+        if (not json["mesh"].count("results"))
+          return abort("must provide the prefix for result files");
       }
 
       if(not json.count("remap"))
@@ -213,6 +218,7 @@ public:
       dump      = json["mesh"]["export"];
       source    = json["mesh"]["source"];
       target    = json["mesh"]["target"];
+      results   = json["mesh"]["results"];
       order     = json["remap"]["order"];
       fix_iter  = json["remap"]["fixup"]["max-iter"];
 
@@ -370,6 +376,7 @@ private:
       "    \e[32m'target'\e[0m: '/path/to/target/mesh.exo',                  \n"
       "    \e[32m'conformal'\e[0m: <boolean>                                 \n"
       "    \e[32m'export'\e[0m: <boolean>                                    \n"
+      "    \e[32m'results'\e[0m: <string>                                    \n"
       "  },                                                                  \n"
       "  \e[32m'remap'\e[0m: {                                               \n"
       "    \e[32m'kind'\e[0m: 'cell',                                        \n"
@@ -453,7 +460,8 @@ private:
     std::printf(" \u2022 dimension: \e[32m%d\e[0m\n", dimension);
     std::printf(" \u2022 source mesh: '\e[32m%s\e[0m'\n", base(source).data());
     std::printf(" \u2022 target mesh: '\e[32m%s\e[0m'\n", base(target).data());
-    std::printf(" \u2022 dump results: \e[32m%s\e[0m\n", dump_result.data());
+    std::printf(" \u2022 dump meshes: \e[32m%s\e[0m\n", dump_result.data());
+    std::printf(" \u2022 result prefix: \e[32m%s\e[0m\n", results.data());
     std::printf(" \u2022 remap order: \e[32m%d\e[0m\n", order);
     std::printf(" \u2022 remap kind: \e[32m%s\e[0m\n", remap_kind.data());
     std::printf(" \u2022 use limiter: \e[32m%s\e[0m\n", use_limiter.data());
