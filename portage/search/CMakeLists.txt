@@ -10,7 +10,7 @@ project(portage_search)
 add_library(portage_search)
 
 # Add header files
-set(search_HEADERS
+set(portage_search_HEADERS
     search_simple.h
     search_direct_product.h
     search_kdtree.h
@@ -23,14 +23,14 @@ set(search_HEADERS
     search_simple_points.h
     search_points_by_cells.h)
 
-set(search_SOURCES pairs.cc)
+set(portage_search_SOURCES pairs.cc)
 
 target_include_directories(portage_search PUBLIC
     $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
     $<BUILD_INTERFACE:${portage_BINARY_DIR}>
     $<INSTALL_INTERFACE:include>)
 
-target_sources(portage_search PRIVATE "${search_SOURCES}")
+target_sources(portage_search PRIVATE "${portage_search_SOURCES}")
 
 set_target_properties(portage_search PROPERTIES
     PUBLIC_HEADER "${portage_search_HEADERS}")
