@@ -59,8 +59,8 @@ TEST_P(Order2Test, SimpleMesh) {
     std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, nx, nx);
 
   // Create mesh wrappers
-  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh, true, true, true, Wonton::CoordSys::CylindricalAxisymmetric);
-  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh, true, true, true, Wonton::CoordSys::CylindricalAxisymmetric);
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh, true, true, true, Wonton::CoordSysType::CylindricalAxisymmetric);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh, true, true, true, Wonton::CoordSysType::CylindricalAxisymmetric);
 
   const int ncells_source = sourceMeshWrapper.num_owned_cells();
   const int ncells_target = targetMeshWrapper.num_owned_cells();
@@ -177,11 +177,16 @@ TEST_P(Order2Test, SimpleMesh) {
     mass1 += outvals[c] * vol;
     errl2 += std::pow(stdval - outvals[c], 2);
   }
-
   errl2 = sqrt(errl2 / ncells_target);
+
+  std::cout << "masses: " << mass0 << " " << mass1
+            << " tols: " << TOL_L2 << " " << TOL_L8 << std::endl;
+  std::cout << "mass error:     " << mass0 - mass1 << std::endl;
+  std::cout << "solution error: " << errl2 << std::endl;
+
+  ASSERT_NEAR(mass0, mass1, 1.0e-14);
   ASSERT_NEAR(0.0, errl2, TOL_L2);
-  std::cout << "masses: " << mass0 << " " << mass1 << std::endl;
-  std::cout << errl2 << std::endl;
+
 }
 
 

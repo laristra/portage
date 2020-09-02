@@ -32,25 +32,29 @@ class Order1Test : public ::testing::TestWithParam<int> {
 
 TEST_P(Order1Test, Cell_Constant_2D) {
   int itest = GetParam();
-  int nx;
+  int mx(4), nx(5);
+  double TOL_L8(1e-12), TOL_L2(1e-12);
   Wonton::Vector<3> coefs;
   if (itest == 1) {
     nx = 5;
     coefs = { 1.25, 0.0, 0.0 }; 
-  } else if (itest == 2) {
-    nx = 2;
-    coefs = { 0.0, 1.0, 1.0 }; 
+  } else { 
+    mx *= std::pow(2, itest - 1);
+    nx *= std::pow(2, itest - 1);
+    coefs = { 0.0, 1.0, 0.0 }; 
+    TOL_L8 = 0.8 / nx;
+    TOL_L2 = 0.4 / nx;
   }
 
   // Create simple meshes
   std::shared_ptr<Wonton::Simple_Mesh> source_mesh =
-    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, 4, 4);
+    std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, mx, mx);
   std::shared_ptr<Wonton::Simple_Mesh> target_mesh =
     std::make_shared<Wonton::Simple_Mesh>(0.0, 0.0, 1.0, 1.0, nx, nx);
 
   // Create mesh wrappers
-  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh);
-  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh);
+  Wonton::Simple_Mesh_Wrapper sourceMeshWrapper(*source_mesh, true, true, true, Wonton::CoordSysType::CylindricalAxisymmetric);
+  Wonton::Simple_Mesh_Wrapper targetMeshWrapper(*target_mesh, true, true, true, Wonton::CoordSysType::CylindricalAxisymmetric);
 
   const int ncells_source = sourceMeshWrapper.num_owned_cells();
   const int ncells_target = targetMeshWrapper.num_owned_cells();
@@ -59,11 +63,15 @@ TEST_P(Order1Test, Cell_Constant_2D) {
   Wonton::Simple_State source_state(source_mesh);
 
   // Define a state vector with constant value and add it to the source state
+  double vol, mass0(0.0);
   std::vector<double> data(ncells_source);
   for (int c = 0; c < ncells_source; ++c) {
     Wonton::Point<2> xc;
     sourceMeshWrapper.cell_centroid(c, &xc);
+    vol = sourceMeshWrapper.cell_volume(c);
+
     data[c] = coefs[0] + xc[0] * coefs[1] + xc[1] * coefs[2];
+    mass0 += data[c] * vol;
   }
   source_state.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
@@ -94,9 +102,10 @@ TEST_P(Order1Test, Cell_Constant_2D) {
     // Compute the moments
     // xcells is the source cell indices that intersect
     // xwts is the moments vector for each cell that intersects
-    BOX_INTERSECT::intersection_moments<2>(target_cell_coords[c],
-                                           source_cell_coords,
-                                           &xcells, &xwts);
+    BOX_INTERSECT::intersection_moments<2,Wonton::CylindricalAxisymmetricCoordinates>(
+        target_cell_coords[c],
+        source_cell_coords,
+        &xcells, &xwts);
 
     // Pack the results into a vector of true Portage::Weights_t
     int const num_intersect_cells = xcells.size();
@@ -134,18 +143,32 @@ TEST_P(Order1Test, Cell_Constant_2D) {
                      outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
-  double stdval;
+  double stdval, mass1(0.0), errl2(0.0);
   for (int c = 0; c < ncells_target; ++c) {
     Wonton::Point<2> xc;
     targetMeshWrapper.cell_centroid(c, &xc);
+    vol = targetMeshWrapper.cell_volume(c);
+
     stdval = coefs[0] + xc[0] * coefs[1] + xc[1] * coefs[2];
-    ASSERT_NEAR(stdval, outvals[c], TOL);
+    ASSERT_NEAR(stdval, outvals[c], TOL_L8);
+
+    mass1 += outvals[c] * vol;
+    errl2 += std::pow(stdval - outvals[c], 2);
   }
+  errl2 = sqrt(errl2 / ncells_target);
+
+  std::cout << "masses: " << mass0 << " " << mass1
+            << " tols: " << TOL_L2 << " " << TOL_L8 << std::endl;
+  std::cout << "mass error:     " << mass0 - mass1 << std::endl;
+  std::cout << "solution error: " << errl2 << std::endl;
+
+  ASSERT_NEAR(mass0, mass1, 1.0e-14);
+  ASSERT_NEAR(0.0, errl2, TOL_L2);
 }
 
 
 INSTANTIATE_TEST_SUITE_P(
   Order1TestAll,
   Order1Test,
-  ::testing::Values(1, 2));
+  ::testing::Values(1, 2, 3));
 
