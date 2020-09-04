@@ -42,7 +42,7 @@ install(FILES ${portage_driver_HEADERS} DESTINATION include/portage/driver)
 
 target_link_libraries(portage_driver INTERFACE portage_support)
 target_link_libraries(portage_driver INTERFACE portage_search)
-target_link_libraries(portage_driver INTERFACE portage_distribute)
+target_link_libraries(portage_driver INTERFACE portage_distributed)
 target_link_libraries(portage_driver INTERFACE portage_accumulate)
 target_link_libraries(portage_driver INTERFACE portage_estimate)
 target_link_libraries(portage_driver INTERFACE portage_intersect)
