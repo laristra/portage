@@ -61,7 +61,7 @@ find_dependency(WONTON REQUIRED NAMES wonton)
 set(CMAKE_MODULE_PATH ${SAVED_CMAKE_MODULE_PATH})
 
 #
-# Import Tangram targets
+# Import Portage targets
 #
 
 include("@CMAKE_INSTALL_PREFIX@/lib/cmake/portage/portageTargets.cmake")
