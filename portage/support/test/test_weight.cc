@@ -178,12 +178,12 @@ TEST_P(WeightTest, check_weights_3D) {
   checkWeight<3>(std::get<0>(GetParam()), std::get<1>(GetParam()));
 }
 
-INSTANTIATE_TEST_SUITE_P(
+INSTANTIATE_TEST_CASE_P(
     GeoKernelCombos,
     WeightTest,
     Combine(Values(ELLIPTIC, TENSOR),
             Values(B4, SQUARE, EPANECHNIKOV, INVSQRT, COULOMB)));
 
-INSTANTIATE_TEST_SUITE_P(FacetedSupport, WeightTest,
+INSTANTIATE_TEST_CASE_P(FacetedSupport, WeightTest,
                         Combine(Values(FACETED), Values(POLYRAMP, STEP)));
 

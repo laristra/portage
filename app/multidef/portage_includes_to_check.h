@@ -11,9 +11,8 @@ Please see the license file at the root of this repository, or at:
 // 0. Make sure you have include guards so that multiple inclusions of
 // the include file in a source file is ok
 // 1. Move it to a .cc file
-// 2. Make it inline
-// 3. Make it static
-// 4. Enclose it in its own namespace
+// 2. Make it static inline (Clang is not happy with just static or just inline)
+// 3. Enclose it in its own namespace
 //
 // Option 3 and 4 will cause each translation unit (compiled source file) to
 // have it's own copy of the function
