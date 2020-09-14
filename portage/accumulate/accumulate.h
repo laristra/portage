@@ -199,7 +199,7 @@ class Accumulate {
           // solve the linear system
           if (not zilchit) {
             std::string error="check";
-#ifdef HAVE_LAPACKE
+#ifdef WONTON_HAS_LAPACKE
             Wonton::Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr", error);
 #else
             Wonton::Matrix pair_result_matrix = moment.solve(basis_matrix, "inverse", error);
