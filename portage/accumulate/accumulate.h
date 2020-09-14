@@ -167,12 +167,14 @@ class Accumulate {
         // Calculate weights and moment matrix (P*W*transpose(P))
 	      std::vector<double> weight_val(source_particles.size());
         Wonton::Matrix moment(nbasis,nbasis,0.);
+        std::vector<std::vector<double>> basis_values(source_particles.size());
         size_t iB = 0;
         if (not zilchit) {
           for (auto const& particleB : source_particles) {
             weight_val[iB] = weight(particleA, particleB); // save weights for later
             Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-            auto basis = basis::shift<dim>(basis_, x, y);
+            auto& basis = basis_values[iB];
+            basis = basis::shift<dim>(basis_, x, y);
             for (size_t i=0; i<nbasis; i++) {
               for (size_t j=0; j<nbasis; j++) {
                 moment[i][j] += basis[i]*basis[j]*weight_val[iB];
@@ -188,7 +190,7 @@ class Accumulate {
         for (auto const& particleB : source_particles) {
 	        std::vector<double> pair_result(nbasis);
           Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-	        std::vector<double> basis = basis::shift<dim>(basis_, x, y);
+          auto const& basis = (not zilchit ? basis_values[iB] : basis::shift<dim>(basis_, x, y));
 
           // recast as a Portage::Matrix
           Wonton::Matrix basis_matrix(nbasis,1);
