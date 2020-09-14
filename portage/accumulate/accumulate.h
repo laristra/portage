@@ -186,7 +186,6 @@ class Accumulate {
           }
         }
 
-        // Calculate inverse(P*W*transpose(P))*P*W
         iB = 0;
 
         // optimize for unitary basis
@@ -204,17 +203,16 @@ class Accumulate {
           return result;
         }
 
+        // calculate inverse(P*W*transpose(P))*P*W otherwise
         for (auto const& particleB : source_particles) {
 	        std::vector<double> pair_result(nbasis,0.);
-          Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-          auto const& basis = (not zilchit ? basis_values[iB] : basis::shift<dim>(basis_, x, y));
-
-          // recast as a Portage::Matrix
-          Wonton::Matrix basis_matrix(nbasis,1);
-          for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
-
           // solve the linear system
           if (not zilchit) {
+            auto const& basis = basis_values[iB];
+            // recast as a Portage::Matrix
+            Wonton::Matrix basis_matrix(nbasis,1);
+            for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
+
             std::string error="check";
 #ifdef WONTON_HAS_LAPACKE
             Wonton::Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr", error);
@@ -227,9 +225,6 @@ class Accumulate {
               //if (basis_matrix.is_singular() == 2 or error != "none") {
               //  bad_count++;
               //}
-          } else {
-            for (size_t i=0; i<nbasis; i++)
-              pair_result[i] = 0.;
           }
 
           // If an operator is being applied, adjust final weights.
@@ -247,12 +242,12 @@ class Accumulate {
 
  private:
   /**
-   * @brief
+   * @brief Adjust weights if a user-defined operator is specified.
    *
-   * @param particleA
-   * @param nbasis
-   * @param x
-   * @param pair_result
+   * @param particleA: target particle index.
+   * @param nbasis: number of weight basis
+   * @param x: target particle coordinates.
+   * @param pair_result:the corrected weights.
    */
   void apply_operator(size_t particleA, size_t nbasis,
                       Wonton::Point<dim> const& x,
