@@ -167,7 +167,9 @@ class Accumulate {
         // Calculate weights and moment matrix (P*W*transpose(P))
 	      std::vector<double> weight_val(source_particles.size());
         Wonton::Matrix moment(nbasis,nbasis,0.);
-        std::vector<std::vector<double>> basis_values(source_particles.size());
+        int const num_source_particles = source_particles.size();
+        std::vector<std::vector<double>> basis_values(num_source_particles);
+
         size_t iB = 0;
         if (not zilchit) {
           for (auto const& particleB : source_particles) {
@@ -187,8 +189,23 @@ class Accumulate {
         // Calculate inverse(P*W*transpose(P))*P*W
         iB = 0;
 
+        // optimize for unitary basis
+        if (nbasis == 1) {
+          for (auto const& particleB : source_particles) {
+            std::vector<double> pair_result(nbasis, 0.);
+            if (not zilchit) {
+              pair_result[0] = (basis_values[iB][0] * weight_val[iB] / moment[0][0]);
+            }
+            // If an operator is being applied, adjust final weights.
+            apply_operator(particleA, nbasis, x, pair_result);
+            result.emplace_back(particleB, pair_result);
+            iB++;
+          }
+          return result;
+        }
+
         for (auto const& particleB : source_particles) {
-	        std::vector<double> pair_result(nbasis);
+	        std::vector<double> pair_result(nbasis,0.);
           Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
           auto const& basis = (not zilchit ? basis_values[iB] : basis::shift<dim>(basis_, x, y));
 
@@ -216,27 +233,7 @@ class Accumulate {
           }
 
           // If an operator is being applied, adjust final weights.
-          if (estimate_ == OperatorRegression) {
-            auto ijet = basis::inverse_jet<dim>(basis_, x);
-            std::vector<std::vector<double>> basisop;
-            oper::apply<dim>(operator_spec_, basis_,
-                             operator_domain_[particleA],
-                             operator_data_[particleA], basisop);
-            int const num_basis = nbasis;
-            int const opsize = oper::size_info(operator_spec_, basis_,
-                                            operator_domain_[particleA])[0];
-            std::vector<double> operator_result(opsize, 0.);
-
-            for (int j = 0; j < opsize; j++) {
-              for (int k = 0; k < num_basis; k++) {
-                for (int m = 0; m < num_basis; m++) {
-                  operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
-                }
-              }
-            }
-            for (int j = 0; j < num_basis; j++)
-              pair_result[j] = operator_result[j];
-          }
+          apply_operator(particleA, nbasis, x, pair_result);
           result.emplace_back(particleB, pair_result);
           iB++;
         }
@@ -249,6 +246,42 @@ class Accumulate {
   }
 
  private:
+  /**
+   * @brief
+   *
+   * @param particleA
+   * @param nbasis
+   * @param x
+   * @param pair_result
+   */
+  void apply_operator(size_t particleA, size_t nbasis,
+                      Wonton::Point<dim> const& x,
+                      std::vector<double>& pair_result) const {
+
+    if (estimate_ == OperatorRegression) {
+      auto ijet = basis::inverse_jet<dim>(basis_, x);
+      std::vector<std::vector<double>> basisop;
+      oper::apply<dim>(operator_spec_, basis_,
+                       operator_domain_[particleA],
+                       operator_data_[particleA], basisop);
+      int const num_basis = nbasis;
+      int const opsize = oper::size_info(operator_spec_, basis_,
+                                         operator_domain_[particleA])[0];
+      std::vector<double> operator_result(opsize, 0.);
+
+      for (int j = 0; j < opsize; j++) {
+        for (int k = 0; k < num_basis; k++) {
+          for (int m = 0; m < num_basis; m++) {
+            operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
+          }
+        }
+      }
+      for (int j = 0; j < num_basis; j++)
+        pair_result[j] = operator_result[j];
+    }
+  }
+
+
   SourceSwarm const& source_;
   TargetSwarm const& target_;
   EstimateType estimate_;
