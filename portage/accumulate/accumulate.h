@@ -243,7 +243,7 @@ class Accumulate {
 	      break;
       }
       default:  // invalid estimate
-	      assert(false);
+	      throw std::runtime_error("invalid estimate type");
     }
     return result;
   }
