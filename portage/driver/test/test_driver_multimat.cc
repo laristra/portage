@@ -66,7 +66,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   std::shared_ptr<Jali::State> targetState;
 
   sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 5, 5);
-  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 6);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 7, 7);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -337,7 +337,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
 
     for (int ic = 0; ic < nmatcells; ic++)
-      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-10);
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 1.0e-9);
 
     Wonton::Point<2> const *matcen_remap;
     targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
