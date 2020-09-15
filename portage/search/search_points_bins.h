@@ -51,6 +51,16 @@ public:
 
   }
 
+  /**
+   * @brief
+   *
+   * @param target_id
+   * @return
+   */
+  std::vector<int> operator() (int target_id) const {
+
+  }
+
 private:
 
   /**
@@ -61,14 +71,13 @@ private:
   void build_helper_grid(double h) {
 
     assert(h > 0.);
+    int const num_source_points = source_swarm_.num_particles();
 
     // step 1: compute bounding box of source points
     for (int d = 0; d < dim; ++d) {
       p_min[d] = std::numeric_limits<double>::max();
       p_max[d] = std::numeric_limits<double>::lowest();
     }
-
-    int const num_source_points = source_swarm_.num_particles();
 
     for (int i = 0; i < num_source_points; ++i) {
       auto const& p = target_swarm_.get_particle_coordinates(i);
@@ -79,14 +88,22 @@ private:
     }
 
     // step 2: discretize into cells
-    // how to choose the spatial step h
     num_sides_ = 0;
     for (int d = 0; d < dim; ++d) {
       double range = p_max[d] - p_min[d];
       num_sides_ = std::max(num_sides_, static_cast<int>(range / h));
     }
 
-    cells_.resize(std::pow(num_sides_, dim));
+    // step 3: resize grid and push source points
+    int const num_cells = static_cast<int>(std::pow(num_sides_, dim));
+    bins_.resize(num_cells);
+
+    for (int i = 0; i < num_source_points; ++i) {
+      auto const& p = target_swarm_.get_particle_coordinates(i);
+      int const j = retrieve_index(p);
+      assert(j > -1);
+      bins_[j].emplace_back(i);
+    }
   }
 
   /**
@@ -96,6 +113,7 @@ private:
    * @return
    */
   int retrieve_index(Wonton::Point<dim> const& p) const {
+
     assert(num_sides_);
 
     // step 1: (x,y,z) to (i,j,k)
@@ -107,19 +125,18 @@ private:
     }
 
     // step 2: (i,j,k) to flat array index
-    switch (dim) {
-      case 1: return index[0];
-      case 2: return index[0] + index[1] * num_sides_;
-      case 3: return index[0] + index[1] * num_sides_ + index[2] * num_sides_ * num_sides_;
-      default: return -1;
+    for (int d = 1; d < dim; ++d) {
+      index[0] += index[d] * static_cast<int>(std::pow(num_sides_, d));
     }
+    return index[0];
   }
+
 
   SourceSwarm const& source_swarm_;
   TargetSwarm const& target_swarm_;
   Wonton::vector<Wonton::Point<dim>> const& target_radius_;
   Wonton::Point<dim> p_min, p_max;
-  std::vector<int> cells_; // flatten multi-dimensional array
+  std::vector<std::vector<int>> bins_; // flatten multi-dimensional array
   int num_sides_ = 0;
 };
 
