@@ -21,6 +21,7 @@ set(portage_search_HEADERS
     pairs.hh
     search_swept_face.h
     search_simple_points.h
+    search_points_bins.h
     search_points_by_cells.h)
 
 set(portage_search_SOURCES pairs.cc)
@@ -76,6 +77,11 @@ if(ENABLE_UNIT_TESTS)
 
   portage_add_unittest(test_search_simple_points
     SOURCES test/test_search_simple_points.cc
+    LIBRARIES portage_search
+    POLICY SERIAL)
+
+  portage_add_unittest(test_search_points_bins
+    SOURCES test/test_search_points_bins.cc
     LIBRARIES portage_search
     POLICY SERIAL)
 
