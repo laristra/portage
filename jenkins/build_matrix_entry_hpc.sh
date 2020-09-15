@@ -37,7 +37,7 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.2
+wonton_version=1.2.4
 tangram_version=1.0.1
 
 export NGC=/usr/projects/ngc
