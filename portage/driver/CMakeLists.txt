@@ -151,6 +151,12 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
        POLICY MPI
        THREADS 4)
+
+       portage_add_unittest(test_driver_reverse_weights
+         SOURCES test/test_driver_reverse_weights.cc
+         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+         POLICY MPI
+         THREADS 4)
      endif (PORTAGE_HAS_TANGRAM)
 
      portage_add_unittest(test_driver_core_single_mat
