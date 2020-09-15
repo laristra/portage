@@ -119,7 +119,7 @@ TEST(ReverseWeights, MultiMat) {
 
   MPI_Comm comm = MPI_COMM_WORLD;
   auto source_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 5, 5);
-  auto target_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 7, 6);
+  auto target_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 7, 7);
   auto source_state = Jali::State::create(source_mesh);
   auto target_state = Jali::State::create(target_mesh);
 
