@@ -36,11 +36,13 @@ public:
                    TargetSwarm const& target_swarm,
                    Wonton::vector<Wonton::Point<dim>> const& /* unused */,
                    Wonton::vector<Wonton::Point<dim>> const& target_radius,
-                   Meshfree::WeightCenter center = Meshfree::Gather)
+                   Meshfree::WeightCenter const center = Meshfree::Gather)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
       target_radius_(target_radius) {
 
+    static_assert(dim > 0 and dim < 4, "invalid dimension");
+    
     if (center == Meshfree::Scatter)
       throw std::runtime_error("scatter weight form not supported");
 
@@ -57,8 +59,62 @@ public:
    * @param target_id
    * @return
    */
-  std::vector<int> operator() (int target_id) const {
+  std::vector<int> operator() (int id) const {
 
+    auto const& p = target_swarm_.get_particle_coordinates(id);
+    auto const& h = target_radius_[id];
+
+    // step 1: build bounding box of the radius of 'j'
+    Wonton::Point<dim> b_min, b_max;
+    for (int d = 0; d < dim; ++d) {
+      b_min[d] = std::max(p[d] - h[d], p_min_[d]);
+      b_max[d] = std::min(p[d] + h[d], p_max_[d]);
+    }
+
+    // step 2: push cells overlapped by the bounding box
+    std::vector<int> cells;
+    auto i_min = retrieve_indices(b_min);
+    auto i_max = retrieve_indices(b_max);
+
+    if (dim == 1) {
+      for (int i = i_min[0]; i < i_max[0]; ++i) {
+        cells.emplace_back(i);
+      }
+    } else if (dim == 2) {
+      for (int j = i_min[1]; j < i_max[1]; ++j) {
+        for (int i = i_min[0]; i < i_max[0]; ++i) {
+          cells.emplace_back(i + j * num_sides_);
+        }
+      }
+    } else if (dim == 3) {
+      for (int k = i_min[2]; k < i_max[2]; ++k) {
+        for (int j = i_min[1]; j < i_max[1]; ++j) {
+          for (int i = i_min[0]; i < i_max[0]; ++i) {
+            cells.emplace_back(i + j * num_sides_ + k * num_sides_ * num_sides_);
+          }
+        }
+      }
+    }
+
+    // step 3: scan cells and check distance of each included source point
+    std::vector<int> neighbors;
+
+    for (int const& cell : cells) {
+      for (int const& s : bins_[cell]) {
+        bool contained = true;
+        auto const& q = source_swarm_.get_particle_coordinates(s);
+        for (int d = 0; d < dim; ++d) {
+          if (std::abs(q[d] - p[d]) > h[d]) {
+            contained = false;
+            break;
+          }
+        }
+        if (contained) {
+          neighbors.emplace_back(s);
+        }
+      }
+    }
+    return neighbors;
   }
 
 private:
@@ -75,22 +131,22 @@ private:
 
     // step 1: compute bounding box of source points
     for (int d = 0; d < dim; ++d) {
-      p_min[d] = std::numeric_limits<double>::max();
-      p_max[d] = std::numeric_limits<double>::lowest();
+      p_min_[d] = std::numeric_limits<double>::max();
+      p_max_[d] = std::numeric_limits<double>::lowest();
     }
 
     for (int i = 0; i < num_source_points; ++i) {
       auto const& p = target_swarm_.get_particle_coordinates(i);
       for (int d = 0; d < dim; ++d) {
-        if (p[d] < p_min[d]) { p_min[d] = p[d]; }
-        if (p[d] > p_max[d]) { p_max[d] = p[d]; }
+        if (p[d] < p_min_[d]) { p_min_[d] = p[d]; }
+        if (p[d] > p_max_[d]) { p_max_[d] = p[d]; }
       }
     }
 
     // step 2: discretize into cells
     num_sides_ = 0;
     for (int d = 0; d < dim; ++d) {
-      double range = p_max[d] - p_min[d];
+      double range = p_max_[d] - p_min_[d];
       num_sides_ = std::max(num_sides_, static_cast<int>(range / h));
     }
 
@@ -112,30 +168,45 @@ private:
    * @param p
    * @return
    */
-  int retrieve_index(Wonton::Point<dim> const& p) const {
-
+  std::array<int, dim> retrieve_indices(Wonton::Point<dim> const& p) const {
     assert(num_sides_);
-
-    // step 1: (x,y,z) to (i,j,k)
-    int index[dim];
+    std::array<int, dim> indices;
     for (int d = 0; d < dim; ++d) {
-      double t = p[d] - p_min[d];
-      double range = p_max[d] - p_min[d];
-      index[d] = static_cast<int>(std::floor(t * num_sides_ / range));
+      double const t = p[d] - p_min_[d];
+      if (t >= 0.) {
+        double range = p_max_[d] - p_min_[d];
+        indices[d] = static_cast<int>(std::floor(t * num_sides_ / range));
+      } else
+        throw std::runtime_error("p[d] < p_min[d]");
     }
+    return indices;
+  }
 
-    // step 2: (i,j,k) to flat array index
-    for (int d = 1; d < dim; ++d) {
-      index[0] += index[d] * static_cast<int>(std::pow(num_sides_, d));
+  int retrieve_index(std::array<int, dim> const& indices) const {
+    switch (dim) {
+      case 1: return indices[0];
+      case 2: return indices[0] + indices[1] * num_sides_;
+      case 3: return indices[0] + indices[1] * num_sides_ + indices[2] * num_sides_ * num_sides_;
+      default: return -1;
     }
-    return index[0];
+  }
+
+  /**
+   * @brief
+   *
+   * @param p
+   * @return
+   */
+  int retrieve_index(Wonton::Point<dim> const& p) const {
+    // (x,y,z) to (i,j,k) to i'
+    return retrieve_index(retrieve_indices(p));
   }
 
 
   SourceSwarm const& source_swarm_;
   TargetSwarm const& target_swarm_;
-  Wonton::vector<Wonton::Point<dim>> const& target_radius_;
-  Wonton::Point<dim> p_min, p_max;
+  std::vector<Wonton::Point<dim>> const& target_radius_;
+  Wonton::Point<dim> p_min_, p_max_;
   std::vector<std::vector<int>> bins_; // flatten multi-dimensional array
   int num_sides_ = 0;
 };
