@@ -13,7 +13,7 @@
 
 namespace Portage {
 
-using Meshfree::WeightCenter;
+using namespace Meshfree;
 
 template<int dim, class SourceSwarm, class TargetSwarm>
 class SearchPointsBins {
@@ -36,14 +36,16 @@ public:
                    TargetSwarm const& target_swarm,
                    Wonton::vector<Wonton::Point<dim>> const& /* unused */,
                    Wonton::vector<Wonton::Point<dim>> const& target_radius,
-                   Meshfree::WeightCenter const center = Meshfree::Gather)
+                   WeightCenter const center = Gather,
+                   double radius_scale_factor = 1)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
-      target_radius_(target_radius) {
+      target_radius_(target_radius),
+      radius_scale_factor_(radius_scale_factor) {
 
     static_assert(dim > 0 and dim < 4, "invalid dimension");
-    
-    if (center == Meshfree::Scatter)
+
+    if (center == Scatter)
       throw std::runtime_error("scatter weight form not supported");
 
     int const num_source_points = source_swarm_.num_particles();
@@ -55,22 +57,22 @@ public:
     for (int d = 0; d < dim; ++d) {
       p_min_[d] = std::numeric_limits<double>::max();
       p_max_[d] = std::numeric_limits<double>::lowest();
-      radius[d] = 0.;
+      radius[d] = 0;
     }
 
     for (int s = 0; s < num_source_points; ++s) {
-      auto const& p = target_swarm.get_particle_coordinates(s);
+      auto const& p = source_swarm.get_particle_coordinates(s);
       for (int d = 0; d < dim; ++d) {
         p_min_[d] = std::min(p_min_[d], p[d]);
         p_max_[d] = std::max(p_max_[d], p[d]);
       }
     }
 
-    // step 2: discretize into cartesian grid
+    // step 2: deduce discretization step from search radii
     for (int t = 0; t < num_target_points; ++t) {
       Wonton::Point<dim> const& extent = target_radius[t];
       for (int d = 0; d < dim; ++d) {
-        radius[d] += std::abs(extent[d]);
+        radius[d] += radius_scale_factor * std::abs(extent[d]);
       }
     }
 
@@ -81,13 +83,14 @@ public:
       num_sides_ = std::max(num_sides_, static_cast<int>(range / step));
     }
 
+    int const num_bins = static_cast<int>(std::pow(num_sides_, dim));
+
     // step 3: push source points into bins
-    bucket_.resize(std::pow(num_sides_, dim));
+    bucket_.resize(num_bins);
 
     for (int s = 0; s < num_source_points; ++s) {
       auto const& p = source_swarm.get_particle_coordinates(s);
-      int indices[dim];
-      int const i = deduce_index(p, indices);
+      int const i = deduce_bin_index(p);
       bucket_[i].emplace_back(s);
     }
   }
@@ -106,31 +109,35 @@ public:
     // step 1: build bounding box of the radius of target point
     Wonton::Point<dim> box_min, box_max;
     for (int d = 0; d < dim; ++d) {
-      box_min[d] = std::max(p[d] - h[d], p_min_[d]);
-      box_max[d] = std::min(p[d] + h[d], p_max_[d]);
+      box_min[d] = std::max(p[d] - radius_scale_factor_ * h[d], p_min_[d]);
+      box_max[d] = std::min(p[d] + radius_scale_factor_ * h[d], p_max_[d]);
     }
 
     // step 2: filter cells overlapped by the bounding box
     std::vector<int> cells;
-    int bin_min[dim];
-    int bin_max[dim];
-    deduce_index(box_min, bin_min);
-    deduce_index(box_max, bin_max);
+    auto const first_cell = deduce_cell_index(box_min);
+    auto const last_cell  = deduce_cell_index(box_max);
+
+#ifndef NDEBUG
+    for (int d = 0; d < dim; ++d) {
+      assert(first_cell[d] <= last_cell[d]);
+    }
+#endif
 
     if (dim == 1) {
-      for (int i = bin_min[0]; i < bin_max[0]; ++i) {
+      for (int i = first_cell[0]; i < last_cell[0]; ++i) {
         cells.emplace_back(i);
       }
     } else if (dim == 2) {
-      for (int j = bin_min[1]; j < bin_max[1]; ++j) {
-        for (int i = bin_min[0]; i < bin_max[0]; ++i) {
+      for (int j = first_cell[1]; j < last_cell[1]; ++j) {
+        for (int i = first_cell[0]; i < last_cell[0]; ++i) {
           cells.emplace_back(i + j * num_sides_);
         }
       }
     } else if (dim == 3) {
-      for (int k = bin_min[2]; k < bin_max[2]; ++k) {
-        for (int j = bin_min[1]; j < bin_max[1]; ++j) {
-          for (int i = bin_min[0]; i < bin_max[0]; ++i) {
+      for (int k = first_cell[2]; k < last_cell[2]; ++k) {
+        for (int j = first_cell[1]; j < last_cell[1]; ++j) {
+          for (int i = first_cell[0]; i < last_cell[0]; ++i) {
             cells.emplace_back(i + j * num_sides_ + k * num_sides_ * num_sides_);
           }
         }
@@ -144,7 +151,7 @@ public:
         bool contained = true;
         auto const& q = source_swarm_.get_particle_coordinates(s);
         for (int d = 0; d < dim; ++d) {
-          if (std::abs(q[d] - p[d]) > h[d]) {
+          if (std::abs(q[d] - p[d]) > radius_scale_factor_ * h[d]) {
             contained = false;
             break;
           }
@@ -159,18 +166,15 @@ public:
 
 private:
   /**
-   * @brief
+   * @brief Deduce cell indices (i,j,k) from physical coordinates (x,y,z).
    *
-   * @param p
-   * @param indices
-   * @return
+   * @param p: current point coordinates.
+   * @return index of the cell containing the point in helper grid.
    */
-  int deduce_index(Wonton::Point<dim> const& p, int indices[dim]) const {
-
+  std::array<int, dim> deduce_cell_index(Wonton::Point<dim> const& p) const {
     assert(num_sides_ > 0);
-    assert(indices != nullptr);
+    std::array<int, dim> indices;
 
-    // step 1: (x,y,z) to (i,j,k)
     for (int d = 0; d < dim; ++d) {
       double const t = p[d] - p_min_[d];
       if (t < 0) {
@@ -180,11 +184,22 @@ private:
         indices[d] = static_cast<int>(std::floor(t * num_sides_ / range));
       }
     }
+    return indices;
+  }
 
+  /**
+   * @brief Deduce bin index i' from physical coordinates (x,y,z).
+   *
+   * @param p: current point coordinates.
+   * @return index of the bin containing the point.
+   */
+  int deduce_bin_index(Wonton::Point<dim> const& p) const {
+    // step 1: (x,y,z) to (i,j,k)
+    auto const cell = deduce_cell_index(p);
     // step 2: (i,j,k) to i'
-    int index = indices[0];
+    int index = cell[0];
     for (int d = 1; d < dim; ++d) {
-      index += indices[d] * static_cast<int>(std::pow(num_sides_, d));
+      index += cell[d] * static_cast<int>(std::pow(num_sides_, d));
     }
     return index;
   }
@@ -195,6 +210,8 @@ private:
   TargetSwarm const& target_swarm_;
   /** search radius for each target point */
   Wonton::vector<Wonton::Point<dim>> const& target_radius_;
+  /** search radius scaling factor */
+  double radius_scale_factor_ = 1;
   /** bounding box of helper grid */
   Wonton::Point<dim> p_min_, p_max_;
   /** bins of source points within helper grid */
