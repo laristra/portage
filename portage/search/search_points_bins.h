@@ -90,9 +90,11 @@ public:
 
     for (int s = 0; s < num_source_points; ++s) {
       auto const& p = source_swarm.get_particle_coordinates(s);
-      int const i = deduce_bin_index(p);
-      std::cout << "bin index: "<< i << std::endl;
-      bucket_[i].emplace_back(s);
+      if (not is_outside(p)) {
+        int const i = deduce_bin_index(p);
+        std::cout << "bin index: "<< i << std::endl;
+        bucket_[i].emplace_back(s);
+      }
     }
   }
 
@@ -110,42 +112,42 @@ public:
     // step 1: build bounding box of the radius of target point
     Wonton::Point<dim> box_min, box_max;
     for (int d = 0; d < dim; ++d) {
-      box_min[d] = std::max(p[d] - radius_scale_ * h[d], p_min_[d]);
-      box_max[d] = std::min(p[d] + radius_scale_ * h[d], p_max_[d]);
+      box_min[d] = p[d] - radius_scale_ * h[d];
+      box_max[d] = p[d] + radius_scale_ * h[d];
     }
 
     // step 2: filter cells overlapped by the bounding box
     std::vector<int> cells;
     std::cout << " =========" << std::endl;
     std::cout << "compute box min, max" << std::endl;
-    auto const first_cell = deduce_cell_index(box_min);
-    auto const last_cell  = deduce_cell_index(box_max);
+    auto const first = deduce_cell_index(box_min);
+    auto const last  = deduce_cell_index(box_max);
 
 #ifndef NDEBUG
     for (int d = 0; d < dim; ++d) {
-      assert(first_cell[d] <= last_cell[d]);
+      assert(first[d] <= last[d]);
     }
 #endif
 
     std::cout << " =========" << std::endl;
     std::cout << "box_min: " << box_min << ", box_max: " << box_max << std::endl;
-    std::cout << "first_cell: [" << first_cell[0] << ", "<< first_cell[1] << "]" << std::endl;
-    std::cout << "last_cell: [" << last_cell[0] << ", "<< last_cell[1] << "]" << std::endl;
+    std::cout << "first: [" << first[0] << ", " << first[1] << "]" << std::endl;
+    std::cout << "last:  [" <<  last[0] << ", " <<  last[1] << "]" << std::endl;
 
     if (dim == 1) {
-      for (int i = first_cell[0]; i <= last_cell[0]; ++i) {
+      for (int i = first[0]; i <= last[0]; ++i) {
         cells.emplace_back(i);
       }
     } else if (dim == 2) {
-      for (int j = first_cell[1]; j <= last_cell[1]; ++j) {
-        for (int i = first_cell[0]; i <= last_cell[0]; ++i) {
+      for (int j = first[1]; j <= last[1]; ++j) {
+        for (int i = first[0]; i <= last[0]; ++i) {
           cells.emplace_back(i + j * num_sides_[0]);
         }
       }
     } else if (dim == 3) {
-      for (int k = first_cell[2]; k <= last_cell[2]; ++k) {
-        for (int j = first_cell[1]; j <= last_cell[1]; ++j) {
-          for (int i = first_cell[0]; i <= last_cell[0]; ++i) {
+      for (int k = first[2]; k <= last[2]; ++k) {
+        for (int j = first[1]; j <= last[1]; ++j) {
+          for (int i = first[0]; i <= last[0]; ++i) {
             cells.emplace_back(i + j * num_sides_[0] + k * num_sides_[0] * num_sides_[1]);
           }
         }
@@ -178,6 +180,22 @@ public:
   }
 
 private:
+
+  /**
+   * @brief Check whether the given point is outside the grid.
+   *
+   * @param p: current point coordinates.
+   * @return true if outside, false otherwise.
+   */
+  bool is_outside(Wonton::Point<dim> const& p) const {
+    for (int d = 0; d < dim; ++d) {
+      if (p[d] < p_min_[d] or p[d] > p_max_[d]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * @brief Deduce cell indices (i,j,k) from physical coordinates (x,y,z).
    *
@@ -190,16 +208,13 @@ private:
 
     for (int d = 0; d < dim; ++d) {
       double const t = p[d] - p_min_[d];
-      std::cout << "p[d]: "<< p[d] <<", p_min[d]: "<< p_min_[d] << ", p_max[d]: " << p_max_[d] << std::endl;
       double const range = p_max_[d] - p_min_[d];
-      if (t < 0 or t > range) {
-        throw std::runtime_error("outside bounding box");
-      } else {
-        std::cout << "range: " << range << ", t: " << t << ", num sides: " << num_sides_[d] << std::endl;
-//        indices[d] = std::min(static_cast<int>(std::floor(t * num_sides_[d] / range)), num_sides_[d] - 1);
-        indices[d] = std::min(static_cast<int>(std::floor(t * num_sides_[d] / range)), num_sides_[d] - 1);
-      }
+      assert(t >= 0 and t <= range);
+//      std::cout << "p[d]: "<< p[d] <<", p_min[d]: "<< p_min_[d] << ", p_max[d]: " << p_max_[d] << std::endl;
+      std::cout << "range: " << range << ", t: " << t << ", num sides: " << num_sides_[d] << std::endl;
+      indices[d] = std::min(static_cast<int>(std::floor(t * num_sides_[d] / range)), num_sides_[d] - 1);
     }
+
     std::cout << "(i,j): ("<< indices[0] <<", "<< indices[1] << ")" << std::endl;
     return indices;
   }
