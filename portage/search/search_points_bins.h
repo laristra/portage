@@ -71,8 +71,6 @@ public:
       }
     }
 
-//    std::cout << "bounding box computed" << p_min << " | "<< p_max << std::endl;
-
     // step 2: deduce number of bins from search radii
     int const max_sides = get_max_sides(num_target_points);
     int num_bins = 1;
@@ -84,8 +82,6 @@ public:
       sides_[d] = std::min(static_cast<int>(span_[d] / step), max_sides);
       num_bins *= sides_[d];
     }
-
-//    std::cout << "num bins: " << num_bins << std::endl;
 
     // step 3: push source points into bins
     bucket_.resize(num_bins);
@@ -101,7 +97,6 @@ public:
       }
       if (inside) {
         int const i = deduce_bin_index(p);
-//        std::cout << "bin index: "<< i << std::endl;
         bucket_[i].emplace_back(s);
       }
     }
@@ -127,8 +122,6 @@ public:
 
     // step 2: filter cells overlapped by the bounding box
     std::vector<int> cells;
-//    std::cout << " =========" << std::endl;
-//    std::cout << "compute box min, max" << std::endl;
     auto const first = deduce_cell_index(box_min);
     auto const last  = deduce_cell_index(box_max);
 
@@ -137,11 +130,6 @@ public:
       assert(first[d] <= last[d]);
     }
 #endif
-
-//    std::cout << " =========" << std::endl;
-//    std::cout << "box_min: " << box_min << ", box_max: " << box_max << std::endl;
-//    std::cout << "first: [" << first[0] << ", " << first[1] << "]" << std::endl;
-//    std::cout << "last:  [" <<  last[0] << ", " <<  last[1] << "]" << std::endl;
 
     if (dim == 1) {
       for (int i = first[0]; i <= last[0]; ++i) {
@@ -163,12 +151,9 @@ public:
       }
     }
 
-//    std::cout << "cells size: " << cells.size() << std::endl;
-
     // step 3: scan cells and check distance of each included source point
     std::vector<int> neighbors;
     for (int c : cells) {
-//      std::cout << "c: "<< c << ", bin size: "<< bucket_[c].size() << std::endl;
       for (int s : bucket_[c]) {
         bool contained = true;
         auto const& q = source_swarm_.get_particle_coordinates(s);
@@ -213,11 +198,9 @@ private:
       assert(sides_[d] > 0);
       double const shift = p[d] - orig_[d];
       assert(shift >= 0 and shift <= span_[d]);
-//      std::cout << "range: " << span_[d] << ", t: " << shift << ", num sides: " << sides_[d] << std::endl;
       cell[d] = std::min(static_cast<int>(std::floor(shift * sides_[d] / span_[d])), sides_[d] - 1);
     }
 
-//    std::cout << "(i,j): (" << cell[0] << ", " << cell[1] << ")" << std::endl;
     return cell;
   }
 
