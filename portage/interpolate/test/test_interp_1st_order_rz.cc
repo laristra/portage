@@ -167,7 +167,7 @@ TEST_P(Order1Test, Cell_Constant_2D) {
 }
 
 
-INSTANTIATE_TEST_SUITE_P(
+INSTANTIATE_TEST_CASE_P(
   Order1TestAll,
   Order1Test,
   ::testing::Values(1, 2, 3));
