@@ -15,22 +15,34 @@ namespace Portage {
 
 using namespace Meshfree;
 
+/**
+ * @class SearchPointsBins.
+ * @brief A lightweight linear-time search kernel for particles based on
+ *        source points binning using a helper grid. It is only valid
+ *        for gather weight forms.
+ *
+ * @tparam dim: dimension of source/target points.
+ * @tparam SourceSwarm: source point cloud type.
+ * @tparam TargetSwarm: target point cloud type.
+ */
 template<int dim, class SourceSwarm, class TargetSwarm>
 class SearchPointsBins {
 
 public:
   /**
-   * @brief Disabled default constructor.
+   * @brief Default constructor (disabled).
    */
   SearchPointsBins() = delete;
 
   /**
-   * @brief
+   * @brief Create an instance of the search kernel.
    *
-   * @param source_swarm
-   * @param target_swarm
-   * @param source_extents
-   * @param target_extents
+   * @param source_swarm: the source points.
+   * @param target_swarm: the target points.
+   * @param source_extents: search radius of each source point (unused).
+   * @param target_radius: search radius of each target point.
+   * @param center: weight form (gather only)
+   * @param radius_scale: scale factor for search radius.
    */
   SearchPointsBins(SourceSwarm const& source_swarm,
                    TargetSwarm const& target_swarm,
@@ -40,7 +52,7 @@ public:
                    double radius_scale = 1.)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
-      target_radius_(target_radius),
+      search_radius_(target_radius),
       radius_scale_(radius_scale) {
 
     static_assert(dim > 0 and dim < 4, "invalid dimension");
@@ -103,15 +115,15 @@ public:
   }
 
   /**
-   * @brief
+   * @brief Retrieve source neighbors within the radius of a given target point.
    *
-   * @param target_id
-   * @return
+   * @param target_id: the given target point.
+   * @return the filtered list of source neighbors.
    */
   std::vector<int> operator() (int id) const {
 
     auto const p = target_swarm_.get_particle_coordinates(id);
-    auto const h = radius_scale_ * Wonton::Point<dim>(target_radius_[id]);
+    auto const h = radius_scale_ * Wonton::Point<dim>(search_radius_[id]);
 
     // step 1: build bounding box of the radius of target point
     Wonton::Point<dim> box_min, box_max;
@@ -172,12 +184,11 @@ public:
   }
 
 private:
-
   /**
-   * @brief
+   * @brief Retrieve the maximum number of sides for the helper grid.
    *
-   * @param num_points
-   * @return
+   * @param num_points: the number of points of the swarm.
+   * @return the maximum allowed number of sides for the grid.
    */
   int get_max_sides(int num_points) const {
     double const factor = 0.1;
@@ -217,25 +228,18 @@ private:
     switch (dim) {
       case 1: return cell[0];
       case 2: return cell[0] + cell[1] * sides_[0];
-      case 3: return cell[0] + cell[1] * sides_[0] + cell[2] * sides_[1] * sides_[1];
+      case 3: return cell[0] + cell[1] * sides_[0] + cell[2] * sides_[0] * sides_[1];
       default: return -1;
     }
   }
 
-  /** source points */
-  SourceSwarm const& source_swarm_;
-  /** target points */
-  TargetSwarm const& target_swarm_;
-  /** search radius for each target point */
-  Wonton::vector<Wonton::Point<dim>> const& target_radius_;
-  /** search radius scale factor */
-  double radius_scale_ = 1.;
-  /** bounding box of helper grid */
-  Wonton::Point<dim> orig_, span_;
-  /** source points bins */
-  std::vector<std::vector<int>> bucket_;
-  /** number of sides per axis */
-  int sides_[dim] {};
+  SourceSwarm const& source_swarm_;                         /** source points */
+  TargetSwarm const& target_swarm_;                         /** target points */
+  Wonton::vector<Wonton::Point<dim>> const& search_radius_; /** search radius per target point */
+  double radius_scale_ = 1.;                                /** radii scale factor */
+  Wonton::Point<dim> orig_, span_;                          /** helper grid */
+  std::vector<std::vector<int>> bucket_;                    /** source points bins */
+  int sides_[dim] {};                                       /** sides per axis */
 };
 
 } // namespace Portage
