@@ -42,7 +42,7 @@ install(FILES ${portage_driver_HEADERS} DESTINATION include/portage/driver)
 
 target_link_libraries(portage_driver INTERFACE portage_support)
 target_link_libraries(portage_driver INTERFACE portage_search)
-target_link_libraries(portage_driver INTERFACE portage_distribute)
+target_link_libraries(portage_driver INTERFACE portage_distributed)
 target_link_libraries(portage_driver INTERFACE portage_accumulate)
 target_link_libraries(portage_driver INTERFACE portage_estimate)
 target_link_libraries(portage_driver INTERFACE portage_intersect)
@@ -126,17 +126,19 @@ if (ENABLE_UNIT_TESTS)
          POLICY MPI
          THREADS 1)
 
-       portage_add_unittest(test_driver_multimat_uber_swept
-         SOURCES test/test_driver_multimat_uber_swept.cc
-         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
-         POLICY MPI
-         THREADS 1)
+       if (TANGRAM_ENABLE_XMOF2D)
+	 portage_add_unittest(test_driver_multimat_uber_swept
+           SOURCES test/test_driver_multimat_uber_swept.cc
+           LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+           POLICY MPI
+           THREADS 1)
 
-       portage_add_unittest(test_driver_multimat_uber_swept_mismatch
-         SOURCES test/test_driver_multimat_uber_swept_mismatch.cc
-         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
-         POLICY MPI
-         THREADS 1)
+	 portage_add_unittest(test_driver_multimat_uber_swept_mismatch
+           SOURCES test/test_driver_multimat_uber_swept_mismatch.cc
+           LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+           POLICY MPI
+           THREADS 1)
+       endif ()
 
        portage_add_unittest(test_driver_multimat_distributed
        SOURCES test/test_driver_multimat_distributed.cc
@@ -149,6 +151,12 @@ if (ENABLE_UNIT_TESTS)
        LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
        POLICY MPI
        THREADS 4)
+
+       portage_add_unittest(test_driver_reverse_weights
+         SOURCES test/test_driver_reverse_weights.cc
+         LIBRARIES portage_driver ${TANGRAM_LIBRARIES}
+         POLICY MPI
+         THREADS 4)
      endif (PORTAGE_HAS_TANGRAM)
 
      portage_add_unittest(test_driver_core_single_mat

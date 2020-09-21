@@ -12,6 +12,10 @@ set -e
 # Echo each command
 set -x
 
+echo "--------------------------------------------------------------"
+echo "Running configuration $COMPILER $BUILD_TYPE on `hostname`"
+echo "--------------------------------------------------------------"
+
 compiler=$1
 build_type=$2
 
@@ -33,8 +37,8 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.0
-tangram_version=0.9.9
+wonton_version=1.2.4
+tangram_version=1.0.1
 
 export NGC=/usr/projects/ngc
 ngc_include_dir=$NGC/private/include
@@ -88,7 +92,7 @@ fi
 
 cov_flags=
 if [[ $build_type == "coverage" ]]; then
-    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage'"
+    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage' -D CMAKE_EXE_LINKER_FLAGS=-coverage"
     cmake_build_type=Debug
     export PATH=$NGC/private/bin:${PATH}
 fi
@@ -125,6 +129,7 @@ cd build
 
 cmake \
   -D CMAKE_BUILD_TYPE=$cmake_build_type \
+  -D CMAKE_CXX_FLAGS="-Wall -Werror" \
   -D ENABLE_UNIT_TESTS=True \
   -D ENABLE_APP_TESTS=True \
   -D ENABLE_JENKINS_OUTPUT=True \
@@ -134,7 +139,14 @@ cmake \
   $thrust_flags \
   $jali_flags \
   $flecsi_flags \
+  $cov_flags \
   ..
-make -j2
-ctest --output-on-failure
-
+make -j8
+ctest -j36 --output-on-failure  && true #keep going if tests fail so that we get coverage report 
+status=$?
+if [[ $build_type == "coverage" ]]; then                     
+    echo 'building coverage reports'
+    export PYTHONPATH=/usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/lib/python2.7/site-packages
+    /usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/bin/gcovr -f "$(readlink -f ..)"  -e '.*googletest' -e '.*exprtk.hpp' -e '.*json.h' -e '.*CMakeFiles' -x >coverage.xml
+fi
+exit $status #return the status of the ctest build so that jenkins knows whether tests past or fail

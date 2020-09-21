@@ -9,13 +9,13 @@
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
 
 #include "portage/accumulate/accumulate.h"
 #include "portage/distributed/mpi_particle_distribute.h"
 
 #include "portage/support/portage.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/support/faceted_setup.h"
 
 #include "gtest/gtest.h"
@@ -45,10 +45,10 @@ TEST(MPI_Particle_Distribute, SimpleTest2DGather) {
   Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
 
   // Source and target swarms 
-  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<2> source_state(source_swarm);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<2> source_state(source_swarm);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   int const nb_source = source_swarm.num_particles(Wonton::ALL);
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
@@ -149,10 +149,10 @@ TEST(MPI_Particle_Distribute, SimpleTest2DScatter) {
   Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
 
   // Source and target swarms
-  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<2> source_state(source_swarm);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<2> source_state(source_swarm);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
   Wonton::vector<int> source_data_int(nb_source);
@@ -224,10 +224,10 @@ TEST(MPI_Particle_Distribute, SimpleTest3DGather) {
   Wonton::Jali_Mesh_Wrapper target_mesh_wrapper(*target_mesh);
 
   // Source and target swarms
-  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<3> source_state(source_swarm);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<3> source_state(source_swarm);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   int const nb_source = source_swarm.num_particles(Wonton::ALL);
   int const nb_target = target_swarm.num_particles(Wonton::ALL);
@@ -327,10 +327,10 @@ TEST(MPI_Particle_Distribute, SimpleTest3DScatter) {
   Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::ELLIPTIC);
 
   // Source and target swarms
-  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<3> source_state(source_swarm);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<3> source_state(source_swarm);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
   Wonton::vector<int> source_data_int(nb_source);
@@ -415,10 +415,10 @@ TEST(MPI_Particle_Distribute, SimpleTest2DFaceted) {
   Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
   // Source and target swarms
-  Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<2> source_state(source_swarm);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::Swarm<2> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<2> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<2> source_state(source_swarm);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   // Create an integer source data for given function
   Wonton::vector<int> source_data_int(nb_source);
@@ -518,10 +518,10 @@ TEST(MPI_Particle_Distribute, SimpleTest3DFaceted) {
   Wonton::vector<Weight::Geometry> geom_types(nb_source, Weight::FACETED);
 
   // Source and target swarms
-  Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
-  Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
-  SwarmState<3> source_state(source_swarm);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::Swarm<3> source_swarm(source_mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<3> target_swarm(target_mesh_wrapper, Wonton::CELL);
+  Wonton::SwarmState<3> source_state(source_swarm);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   // Create an integer source data for given function
   Wonton::vector<int> source_data_int(nb_source);

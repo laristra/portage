@@ -165,7 +165,7 @@ public:
                            Meshfree::oper::Type operator_spec = Meshfree::oper::LastOperator,
                            Wonton::vector<Meshfree::oper::Domain> const& operator_domains = {},
                            Wonton::vector<std::vector<Point<dim>>> const& operator_data = {}) {
-#ifdef DEBUG
+#ifndef NDEBUG
     assert(source_vars.size() == target_vars.size());
 
     int nvars = source_vars.size();
@@ -232,7 +232,7 @@ public:
       }
     }
 #endif
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     if (rank == 0)
       std::cout << "in MSM_Driver::run() ... " << std::endl;
 
@@ -444,7 +444,7 @@ public:
       }
     }
 
-#if ENABLE_DEBUG
+#ifndef NDEBUG
     float elapsed = timer::elapsed(tic);
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif

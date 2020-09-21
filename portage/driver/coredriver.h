@@ -194,7 +194,7 @@ class CoreDriver {
   template<template <Entity_kind, class, class, class,
                      template <class, int, class, class> class,
                      class, class> class Intersect>
-  Wonton::vector<std::vector<Portage::Weights_t>>
+  Wonton::vector<std::vector<Wonton::Weights_t>>
   intersect_meshes(Wonton::vector<std::vector<int>> const& candidates) {
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -229,6 +229,38 @@ class CoreDriver {
     return sources_and_weights;
   }
 
+  /**
+   * @brief Deduce weights for reverse remap by transposing
+   *        the weight matrix used for forward remap.
+   *
+   * @param forward_weights: weights list for forward remap.
+   * @return weights list for reverse remap.
+   */
+  Wonton::vector<std::vector<Wonton::Weights_t>> deduce_reverse_weights
+    (Wonton::vector<std::vector<Wonton::Weights_t>> const& forward_weights) const {
+
+    int const num_source_entities = source_mesh_.num_entities(ONWHAT, ALL);
+    int const num_target_entities = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
+    assert(unsigned(num_target_entities) == forward_weights.size());
+
+    std::vector<entity_weights_t> reverse_weights(num_source_entities);
+
+    for (int t = 0; t < num_target_entities; ++t) {
+      entity_weights_t const& list = forward_weights[t];
+      for (auto const& weight : list) {
+        int const& s = weight.entityID;
+        reverse_weights[s].emplace_back(t, weight.weights);
+      }
+    }
+
+#ifdef WONTON_ENABLE_THRUST
+    Wonton::vector<entity_weights_t> result(num_source_entities);
+    std::copy(reverse_weights.begin(), reverse_weights.end(), result.begin());
+    return result;
+#else
+    return reverse_weights;
+#endif
+  }
 
   /// Set core numerical tolerances
   void set_num_tols(const double min_absolute_distance, 
@@ -290,6 +322,21 @@ class CoreDriver {
   intersect_materials(Wonton::vector<std::vector<int>> const& candidates) {
 
 #ifdef PORTAGE_HAS_TANGRAM
+    // set numerical tolerance if not already done.
+    // it avoids the necessity of calling 'intersect_meshes',
+    // but should not change anything if it was already set.
+    if (reconstructor_tols_.empty()) {
+      // if the user did NOT set tolerances for Tangram, use Portage tolerances
+      reconstructor_tols_ = {
+        {1000, num_tols_.min_absolute_distance, num_tols_.min_absolute_volume},
+        { 100, num_tols_.min_absolute_distance, num_tols_.min_absolute_distance}
+      };
+    } else if (not num_tols_.user_tolerances) {
+      // if the user has set tolerances for Tangram, but not for Portage,
+      // use Tangram tolerances
+      num_tols_.min_absolute_distance = reconstructor_tols_[0].arg_eps;
+      num_tols_.min_absolute_volume = reconstructor_tols_[0].fun_eps;
+    }
 
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
@@ -382,7 +429,7 @@ class CoreDriver {
       // become mixed).
 
 
-      std::vector<std::vector<Weights_t>> this_mat_sources_and_wts(ntargetcells);
+      Wonton::vector<std::vector<Weights_t>> this_mat_sources_and_wts(ntargetcells);
       Wonton::transform(target_mesh_.begin(CELL, PARALLEL_OWNED),
                          target_mesh_.end(CELL, PARALLEL_OWNED),
                          candidates.begin(),
@@ -496,6 +543,78 @@ class CoreDriver {
 
   }
 
+#ifdef PORTAGE_HAS_TANGRAM
+  /**
+   * @brief Cache gradient stencil matrices for multi-material fields.
+   *        It cannot be invoked directly in the constructor since
+   *        the interface reconstructor is only initialized after
+   *        the intersection step.
+   */
+  void cache_multimat_gradient_stencils() {
+    // make sure that the interface reconstructor is initialized.
+    // it is only done after the intersection step
+    // this check enforces that this method is called only after that step.
+    if (interface_reconstructor_) {
+      if (not cached_multimat_stenc_) {
+        gradient_.set_interface_reconstructor(interface_reconstructor_);
+        gradient_.cache_matrices(Field_type::MULTIMATERIAL_FIELD);
+        cached_multimat_stenc_ = true;
+      }
+    } else
+      throw std::runtime_error("interface reconstructor not yet initialized");
+  }
+
+  /**
+   * @brief Deduce reverse material weights by transposing
+   *        the weight matrix used in forward remap for each
+   *        material.
+   *
+   * Here we assume that the source state has already the material
+   * fields and material polytopes moments (volume and centroids).
+   *
+   * @param forward_weights: weights list per material for forward remap.
+   * @param index_mapping: source material cells to source cells lookup table.
+   * @return the weights list per material for reverse remap.
+   */
+  std::vector<Wonton::vector<std::vector<Weights_t>>> deduce_reverse_material_weights
+    (std::vector<Wonton::vector<std::vector<Wonton::Weights_t>>> const& forward_weights,
+     std::vector<std::vector<int>>& index_mapping) {
+
+    int const num_materials = forward_weights.size();
+    int const num_source_cells = source_mesh_.num_entities(ONWHAT, ALL);
+
+    std::vector<Wonton::vector<entity_weights_t>> reverse_weights(num_materials);
+
+    for (int m = 0; m < num_materials; ++m) {
+      int const num_target_material_cells = forward_weights[m].size();
+
+      std::vector<entity_weights_t> reverse_material_weights(num_source_cells);
+      for (int t = 0; t < num_target_material_cells; ++t) {
+        entity_weights_t const& list = forward_weights[m][t];
+        for (auto const& weight : list) {
+          int const& s = weight.entityID;
+          reverse_material_weights[s].emplace_back(t, weight.weights);
+        }
+      }
+
+      // filtering step
+      for (int s = 0; s < num_source_cells; ++s) {
+        entity_weights_t const& weights = reverse_material_weights[s];
+        if (not weights.empty()) {
+          index_mapping[m].emplace_back(s);
+        }
+      }
+
+      reverse_weights[m].resize(index_mapping[m].size());
+      Wonton::transform(index_mapping[m].begin(),
+                        index_mapping[m].end(),
+                        reverse_weights[m].begin(),
+                        [&](int s) { return reverse_material_weights[s]; });
+    }
+
+    return reverse_weights;
+  }
+#endif
 
   /**
    * @brief Compute the gradient field of the given variable on source mesh.
@@ -504,6 +623,13 @@ class CoreDriver {
    * @param limiter_type: gradient limiter to use on internal regions.
    * @param boundary_limiter_type: gradient limiter to use on boundary.
    * @param source_part: the source mesh part to consider if any.
+   *
+   * Remark: the gradient computation cannot be done in parallel yet
+   * for multiple fields due to some side effects. Indeed the same
+   * instance is used for multiple fields but limiter options
+   * are specified at runtime for each field. Besides, if the stencil
+   * matrices used for the least square approximation are not yet cached
+   * then it will be done at this step.
    */
   Wonton::vector<Vector<D>> compute_source_gradient(
     std::string const field_name,
@@ -525,6 +651,16 @@ class CoreDriver {
     std::vector<int> mat_cells;
 
     if (multimat) {
+      // cache gradient stencil first
+      if (not cached_multimat_stenc_) {
+        std::cerr << "Warning: gradient stencil matrices for ";
+        std::cerr << "multi-material fields were not cached yet." << std::endl;
+        std::cerr << "Please invoke 'cache_multimat_gradient_stencils' ";
+        std::cerr << "prior to 'compute_source_gradient' for optimized runs.";
+        std::cerr << std::endl;
+        cache_multimat_gradient_stencils();
+      }
+
       if (interface_reconstructor_) {
         std::vector<int> mat_cells_all;
         source_state_.mat_get_cells(material_id, &mat_cells_all);
@@ -709,7 +845,7 @@ class CoreDriver {
     auto const& source_part = partition->source();
     auto const& target_part = partition->target();
 
-#ifdef DEBUG
+#ifndef NDEBUG
     int const& max_source_id = source_mesh_.num_entities(ONWHAT, ALL);
     int const& max_target_id = target_mesh_.num_entities(ONWHAT, ALL);
 
@@ -992,6 +1128,7 @@ class CoreDriver {
 #endif
 
 #ifdef PORTAGE_HAS_TANGRAM
+  bool cached_multimat_stenc_ = false;
 
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the

@@ -156,16 +156,16 @@ TEST(Faceted_Setup, Simple2D_Tilted) {
     ASSERT_EQ(h.size(), unsigned(4));
     ASSERT_NEAR(h[0][0],  b,  1.e-12);
     ASSERT_NEAR(h[0][1],  -a,  1.e-12);
-    ASSERT_NEAR(h[0][2],  dx1,   1.e-12);
+    ASSERT_NEAR(h[0][2],  dx1,   1.e-10);
     ASSERT_NEAR(h[1][0],  a,  1.e-12);
     ASSERT_NEAR(h[1][1],  b,  1.e-12);
-    ASSERT_NEAR(h[1][2],  dx0,   1.e-12); 
+    ASSERT_NEAR(h[1][2],  dx0,   1.e-10);
     ASSERT_NEAR(h[2][0],  -b,  1.e-12);
     ASSERT_NEAR(h[2][1],  a,  1.e-12);
-    ASSERT_NEAR(h[2][2],  dx1,   1.e-12); 
+    ASSERT_NEAR(h[2][2],  dx1,   1.e-10);
     ASSERT_NEAR(h[3][0],  -a,  1.e-12);
     ASSERT_NEAR(h[3][1],  -b,  1.e-12);
-    ASSERT_NEAR(h[3][2],  dx0,   1.e-12); 
+    ASSERT_NEAR(h[3][2],  dx0,   1.e-10);
 
     Wonton::Point<2> dx=extents[i];
     ASSERT_NEAR(dx[0], 2*(xmax[0]-xmin[0]), 1.e-12);

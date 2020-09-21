@@ -45,7 +45,7 @@ public:
   SearchSweptFace(const SourceMeshType & source_mesh,
                   const TargetMeshType & target_mesh)
     : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
-#ifdef DEBUG
+#ifndef NDEBUG
     int numSourceCells = sourceMesh_.num_owned_cells() +
       sourceMesh_.num_ghost_cells();
     int numTargetCells = targetMesh_.num_owned_cells() +
@@ -112,7 +112,7 @@ public:
   SearchSweptFace(const SourceMeshType & source_mesh,
                   const TargetMeshType & target_mesh)
     : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
-#ifdef DEBUG
+#ifndef NDEBUG
     int numSourceCells = sourceMesh_.num_owned_cells() +
       sourceMesh_.num_ghost_cells();
     int numTargetCells = targetMesh_.num_owned_cells() +
@@ -176,7 +176,7 @@ public:
   SearchSweptFace(const SourceMeshType & source_mesh,
                   const TargetMeshType & target_mesh)
     : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
-#ifdef DEBUG
+#ifndef NDEBUG
     int numSourceCells = sourceMesh_.num_owned_cells() +
       sourceMesh_.num_ghost_cells();
     int numTargetCells = targetMesh_.num_owned_cells() +
@@ -203,7 +203,7 @@ public:
   std::vector<int> operator() (const int entityId) const {
     std::vector<int> candidates;
     sourceMesh_.cell_get_face_adj_cells(entityId, Entity_type::ALL, &candidates);
-#ifdef DEBUG
+#ifndef NDEBUG
     std::vector<int> alt_candidates;
     targetMesh_.cell_get_face_adj_cells(entityId, Entity_type::ALL, &alt_candidates);
     assert(candidates.size() == alt_candidates.size());

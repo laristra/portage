@@ -88,7 +88,7 @@ class Accumulate {
       operator_domain_(operator_domain),
       operator_data_(operator_data)
   {
-#ifdef DEBUG
+#ifndef NDEBUG
     // check sizes of inputs are consistent
     size_t n_particles = (center == Gather ? target_.num_owned_particles()
                                            : source_.num_particles());

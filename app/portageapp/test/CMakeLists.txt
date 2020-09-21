@@ -79,6 +79,8 @@ macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
             ../../../test_data/coarse_poly2D.exo
             ../../../test_data/fine_poly2D.exo 
             ../../../test_data/3dvoro-voronoized-10k.exo
+	    ../../../test_data/sector5.exo
+	    ../../../test_data/sector6.exo
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   add_test(NAME portageapp_jali_unstruc_${SUFFIX}
     COMMAND ./portageapp_jali_unstruc_${SUFFIX}.sh)
@@ -110,10 +112,12 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
 
   ADD_SPECIFIC_APPTEST(jali_unstruc 2d_cell_gen_r2)
   ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
+
+  ADD_SPECIFIC_APPTEST(jali_radial 3d_node_f1_r2)
 endif ()
 
 #multi-material tests
-if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM AND TANGRAM_ENABLE_XMOF2D)
+if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
   file(COPY portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY gold/GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ../../../test_data/reg10x10.exo

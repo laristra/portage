@@ -8,14 +8,14 @@ project(portage_estimate)
 
 add_library(portage_estimate INTERFACE)
 
-target_include_directories(portage_accumulate INTERFACE
+target_include_directories(portage_estimate INTERFACE
   $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
   $<BUILD_INTERFACE:${portage_BINARY_DIR}>
   $<INSTALL_INTERFACE:include>
   )
 
 # Add header files
-set (estimate_HEADERS
+set (portage_estimate_HEADERS
   estimate.h
   )
 

@@ -376,7 +376,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions:"
               << "\n";
@@ -413,7 +413,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "\nMaterial " << m << "\n";
     std::cerr << " Expected volume " << std::setw(3) <<
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
@@ -723,7 +723,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], 1.0e-2);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions:"
               << "\n";
@@ -760,7 +760,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "\nMaterial " << m << "\n";
     std::cerr << " Expected volume " << std::setw(3) <<
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
@@ -1159,7 +1159,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     for (int ic = 0; ic < nmatcells; ic++)
       ASSERT_NEAR(matrho[m], density_remap[ic], 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions:"
               << "\n";
@@ -1196,7 +1196,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "\nMaterial " << m << "\n";
     std::cerr << " Expected volume " << std::setw(3) <<
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";
@@ -1513,7 +1513,7 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
       std::cout<<" m "<<m<<" cell "<<matcells_remap[m][ic]
                <<" density: "<<matrho_trg[m][ic]<<" "<<density_remap[ic]<<std::endl;
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "Number of cells in material " << m << " is " << nmatcells << "\n";
     std::cerr << "Material " << m << " cell ids, volume fractions:"
               << "\n";
@@ -1550,7 +1550,7 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr << "\nMaterial " << m << "\n";
     std::cerr << " Expected volume " << std::setw(3) <<
         matvol[m] << "    Computed volume " << std::setw(3) << volume << "\n";

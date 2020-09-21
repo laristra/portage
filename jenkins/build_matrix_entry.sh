@@ -31,8 +31,8 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.0
-tangram_version=0.9.9
+wonton_version=1.2.4
+tangram_version=1.0.1
  
 
 export NGC=/usr/local/codes/ngc
@@ -107,11 +107,7 @@ if [[ $build_type != singlemat ]]; then
 fi
 
 if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
-  if [[ "${wonton_version}" == "dev" ]]; then
-    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=False"  # FleCSI found through Wonton
-  else
-    flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True"
-  fi
+  flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True" # FleCSI found through Wonton
 fi
 if [[ $build_type != "serial" ]]; then
     jali_flags="-D PORTAGE_ENABLE_Jali:BOOL=True"  # Jali found through Wonton
