@@ -24,7 +24,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/parts.h"
-#include "portage/interpolate/coordinate_system.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/driver.h"
