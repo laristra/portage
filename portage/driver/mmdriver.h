@@ -628,7 +628,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if !defined(NDEBUG)
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -862,13 +862,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on cells to remap is " <<
         nvars << std::endl;
   }
+#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -957,18 +959,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Cell remap on Rank " <<
+  std::cout << "Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
+
+#if defined(VERBOSE_OUTPUT)
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for cells
@@ -1086,13 +1091,15 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on nodes to remap is " <<
         nvars << std::endl;
   }
+#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -1135,18 +1142,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Node remap on Rank " <<
+  std::cout << "Time for Node remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
-  std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
+
+#if defined(VERBOSE_OUTPUT)
+     std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for nodes

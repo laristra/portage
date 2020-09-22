@@ -377,7 +377,7 @@ public:
       delete swarm_remap_ptr;
     }
 
-    // Wonton::NODE VARIABLE SECTION ---------------------------------------------------
+    // Wonton::NODE VARIABLE SECTION ------------------------------------------
 
     // get node variable names
     std::vector<std::string> source_nodevar_names;

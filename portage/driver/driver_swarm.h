@@ -501,15 +501,14 @@ public:
       tot_seconds = tot_seconds_dist + tot_seconds_srch +
                     tot_seconds_xsect + tot_seconds_interp;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)      
       if (report_time) {
         std::cout << "Swarm Transform Time Rank " << rank << " (s): " << tot_seconds << std::endl;
         std::cout << "  Swarm Distribution Time Rank " << rank << " (s): " << tot_seconds_dist << std::endl;
         std::cout << "  Swarm Search Time Rank " << rank << " (s): " << tot_seconds_srch << std::endl;
         std::cout << "  Swarm Accumulate Time Rank " << rank << " (s): " << tot_seconds_xsect << std::endl;
         std::cout << "  Swarm Estimate Time Rank " << rank << " (s): " << tot_seconds_interp << std::endl;
-#endif
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)      
         // put out neighbor statistics
         int nnbrmax = 0;
         int nnbrmin = nb_target;
@@ -541,7 +540,6 @@ public:
         }
         nnbrsdev = std::sqrt(nnbrsdev / nb_target);
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
         std::cout << "Max number of neighbors: " << nnbrmax << std::endl;
         std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
         std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
