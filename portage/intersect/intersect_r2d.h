@@ -196,8 +196,7 @@ class IntersectR2D {
 
   std::vector<Weights_t>
   operator() (const int tgt_entity, std::vector<int> const& src_entities) const {
-    std::cerr << "IntersectR3D not implemented for this entity type" << std::endl;
-    return std::vector<Weights_t>(0);
+    throw std::logic_error("IntersectR3D not implemented for this entity type");
   }
 
   IntersectR2D() = delete;

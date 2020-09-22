@@ -321,7 +321,7 @@ class MMDriver {
       double_lower_bounds_[target_var_name] = lower_bound;
       double_upper_bounds_[target_var_name] = upper_bound;
     } else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
   /*!
@@ -334,7 +334,7 @@ class MMDriver {
     if (typeid(T) == typeid(double))
       conservation_tol_[target_var_name] = conservation_tol;
     else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -555,7 +555,7 @@ class MMDriver {
     }
 #endif
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -628,7 +628,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -681,7 +681,7 @@ class MMDriver {
           src_meshvar_names.push_back(srcvarname);
           trg_meshvar_names.push_back(trgvarname);
         } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
-          std::cerr << "Cannot handle multi-material fields on nodes\n";
+          throw std::logic_error("Cannot handle multi-material fields on nodes\n");
       }
     }
 
@@ -862,7 +862,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
   tic = timer::now();
 
   if (comm_rank == 0) {
@@ -957,7 +957,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
@@ -1086,7 +1086,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
   tic = timer::now();
 
   if (comm_rank == 0) {
@@ -1135,7 +1135,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 

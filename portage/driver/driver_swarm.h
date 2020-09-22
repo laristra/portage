@@ -318,8 +318,10 @@ public:
     }
 #endif
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (rank == 0)
       std::cout << "in SwarmDriver::run() ... " << std::endl;
+#endif
 
     // useful aliases
     using Searcher = Search<dim, SourceSwarm, TargetSwarm>;
@@ -457,16 +459,20 @@ public:
 
     // ESTIMATE (one variable at a time)
     nb_fields = source_vars_.size();
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (rank == 0)
       std::cout << "number of variables to remap is " << nb_fields << std::endl;
+#endif
 
     // Get an instance of the desired interpolate algorithm type
     Estimator estimator(source_state_);
 
     for (int i = 0; i < nb_fields; ++i) {
       //amh: ?? add back accuracy output statement??
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank == 0)
         std::cout << "Remap "<< source_vars_[i] <<" to "<< target_vars_[i] << std::endl;
+#endif
 
       estimator.set_variable(source_vars_[i]);
 
@@ -495,12 +501,14 @@ public:
       tot_seconds = tot_seconds_dist + tot_seconds_srch +
                     tot_seconds_xsect + tot_seconds_interp;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)      
       if (report_time) {
         std::cout << "Swarm Transform Time Rank " << rank << " (s): " << tot_seconds << std::endl;
         std::cout << "  Swarm Distribution Time Rank " << rank << " (s): " << tot_seconds_dist << std::endl;
         std::cout << "  Swarm Search Time Rank " << rank << " (s): " << tot_seconds_srch << std::endl;
         std::cout << "  Swarm Accumulate Time Rank " << rank << " (s): " << tot_seconds_xsect << std::endl;
         std::cout << "  Swarm Estimate Time Rank " << rank << " (s): " << tot_seconds_interp << std::endl;
+#endif
 
         // put out neighbor statistics
         int nnbrmax = 0;
@@ -533,10 +541,12 @@ public:
         }
         nnbrsdev = std::sqrt(nnbrsdev / nb_target);
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
         std::cout << "Max number of neighbors: " << nnbrmax << std::endl;
         std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
         std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
         std::cout << "Std Dev for number of neighbors: " << nnbrsdev << std::endl;
+#endif
       }
     }
 
