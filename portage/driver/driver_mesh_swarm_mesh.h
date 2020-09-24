@@ -226,13 +226,15 @@ public:
       MPI_Comm_rank(mycomm, &rank);
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
         std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet";
         std::cerr << std::endl;
+#endif
         return;
       }
     }
 #endif
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (rank == 0)
       std::cout << "in MSM_Driver::run() ... " << std::endl;
 
@@ -375,7 +377,7 @@ public:
       delete swarm_remap_ptr;
     }
 
-    // Wonton::NODE VARIABLE SECTION ---------------------------------------------------
+    // Wonton::NODE VARIABLE SECTION ------------------------------------------
 
     // get node variable names
     std::vector<std::string> source_nodevar_names;
@@ -400,8 +402,7 @@ public:
       std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
 
       if (geometry_ == Weight::FACETED) {
-        std::cerr << "Cannot do FACETED weights for nodal variables yet." << std::endl;
-        return;
+        throw std::logic_error("Cannot do FACETED weights for nodal variables yet.");
       }
 
       int nnodes = (center_ == Scatter ? source_mesh_.num_owned_nodes()
@@ -444,7 +445,7 @@ public:
       }
     }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     float elapsed = timer::elapsed(tic);
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif

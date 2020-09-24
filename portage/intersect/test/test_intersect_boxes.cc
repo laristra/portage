@@ -72,11 +72,7 @@ template<>
 double analytic_moment<3,Wonton::Spherical3DCoordinates>(
     std::array<int,3> const & exponents,
     Wonton::Point<3> const xbar, Wonton::Point<3> const dx) {
-  std::cerr << "The analytic_moment method does not work in 3D spherical " <<
-      "coordinates (mostly because I don't want to work through the math " <<
-      "and implement the result)." << std::endl;
-  assert(false);
-  return 0;
+  throw std::runtime_error("The analytic_moment method is not implemented for 3D spherical coordinates");
 }
 
 // ============================================================================
