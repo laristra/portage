@@ -225,7 +225,7 @@ TEST(Faceted_Setup, Simple3D_Tilted) {
     ASSERT_NEAR(h[1][0],  b, 1.e-11);
     ASSERT_NEAR(h[1][1],  a+b, 1.e-11);
     ASSERT_NEAR(h[1][2],  -a+b, 1.e-11);
-    ASSERT_NEAR(h[1][3],  dx0, 1.e-10); 
+    ASSERT_NEAR(h[1][3],  dx0, 1.e-09); 
     ASSERT_NEAR(h[2][0],  -a+b, 1.e-11);
     ASSERT_NEAR(h[2][1],  b, 1.e-11);
     ASSERT_NEAR(h[2][2],  a+b, 1.e-11);
