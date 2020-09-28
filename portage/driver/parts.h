@@ -928,7 +928,7 @@ public:
 
       return true;
     } else {
-      throw std::runtime_error(stderr, "Unknown Partial fixup type\n");
+      throw std::runtime_error("Unknown Partial fixup type\n");
     }
   }
 
