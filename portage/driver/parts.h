@@ -434,19 +434,23 @@ public:
     if (relative_voldiff_source > tolerance_) {
       has_mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0) {
         std::fprintf(stderr, "\n** MESH MISMATCH - some source cells ");
         std::fprintf(stderr, "are not fully covered by the target mesh\n");
       }
+#endif
     }
 
     if (relative_voldiff_target > tolerance_) {
       has_mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0) {
         std::fprintf(stderr, "\n** MESH MISMATCH - some target cells ");
         std::fprintf(stderr, "are not fully covered by the source mesh\n");
       }
+#endif
     }
 
     if (not has_mismatch_) {
@@ -487,12 +491,14 @@ public:
     }
 #endif
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (global_nb_empty > 0 and rank_ == 0) {
       std::fprintf(stderr,
                    "One or more target cells are not covered by ANY source cells.\n"
                    "Will assign values based on their neighborhood\n"
       );
     }
+#endif
 
     if (nb_empty > 0) {
       layer_num_.resize(target_.size(), 0);
@@ -818,10 +824,12 @@ public:
               target_data[entity] = global_lower_bound;
 
               if (not hit_lower_bound) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
                 std::fprintf(stderr,
                   "Hit lower bound for cell %d (and maybe other ones) on rank %d\n",
                   t, rank_
                 );
+#endif
                 hit_lower_bound = true;
               }
               // this cell is no longer in play for adjustment - so remove its
@@ -835,10 +843,12 @@ public:
               target_data[entity] = global_upper_bound;
 
               if (not hit_higher_bound) {
-                std::fprintf(stderr,
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+               std::fprintf(stderr,
                   "Hit upper bound for cell %d (and maybe other ones) on rank %d\n",
                   t, rank_
                 );
+#endif
                 hit_higher_bound = true;
               }
 
@@ -904,20 +914,21 @@ public:
 
       if (std::abs(relative_diff) > conservation_tol) {
         if (rank_ == 0) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
           std::fprintf(stderr,
             "Redistribution not entirely successfully for variable %s\n"
             "Relative conservation error is %f\n"
             "Absolute conservation error is %f\n",
             src_var_name.data(), relative_diff, absolute_diff
           );
+#endif
           return false;
         }
       }
 
       return true;
     } else {
-      std::fprintf(stderr, "Unknown Partial fixup type\n");
-      return false;
+      throw std::runtime_error(stderr, "Unknown Partial fixup type\n");
     }
   }
 
