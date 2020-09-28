@@ -153,7 +153,7 @@ namespace Portage {
      */
     void set_interpolation_variable(std::string const& variable_name,
                                     const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
-      throw std::logic_error("Interpolation is available for only cells and nodes");
+      throw std::runtime_error("Interpolation is available for only cells and nodes");
     }
 
     /**
@@ -175,7 +175,7 @@ namespace Portage {
                       std::vector<Weights_t> const& sources_and_weights) const {
 
       // not implemented for all types - see specialization for cells and nodes
-      throw std::logic_error("Error: interpolation operator not implemented for this entity type");
+      throw std::runtime_error("Error: interpolation operator not implemented for this entity type");
     }
 
     constexpr static int order = 2;
@@ -616,7 +616,7 @@ namespace Portage {
       if (field_type_ == Field_type::MESH_FIELD) {
         source_state_.mesh_get_data(Entity_kind::NODE, variable_name, &source_values_);
       } else {
-        throw std::logic_error("Sorry: cannot remap node-centered multi-material data.");
+        throw std::runtime_error("Sorry: cannot remap node-centered multi-material data.");
       }
     }
 

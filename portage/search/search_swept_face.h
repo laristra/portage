@@ -74,8 +74,7 @@ public:
   */
   std::vector<int> operator() (const int entityId) const {
     std::vector<int> candidates;
-    throw std::logic_error("Swept face search is not implemented for a generic entity kind");
-    return candidates;
+    throw std::runtime_error("Swept face search is not implemented for a generic entity kind");
   }
 
 private:
@@ -139,8 +138,7 @@ public:
   */
   std::vector<int> operator() (const int entityId) const {
     std::vector<int> candidates;
-    throw std::logic_error("Swept face search is not implemented for nodal control volumes");
-    return candidates;
+    throw std::runtime_error("Swept face search is not implemented for nodal control volumes");
   }
 
 private:

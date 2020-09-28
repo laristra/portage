@@ -402,7 +402,7 @@ public:
       std::vector<std::vector<double>> default_lengths(1, std::vector<double>(dim));
 
       if (geometry_ == Weight::FACETED) {
-        throw std::logic_error("Cannot do FACETED weights for nodal variables yet.");
+        throw std::runtime_error("Cannot do FACETED weights for nodal variables yet.");
       }
 
       int nnodes = (center_ == Scatter ? source_mesh_.num_owned_nodes()

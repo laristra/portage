@@ -201,8 +201,7 @@ class Interpolate_1stOrder {
 
   T operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const {
-    throw std::logic_error("Interpolation operator not implemented for this entity type");
-    return T(0.0);
+    throw std::runtime_error("Interpolation operator not implemented for this entity type");
   }
   
   constexpr static int order = 1;
@@ -527,7 +526,7 @@ class Interpolate_1stOrder<
                                   &source_vals_);
     else {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-      throw std::logic_error("Cannot remap NODE-centered multi-material data");
+      throw std::runtime_error("Cannot remap NODE-centered multi-material data");
     }
   }  // set_interpolation_variable
 

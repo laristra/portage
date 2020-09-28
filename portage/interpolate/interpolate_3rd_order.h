@@ -138,7 +138,7 @@ class Interpolate_3rdOrder {
                      std::vector<Weights_t> const & sources_and_weights) const {
     // not implemented for all types - see specialization for cells and nodes
 
-    throw std::logic_error("Interpolation operator not implemented for this entity type");
+    throw std::runtime_error("Interpolation operator not implemented for this entity type");
     return 0.;
   }
 
