@@ -86,7 +86,7 @@ namespace Portage {
     // Functor - not implemented for all types - see specialization for
     // cells, nodes
     Vector<D> operator()(int entity_id) {
-      throw std::logic_error("Limited gradient not implemented for this entity kind");
+      throw std::runtime_error("Limited gradient not implemented for this entity kind");
     }
 
   private:

@@ -699,8 +699,7 @@ class MismatchFixer {
 
       return true;
     } else {
-      throw std::logic_error("Unknown Partial fixup type");
-      return false;
+      throw std::runtime_error("Unknown Partial fixup type");
     }
 
   }  // fix_mismatch_meshvar

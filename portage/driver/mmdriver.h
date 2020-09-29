@@ -681,7 +681,7 @@ class MMDriver {
           src_meshvar_names.push_back(srcvarname);
           trg_meshvar_names.push_back(trgvarname);
         } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
-          throw std::logic_error("Cannot handle multi-material fields on nodes\n");
+          throw std::runtime_error("Cannot handle multi-material fields on nodes\n");
       }
     }
 
