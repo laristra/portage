@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/CoordinateSystem.h"
@@ -670,7 +671,7 @@ namespace Portage {
 
         Vector<D> gradient = gradient_field[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
-        CoordSys::modify_line_element(dr, source_coord);
+        CoordSys::template modify_line_element<D>(dr, source_coord);
 
         double value = source_values_[src_node] + dot(gradient, dr);
         value *= intersect_volume;
@@ -709,6 +710,7 @@ namespace Portage {
 #endif
   };
   /* ------------------------------------------------------------------------ */
+
 }  // namespace Portage
 
 #endif  // PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_
