@@ -564,19 +564,18 @@ public:
    * ---------------------------------------------------------------------------
    * 'partial_fixup_type' can be one of three types:
    *
-   * CONSTANT             - Fields will see no perturbations BUT REMAP WILL BE
-   *                        NON-CONSERVATIVE (constant preserving, not linearity
-   *                        preserving)
-   * LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
-   *                        will preserve the integral quantities received from
-   *                        source mesh overlap) but perturbations will
-   *                        occur in the field (constant fields may not stay
-   *                        constant if there is mismatch)
-   * SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
-   *                        perturbations will be minimum but field
-   *                        values may be shifted (Constant fields
-   *                        will be shifted to different constant; no
-   *                        guarantees on linearity preservation)
+   * CONSTANT              - Fields will see no perturbations BUT REMAP WILL BE
+   *                         NON-CONSERVATIVE (constant preserving, not
+   *                         linearity preserving)
+   * LOCALLY_CONSERVATIVE -  REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+   *                         will preserve the integral quantities received from
+   *                         source mesh overlap) but perturbations will
+   *                         occur in the field (constant fields may not stay
+   *                         constant if there is mismatch)
+   * GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
+   *                         of field over source and target meshes will be
+   *                         the same); field perturbations will be minimize
+   *                         to the extent possible
    *
    * ---------------------------------------------------------------------------
    * 'empty_fixup_type' can be one of two types:
@@ -592,7 +591,7 @@ public:
                     double global_upper_bound = infinity_,
                     double conservation_tol = tolerance_,
                     int maxiter = 5,
-                    Partial_fixup_type partial_fixup_type = SHIFTED_CONSERVATIVE,
+                    Partial_fixup_type partial_fixup_type = GLOBALLY_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type = EXTRAPOLATE) const {
 
     if (source_.state().field_type(Entity_kind::CELL, src_var_name) == Field_type::MESH_FIELD) {
@@ -724,7 +723,7 @@ public:
     // if the fixup scheme is constant or locally conservative then we're done
     if (partial_fixup_type == CONSTANT or partial_fixup_type == LOCALLY_CONSERVATIVE) {
       return true;
-    } else if (partial_fixup_type == SHIFTED_CONSERVATIVE) {
+    } else if (partial_fixup_type == GLOBALLY_CONSERVATIVE) {
 
       // At this point assume that all cells have some value in them
       // for the variable
