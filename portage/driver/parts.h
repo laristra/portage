@@ -575,7 +575,8 @@ public:
    * GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
    *                         of field over source and target meshes will be
    *                         the same); field perturbations will be minimize
-   *                         to the extent possible
+   *                         to the extent possible (constant fields will shift
+   *                         to a different constant; not linearity preserving)
    *
    * ---------------------------------------------------------------------------
    * 'empty_fixup_type' can be one of two types:

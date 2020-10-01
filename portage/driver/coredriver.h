@@ -1086,7 +1086,8 @@ class CoreDriver {
   /// GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
   ///                         value of fields on source and target will match);
   ///                         field perturbations will be minimized to the
-  ///                         extent possible
+  ///                         extent possible (constant fields will shift to a
+  ///                         different constant; not linearity preserving)
   ///
   /// empty_fixup_type can be one of two types:
   ///
