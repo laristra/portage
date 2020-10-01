@@ -185,7 +185,7 @@ protected:
             return 1.;
           }
         }
-      } case Partial::SHIFTED_CONSERVATIVE: {
+      } case Partial::GLOBALLY_CONSERVATIVE: {
 
         /* Correct target cell density for shifted-conservative fixup scheme. */
         auto compute_shifted_density = [](double mass_source,
@@ -358,9 +358,9 @@ TEST_F(PartMismatchTest, Constant_Extrapolate) {
 }
 
 TEST_F(PartMismatchTest, ShiftedConservative_LeaveEmpty) {
-  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::LEAVE_EMPTY);
+  unitTest(Partial::GLOBALLY_CONSERVATIVE, Empty::LEAVE_EMPTY);
 }
 
 TEST_F(PartMismatchTest, ShiftedConservative_Extrapolate) {
-  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::EXTRAPOLATE);
+  unitTest(Partial::GLOBALLY_CONSERVATIVE, Empty::EXTRAPOLATE);
 }

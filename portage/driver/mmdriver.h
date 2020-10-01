@@ -194,7 +194,7 @@ class MMDriver {
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
       bnd_limiters_[source_remap_var_names[i]] = Boundary_Limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
-          Partial_fixup_type::SHIFTED_CONSERVATIVE;
+          Partial_fixup_type::GLOBALLY_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
           Empty_fixup_type::EXTRAPOLATE;
     }
@@ -248,7 +248,7 @@ class MMDriver {
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                      Partial_fixup_type::SHIFTED_CONSERVATIVE
+                      Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -262,7 +262,7 @@ class MMDriver {
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                       Partial_fixup_type::SHIFTED_CONSERVATIVE
+                       Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
                               Partial_fixup_type fixup_type) {

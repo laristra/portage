@@ -40,7 +40,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // exact results for Partial_fixup_type:
   //	CONSTANT (C)
   //    LOCALLY_CONSERVATIVE (L)
-  //    SHIFTED_CONSERVATIVE (S)
+  //    GLOBALLY_CONSERVATIVE (S)
   // and Empty_fixup_type:
   // 	EXTRAPOLATE (E)
   //    LEAVE_EMPTY (L)
@@ -160,7 +160,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   // Execute remapper (No arguments implies serial execution)
@@ -208,7 +208,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   // Execute remapper (No arguments implies serial execution)
