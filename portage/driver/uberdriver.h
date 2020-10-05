@@ -311,6 +311,21 @@ public:
   }
 
   /*!
+    @brief set flag whether we want to check for mesh mismatch
+
+    @param do_check_mismatch  boolean flag indicating if we want to check for
+                              boundary mismatch between meshes
+
+    This check is used to determine if the boundaries of the two
+    meshes overlap exactly. If they don't conservation is
+    violated. Callers can ask to compensate for the mismatch when
+    interpolating a mesh variable.
+  */
+  void set_check_mismatch_flag(const bool do_check_mismatch) {
+    do_check_mismatch_ = do_check_mismatch;
+  }
+  
+  /*!
     @brief search for candidate source entities whose control volumes
      (cells, dual cells) overlap the control volumes of target cells
 
@@ -361,7 +376,7 @@ public:
         // Check the mesh mismatch once, to make sure the mismatch is cached
         // prior to interpolation with fixup. This is the correct place to automatically do the
         // check because it reqires the intersection weights which were just computed.
-        driver_cell_->check_mismatch(weights);
+        if (do_check_mismatch_) driver_cell_->check_mismatch(weights);
         mesh_intersection_completed_[CELL] = true;
         return weights;
       }
@@ -370,7 +385,7 @@ public:
         // Check the mesh mismatch once, to make sure the mismatch is cached
         // prior to interpolation with fixup. This is the correct place to automatically do the
         // check because it reqires the intersection weights which were just computed.
-        driver_node_->check_mismatch(weights);
+        if (do_check_mismatch_) driver_node_->check_mismatch(weights);
         mesh_intersection_completed_[NODE] = true;
         return weights;
       } break;
@@ -646,7 +661,7 @@ public:
           );
         }
 
-        if (driver_cell_->has_mismatch()) {
+        if (do_check_mismatch_ && driver_cell_->has_mismatch()) {
           driver_cell_->fix_mismatch(srcvarname, trgvarname,
                                      lower_bound, upper_bound,
                                      conservation_tol, max_fixup_iter,
@@ -667,7 +682,7 @@ public:
           );
         }
 
-        if (driver_node_->has_mismatch()) {
+        if (do_check_mismatch_ && driver_node_->has_mismatch()) {
           driver_node_->fix_mismatch(srcvarname, trgvarname,
                                      lower_bound, upper_bound,
                                      conservation_tol, max_fixup_iter,
@@ -786,6 +801,12 @@ public:
   // Whether we are remapping multimaterial fields
   bool have_multi_material_fields_ = false;
 
+  // Whether to do mismatch check or not. Checks exact overlap between
+  // source and target boundaries if true. Callers can ask to
+  // compensate for the mismatch during the interpolate call if this
+  // check is performed and mismatch is detected
+  bool do_check_mismatch_ = true;
+  
   // Track what steps are completed
   std::map<Entity_kind, bool> search_completed_ {};
   std::map<Entity_kind, bool> mesh_intersection_completed_ {};

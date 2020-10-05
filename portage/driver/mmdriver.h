@@ -245,6 +245,21 @@ class MMDriver {
   }
 
   /*!
+    @brief set flag whether we want to check for mesh mismatch
+
+    @param do_check_mismatch  boolean flag indicating if we want to check for
+                              boundary mismatch between meshes
+
+    This check is used to determine if the boundaries of the two
+    meshes overlap exactly. If they don't conservation is
+    violated. Callers can ask to compensate for the mismatch when
+    interpolating a mesh variable.
+  */
+  void set_check_mismatch_flag(const bool do_check_mismatch) {
+    do_check_mismatch_ = do_check_mismatch;
+  }
+  
+  /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
@@ -722,6 +737,7 @@ class MMDriver {
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
+  bool do_check_mismatch_ = true;
 
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -853,10 +869,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_cell.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_cell.check_mismatch(source_ents_and_weights);
 
   // compute bounds (for all variables) if required for mismatch
-  if (coredriver_cell.has_mismatch())
+  if (do_check_mismatch_ && coredriver_cell.has_mismatch())
     compute_bounds<SourceState_Wrapper2, CELL>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
   
@@ -902,7 +919,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_cell.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_cell.has_mismatch()) {
       coredriver_cell.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
@@ -1082,10 +1099,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_node.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_node.check_mismatch(source_ents_and_weights);
 
   // compute bounds if required for mismatch
-  if (coredriver_node.has_mismatch())
+  if (do_check_mismatch_ && coredriver_node.has_mismatch())
     compute_bounds<SourceState_Wrapper2, NODE>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
@@ -1130,7 +1148,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_node.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_node.has_mismatch()) {
       coredriver_node.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
