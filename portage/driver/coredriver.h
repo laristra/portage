@@ -702,8 +702,7 @@ class CoreDriver {
     // populate it by invoking the kernel on each source entity.
 #ifdef PORTAGE_HAS_TANGRAM
     if (multimat) {
-      // no need for this to be Wonton::vector as it will be copied out
-      std::vector<Vector<D>> owned_gradient_field(mat_cells.size());
+      Wonton::vector<Vector<D>> owned_gradient_field(mat_cells.size());
 
       kernel->set_material(material_id);
       kernel->set_interface_reconstructor(interface_reconstructor_);
