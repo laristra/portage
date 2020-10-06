@@ -653,11 +653,13 @@ class CoreDriver {
     if (multimat) {
       // cache gradient stencil first
       if (not cached_multimat_stenc_) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
         std::cerr << "Warning: gradient stencil matrices for ";
         std::cerr << "multi-material fields were not cached yet." << std::endl;
         std::cerr << "Please invoke 'cache_multimat_gradient_stencils' ";
         std::cerr << "prior to 'compute_source_gradient' for optimized runs.";
         std::cerr << std::endl;
+#endif
         cache_multimat_gradient_stencils();
       }
 
@@ -744,8 +746,10 @@ class CoreDriver {
                             Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
                 << ONWHAT << ". Skipping!" << std::endl;
+#endif
       return;
     }
 
@@ -814,8 +818,10 @@ class CoreDriver {
                        Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
                 << ONWHAT << ". Skipping!" << std::endl;
+#endif
       return;
     }
 
@@ -1069,19 +1075,19 @@ class CoreDriver {
   ///
   /// partial_fixup_type can be one of three types:
   ///
-  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
-  ///            NON-CONSERVATIVE (constant preserving, not linearity
-  ///            preserving)
-  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
-  ///                        will preserve the integral quantities received from
-  ///                        source mesh overlap) but perturbations will
-  ///                        occur in the field (constant fields may not stay
-  ///                        constant if there is mismatch)
-  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
-  ///                        perturbations will be minimum but field
-  ///                        values may be shifted (Constant fields
-  ///                        will be shifted to different constant; no
-  ///                        guarantees on linearity preservation)
+  /// CONSTANT              - Fields will see no perturbations BUT REMAP WILL BE
+  ///                         NON-CONSERVATIVE (constant preserving,
+  ///                         not linearity preserving)
+  /// LOCALLY_CONSERVATIVE  - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                         will preserve the integral quantities received
+  ///                         from source mesh overlap) but perturbations will
+  ///                         occur in the field (constant fields may not stay
+  ///                         constant if there is mismatch)
+  /// GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
+  ///                         value of fields on source and target will match);
+  ///                         field perturbations will be minimized to the
+  ///                         extent possible (constant fields will shift to a
+  ///                         different constant; not linearity preserving)
   ///
   /// empty_fixup_type can be one of two types:
   ///
@@ -1095,7 +1101,7 @@ class CoreDriver {
                     double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                     int maxiter = 5,
                     Partial_fixup_type partial_fixup_type =
-                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Partial_fixup_type::GLOBALLY_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
                     Empty_fixup_type::EXTRAPOLATE) {
 

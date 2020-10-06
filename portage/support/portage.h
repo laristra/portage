@@ -102,7 +102,7 @@ inline std::string to_string(Boundary_Limiter_type boundary_limiter_type) {
 }
 
 /// Fixup options for partially filled cells
-typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, SHIFTED_CONSERVATIVE}
+typedef enum {CONSTANT, LOCALLY_CONSERVATIVE, GLOBALLY_CONSERVATIVE}
   Partial_fixup_type;
 constexpr int NUM_PARTIAL_FIXUP_TYPE = 3;
 
@@ -113,7 +113,7 @@ inline std::string to_string(Partial_fixup_type partial_fixup_type) {
   static const std::string type2string[NUM_PARTIAL_FIXUP_TYPE] =
       {"Partial_fixup_type::CONSTANT",
        "Partial_fixup_type::LOCALLY_CONSERVATIVE",
-       "Partial_fixup_type::SHIFTED_CONSERVATIVE"};
+       "Partial_fixup_type::GLOBALLY_CONSERVATIVE"};
 
   int itype = static_cast<int>(partial_fixup_type);
   return (itype >= 0 && itype < NUM_PARTIAL_FIXUP_TYPE) ? type2string[itype] :

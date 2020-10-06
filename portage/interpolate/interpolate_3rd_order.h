@@ -138,8 +138,7 @@ class Interpolate_3rdOrder {
                      std::vector<Weights_t> const & sources_and_weights) const {
     // not implemented for all types - see specialization for cells and nodes
 
-    std::cerr << "Interpolation operator not implemented for this entity type"
-              << std::endl;
+    throw std::runtime_error("Interpolation operator not implemented for this entity type");
     return 0.;
   }
 
@@ -271,7 +270,7 @@ class Interpolate_3rdOrder<
 
     int nsrccells = sources_and_weights.size();
     if (!nsrccells) {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
 #endif
@@ -455,7 +454,7 @@ class Interpolate_3rdOrder<
 
     int nsrcnodes = sources_and_weights.size();
     if (!nsrcnodes) {
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       std::cerr << "WARNING: No source nodes contribute to target node." <<
         std::endl;
 #endif

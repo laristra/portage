@@ -194,7 +194,7 @@ class MMDriver {
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
       bnd_limiters_[source_remap_var_names[i]] = Boundary_Limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
-          Partial_fixup_type::SHIFTED_CONSERVATIVE;
+          Partial_fixup_type::GLOBALLY_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
           Empty_fixup_type::EXTRAPOLATE;
     }
@@ -245,10 +245,25 @@ class MMDriver {
   }
 
   /*!
+    @brief set flag whether we want to check for mesh mismatch
+
+    @param do_check_mismatch  boolean flag indicating if we want to check for
+                              boundary mismatch between meshes
+
+    This check is used to determine if the boundaries of the two
+    meshes overlap exactly. If they don't conservation is
+    violated. Callers can ask to compensate for the mismatch when
+    interpolating a mesh variable.
+  */
+  void set_check_mismatch_flag(const bool do_check_mismatch) {
+    do_check_mismatch_ = do_check_mismatch;
+  }
+  
+  /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                      Partial_fixup_type::SHIFTED_CONSERVATIVE
+                      Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -262,7 +277,7 @@ class MMDriver {
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                       Partial_fixup_type::SHIFTED_CONSERVATIVE
+                       Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
                               Partial_fixup_type fixup_type) {
@@ -321,7 +336,7 @@ class MMDriver {
       double_lower_bounds_[target_var_name] = lower_bound;
       double_upper_bounds_[target_var_name] = upper_bound;
     } else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
   /*!
@@ -334,7 +349,7 @@ class MMDriver {
     if (typeid(T) == typeid(double))
       conservation_tol_[target_var_name] = conservation_tol;
     else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -555,7 +570,7 @@ class MMDriver {
     }
 #endif
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -628,7 +643,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#ifndef NDEBUG
+#if !defined(NDEBUG)
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -681,7 +696,7 @@ class MMDriver {
           src_meshvar_names.push_back(srcvarname);
           trg_meshvar_names.push_back(trgvarname);
         } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
-          std::cerr << "Cannot handle multi-material fields on nodes\n";
+          throw std::runtime_error("Cannot handle multi-material fields on nodes\n");
       }
     }
 
@@ -722,6 +737,7 @@ class MMDriver {
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
+  bool do_check_mismatch_ = true;
 
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -853,22 +869,25 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_cell.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_cell.check_mismatch(source_ents_and_weights);
 
   // compute bounds (for all variables) if required for mismatch
-  if (coredriver_cell.has_mismatch())
+  if (do_check_mismatch_ && coredriver_cell.has_mismatch())
     compute_bounds<SourceState_Wrapper2, CELL>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on cells to remap is " <<
         nvars << std::endl;
   }
+#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -900,7 +919,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_cell.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_cell.has_mismatch()) {
       coredriver_cell.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
@@ -957,18 +976,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
 
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Cell remap on Rank " <<
+  std::cout << "Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
+
+#if defined(VERBOSE_OUTPUT)
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for cells
@@ -1077,22 +1099,25 @@ int MMDriver<Search, Intersect, Interpolate, D,
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_node.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_node.check_mismatch(source_ents_and_weights);
 
   // compute bounds if required for mismatch
-  if (coredriver_node.has_mismatch())
+  if (do_check_mismatch_ && coredriver_node.has_mismatch())
     compute_bounds<SourceState_Wrapper2, NODE>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on nodes to remap is " <<
         nvars << std::endl;
   }
+#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -1123,7 +1148,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_node.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_node.has_mismatch()) {
       coredriver_node.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
@@ -1135,18 +1160,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifndef NDEBUG
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Node remap on Rank " <<
+  std::cout << "Time for Node remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
-  std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
+
+#if defined(VERBOSE_OUTPUT)
+     std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for nodes

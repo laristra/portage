@@ -147,9 +147,8 @@ namespace Portage {
       int const cell_id,
       int const face_group_id,
       double const swept_volume) const {      
-      // see specialization for cells
-      std::cerr << "Sorry: current entity type not supported." << std::endl;
-      return std::vector<double>();    
+      // see specialization for cells      
+      throw std::runtime_error("IntersectSweptFace::compute_face_group_moments(): face group moment computation not supported for this entity type");
     }
 #endif
 
@@ -164,8 +163,7 @@ namespace Portage {
     std::vector<Weights_t> operator()(int target_id,
                                       std::vector<int> const& stencil) const {
       // see specialization for cells
-      std::cerr << "Sorry: current entity type not supported." << std::endl;
-      return std::vector<Weights_t>();
+      throw std::runtime_error("IntersectSweptFace::operator(): swept face volume computation not supported for this entity type.");
     }
 
   private:
