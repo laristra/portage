@@ -73,7 +73,7 @@ namespace RGMDApp {
     SRCPURECELLS, TJUNCTION, BALL, ROTOR
   };
   enum Mesh_perturb_type {
-    NO, SHIFT, PSEUDORANDOM
+    NO, SHIFT, PSEUDORANDOM, ROTATE
   };
 }
 
@@ -120,7 +120,7 @@ int print_usage() {
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
-      "--mesh_min=0. --mesh_max=1. --perturb_source=n|shift|pseudorandom \n" <<
+      "--mesh_min=0. --mesh_max=1. --perturb_source=n|shift|pseudorandom|rotate \n" <<
       "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n " <<
       "--field_filename=string --intersect=y|n \n\n";
 
@@ -157,7 +157,7 @@ int print_usage() {
       "ONLY APPLICABLE FOR INTERNALLY GENERATED MESHES\n\n";
 
   std::cout << "--perturb_source (default = n): " <<
-      "add a shift or pseudorandom perturbation to coordinates of a source mesh\n\n";
+      "add a shift, pseudorandom perturbation or rotation to coordinates of a source mesh\n\n";
 
   std::cout << "--material_fields: A comma separated list of quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
@@ -655,6 +655,8 @@ int main(int argc, char** argv) {
         mesh_perturb = RGMDApp::Mesh_perturb_type::SHIFT;
       else if (valueword == "pseudorandom")
         mesh_perturb = RGMDApp::Mesh_perturb_type::PSEUDORANDOM;
+      else if (valueword == "rotate")
+        mesh_perturb = RGMDApp::Mesh_perturb_type::ROTATE;
       else {
         std::cerr << "Unknown mesh perturbation type!\n";
         MPI_Abort(MPI_COMM_WORLD, -1);
@@ -953,13 +955,25 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           new_pnt[dir] = pnt[dir] + dx/20.0 * sin( 2.0*M_PI / (srchi-srclo) *
                   (pnt[dir]-srclo)*(pnt[(dir+1)%2]-srclo) *
                   (srchi-pnt[dir])*(srchi-pnt[(dir+1)%2]) * 9001 );
+        if (dim==3) new_pnt[2] = pnt[2];
       }
       else if (mesh_perturb == RGMDApp::Mesh_perturb_type::SHIFT) { // perturbation ala Misha
         double alpha = 0.1*dx;
         new_pnt[0] = (1. - alpha) * pnt[0] + alpha * pnt[0]*pnt[0]*pnt[0];
         new_pnt[1] = (1. - alpha) * pnt[1] + alpha * pnt[1]*pnt[1];
+        if (dim==3) new_pnt[2] = pnt[2];
       }
-      if (dim==3) new_pnt[2] = pnt[2];
+      else if(mesh_perturb == RGMDApp::Mesh_perturb_type::ROTATE) {
+        if (dim==3) {
+          new_pnt[0] = 4.0 * (  1.0 / sqrt(6.0)* pnt[0] + 1.0 / sqrt(6.0)* pnt[1] - sqrt(2.0/3.0)* pnt[2] );
+          new_pnt[1] = 4.0 * ( -1.0 / sqrt(2.0)* pnt[0] + 1.0 / sqrt(2.0)* pnt[1] );
+          new_pnt[2] = 4.0 * (  1.0 / sqrt(3.0)* pnt[0] + 1.0 / sqrt(3.0)* pnt[1] + 1.0 / sqrt(3.0)* pnt[2] );
+        }
+        else {
+          new_pnt[0] = 2.0 * sqrt(2.0) * ( pnt[0] - pnt[1] );
+          new_pnt[1] = 2.0 * sqrt(2.0) * ( pnt[0] + pnt[1] );
+        }
+      }
       sourceMesh->node_set_coordinates(i, new_pnt.data());
     }
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
