@@ -564,7 +564,7 @@ generate_gnuplot() {
   XCOL=0
   SUFFIX=""
   
-  if [ "${OPENMP_ONLY}" = true ]; then 
+  if [ "${THREAD_ONLY}" = true ]; then 
     MODE="OpenMP"
     XMAX=${MAX_THREADS}
     XLABEL="threads"
@@ -615,11 +615,11 @@ generate_gnuplot() {
   echo "set logscale x 2"                                           >> ${SCRIPT}
   echo "set logscale y 2"                                           >> ${SCRIPT}
   echo ""                                                           >> ${SCRIPT}
-  echo "plot '${INPUT}' u ${XCOL}:6 t 'remap'     ${FIELDS[0]},\\"  >> ${SCRIPT}
-  echo "     '${INPUT}' u ${XCOL}:7 t 'total'     ${FIELDS[1]},\\"  >> ${SCRIPT}
-  echo "     linear(x)              t 'linear'    ${FIELDS[2]},\\"  >> ${SCRIPT}
-  echo "     '${INPUT}' u ${XCOL}:3 t 'mesh-init' ${FIELDS[3]},\\"  >> ${SCRIPT}
-  echo "     '${INPUT}' u ${XCOL}:5 t 'interface' ${FIELDS[4]}"     >> ${SCRIPT}
+  echo "plot '${INPUT}' u ${XCOL}:11 t 'remap'     ${FIELDS[0]},\\" >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:12 t 'total'     ${FIELDS[1]},\\" >> ${SCRIPT}
+  echo "     linear(x)               t 'linear'    ${FIELDS[2]},\\" >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:3  t 'mesh-init' ${FIELDS[3]},\\" >> ${SCRIPT}
+  echo "     '${INPUT}' u ${XCOL}:5  t 'interface' ${FIELDS[4]}"    >> ${SCRIPT}
 
 
   # move to build directory
