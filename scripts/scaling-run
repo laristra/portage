@@ -299,8 +299,8 @@ set_default_params() {
 
 setup_run_options() {
 
-  # set build directory  
-  BUILD_DIR="${SOURCE_DIR}/build-${COMPILER}"
+  # set build directory
+  BUILD_DIR="${SOURCE_DIR}/build"
   
   # slurm partition  
   #CORES=$(grep ^cpu\\scores /proc/cpuinfo | uniq |  awk '{print $4}');
