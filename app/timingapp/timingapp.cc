@@ -37,8 +37,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
 
-#define ENABLE_TIMINGS 1
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
