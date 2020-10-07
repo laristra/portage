@@ -507,10 +507,6 @@ run_scaling() {
   echo -e "#SBATCH --nodes=${NODES}"                                        >> ${SCRIPT}
   echo -e "#SBATCH --ntasks-per-node=${RANKS_PER_NODE}"                     >> ${SCRIPT}
   echo -e "#SBATCH --job-name=remap"                                        >> ${SCRIPT}
-  echo -e "#SBATCH --error=${OUTPUT}"                                       >> ${SCRIPT}
-  echo -e "#SBATCH --output=${OUTPUT}"                                      >> ${SCRIPT}
-  echo -e "#SBATCH --no-requeue"                                            >> ${SCRIPT}
-  echo -e "#SBATCH --signal=23@60"                                          >> ${SCRIPT}
   echo -e ""                                                                >> ${SCRIPT}
   echo -e "# move to the build directory"                                   >> ${SCRIPT}
   echo -e "cd ${BUILD_DIR}"                                                 >> ${SCRIPT}
