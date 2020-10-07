@@ -534,7 +534,7 @@ int main(int argc, char** argv) {
 
 #else
   // Output results for small test cases
-  double error, toterr = 0.0;
+  double error = 0.0, toterr = 0.0;
   double const * cellvecout;
   double const * nodevecout;
 
@@ -556,8 +556,7 @@ int main(int argc, char** argv) {
         else if (poly_order == 1)
           error = ccen[0] + ccen[1] - cellvecout[c];
         else  // quadratic
-          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
-              cellvecout[c];
+          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] - cellvecout[c];
 
         if (numpe == 1 && n_target < 10) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
