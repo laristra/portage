@@ -10,3 +10,8 @@ build
 install
 .idea
 data
+scripts/archives
+scripts/slurm-*.out
+scripts/*.sh
+scripts/*.dat
+build-portage.sh
