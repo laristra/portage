@@ -70,7 +70,7 @@ using Wonton::Jali_Mesh_Wrapper;
 
 namespace RGMDApp {
   enum Problem_type {
-    SRCPURECELLS, TJUNCTION, BALL, ROTOR
+    SRCPURECELLS, TJUNCTION, BALL, ROTOR, CHECKERBOARD
   };
   enum Mesh_perturb_type {
     NO, SHIFT, PSEUDORANDOM, ROTATE
@@ -108,6 +108,8 @@ namespace RGMDApp {
   the domain.
   - rotor: only available in 3D, the domain contains 13 materials of complex 
   geometrical shapes, with some of them being thin layers.
+  - checkerboard: domain contains two alternating materials in 2D or 8 in 3D.
+  There are only single-material cells in this problem.
 */
 
 //////////////////////////////////////////////////////////////////////
@@ -115,7 +117,7 @@ namespace RGMDApp {
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp_rgmd_jali " <<
-      "--problem=srcpurecells|tjunction|ball|rotor \n" <<  
+      "--problem=srcpurecells|tjunction|ball|rotor|checkerboard \n" <<  
       "--dim=2|3 --nsourcecells=N --ntargetcells=M \n" << 
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
@@ -264,6 +266,27 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
 }
 
 template<class Mesh_Wrapper>
+void checkerboard_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<2> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
+  mesh_material_IDs = {0, 1};
+  int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
+  cell_num_mats.resize(ncells);
+  cell_mat_ids.resize(ncells);
+  cell_mat_volfracs.resize(ncells);
+  cell_mat_centroids.resize(ncells);
+  std::fill(cell_num_mats.begin(), cell_num_mats.end(), 1);
+  for (int icell = 0; icell < ncells; icell++)
+    cell_mat_ids[icell] = icell%2;
+}
+
+template<class Mesh_Wrapper>
 void tjunction_material_data(const Mesh_Wrapper& mesh,
                              std::vector<int>& mesh_material_IDs,
                              std::vector<int>& cell_num_mats,
@@ -387,6 +410,32 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
         nextras -= ncellmats - 1;
         if (nextras == 0) break;
       }
+  }
+}
+
+template<class Mesh_Wrapper>
+void checkerboard_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<3> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
+  mesh_material_IDs = {0, 1, 2, 3, 4, 5, 6, 7};
+  int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
+  cell_num_mats.resize(ncells);
+  cell_mat_ids.resize(ncells);
+  cell_mat_volfracs.resize(ncells);
+  cell_mat_centroids.resize(ncells);
+  std::fill(cell_num_mats.begin(), cell_num_mats.end(), 1);
+  for (int icell = 0; icell < ncells; icell++) {
+    int nc = int(std::cbrt(ncells));
+    int i = icell/(nc*nc);
+    int j = (icell%(nc*nc))/nc;
+    int k = icell%nc;
+    cell_mat_ids[icell] = i%2+2*(j%2)+4*(k%2);
   }
 }
 
@@ -596,6 +645,8 @@ int main(int argc, char** argv) {
         problem = RGMDApp::Problem_type::BALL;
       else if (valueword == "rotor")
         problem = RGMDApp::Problem_type::ROTOR;
+      else if (valueword == "checkerboard")
+        problem = RGMDApp::Problem_type::CHECKERBOARD;
       else {
         std::cerr << "Unknown problem type!\n";
         MPI_Abort(MPI_COMM_WORLD, -1);
@@ -753,6 +804,7 @@ int main(int argc, char** argv) {
     case RGMDApp::Problem_type::TJUNCTION: profiler->params.output  = "t-junction_"; break;
     case RGMDApp::Problem_type::BALL: profiler->params.output  = "ball_"; break;
     case RGMDApp::Problem_type::ROTOR: profiler->params.output  = "rotor_"; break;
+    case RGMDApp::Problem_type::CHECKERBOARD: profiler->params.output  = "checkerboard_"; break;
     default: std::cerr << "Unknown problem type!\n"; MPI_Abort(MPI_COMM_WORLD, -1);
   }
   profiler->params.output += scaling_type + "_scaling_" +
@@ -1058,6 +1110,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   switch(problem) {
     case RGMDApp::Problem_type::SRCPURECELLS:
       srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
+                                                            global_material_IDs,
+                                                            cell_num_mats,
+                                                            cell_mat_ids,
+                                                            cell_mat_volfracs,
+                                                            cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !source_convex_cells);
+      break;
+    case RGMDApp::Problem_type::CHECKERBOARD:
+      checkerboard_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
                                                             global_material_IDs,
                                                             cell_num_mats,
                                                             cell_mat_ids,
@@ -1783,6 +1846,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   switch(problem) {
     case RGMDApp::Problem_type::SRCPURECELLS:
       srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                            trgex_global_material_IDs,
+                                                            trgex_cell_num_mats,
+                                                            trgex_cell_mat_ids,
+                                                            trgex_cell_mat_volfracs,
+                                                            trgex_cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !target_convex_cells);
+      break;
+    case RGMDApp::Problem_type::CHECKERBOARD:
+      checkerboard_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
                                                             trgex_global_material_IDs,
                                                             trgex_cell_num_mats,
                                                             trgex_cell_mat_ids,
