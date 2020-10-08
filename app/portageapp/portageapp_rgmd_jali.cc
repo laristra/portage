@@ -1016,7 +1016,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
         if (dim==3) new_pnt[2] = pnt[2];
       }
       else if(mesh_perturb == RGMDApp::Mesh_perturb_type::ROTATE) {
-        if (dim==3) {
+        if (dim==3) { // scaling by 4 and rotations by pi/4 around z and by arccos(1/sqrt(3)) around y
           new_pnt[0] = 4.0 * (  1.0 / sqrt(6.0)* pnt[0] + 1.0 / sqrt(6.0)* pnt[1] - sqrt(2.0/3.0)* pnt[2] );
           new_pnt[1] = 4.0 * ( -1.0 / sqrt(2.0)* pnt[0] + 1.0 / sqrt(2.0)* pnt[1] );
           new_pnt[2] = 4.0 * (  1.0 / sqrt(3.0)* pnt[0] + 1.0 / sqrt(3.0)* pnt[1] + 1.0 / sqrt(3.0)* pnt[2] );
