@@ -70,10 +70,10 @@ using Wonton::Jali_Mesh_Wrapper;
 
 namespace RGMDApp {
   enum Problem_type {
-    SRCPURECELLS, TJUNCTION, BALL, ROTOR
+    SRCPURECELLS, TJUNCTION, BALL, ROTOR, CHECKERBOARD
   };
   enum Mesh_perturb_type {
-    NO, SHIFT, PSEUDORANDOM
+    NO, SHIFT, PSEUDORANDOM, ROTATE
   };
 }
 
@@ -108,6 +108,8 @@ namespace RGMDApp {
   the domain.
   - rotor: only available in 3D, the domain contains 13 materials of complex 
   geometrical shapes, with some of them being thin layers.
+  - checkerboard: domain contains two alternating materials in 2D or 8 in 3D.
+  There are only single-material cells in this problem.
 */
 
 //////////////////////////////////////////////////////////////////////
@@ -115,12 +117,12 @@ namespace RGMDApp {
 int print_usage() {
   std::cout << std::endl;
   std::cout << "Usage: portageapp_rgmd_jali " <<
-      "--problem=srcpurecells|tjunction|ball|rotor \n" <<  
+      "--problem=srcpurecells|tjunction|ball|rotor|checkerboard \n" <<  
       "--dim=2|3 --nsourcecells=N --ntargetcells=M \n" << 
       "--source_convex_cells=y|n --target_convex_cells=y|n \n" <<
       "--remap_order=1|2 \n" <<
       "--limiter=barth_jespersen --bnd_limiter=zero_gradient \n"
-      "--mesh_min=0. --mesh_max=1. --perturb_source=n|shift|pseudorandom \n" <<
+      "--mesh_min=0. --mesh_max=1. --perturb_source=n|shift|pseudorandom|rotate \n" <<
       "--output_meshes=y|n --convergence_study=NREF --only_threads=y|n " <<
       "--field_filename=string --intersect=y|n \n\n";
 
@@ -157,7 +159,7 @@ int print_usage() {
       "ONLY APPLICABLE FOR INTERNALLY GENERATED MESHES\n\n";
 
   std::cout << "--perturb_source (default = n): " <<
-      "add a shift or pseudorandom perturbation to coordinates of a source mesh\n\n";
+      "add a shift, pseudorandom perturbation or rotation to coordinates of a source mesh\n\n";
 
   std::cout << "--material_fields: A comma separated list of quoted math expressions \n" <<
       " expressed in terms of \n" << "x, y and z following the syntax of " <<
@@ -261,6 +263,27 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
         if (nextras == 0) break;
       }
   }
+}
+
+template<class Mesh_Wrapper>
+void checkerboard_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<2> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
+  mesh_material_IDs = {0, 1};
+  int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
+  cell_num_mats.resize(ncells);
+  cell_mat_ids.resize(ncells);
+  cell_mat_volfracs.resize(ncells);
+  cell_mat_centroids.resize(ncells);
+  std::fill(cell_num_mats.begin(), cell_num_mats.end(), 1);
+  for (int icell = 0; icell < ncells; icell++)
+    cell_mat_ids[icell] = icell%2;
 }
 
 template<class Mesh_Wrapper>
@@ -387,6 +410,32 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
         nextras -= ncellmats - 1;
         if (nextras == 0) break;
       }
+  }
+}
+
+template<class Mesh_Wrapper>
+void checkerboard_material_data(const Mesh_Wrapper& mesh,
+                                std::vector<int>& mesh_material_IDs,
+                                std::vector<int>& cell_num_mats,
+                                std::vector<int>& cell_mat_ids,
+                                std::vector<double>& cell_mat_volfracs,
+                                std::vector< Wonton::Point<3> >& cell_mat_centroids,
+                                const double vol_tol,
+                                const double dst_tol,
+                                bool decompose_cells) {
+  mesh_material_IDs = {0, 1, 2, 3, 4, 5, 6, 7};
+  int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
+  cell_num_mats.resize(ncells);
+  cell_mat_ids.resize(ncells);
+  cell_mat_volfracs.resize(ncells);
+  cell_mat_centroids.resize(ncells);
+  std::fill(cell_num_mats.begin(), cell_num_mats.end(), 1);
+  for (int icell = 0; icell < ncells; icell++) {
+    int nc = int(std::cbrt(ncells));
+    int i = icell/(nc*nc);
+    int j = (icell%(nc*nc))/nc;
+    int k = icell%nc;
+    cell_mat_ids[icell] = i%2+2*(j%2)+4*(k%2);
   }
 }
 
@@ -596,6 +645,8 @@ int main(int argc, char** argv) {
         problem = RGMDApp::Problem_type::BALL;
       else if (valueword == "rotor")
         problem = RGMDApp::Problem_type::ROTOR;
+      else if (valueword == "checkerboard")
+        problem = RGMDApp::Problem_type::CHECKERBOARD;
       else {
         std::cerr << "Unknown problem type!\n";
         MPI_Abort(MPI_COMM_WORLD, -1);
@@ -655,6 +706,8 @@ int main(int argc, char** argv) {
         mesh_perturb = RGMDApp::Mesh_perturb_type::SHIFT;
       else if (valueword == "pseudorandom")
         mesh_perturb = RGMDApp::Mesh_perturb_type::PSEUDORANDOM;
+      else if (valueword == "rotate")
+        mesh_perturb = RGMDApp::Mesh_perturb_type::ROTATE;
       else {
         std::cerr << "Unknown mesh perturbation type!\n";
         MPI_Abort(MPI_COMM_WORLD, -1);
@@ -751,6 +804,7 @@ int main(int argc, char** argv) {
     case RGMDApp::Problem_type::TJUNCTION: profiler->params.output  = "t-junction_"; break;
     case RGMDApp::Problem_type::BALL: profiler->params.output  = "ball_"; break;
     case RGMDApp::Problem_type::ROTOR: profiler->params.output  = "rotor_"; break;
+    case RGMDApp::Problem_type::CHECKERBOARD: profiler->params.output  = "checkerboard_"; break;
     default: std::cerr << "Unknown problem type!\n"; MPI_Abort(MPI_COMM_WORLD, -1);
   }
   profiler->params.output += scaling_type + "_scaling_" +
@@ -953,13 +1007,25 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           new_pnt[dir] = pnt[dir] + dx/20.0 * sin( 2.0*M_PI / (srchi-srclo) *
                   (pnt[dir]-srclo)*(pnt[(dir+1)%2]-srclo) *
                   (srchi-pnt[dir])*(srchi-pnt[(dir+1)%2]) * 9001 );
+        if (dim==3) new_pnt[2] = pnt[2];
       }
       else if (mesh_perturb == RGMDApp::Mesh_perturb_type::SHIFT) { // perturbation ala Misha
         double alpha = 0.1*dx;
         new_pnt[0] = (1. - alpha) * pnt[0] + alpha * pnt[0]*pnt[0]*pnt[0];
         new_pnt[1] = (1. - alpha) * pnt[1] + alpha * pnt[1]*pnt[1];
+        if (dim==3) new_pnt[2] = pnt[2];
       }
-      if (dim==3) new_pnt[2] = pnt[2];
+      else if(mesh_perturb == RGMDApp::Mesh_perturb_type::ROTATE) {
+        if (dim==3) { // scaling by 4 and rotations by pi/4 around z and by arccos(1/sqrt(3)) around y
+          new_pnt[0] = 4.0 * (  1.0 / sqrt(6.0)* pnt[0] + 1.0 / sqrt(6.0)* pnt[1] - sqrt(2.0/3.0)* pnt[2] );
+          new_pnt[1] = 4.0 * ( -1.0 / sqrt(2.0)* pnt[0] + 1.0 / sqrt(2.0)* pnt[1] );
+          new_pnt[2] = 4.0 * (  1.0 / sqrt(3.0)* pnt[0] + 1.0 / sqrt(3.0)* pnt[1] + 1.0 / sqrt(3.0)* pnt[2] );
+        }
+        else {
+          new_pnt[0] = 2.0 * sqrt(2.0) * ( pnt[0] - pnt[1] );
+          new_pnt[1] = 2.0 * sqrt(2.0) * ( pnt[0] + pnt[1] );
+        }
+      }
       sourceMesh->node_set_coordinates(i, new_pnt.data());
     }
     if (numpe > 1) MPI_Barrier(MPI_COMM_WORLD);
@@ -1044,6 +1110,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   switch(problem) {
     case RGMDApp::Problem_type::SRCPURECELLS:
       srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
+                                                            global_material_IDs,
+                                                            cell_num_mats,
+                                                            cell_mat_ids,
+                                                            cell_mat_volfracs,
+                                                            cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !source_convex_cells);
+      break;
+    case RGMDApp::Problem_type::CHECKERBOARD:
+      checkerboard_material_data<Wonton::Jali_Mesh_Wrapper>(sourceMeshWrapper,
                                                             global_material_IDs,
                                                             cell_num_mats,
                                                             cell_mat_ids,
@@ -1769,6 +1846,17 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   switch(problem) {
     case RGMDApp::Problem_type::SRCPURECELLS:
       srcpurecells_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
+                                                            trgex_global_material_IDs,
+                                                            trgex_cell_num_mats,
+                                                            trgex_cell_mat_ids,
+                                                            trgex_cell_mat_volfracs,
+                                                            trgex_cell_mat_centroids,
+                                                            vol_tol,
+                                                            dst_tol,
+                                                            !target_convex_cells);
+      break;
+    case RGMDApp::Problem_type::CHECKERBOARD:
+      checkerboard_material_data<Wonton::Jali_Mesh_Wrapper>(targetMeshWrapper,
                                                             trgex_global_material_IDs,
                                                             trgex_cell_num_mats,
                                                             trgex_cell_mat_ids,
