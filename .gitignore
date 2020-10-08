@@ -12,6 +12,6 @@ install
 data
 scripts/archives
 scripts/slurm-*.out
-scripts/*.sh
+scripts/*scaling*.sh
 scripts/*.dat
 build-portage.sh
