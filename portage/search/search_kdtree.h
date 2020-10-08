@@ -64,8 +64,7 @@ class SearchKDTree {
   */
   std::vector<int> operator() (const int entityId) const {
     std::vector<int> candidates;
-    std::cerr << "Search not implemented for generic entity kind" << std::endl;
-    return candidates;
+    throw std::runtime_error("Search not implemented for generic entity kind");
   }
 
  private:

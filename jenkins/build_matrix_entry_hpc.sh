@@ -12,6 +12,9 @@ set -e
 # Echo each command
 set -x
 
+# set umask so installations will have group rwx permission
+umask 007
+
 echo "--------------------------------------------------------------"
 echo "Running configuration $COMPILER $BUILD_TYPE on `hostname`"
 echo "--------------------------------------------------------------"
@@ -37,7 +40,7 @@ fi
 
 # set modules and install paths
 
-wonton_version=1.2.4
+wonton_version=1.2.6
 tangram_version=1.0.1
 
 export NGC=/usr/projects/ngc

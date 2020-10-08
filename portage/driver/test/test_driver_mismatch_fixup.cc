@@ -40,17 +40,17 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // exact results for Partial_fixup_type:
   //	CONSTANT (C)
   //    LOCALLY_CONSERVATIVE (L)
-  //    SHIFTED_CONSERVATIVE (S)
+  //    GLOBALLY_CONSERVATIVE (G)
   // and Empty_fixup_type:
   // 	EXTRAPOLATE (E)
   //    LEAVE_EMPTY (L)
 
   double exact_C_E[2] = {1.0, 1.0};
   double exact_L_E[2] = {0.4, 0.4};
-  double exact_S_E[2] = {0.6, 0.6};
+  double exact_G_E[2] = {0.6, 0.6};
   double exact_C_L[2] = {1.0, 0.0};
   double exact_L_L[2] = {0.4, 0.0};
-  double exact_S_L[2] = {1.2, 0.0};
+  double exact_G_L[2] = {1.2, 0.0};
 
   const int ncells_source =
       source_mesh->num_entities(Jali::Entity_kind::CELL,
@@ -109,19 +109,21 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
                   2,
                   Wonton::Jali_Mesh_Wrapper,
                   Wonton::Jali_State_Wrapper> remapper(sourceMeshWrapper,
-                                                         sourceStateWrapper,
-                                                         targetMeshWrapper,
-                                                         targetStateWrapper);
+                                                       sourceStateWrapper,
+                                                       targetMeshWrapper,
+                                                       targetStateWrapper);
 
   remapper.set_remap_var_names(source_var_names, target_var_names);
 
   // Execute remapper (No arguments implies serial execution)
 
+  // Run with default fixup options
+
   remapper.run();
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(exact_G_E[c], targetvec[c], TOL);
   }
 
 
@@ -160,7 +162,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   // Execute remapper (No arguments implies serial execution)
@@ -169,7 +171,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
+    ASSERT_NEAR(exact_G_E[c], targetvec[c], TOL);
   }
 
 
@@ -208,7 +210,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Set fixup types
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   // Execute remapper (No arguments implies serial execution)
@@ -217,7 +219,19 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   // Verify that we got the fields we wanted
   for (int c = 0; c < ncells_target; c++) {
-    ASSERT_NEAR(exact_S_L[c], targetvec[c], TOL);
+    ASSERT_NEAR(exact_G_L[c], targetvec[c], TOL);
   }
+
+  // Ask for no mismatch check or fixup (same as CONSTANT/LEAVE_EMPTY)
+
+  remapper.set_check_mismatch_flag(false);
+  
+  remapper.run();
+
+  // Verify that we got the fields we wanted
+  for (int c = 0; c < ncells_target; c++) {
+    ASSERT_NEAR(exact_C_L[c], targetvec[c], TOL);
+  }
+
 
 }

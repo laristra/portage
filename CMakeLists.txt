@@ -57,6 +57,11 @@ if (ENABLE_DOXYGEN)
   add_doxygen()
 endif()
 
+#------------------------------------------------------------------------------#
+# Enable timings
+#------------------------------------------------------------------------------#
+option(ENABLE_APP_TIMINGS "Enable timings" OFF)
+
 #----------------------------------------------------------------------------
 # Find packages here and set CMake variables. Set link dependencies
 # and compile definitions for portage_support target in

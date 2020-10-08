@@ -249,11 +249,11 @@ class MismatchFixer {
 
       mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0) 
         std::cerr << "\n** MESH MISMATCH -" <<
             " some source cells are not fully covered by the target mesh\n";
 
-#ifndef NDEBUG
       // Find one source cell (or dual cell) that is not fully covered
       // by the target mesh and output its ID. Unfortunately, that means
       // processing all source cells. We initialize each source cell to
@@ -284,6 +284,7 @@ class MismatchFixer {
           break;
         }
 #endif
+
     }
 
     // Are some target cells not fully covered by source cells?
@@ -294,11 +295,11 @@ class MismatchFixer {
 
       mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0)
         std::cerr << "\n** MESH MISMATCH -" <<
             " some target cells are not fully covered by the source mesh\n";
 
-#ifndef NDEBUG
       // Find one target cell that is not fully covered by the source mesh and
       // output its ID
       for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
@@ -356,19 +357,19 @@ class MismatchFixer {
   ///
   /// partial_fixup_type can be one of three types:
   ///
-  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
-  ///            NON-CONSERVATIVE (constant preserving, not linearity
-  ///            preserving)
-  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
-  ///                        will preserve the integral quantities received from
-  ///                        source mesh overlap) but perturbations will
-  ///                        occur in the field (constant fields may not stay
-  ///                        constant if there is mismatch)
-  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
-  ///                        perturbations will be minimum but field
-  ///                        values may be shifted (Constant fields
-  ///                        will be shifted to different constant; no
-  ///                        guarantees on linearity preservation)
+  /// CONSTANT              - Fields will see no perturbations BUT REMAP WILL BE
+  ///                         NON-CONSERVATIVE (constant preserving,
+  ///                         not linearity preserving)
+  /// LOCALLY_CONSERVATIVE  - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                         will preserve the integral quantities received
+  ///                         from source mesh overlap) but perturbations will
+  ///                         occur in the field (constant fields may not stay
+  ///                         constant if there is mismatch)
+  /// GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
+  ///                         values of field on source and target will match);
+  ///                         field perturbations will be minimized to the
+  ///                         extent possible (constant fields will shift to a
+  ///                         different constant; not linearity preserving)
   ///
   /// empty_fixup_type can be one of two types:
   ///
@@ -383,7 +384,7 @@ class MismatchFixer {
                     double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                     int maxiter = 5,
                     Partial_fixup_type partial_fixup_type =
-                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Partial_fixup_type::GLOBALLY_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
                     Empty_fixup_type::EXTRAPOLATE) {
 
@@ -391,9 +392,9 @@ class MismatchFixer {
     // Make sure the user isn't trying to do a global fixup without a global check.
     // A serial run will always proceed.
     if (distributed_ && !global_check_ && 
-                        partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+                        partial_fixup_type==Partial_fixup_type::GLOBALLY_CONSERVATIVE) {
      throw std::runtime_error( 
-       "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+       "Cannot implement GLOBALLY_CONSERVATIVE in a distributed run without MPI!");
     }
 
     // Make sure the user isn't trying to extrapolate into empty cels without having
@@ -427,7 +428,7 @@ class MismatchFixer {
                             double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                             int maxiter = 5,
                             Partial_fixup_type partial_fixup_type =
-                            Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                            Partial_fixup_type::GLOBALLY_CONSERVATIVE,
                             Empty_fixup_type empty_fixup_type =
                             Empty_fixup_type::EXTRAPOLATE) {
 
@@ -492,7 +493,7 @@ class MismatchFixer {
           }
           if (nave)
             aveval /= nave;
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
           else
             std::cerr <<
                 "No owned neighbors of empty entity to extrapolate data from\n";
@@ -510,7 +511,7 @@ class MismatchFixer {
 
       return true;
 
-    } else if (partial_fixup_type == Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+    } else if (partial_fixup_type == Partial_fixup_type::GLOBALLY_CONSERVATIVE) {
     
       // At this point assume that all cells have some value in them
       // for the variable
@@ -599,8 +600,10 @@ class MismatchFixer {
               target_data[t] = global_lower_bound;
 
               if (!hit_lobound) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
                 std::cerr << "Hit lower bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
+#endif
                 hit_lobound = true;
               }
 
@@ -617,8 +620,10 @@ class MismatchFixer {
               target_data[t] = global_upper_bound;
 
               if (!hit_hibound) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
                 std::cerr << "Hit upper bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
+#endif
                 hit_hibound = true;
               }
 
@@ -682,8 +687,9 @@ class MismatchFixer {
       }  // while leftover is not zero
 
       if (fabs(reldiff) > conservation_tol) {
+        // We actually want to tell users about this
         if (rank_ == 0) {
-          std::cerr << "Redistribution not entirely successfully for variable " <<
+          std::cerr << "Redistribution of conserved quantity (due to mesh mismatch) not entirely successfully for variable " <<
               src_var_name << "\n";
           std::cerr << "Relative conservation error is " << reldiff << "\n";
           std::cerr << "Absolute conservation error is " << global_diff << "\n";
@@ -693,8 +699,7 @@ class MismatchFixer {
 
       return true;
     } else {
-      std::cerr << "Unknown Partial fixup type\n";
-      return false;
+      throw std::runtime_error("Unknown Partial fixup type");
     }
 
   }  // fix_mismatch_meshvar
@@ -756,7 +761,7 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
-#ifndef NDEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
 
     int global_nempty = nempty;
 #ifdef WONTON_ENABLE_MPI

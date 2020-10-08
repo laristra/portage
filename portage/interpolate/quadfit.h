@@ -87,7 +87,7 @@ class Limited_Quadfit {
   /// cells, nodes
 
   Vector<D*(D+3)/2> operator()(int entity_id) {
-    std::cerr << "Limited quadfit not implemented for this entity kind\n";
+    throw std::runtime_error("Limited quadfit not implemented for this entity kind");
   }
 
  private:

@@ -14,6 +14,7 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <utility>
 #include <vector>
+#include <type_traits>
 
 #include "wonton/support/wonton.h"
 #include "wonton/support/CoordinateSystem.h"
@@ -153,8 +154,7 @@ namespace Portage {
      */
     void set_interpolation_variable(std::string const& variable_name,
                                     const Wonton::vector<Vector<D>>* gradient_field = nullptr) {
-      std::cerr << "Interpolation is available for only cells and nodes";
-      std::cerr << std::endl;
+      throw std::runtime_error("Interpolation is available for only cells and nodes");
     }
 
     /**
@@ -176,9 +176,7 @@ namespace Portage {
                       std::vector<Weights_t> const& sources_and_weights) const {
 
       // not implemented for all types - see specialization for cells and nodes
-      std::cerr << "Error: interpolation operator not implemented for this entity type";
-      std::cerr << std::endl;
-      return 0.;
+      throw std::runtime_error("Error: interpolation operator not implemented for this entity type");
     }
 
     constexpr static int order = 2;
@@ -619,9 +617,7 @@ namespace Portage {
       if (field_type_ == Field_type::MESH_FIELD) {
         source_state_.mesh_get_data(Entity_kind::NODE, variable_name, &source_values_);
       } else {
-        std::cerr << "Sorry: cannot remap node-centered multi-material data.";
-        std::cerr << std::endl;
-        return;
+        throw std::runtime_error("Sorry: cannot remap node-centered multi-material data.");
       }
     }
 
@@ -675,7 +671,7 @@ namespace Portage {
 
         Vector<D> gradient = gradient_field[src_node];
         Vector<D> dr = intersect_centroid - source_coord;
-        CoordSys::modify_line_element(dr, source_coord);
+        CoordSys::template modify_line_element<D>(dr, source_coord);
 
         double value = source_values_[src_node] + dot(gradient, dr);
         value *= intersect_volume;
@@ -714,6 +710,7 @@ namespace Portage {
 #endif
   };
   /* ------------------------------------------------------------------------ */
+
 }  // namespace Portage
 
 #endif  // PORTAGE_INTERPOLATE_INTERPOLATE_2ND_ORDER_H_

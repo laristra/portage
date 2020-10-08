@@ -95,7 +95,7 @@ public:
   /** empty cells fixup policy */
   Portage::Empty_fixup_type empty_fixup = Portage::EXTRAPOLATE;
   /** partially overlapped cells fixup policy */
-  Portage::Partial_fixup_type partial_fixup = Portage::SHIFTED_CONSERVATIVE;
+  Portage::Partial_fixup_type partial_fixup = Portage::GLOBALLY_CONSERVATIVE;
 
   /**
    * @brief Parse and store parameters.
@@ -242,7 +242,7 @@ public:
       else if (parts_fixup == "constant")
         partial_fixup = Portage::Partial_fixup_type::CONSTANT;
       else
-        partial_fixup = Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE;
+        partial_fixup = Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE;
 
       if (empts_fixup == "leave_empty")
         empty_fixup = Portage::Empty_fixup_type::LEAVE_EMPTY;

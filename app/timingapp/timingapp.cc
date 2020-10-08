@@ -37,8 +37,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/timer.h"
 #include "portage/driver/mmdriver.h"
 
-#define ENABLE_TIMINGS 1
-
 using Wonton::Jali_Mesh_Wrapper;
 using Portage::argsort;
 using Portage::reorder;
@@ -413,7 +411,7 @@ int main(int argc, char** argv) {
         sourceData[i] = const_val;
     } else {
       if (dim == 2) {
-        Portage::Point<2> nodexy;
+        Wonton::Point<2> nodexy;
         for (int i = 0; i < nsrcnodes; ++i) {
           sourceMeshWrapper.node_get_coordinates(i, &nodexy);
           if (poly_order == 1)
@@ -422,7 +420,7 @@ int main(int argc, char** argv) {
             sourceData[i] = nodexy[0]*nodexy[0] + nodexy[1]*nodexy[1];
         }
       } else {  // 3d
-        Portage::Point<3> nodexyz;
+        Wonton::Point<3> nodexyz;
         for (int i = 0; i < nsrcnodes; ++i) {
           sourceMeshWrapper.node_get_coordinates(i, &nodexyz);
           if (poly_order == 1)
@@ -536,7 +534,7 @@ int main(int argc, char** argv) {
 
 #else
   // Output results for small test cases
-  double error, toterr = 0.0;
+  double error = 0.0, toterr = 0.0;
   double const * cellvecout;
   double const * nodevecout;
 
@@ -550,7 +548,7 @@ int main(int argc, char** argv) {
 
     if (dim == 2) {
       for (int c = 0; c < ntarcells; ++c) {
-        Portage::Point<2> ccen;
+        Wonton::Point<2> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
 
         if (poly_order == 0)
@@ -558,8 +556,7 @@ int main(int argc, char** argv) {
         else if (poly_order == 1)
           error = ccen[0] + ccen[1] - cellvecout[c];
         else  // quadratic
-          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] + ccen[2]*ccen[2] -
-              cellvecout[c];
+          error = ccen[0]*ccen[0] + ccen[1]*ccen[1] - cellvecout[c];
 
         if (numpe == 1 && n_target < 10) {
           std::printf("Cell=% 4d Centroid = (% 5.3lf,% 5.3lf)", c,
@@ -571,7 +568,7 @@ int main(int argc, char** argv) {
       }
     } else {  // dim == 3
       for (int c = 0; c < ntarcells; ++c) {
-        Portage::Point<3> ccen;
+        Wonton::Point<3> ccen;
         targetMeshWrapper.cell_centroid(c, &ccen);
 
         if (poly_order == 0)
@@ -602,7 +599,7 @@ int main(int argc, char** argv) {
                 << std::endl;
 
     if (dim == 2) {
-      Portage::Point<2> nodexy;
+      Wonton::Point<2> nodexy;
       for (int i = 0; i < ntarnodes; ++i) {
         targetMeshWrapper.node_get_coordinates(i, &nodexy);
 
@@ -622,7 +619,7 @@ int main(int argc, char** argv) {
         toterr += error*error;
       }
     } else {  // dim == 3
-      Portage::Point<3> nodexyz;
+      Wonton::Point<3> nodexyz;
       for (int i = 0; i < ntarnodes; ++i) {
         targetMeshWrapper.node_get_coordinates(i, &nodexyz);
 
@@ -707,14 +704,14 @@ int main(int argc, char** argv) {
     // construct the field file name and open the file
 
     std::string fieldfilename = "field_" +
-        std::to_string(static_cast<long long>(dim)) + "d_" +
-        entstr + "_f" + std::to_string(static_cast<long long>(poly_order)) + "_r" +
-        std::to_string(static_cast<long long>(interp_order));
+        std::to_string(dim) + "d_" +
+        entstr + "_f" + std::to_string(poly_order) + "_r" +
+        std::to_string(interp_order);
     if (!conformal) fieldfilename = fieldfilename + "_nc";
     if (reverse_source_ranks) fieldfilename = fieldfilename + "_rev";
     fieldfilename = fieldfilename + ".txt";
     if (numpe > 1) {
-      int maxwidth = static_cast<long long>(std::ceil(std::log10(numpe)));
+      int maxwidth = static_cast<int>(std::ceil(std::log10(numpe)));
       char rankstr[10];
       std::snprintf(rankstr, sizeof(rankstr), "%0*d", maxwidth, rank);
       fieldfilename = fieldfilename + "." + std::string(rankstr);
@@ -724,8 +721,9 @@ int main(int argc, char** argv) {
     fout.precision(17);
 
     // write out the values
+    int const nlgid= lgid.size();
 
-    for (int i=0; i < lgid.size(); i++)
+    for (int i=0; i < nlgid; i++)
       fout << lgid[i] << " " << lvalues[i] << std::endl;
   }  // if (dump_output)
 #endif

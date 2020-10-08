@@ -98,7 +98,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // exact results for Partial_fixup_type:
   //	CONSTANT (C)
   //  LOCALLY_CONSERVATIVE (L)
-  //  SHIFTED_CONSERVATIVE (S)
+  //  GLOBALLY_CONSERVATIVE (S)
   // and Empty_fixup_type:
   // 	EXTRAPOLATE (E)
   //  LEAVE_EMPTY (L)
@@ -153,12 +153,12 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
     "cellvars","cellvars", source_weights, &gradients);
 
-  // test (SHIFTED_CONSERVATIVE,EXTRAPOLATE)
+  // test (GLOBALLY_CONSERVATIVE,EXTRAPOLATE)
   if (driver.has_mismatch())
     driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
       Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
       Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
-      Portage::SHIFTED_CONSERVATIVE, Portage::EXTRAPOLATE);
+      Portage::GLOBALLY_CONSERVATIVE, Portage::EXTRAPOLATE);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_E[c], targetvec[c], TOL);
@@ -198,12 +198,12 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   driver.interpolate_mesh_var<double,Portage::Interpolate_1stOrder>(
     "cellvars","cellvars", source_weights, &gradients);
 
-  // test (SHIFTED_CONSERVATIVE,LEAVE_EMPTY)
+  // test (GLOBALLY_CONSERVATIVE,LEAVE_EMPTY)
   if (driver.has_mismatch())
     driver.fix_mismatch("cellvars","cellvars", 0.0, dblmax,
       Portage::DEFAULT_NUMERIC_TOLERANCES<3>.relative_conservation_eps,
       Portage::DEFAULT_NUMERIC_TOLERANCES<3>.max_num_fixup_iter,
-      Portage::SHIFTED_CONSERVATIVE, Portage::LEAVE_EMPTY);
+      Portage::GLOBALLY_CONSERVATIVE, Portage::LEAVE_EMPTY);
 
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(exact_S_L[c], targetvec[c], TOL);

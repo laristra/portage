@@ -86,8 +86,7 @@ namespace Portage {
     // Functor - not implemented for all types - see specialization for
     // cells, nodes
     Vector<D> operator()(int entity_id) {
-      std::cerr << "Limited gradient not implemented for this entity kind";
-      std::cerr << std::endl;
+      throw std::runtime_error("Limited gradient not implemented for this entity kind");
     }
 
   private:
@@ -466,7 +465,8 @@ namespace Portage {
 
       int const m = material_id_ + 1;
       int const c = get_relative_index(cellid, m);
-#ifndef NDEBUG
+
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
         for (int i = 0; i < M.rows(); ++i) {
