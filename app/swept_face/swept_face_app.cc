@@ -566,8 +566,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                         Wonton::Jali_Mesh_Wrapper,
                         Wonton::Jali_State_Wrapper,
                         Tangram::MOF,
-                        Tangram::SplitR2D,
-                        Tangram::ClipR2D>
+                        Tangram::SplitRnD<2>,
+                        Tangram::ClipRnD<2>>
       remapper(source_mesh_wrapper, source_state_wrapper,
                target_mesh_wrapper, target_state_wrapper, executor);
 #endif
@@ -630,8 +630,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
                         Wonton::Jali_Mesh_Wrapper,
                         Wonton::Jali_State_Wrapper,
                         Tangram::MOF,
-                        Tangram::SplitR3D,
-                        Tangram::ClipR3D>
+                        Tangram::SplitRnD<3>,
+                        Tangram::ClipRnD<3>>
       remapper(source_mesh_wrapper, source_state_wrapper,
                target_mesh_wrapper, target_state_wrapper, executor);
 #endif

@@ -18,7 +18,7 @@
 #include "portage/support/portage.h"
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"   // TEMPORARY until Tangram is fixed
-  #include "tangram/intersect/split_r2d.h"
+  #include "tangram/intersect/split_rnd.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
 
@@ -46,8 +46,8 @@ protected:
                                                     Wonton::Jali_State_Wrapper,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Tangram::MOF,
-                                                    Tangram::SplitR2D,
-                                                    Tangram::ClipR2D>;
+                                                    Tangram::SplitRnD<2>,
+                                                    Tangram::ClipRnD<2>>;
 #else
   using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
@@ -87,7 +87,7 @@ public:
     ir_tols[1] = {100, 1.0e-15, 1.0e-15};  
 
     ir = std::make_shared<Tangram::Driver<Tangram::MOF, 2, Wonton::Jali_Mesh_Wrapper, 
-         Tangram::SplitR2D, Tangram::ClipR2D>>(source_mesh_wrapper, ir_tols, false); 
+         Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>>(source_mesh_wrapper, ir_tols, false); 
 #endif
   }
 
@@ -183,7 +183,7 @@ protected:
   //interface reconstructor
   //std::vector<Tangram::IterativeMethodTolerances_t> ir_tols(2, {1000, 1e-12, 1e-12});
   std::shared_ptr<Tangram::Driver<Tangram::MOF, 2, Wonton::Jali_Mesh_Wrapper, 
-                  Tangram::SplitR2D, Tangram::ClipR2D>> ir; 
+                  Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>> ir; 
 
 #endif
 };

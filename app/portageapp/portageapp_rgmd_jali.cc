@@ -477,8 +477,8 @@ class interface_reconstructor_factory<2, MeshWrapper>{
 
   auto operator()() -> decltype(auto) {
     return std::make_shared<Tangram::Driver<Tangram::MOF, 2, MeshWrapper,
-                                            Tangram::SplitR2D,
-                                            Tangram::ClipR2D>>(mesh_, tols_, all_convex_);
+                                            Tangram::SplitRnD<2>,
+                                            Tangram::ClipRnD<2>>>(mesh_, tols_, all_convex_);
   }
 
  private:
@@ -497,8 +497,8 @@ class interface_reconstructor_factory<3, MeshWrapper>{
 
   auto operator()() -> decltype(auto) {
     return std::make_shared<Tangram::Driver<Tangram::MOF, 3, MeshWrapper,
-                                            Tangram::SplitR3D,
-                                            Tangram::ClipR3D>>(mesh_, tols_, all_convex_);
+                                            Tangram::SplitRnD<3>,
+                                            Tangram::ClipRnD<3>>>(mesh_, tols_, all_convex_);
   }
 
  private:
@@ -1309,8 +1309,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::IR_2D,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
+          Tangram::SplitRnD<2>,
+          Tangram::ClipRnD<2>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1327,8 +1327,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::IR_2D,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
+          Tangram::SplitRnD<2>,
+          Tangram::ClipRnD<2>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1349,8 +1349,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
+          Tangram::SplitRnD<3>,
+          Tangram::ClipRnD<3>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1367,8 +1367,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
+          Tangram::SplitRnD<3>,
+          Tangram::ClipRnD<3>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1391,8 +1391,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
+          Tangram::SplitRnD<2>,
+          Tangram::ClipRnD<2>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1409,8 +1409,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
+          Tangram::SplitRnD<2>,
+          Tangram::ClipRnD<2>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1431,8 +1431,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
+          Tangram::SplitRnD<3>,
+          Tangram::ClipRnD<3>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);
@@ -1449,8 +1449,8 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
           Wonton::Jali_Mesh_Wrapper,
           Wonton::Jali_State_Wrapper,
           Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
+          Tangram::SplitRnD<3>,
+          Tangram::ClipRnD<3>>
             driver(sourceMeshWrapper, sourceStateWrapper,
                    targetMeshWrapper, targetStateWrapper);
         driver.set_remap_var_names(remap_fields);

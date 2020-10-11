@@ -214,8 +214,8 @@ void run(
   tols[0] = {1000, 1.0e-15, 1.0e-15};
   tols[1] = {100, 1.0e-15, 1.0e-15};
   Tangram::Driver<Tangram::MOF, 2, Simple_Mesh_Wrapper,
-                                   Tangram::SplitR2D,
-                                   Tangram::ClipR2D>
+                                   Tangram::SplitRnD<2>,
+                                   Tangram::ClipRnD<2>>
       interface_reconstructor{source_mesh_wrapper, tols, true};
 
   // convert from Portage points to Tangram points
@@ -351,8 +351,8 @@ void run(
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::MOF,
-      Tangram::SplitR2D,
-      Tangram::ClipR2D>
+      Tangram::SplitRnD<2>,
+      Tangram::ClipRnD<2>>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
@@ -369,8 +369,8 @@ void run(
       Simple_Mesh_Wrapper,
       Simple_State_Wrapper<Simple_Mesh_Wrapper>,
       Tangram::MOF,
-      Tangram::SplitR2D,
-      Tangram::ClipR2D>
+      Tangram::SplitRnD<2>,
+      Tangram::ClipRnD<2>>
         d(source_mesh_wrapper, source_state,
           target_mesh_wrapper, target_state);
     d.set_remap_var_names(remap_fields);
@@ -481,8 +481,8 @@ void run(
   auto target_interface_reconstructor = std::make_shared<Tangram::Driver<
                                         Tangram::MOF, 2,
                                         Simple_Mesh_Wrapper,
-                                        Tangram::SplitR2D,
-                                        Tangram::ClipR2D>>
+                                        Tangram::SplitRnD<2>,
+                                        Tangram::ClipRnD<2>>>
                                         (target_mesh_wrapper, tols, true);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,

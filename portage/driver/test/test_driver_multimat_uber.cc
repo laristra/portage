@@ -619,7 +619,7 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
@@ -980,7 +980,7 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -1321,7 +1321,7 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::VOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 

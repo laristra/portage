@@ -17,7 +17,7 @@
 #include "portage/support/portage.h"
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"  // TEMPORARY till we fix Tangram
-  #include "tangram/intersect/split_r3d.h"
+  #include "tangram/intersect/split_rnd.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
 
@@ -45,8 +45,8 @@ protected:
                                                     Wonton::Jali_State_Wrapper,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Tangram::MOF,
-                                                    Tangram::SplitR3D,
-                                                    Tangram::ClipR3D>;
+                                                    Tangram::SplitRnD<3>,
+                                                    Tangram::ClipRnD<3>>;
 #else
   using Intersector = Portage::IntersectSweptFace3D<Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,

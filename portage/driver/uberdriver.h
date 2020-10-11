@@ -29,11 +29,13 @@
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rnd.h"   // included for the easy
+                                           // access of Split_RnD,
+                                           // Clip_RnD classes by apps
+                                           // instantiating this class
+#endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#endif
 
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"

@@ -143,7 +143,7 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
 
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
@@ -295,7 +295,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
 
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
@@ -371,7 +371,7 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                         Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                         Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                        Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
+                                        Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>;
 
   // create meshes and related states
   auto source_mesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
@@ -470,7 +470,7 @@ TEST(SweptFaceRemap, MassConservationConstantField2D) {
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+                                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -533,7 +533,7 @@ TEST(SweptFaceRemap, MassConservationConstantField3D) {
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
+                                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
 

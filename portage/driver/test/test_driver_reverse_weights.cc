@@ -115,7 +115,7 @@ TEST(ReverseWeights, MultiMat) {
   using Remapper = Portage::CoreDriver<2, Wonton::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+                                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   auto source_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 5, 5);
@@ -261,7 +261,7 @@ TEST(ReverseWeights, Redistributed) {
                                        Wonton::Flat_Mesh_Wrapper<>,
                                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+                                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   Jali::MeshFactory mesh_factory(comm);

@@ -262,7 +262,7 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder_MisMatch) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -653,7 +653,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -1016,7 +1016,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
   Portage::UberDriver<3,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -1462,7 +1462,7 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
   Portage::UberDriver<3,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 

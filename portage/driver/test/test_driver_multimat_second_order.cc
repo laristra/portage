@@ -595,7 +595,7 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                    Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -935,7 +935,7 @@ for (int ic = 0; ic < num_matcells; ic++) {
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                    Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -1252,7 +1252,7 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                    Tangram::VOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);

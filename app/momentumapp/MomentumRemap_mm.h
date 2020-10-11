@@ -538,7 +538,7 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
                     Mesh_Wrapper, State_Wrapper,
                     Mesh_Wrapper, State_Wrapper,
                     Tangram::IR_2D,
-                    Tangram::SplitR2D, Tangram::ClipR2D>
+                    Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       mmd(srcmesh, srcstate,
           trgmesh, trgstate);
 

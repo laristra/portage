@@ -675,7 +675,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
 		      Portage::Interpolate_1stOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+		      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
@@ -686,7 +686,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
 		      Portage::Interpolate_2ndOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+		      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
@@ -697,7 +697,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
 		      Portage::Interpolate_1stOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+		      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
@@ -708,7 +708,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
 		      Portage::Interpolate_2ndOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+		      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
@@ -1072,7 +1072,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
                       Wonton::Flat_Mesh_Wrapper<>, 
                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
 

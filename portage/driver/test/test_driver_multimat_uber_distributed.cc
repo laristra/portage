@@ -715,7 +715,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
@@ -731,7 +731,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
@@ -748,7 +748,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
@@ -765,7 +765,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
