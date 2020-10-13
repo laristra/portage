@@ -124,7 +124,7 @@ TEST(Test_MultiVar_Remap, Test1) {
   /////////
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,
@@ -251,7 +251,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   // Build the main driver object
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,
@@ -290,7 +290,7 @@ TEST(Test_MultiVar_Remap, Nested_Meshes) {
   // Build the main driver object
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_2ndOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,

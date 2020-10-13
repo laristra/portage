@@ -36,8 +36,7 @@
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/driver/fix_mismatch.h"
@@ -91,7 +90,7 @@ using namespace Wonton;
   the problem and the source mesh class as template parameters
 */
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
@@ -769,7 +768,7 @@ class MMDriver {
 // remap routine specialization for cells
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
@@ -1005,7 +1004,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 // remap routine specialization for nodes
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,

@@ -261,7 +261,7 @@ public:
 
   template<
     template <int, Entity_kind, class, class> class Search,
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
@@ -366,7 +366,7 @@ public:
 
   template<
     Entity_kind ONWHAT,
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
@@ -433,7 +433,7 @@ public:
   */
 
   template<
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >

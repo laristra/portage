@@ -343,7 +343,7 @@ void run(
   if (interp_order == 1) {
     Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       2,
       Simple_Mesh_Wrapper,
@@ -361,7 +361,7 @@ void run(
   } else if (interp_order == 2) {
     Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_2ndOrder,
       2,
       Simple_Mesh_Wrapper,

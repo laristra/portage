@@ -845,7 +845,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_1stOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -863,7 +863,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
       } else if (interp_order == 2) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_2ndOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -885,7 +885,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_1stOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -903,7 +903,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
       } else if (interp_order == 2) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_2ndOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -926,7 +926,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
     if (interp_order == 1) {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_1stOrder,
         3,
         Wonton::Jali_Mesh_Wrapper,
@@ -944,7 +944,7 @@ template<int dim, bool all_convex> void run(std::shared_ptr<Jali::Mesh> sourceMe
     } else {  // 2nd order & 3D
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_2ndOrder,
         3,
         Wonton::Jali_Mesh_Wrapper,

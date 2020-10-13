@@ -32,8 +32,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/search/search_points_by_cells.h"
@@ -191,7 +190,7 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-  template<Portage::Entity_kind, class, class, class,
+  template<int, Portage::Entity_kind, class, class, class,
   template <class, int, class, class> class,
   class, class> class Intersect,
   template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -514,7 +513,7 @@ protected:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-    template<Portage::Entity_kind, class, class, class,
+   template<int, Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
     class, class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -860,12 +859,12 @@ void runjob2(Controls<3> ctl0, std::string filename)
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR2D,
+      msmguy.runit<Portage::IntersectRnD,
 		   Portage::Interpolate_1stOrder,
 		   Portage::SearchPointsByCells>();
 
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR2D,
+      msmguy.runit<Portage::IntersectRnD,
                    Portage::Interpolate_2ndOrder,
                    Portage::SearchPointsByCells>();
     }
@@ -881,11 +880,11 @@ void runjob2(Controls<3> ctl0, std::string filename)
 
     if (DIM==2) {
       if (ctl.order == 1) {
-        msmguy.runit<Portage::IntersectR2D,
+        msmguy.runit<Portage::IntersectRnD,
                      Portage::Interpolate_1stOrder,
                      Portage::SearchPointsByCells>();
       } else if (ctl.order == 2) {
-        msmguy.runit<Portage::IntersectR2D,
+        msmguy.runit<Portage::IntersectRnD,
                      Portage::Interpolate_2ndOrder,
                      Portage::SearchPointsByCells>();
       }
@@ -914,12 +913,12 @@ void runjob3(Controls<3> ctl0, std::string filename)
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
+      msmguy.runit<Portage::IntersectRnD,
 		   Portage::Interpolate_1stOrder,
 		   Portage::SearchPointsByCells>();
 
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
+      msmguy.runit<Portage::IntersectRnD,
                    Portage::Interpolate_2ndOrder,
                    Portage::SearchPointsByCells>();
     }
@@ -934,11 +933,11 @@ void runjob3(Controls<3> ctl0, std::string filename)
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
+      msmguy.runit<Portage::IntersectRnD,
                    Portage::Interpolate_1stOrder,
                    Portage::SearchPointsByCells>();
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
+      msmguy.runit<Portage::IntersectRnD,
                    Portage::Interpolate_2ndOrder,
                    Portage::SearchPointsByCells>();
     }

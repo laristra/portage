@@ -95,7 +95,7 @@ void remap<2>(std::string const& field, int nb_parts,
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   for (auto&& part : parts_registry) {
 
@@ -169,7 +169,7 @@ void remap<3>(std::string const& field, int nb_parts,
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR3D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   for (auto&& part : parts_registry) {
 

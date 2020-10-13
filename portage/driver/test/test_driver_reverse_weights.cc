@@ -19,7 +19,7 @@
 
 // portage
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/driver/coredriver.h"
 #include "portage/distributed/mpi_bounding_boxes.h"
@@ -32,7 +32,7 @@
 // tangram
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/MOF.h"
-#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_rnd.h"
 
 TEST(ReverseWeights, SingleMat) {
 
@@ -55,7 +55,7 @@ TEST(ReverseWeights, SingleMat) {
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto forward_weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto forward_weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
   auto reverse_weights = remapper.deduce_reverse_weights(forward_weights);
 
   int const num_source_cells = source_mesh_wrapper.num_entities(Wonton::CELL, Wonton::ALL);
@@ -195,7 +195,7 @@ TEST(ReverseWeights, MultiMat) {
                     target_mesh_wrapper, target_state_wrapper);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto forward_weights = remapper.intersect_materials<Portage::IntersectR2D>(candidates);
+  auto forward_weights = remapper.intersect_materials<Portage::IntersectRnD>(candidates);
   auto reverse_weights = remapper.deduce_reverse_material_weights(forward_weights, index_lookup);
 
 #ifdef DEBUG
@@ -388,7 +388,7 @@ TEST(ReverseWeights, Redistributed) {
                     target_mesh_wrapper, target_state_wrapper, &executor);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto forward_weights = remapper.intersect_materials<Portage::IntersectR2D>(candidates);
+  auto forward_weights = remapper.intersect_materials<Portage::IntersectRnD>(candidates);
   auto reverse_weights = remapper.deduce_reverse_material_weights(forward_weights, index_lookup);
 
   // check if the given source cell is contained in

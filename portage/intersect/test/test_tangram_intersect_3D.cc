@@ -16,7 +16,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "tangram/support/MatPoly.h"
 
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 
 double eps = 1.e-8;
 

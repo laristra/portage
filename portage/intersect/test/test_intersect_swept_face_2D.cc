@@ -41,18 +41,20 @@ class IntersectSweptBase2D : public testing::Test {
 
 protected:
 #ifdef PORTAGE_HAS_TANGRAM
-  using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
-                                                    Wonton::Jali_Mesh_Wrapper,
-                                                    Wonton::Jali_State_Wrapper,
-                                                    Wonton::Jali_Mesh_Wrapper,
-                                                    Tangram::MOF,
-                                                    Tangram::SplitRnD<2>,
-                                                    Tangram::ClipRnD<2>>;
+  using Intersector = Portage::IntersectSweptFace<2,
+                                                  Wonton::Entity_kind::CELL,
+                                                  Wonton::Jali_Mesh_Wrapper,
+                                                  Wonton::Jali_State_Wrapper,
+                                                  Wonton::Jali_Mesh_Wrapper,
+                                                  Tangram::MOF,
+                                                  Tangram::SplitRnD<2>,
+                                                  Tangram::ClipRnD<2>>;
 #else
-  using Intersector = Portage::IntersectSweptFace2D<Wonton::Entity_kind::CELL,
-                                                    Wonton::Jali_Mesh_Wrapper,
-                                                    Wonton::Jali_State_Wrapper,
-                                                    Wonton::Jali_Mesh_Wrapper>;
+  using Intersector = Portage::IntersectSweptFace<2,
+                                                  Wonton::Entity_kind::CELL,
+                                                  Wonton::Jali_Mesh_Wrapper,
+                                                  Wonton::Jali_State_Wrapper,
+                                                  Wonton::Jali_Mesh_Wrapper>;
 #endif
 public:
   /**

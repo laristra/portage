@@ -37,8 +37,7 @@
 //Tangram includes
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rnd.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 
@@ -671,7 +670,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
 
   if ((dim == 2) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_1stOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -682,7 +681,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 2) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_2ndOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -693,7 +692,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 3) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_1stOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -704,7 +703,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 3) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_2ndOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -1077,7 +1076,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
 
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmax =  std::numeric_limits<double>::max();
 

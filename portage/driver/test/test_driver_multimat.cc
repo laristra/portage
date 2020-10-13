@@ -26,8 +26,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rnd.h"
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
 
@@ -244,7 +243,7 @@ TEST(MMDriver, ThreeMat2D_MOF_1stOrderRemap) {
   //-------------------------------------------------------------------
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_1stOrder,
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -580,7 +579,7 @@ TEST(MMDriver, ThreeMat3D_MOF_1stOrderRemap) {
 
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR3D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_1stOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -901,7 +900,7 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
   //  -------------------------------------------------------------------
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_1stOrder,
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -1204,7 +1203,7 @@ TEST(MMDriver, ThreeMat3D_VOF_1stOrderRemap) {
 
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR3D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_1stOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,

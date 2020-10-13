@@ -1301,7 +1301,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_1stOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -1319,7 +1319,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       } else if (interp_order == 2) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR2D,
+          Portage::IntersectRnD,
           Portage::Interpolate_2ndOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -1341,7 +1341,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR3D,
+          Portage::IntersectRnD,
           Portage::Interpolate_1stOrder,
           3,
           Wonton::Jali_Mesh_Wrapper,
@@ -1359,7 +1359,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       } else {  // 2nd order & 3D
         Portage::MMDriver<
           Portage::SearchKDTree,
-          Portage::IntersectR3D,
+          Portage::IntersectRnD,
           Portage::Interpolate_2ndOrder,
           3,
           Wonton::Jali_Mesh_Wrapper,
@@ -1383,7 +1383,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchSweptFace,
-          Portage::IntersectSweptFace2D,
+          Portage::IntersectSweptFace,
           Portage::Interpolate_1stOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -1401,7 +1401,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       } else if (interp_order == 2) {
         Portage::MMDriver<
           Portage::SearchSweptFace,
-          Portage::IntersectSweptFace2D,
+          Portage::IntersectSweptFace,
           Portage::Interpolate_2ndOrder,
           2,
           Wonton::Jali_Mesh_Wrapper,
@@ -1423,7 +1423,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       if (interp_order == 1) {
         Portage::MMDriver<
           Portage::SearchSweptFace,
-          Portage::IntersectSweptFace3D,
+          Portage::IntersectSweptFace,
           Portage::Interpolate_1stOrder,
           3,
           Wonton::Jali_Mesh_Wrapper,
@@ -1441,7 +1441,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
       } else {  // 2nd order & 3D
         Portage::MMDriver<
           Portage::SearchSweptFace,
-          Portage::IntersectSweptFace3D,
+          Portage::IntersectSweptFace,
           Portage::Interpolate_2ndOrder,
           3,
           Wonton::Jali_Mesh_Wrapper,

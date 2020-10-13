@@ -34,8 +34,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 
 // tangram
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rnd.h"
 #include "tangram/reconstruct/MOF.h"
 
 // Integrated tests for single material swept-face remap
@@ -569,7 +568,7 @@ TEST(SweptFaceRemap, MassConservationConstantField3D) {
 
   auto candidates = remapper.search<Portage::SearchSweptFace>();
   auto gradients  = remapper.compute_source_gradient("density");
-  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
+  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace>(candidates);
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "density", "density", weights, &gradients

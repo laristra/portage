@@ -29,8 +29,7 @@
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_swept_face.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/support/portage.h"
@@ -585,8 +584,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
     // compute interpolation weights using intersection or swept regions moments.
     auto weights = (intersect_based
-      ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
-      : remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates));
+      ? remapper.template intersect_meshes<Portage::IntersectRnD>(candidates)
+      : remapper.template intersect_meshes<Portage::IntersectSweptFace>(candidates));
 
 #if ENABLE_TIMINGS
     profiler->time.intersect += timer::elapsed(tic, true);
@@ -650,8 +649,8 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
 
     // compute interpolation weights using intersection or swept regions moments.
     auto weights = (intersect_based
-      ? remapper.template intersect_meshes<Portage::IntersectR3D>(candidates)
-      : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
+      ? remapper.template intersect_meshes<Portage::IntersectRnD>(candidates)
+      : remapper.template intersect_meshes<Portage::IntersectSweptFace>(candidates));
 
 #if ENABLE_TIMINGS
     profiler->time.intersect += timer::elapsed(tic, true);

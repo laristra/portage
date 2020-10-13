@@ -660,7 +660,7 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder_MisMatch) {
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1023,7 +1023,7 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder_MisMatch) {
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1469,7 +1469,7 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder_MisMatch) {
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
