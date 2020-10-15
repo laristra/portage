@@ -5,7 +5,7 @@ COMPILER:
   - gcc6
   - gcc7
 
-BUILD_TYPE:
+CONFIG_TYPE:
   - base
   - debug
   - serial
@@ -16,13 +16,13 @@ BUILD_TYPE:
 
 exclude:
   - COMPILER: intel18
-    BUILD_TYPE: flecsi
+    CONFIG_TYPE: flecsi
   - COMPILER: intel18
-    BUILD_TYPE: coverage
+    CONFIG_TYPE: coverage
   - COMPILER: gcc6
-    BUILD_TYPE: readme
+    CONFIG_TYPE: readme
   - COMPILER: gcc7
-    BUILD_TYPE: readme
+    CONFIG_TYPE: readme
   - COMPILER: gcc7
-    BUILD_TYPE: flecsi    
+    CONFIG_TYPE: flecsi    
 

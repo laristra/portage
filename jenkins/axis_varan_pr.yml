@@ -4,7 +4,7 @@ COMPILER:
   - intel18
   - gcc6
 
-BUILD_TYPE:
+CONFIG_TYPE:
   - base
   - serial
   - thrust
@@ -14,8 +14,8 @@ BUILD_TYPE:
 
 exclude:
   - COMPILER: intel18
-    BUILD_TYPE: flecsi
+    CONFIG_TYPE: flecsi
   - COMPILER: gcc6
-    BUILD_TYPE: readme 
+    CONFIG_TYPE: readme 
 
 
