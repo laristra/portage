@@ -32,7 +32,7 @@
 // tangram
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/MOF.h"
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 
 TEST(ReverseWeights, SingleMat) {
 

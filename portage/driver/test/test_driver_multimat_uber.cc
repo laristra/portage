@@ -31,7 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"

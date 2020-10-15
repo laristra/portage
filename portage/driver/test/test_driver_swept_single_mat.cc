@@ -34,7 +34,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 
 // tangram
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/MOF.h"
 
 // Integrated tests for single material swept-face remap

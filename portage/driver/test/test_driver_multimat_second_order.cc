@@ -36,7 +36,7 @@ double TOL = 1e-6;
 // for some reason, tangram headers should be included
 // after portage ones, otherwise this error may occur:
 // error: ‘CellMatPoly’ was not declared in this scope.
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 
 #ifdef TANGRAM_ENABLE_XMOF2D
   #include "tangram/reconstruct/xmof2D_wrapper.h"

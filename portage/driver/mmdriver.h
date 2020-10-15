@@ -26,7 +26,7 @@
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/intersect/split_rnd.h"   // included for the easy
+#include "tangram/intersect/split_rNd.h"   // included for the easy
                                            // access of Split_RnD,
                                            // Clip_RnD classes by apps
                                            // instantiating this class

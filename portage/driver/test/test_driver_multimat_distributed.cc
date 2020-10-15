@@ -37,7 +37,7 @@
 //Tangram includes
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
 

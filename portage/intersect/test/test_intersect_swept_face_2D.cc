@@ -18,7 +18,7 @@
 #include "portage/support/portage.h"
 #ifdef PORTAGE_HAS_TANGRAM
   #include "tangram/driver/CellMatPoly.h"   // TEMPORARY until Tangram is fixed
-  #include "tangram/intersect/split_rnd.h"
+  #include "tangram/intersect/split_rNd.h"
   #include "tangram/reconstruct/MOF.h"
 #endif
 

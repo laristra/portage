@@ -39,7 +39,7 @@
 
 
 //Tangram includes
-#include "tangram/intersect/split_rnd.h"
+#include "tangram/intersect/split_rNd.h"
 #ifndef IR_2D
   #ifdef TANGRAM_ENABLE_XMOF2D
     #include "tangram/reconstruct/xmof2D_wrapper.h"
