@@ -1,0 +1,20 @@
+# axis_varan.yml
+# matrix of builds tested nightly on varan
+COMPILER:
+  - intel18
+  - gcc6
+  - gcc7
+
+CONFIG_TYPE:
+  - base
+  - debug
+  - serial
+  - thrust
+  - flecsi
+
+exclude:
+  - COMPILER: intel18
+    CONFIG_TYPE: flecsi
+  - COMPILER: gcc7
+    CONFIG_TYPE: flecsi    
+
