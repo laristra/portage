@@ -533,12 +533,12 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::RemapND(
 
   // === Step 4 (SGH and CCH)
   // -- remap density and specific momentum
-  Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+  Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
                     Portage::Interpolate_2ndOrder, 2,
                     Mesh_Wrapper, State_Wrapper,
                     Mesh_Wrapper, State_Wrapper,
                     Tangram::IR_2D,
-                    Tangram::SplitR2D, Tangram::ClipR2D>
+                    Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       mmd(srcmesh, srcstate,
           trgmesh, trgstate);
 

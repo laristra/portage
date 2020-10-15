@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # This script is executed on Jenkins using
 #
-#     $WORKSPACE/jenkins/build_matrix_entry_hpc.sh BUILD_TYPE <VER> <WONTON_VER>
+#     $WORKSPACE/jenkins/build_matrix_entry_varan.sh BUILD_TYPE <VER> <WONTON_VER>
 #
-# BUILD_TYPE - pr, nightly, install
+# BUILD_TYPE  -  pr, nightly, install
 #
 # if VER is abset, the HEAD of the master branch will be taken. If
 # WONTON_VER is absent, the HEAD of the master branch of wonton will
@@ -11,13 +11,15 @@
 # install it to /install_prefix/tangram/$VER-blah-blah; if VER is not
 # specified, it will install to /install_prefix/wonton/dev-blah-blah
 #
+# Note that the following environment variables must be set (Jenkins
+# will do this automatically).
+#
 # WORKSPACE   -  where the code is checked out
 # CONFIG_TYPE -  base, debug, serial, readme, thrust, kokkos
 # COMPILER    -  intel, gcc6, gcc7
-# BRANCH_NAME -  master
+# BRANCH_NAME -  master, kokkos
 #
 # The exit code determines if the test succeeded or failed.
-
 
 # Exit on error
 set -e
@@ -28,7 +30,6 @@ set -x
 umask 007
 
 BUILD_TYPE=$1
-build_type=$2
 version=$2
 if [[ $version == "" ]]; then
     version=dev
@@ -46,44 +47,45 @@ echo "inside build_matrix on PLATFORM=$PLATFORM with BUILD_TYPE=$BUILD_TYPE $CON
 
 # special case for README builds
 if [[ $BUILD_TYPE != "install" && $CONFIG_TYPE == "readme" ]]; then
-
-    # Put a couple of settings in place to generate test output even if
-    # the README doesn't ask for it.
-    export CTEST_OUTPUT_ON_FAILURE=1 
-    CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
-    sed "s/^ *cmake/& $CACHE_OPTIONS/g" $WORKSPACE/README.md >$WORKSPACE/README.md.1
-    python2 $WORKSPACE/jenkins/parseREADME.py \
-	    $WORKSPACE/README.md.1 \
-	    $WORKSPACE \
-	    sn-fey
-    exit
-
+  # Put a couple of settings in place to generate test output even if
+  # the README doesn't ask for it.
+  export CTEST_OUTPUT_ON_FAILURE=1
+  CACHE_OPTIONS="-D ENABLE_JENKINS_OUTPUT=True"
+  sed "s/^ *cmake/& $CACHE_OPTIONS/g" $WORKSPACE/README.md >$WORKSPACE/README.md.1
+  python2 $WORKSPACE/jenkins/parseREADME.py \
+      $WORKSPACE/README.md.1 \
+      $WORKSPACE \
+      varan
+  exit
 fi
 
 # set modules and install paths
 
-export NGC=/usr/projects/ngc
+export NGC=/usr/local/codes/ngc
 ngc_include_dir=$NGC/private/include
 
 
 # compiler-specific settings
 if [[ $COMPILER =~ "intel" ]]; then
 
-    compiler_version=18.0.5
+    compiler_version=18.0.1
     cxxmodule=intel/${compiler_version}
     compiler_suffix="-intel-${compiler_version}"
-
+    
     openmpi_version=2.1.2
     mpi_module=openmpi/${openmpi_version}
     mpi_suffix="-openmpi-${openmpi_version}"
-    
+
 elif [[ $COMPILER =~ "gcc" ]]; then
 
     openmpi_version=2.1.2
     if [[ $COMPILER == "gcc6" ]]; then
 	compiler_version=6.4.0
     elif [[ $COMPILER == "gcc7" ]]; then
-	compiler_version=7.4.0
+	compiler_version=7.3.0
+    elif [[ $COMPILER == "gcc8" ]]; then
+	compiler_version=8.2.0
+	openmpi_version=3.1.3
     fi
     
     cxxmodule=gcc/${compiler_version}
@@ -91,8 +93,9 @@ elif [[ $COMPILER =~ "gcc" ]]; then
 
     mpi_module=openmpi/${openmpi_version}
     mpi_suffix="-openmpi-${openmpi_version}"
-
+    
 fi
+
 
 # Jali
 jali_flags="-D PORTAGE_ENABLE_Jali::BOOL=True"
@@ -137,26 +140,25 @@ tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:FILEPATH=$tangram_
 portage_install_dir=$NGC/private/portage/${version}${compiler_suffix}${mpi_suffix}${thrust_suffix}${kokkos_suffix}${debug_suffix}
 
 
-# Coverage
-cov_flags=
-if [[ $build_type == "coverage" ]]; then
-    cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage' -D CMAKE_EXE_LINKER_FLAGS=-coverage"
-    cmake_build_type=Debug
-    export PATH=$NGC/private/bin:${PATH}
+if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
+  flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True" # FleCSI found through Wonton
 fi
 
 
-#Rely on default user environment to load modules; these scripts can be found in /etc/profile.d/ as of 8/25/20 the scripts that set up modules on snow are  /etc/profile.d/z00_lmod.sh; /etc/profile.d/00-modulepath.sh; /etc/profile.d/z01-modules.lanl.sh;
+export SHELL=/bin/sh
+
+export MODULEPATH=""
+. /opt/local/packages/Modules/default/init/sh
 module load $cxxmodule
-if [[ -n "$mpi_flags" ]]; then
-    module load ${mpi_module}
-fi
 module load cmake/3.14.0 # 3.13 or higher is required
 
-echo "JENKINS WORKSPACE = $WORKSPACE"
+if [[ -n "$mpi_flags" ]] ; then
+  module load ${mpi_module}
+fi
+
+echo $WORKSPACE
 cd $WORKSPACE
 
-rm -fr build
 mkdir build
 cd build
 
@@ -174,19 +176,13 @@ cmake \
   $flecsi_flags \
   $cov_flags \
   ..
+make -j2
+ctest --output-on-failure
 
-make -j36
-ctest -j36 --output-on-failure  && true #keep going if tests fail so that we get coverage report 
-status=$?
-
-if [[ $CONFIG_TYPE == "coverage" ]]; then                     
-    echo 'building coverage reports'
-    export PYTHONPATH=/usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/lib/python2.7/site-packages
-    /usr/projects/ngc/private/gcovr/var/lib/perceus/vnfs/asc-fe/rootfs/usr/bin/gcovr -f "$(readlink -f ..)"  -e '.*googletest' -e '.*exprtk.hpp' -e '.*json.h' -e '.*CMakeFiles' -x >coverage.xml
+if [[ $CONFIG_TYPE == "coverage" ]]; then
+  gcovr -r .. -x  >coverage.xml
 fi
 
-if [[ $BUILD_TYPE == "config" ]]; then
+if [[ $BUILD_TYPE == "install" ]]; then
     make install
 fi
-
-exit $status #return the status of the ctest build so that jenkins knows whether tests past or fail

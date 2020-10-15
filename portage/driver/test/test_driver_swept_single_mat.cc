@@ -34,8 +34,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/interpolate/interpolate_2nd_order.h"
 
 // tangram
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/MOF.h"
 
 // Integrated tests for single material swept-face remap
@@ -143,7 +142,7 @@ TEST(SweptFaceRemap, 2D_1stOrder) {
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
 
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
@@ -295,7 +294,7 @@ TEST(SweptFaceRemap, 2D_2ndOrder) {
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
 
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
@@ -371,7 +370,7 @@ TEST(SweptFaceRemap, 3D_2ndOrder) {
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                         Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                         Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                        Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
+                                        Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>;
 
   // create meshes and related states
   auto source_mesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0,0.0,0.0,1.0,1.0,1.0,5,5,5);
@@ -470,7 +469,7 @@ TEST(SweptFaceRemap, MassConservationConstantField2D) {
   using Remapper = Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+                                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -533,7 +532,7 @@ TEST(SweptFaceRemap, MassConservationConstantField3D) {
   using Remapper = Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>;
+                                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>;
 
   MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -569,7 +568,7 @@ TEST(SweptFaceRemap, MassConservationConstantField3D) {
 
   auto candidates = remapper.search<Portage::SearchSweptFace>();
   auto gradients  = remapper.compute_source_gradient("density");
-  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace3D>(candidates);
+  auto weights    = remapper.intersect_meshes<Portage::IntersectSweptFace>(candidates);
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "density", "density", weights, &gradients

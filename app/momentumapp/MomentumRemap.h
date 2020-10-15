@@ -386,7 +386,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
          trgmesh_wrapper, trgstate_wrapper);
 
   auto candidates = cd.template search<Portage::SearchKDTree>();
-  auto srcwts = cd.template intersect_meshes<Portage::IntersectRND<D>::template Intersect>(candidates);
+  auto srcwts = cd.template intersect_meshes<Portage::IntersectRnD>(candidates);
 
   // -- we need to register fields that we want to remap
   std::vector<std::string> field_names;

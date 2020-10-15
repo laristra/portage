@@ -86,7 +86,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
         targetMeshWrapper, targetStateWrapper);
 
   auto candidates = driver.search<Portage::SearchKDTree>();
-  auto source_weights = driver.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto source_weights = driver.intersect_meshes<Portage::IntersectRnD>(candidates);
   auto gradients = driver.compute_source_gradient("cellvars");
 
   driver.check_mismatch(source_weights);

@@ -29,8 +29,7 @@
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
 #include "portage/intersect/intersect_swept_face.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/support/portage.h"
@@ -550,135 +549,69 @@ void remap(std::shared_ptr<Jali::Mesh> source_mesh,
   MPI_Barrier(comm);
 
   // the remapper to use
-  if (dim == 2) { //2D
 #ifndef PORTAGE_HAS_TANGRAM
-    Portage::CoreDriver<2,
-                        Wonton::Entity_kind::CELL,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper>
-      remapper(source_mesh_wrapper, source_state_wrapper,
-               target_mesh_wrapper, target_state_wrapper, executor);
+  Portage::CoreDriver<dim,
+                      Wonton::Entity_kind::CELL,
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper>
+    remapper(source_mesh_wrapper, source_state_wrapper,
+             target_mesh_wrapper, target_state_wrapper, executor);
 #else
-    Portage::CoreDriver<2,
-                        Wonton::Entity_kind::CELL,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper,
-                        Tangram::MOF,
-                        Tangram::SplitR2D,
-                        Tangram::ClipR2D>
-      remapper(source_mesh_wrapper, source_state_wrapper,
-               target_mesh_wrapper, target_state_wrapper, executor);
+  Portage::CoreDriver<dim,
+                      Wonton::Entity_kind::CELL,
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper,
+                      Wonton::Jali_Mesh_Wrapper,
+                      Wonton::Jali_State_Wrapper,
+                      Tangram::MOF,
+                      Tangram::SplitRnD<dim>,
+                      Tangram::ClipRnD<dim>>
+    remapper(source_mesh_wrapper, source_state_wrapper,
+             target_mesh_wrapper, target_state_wrapper, executor);
 #endif
 
 #if ENABLE_TIMINGS
-    auto tic = timer::now();
+  auto tic = timer::now();
 #endif
 
-    // search for neighboring cells candidates
-    auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
-                                       : remapper.template search<Portage::SearchSweptFace>());
+  // search for neighboring cells candidates
+  auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
+                                     : remapper.template search<Portage::SearchSweptFace>());
 #if ENABLE_TIMINGS
-    profiler->time.search += timer::elapsed(tic, true);
+  profiler->time.search += timer::elapsed(tic, true);
 #endif
 
-    // compute interpolation weights using intersection or swept regions moments.
-    auto weights = (intersect_based
-      ? remapper.template intersect_meshes<Portage::IntersectR2D>(candidates)
-      : remapper.template intersect_meshes<Portage::IntersectSweptFace2D>(candidates));
-
-#if ENABLE_TIMINGS
-    profiler->time.intersect += timer::elapsed(tic, true);
-#endif
-
-    // interpolate the field eventually
-    if (interp_order == 1) {
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
-                                                                                    "density",
-                                                                                    weights);
-    } else if (interp_order == 2) {
-      auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+  // compute interpolation weights using intersection or swept regions moments.
+  auto weights = (intersect_based
+    ? remapper.template intersect_meshes<Portage::IntersectRnD>(candidates)
+    : remapper.template intersect_meshes<Portage::IntersectSweptFace>(candidates));
 
 #if ENABLE_TIMINGS
-      profiler->time.gradient += timer::elapsed(tic);
+  profiler->time.intersect += timer::elapsed(tic, true);
 #endif
 
-     remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
-                                                                                    "density",
-                                                                                    weights, &gradients);
+  // interpolate the field eventually
+  if (interp_order == 1) {
+    remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
+                                                                                  "density",
+                                                                                  weights);
+  } else if (interp_order == 2) {
+    auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
+
+#if ENABLE_TIMINGS
+    profiler->time.gradient += timer::elapsed(tic);
+#endif
+
+    remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
+                                                                                  "density",
+                                                                                  weights, &gradients);
 										    
-    }
-
-#if ENABLE_TIMINGS
-     profiler->time.interpolate += timer::elapsed(tic, true);
-#endif
-
-  } else { //3D
-#ifndef PORTAGE_HAS_TANGRAM
-    Portage::CoreDriver<3,
-                        Wonton::Entity_kind::CELL,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper>
-      remapper(source_mesh_wrapper, source_state_wrapper,
-               target_mesh_wrapper, target_state_wrapper, executor);
-#else
-    Portage::CoreDriver<3,
-                        Wonton::Entity_kind::CELL,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper,
-                        Wonton::Jali_Mesh_Wrapper,
-                        Wonton::Jali_State_Wrapper,
-                        Tangram::MOF,
-                        Tangram::SplitR3D,
-                        Tangram::ClipR3D>
-      remapper(source_mesh_wrapper, source_state_wrapper,
-               target_mesh_wrapper, target_state_wrapper, executor);
-#endif
-
-#if ENABLE_TIMINGS
-    auto tic = timer::now();
-#endif
-
-    // search for neighboring cells candidates
-    auto candidates = (intersect_based ? remapper.template search<Portage::SearchKDTree>()
-                                       : remapper.template search<Portage::SearchSweptFace>());
-
-#if ENABLE_TIMINGS
-    profiler->time.search += timer::elapsed(tic, true);
-#endif
-
-    // compute interpolation weights using intersection or swept regions moments.
-    auto weights = (intersect_based
-      ? remapper.template intersect_meshes<Portage::IntersectR3D>(candidates)
-      : remapper.template intersect_meshes<Portage::IntersectSweptFace3D>(candidates));
-
-#if ENABLE_TIMINGS
-    profiler->time.intersect += timer::elapsed(tic, true);
-#endif
-
-    // interpolate the field eventually
-    if (interp_order == 1) {
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_1stOrder>("density",
-                                                                                    "density",
-                                                                                    weights);
-    } else if (interp_order == 2) {
-      auto gradients = remapper.compute_source_gradient("density", limiter, bnd_limiter);
-
-#if ENABLE_TIMINGS
-      profiler->time.gradient += timer::elapsed(tic);
-#endif
-
-      remapper.template interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>("density",
-                                                                                    "density",
-                                                                                    weights, &gradients);
-    }
-
-#if ENABLE_TIMINGS
-     profiler->time.interpolate += timer::elapsed(tic, true);
-#endif
-
   }
+
+#if ENABLE_TIMINGS
+  profiler->time.interpolate += timer::elapsed(tic, true);
+#endif
+
 
 #if ENABLE_TIMINGS
   profiler->time.remap = profiler->time.search + 

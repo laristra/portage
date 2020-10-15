@@ -26,6 +26,10 @@
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
+#include "tangram/intersect/split_rNd.h"   // included for the easy
+                                           // access of Split_RnD,
+                                           // Clip_RnD classes by apps
+                                           // instantiating this class
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
@@ -191,7 +195,7 @@ class CoreDriver {
     @return vector of intersection moments for each target entity
   */
 
-  template<template <Entity_kind, class, class, class,
+  template<template <int, Entity_kind, class, class, class,
                      template <class, int, class, class> class,
                      class, class> class Intersect>
   Wonton::vector<std::vector<Wonton::Weights_t>>
@@ -216,7 +220,7 @@ class CoreDriver {
     int nents = target_mesh_.num_entities(ONWHAT, PARALLEL_OWNED);
     Wonton::vector<std::vector<Portage::Weights_t>> sources_and_weights(nents);
       
-    Intersect<ONWHAT, SourceMesh, SourceState, TargetMesh,
+    Intersect<D, ONWHAT, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
         intersector(source_mesh_, source_state_, target_mesh_, num_tols_);
 
@@ -314,7 +318,7 @@ class CoreDriver {
   */
 
   template<
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
@@ -388,7 +392,7 @@ class CoreDriver {
     // about the interface reconstructor so that it can retrieve pure
     // material polygons
 
-    Intersect<CELL, SourceMesh, SourceState, TargetMesh,
+    Intersect<D, CELL, SourceMesh, SourceState, TargetMesh,
               InterfaceReconstructorType, Matpoly_Splitter, Matpoly_Clipper>
         intersector(source_mesh_, source_state_, target_mesh_, num_tols_,
                     interface_reconstructor_);

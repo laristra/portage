@@ -49,7 +49,7 @@ public:
   using portage_1st_order_driver_t =
       Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       mesh_t::num_dimensions,
       flecsi_mesh_t,
@@ -104,7 +104,7 @@ public:
   using portage_1st_order_driver_t =
       Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR3D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       mesh_t::num_dimensions,
       flecsi_mesh_t,

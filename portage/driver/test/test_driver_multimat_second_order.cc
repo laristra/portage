@@ -27,8 +27,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/driver/mmdriver.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 
@@ -37,8 +36,8 @@ double TOL = 1e-6;
 // for some reason, tangram headers should be included
 // after portage ones, otherwise this error may occur:
 // error: ‘CellMatPoly’ was not declared in this scope.
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"
+
 #ifdef TANGRAM_ENABLE_XMOF2D
   #include "tangram/reconstruct/xmof2D_wrapper.h"
 #endif
@@ -245,7 +244,7 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
   //-------------------------------------------------------------------
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_2ndOrder,
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
@@ -590,12 +589,12 @@ TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
 
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR3D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_2ndOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                    Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -930,12 +929,12 @@ for (int ic = 0; ic < num_matcells; ic++) {
   //-------------------------------------------------------------------
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR2D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_2ndOrder,
                     2,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                    Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
@@ -1247,12 +1246,12 @@ TEST(UberDriver, TwoMat3D_VOF_2ndOrderRemap) {
   Wonton::SerialExecutor_type executor;
 
   Portage::MMDriver<Portage::SearchKDTree,
-                    Portage::IntersectR3D,
+                    Portage::IntersectRnD,
                     Portage::Interpolate_2ndOrder,
                     3,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                     Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                    Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                    Tangram::VOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
   d.set_remap_var_names(remap_fields);

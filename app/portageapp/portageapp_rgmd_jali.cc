@@ -510,52 +510,6 @@ void rotor_material_data(const Mesh_Wrapper& mesh,
     vol_tol, dst_tol, decompose_cells);
 }
 
-// Generic interface reconstructor factory
-
-template<int dim, class MeshWrapper>
-class interface_reconstructor_factory {};
-  
-// Specializations
-template<class MeshWrapper>
-class interface_reconstructor_factory<2, MeshWrapper>{
- public:
-  interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  std::vector<Tangram::IterativeMethodTolerances_t> const& tols,
-                                  bool all_convex) :
-      mesh_(mesh), tols_(tols), all_convex_(all_convex) {};
-
-  auto operator()() -> decltype(auto) {
-    return std::make_shared<Tangram::Driver<Tangram::MOF, 2, MeshWrapper,
-                                            Tangram::SplitR2D,
-                                            Tangram::ClipR2D>>(mesh_, tols_, all_convex_);
-  }
-
- private:
-  MeshWrapper const& mesh_;
-  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
-  bool all_convex_;
-};
-
-template<class MeshWrapper>
-class interface_reconstructor_factory<3, MeshWrapper>{
- public:
-  interface_reconstructor_factory(MeshWrapper const& mesh,
-                                  std::vector<Tangram::IterativeMethodTolerances_t> const& tols,
-                                  bool all_convex) :
-      mesh_(mesh), tols_(tols), all_convex_(all_convex) {};
-
-  auto operator()() -> decltype(auto) {
-    return std::make_shared<Tangram::Driver<Tangram::MOF, 3, MeshWrapper,
-                                            Tangram::SplitR3D,
-                                            Tangram::ClipR3D>>(mesh_, tols_, all_convex_);
-  }
-
- private:
-  MeshWrapper const& mesh_;
-  std::vector<Tangram::IterativeMethodTolerances_t> tols_;
-  bool all_convex_;
-};
-
 // Forward declaration of function to run remap on two meshes and
 // return the L1 and L2 error norm in the remapped field w.r.t. to an
 // analytically imposed field. If no field was imposed, the errors are
@@ -1280,9 +1234,15 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   ims_tols[0] = {1000, dst_tol, vol_tol};
   ims_tols[1] = {100, 1.0e-15, 1.0e-15};
 
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper> 
-    source_IRFactory(sourceMeshWrapper, ims_tols, source_convex_cells);
-  auto source_interface_reconstructor = source_IRFactory();
+  auto source_interface_reconstructor =
+      std::make_shared<Tangram::Driver<Tangram::MOF,
+                                       dim,
+                                       Wonton::Jali_Mesh_Wrapper,
+                                       Tangram::SplitRnD<dim>,
+                                       Tangram::ClipRnD<dim>
+                                       >
+                       >(sourceMeshWrapper, ims_tols, source_convex_cells);
+
 
   source_interface_reconstructor->set_volume_fractions(cell_num_mats,
                                                        cell_mat_ids,
@@ -1374,168 +1334,84 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
 
   if(intersect) {
-    if (dim == 2) {
-      if (interp_order == 1) {
-        Portage::MMDriver<
-          Portage::SearchKDTree,
-          Portage::IntersectR2D,
-          Portage::Interpolate_1stOrder,
-          2,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      } else if (interp_order == 2) {
-        Portage::MMDriver<
-          Portage::SearchKDTree,
-          Portage::IntersectR2D,
-          Portage::Interpolate_2ndOrder,
-          2,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::IR_2D,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_limiter(limiter);
-        driver.set_bnd_limiter(bnd_limiter);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      }
-    } else {  // 3D
-      if (interp_order == 1) {
-        Portage::MMDriver<
-          Portage::SearchKDTree,
-          Portage::IntersectR3D,
-          Portage::Interpolate_1stOrder,
-          3,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      } else {  // 2nd order & 3D
-        Portage::MMDriver<
-          Portage::SearchKDTree,
-          Portage::IntersectR3D,
-          Portage::Interpolate_2ndOrder,
-          3,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_limiter(limiter);
-        driver.set_bnd_limiter(bnd_limiter);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      }
+    if (interp_order == 1) {
+      Portage::MMDriver<
+        Portage::SearchKDTree,
+        Portage::IntersectRnD,
+        Portage::Interpolate_1stOrder,
+        dim,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Tangram::MOF,
+        Tangram::SplitRnD<dim>,
+        Tangram::ClipRnD<dim>>
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
+      driver.run(executor);
+    } else if (interp_order == 2) {
+      Portage::MMDriver<
+        Portage::SearchKDTree,
+        Portage::IntersectRnD,
+        Portage::Interpolate_2ndOrder,
+        dim,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Tangram::MOF,
+        Tangram::SplitRnD<dim>,
+        Tangram::ClipRnD<dim>>
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
+      driver.run(executor);
     }
   } else { // swept face
-    if (dim == 2) {
-      if (interp_order == 1) {
-        Portage::MMDriver<
-          Portage::SearchSweptFace,
-          Portage::IntersectSweptFace2D,
-          Portage::Interpolate_1stOrder,
-          2,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      } else if (interp_order == 2) {
-        Portage::MMDriver<
-          Portage::SearchSweptFace,
-          Portage::IntersectSweptFace2D,
-          Portage::Interpolate_2ndOrder,
-          2,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR2D,
-          Tangram::ClipR2D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_limiter(limiter);
-        driver.set_bnd_limiter(bnd_limiter);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      }
-    } else {  // 3D
-      if (interp_order == 1) {
-        Portage::MMDriver<
-          Portage::SearchSweptFace,
-          Portage::IntersectSweptFace3D,
-          Portage::Interpolate_1stOrder,
-          3,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      } else {  // 2nd order & 3D
-        Portage::MMDriver<
-          Portage::SearchSweptFace,
-          Portage::IntersectSweptFace3D,
-          Portage::Interpolate_2ndOrder,
-          3,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Wonton::Jali_Mesh_Wrapper,
-          Wonton::Jali_State_Wrapper,
-          Tangram::MOF,
-          Tangram::SplitR3D,
-          Tangram::ClipR3D>
-            driver(sourceMeshWrapper, sourceStateWrapper,
-                   targetMeshWrapper, targetStateWrapper);
-        driver.set_remap_var_names(remap_fields);
-        driver.set_limiter(limiter);
-        driver.set_bnd_limiter(bnd_limiter);
-        driver.set_reconstructor_options(source_convex_cells, ims_tols);
-        driver.run(executor);
-      }
+    if (interp_order == 1) {
+      Portage::MMDriver<
+        Portage::SearchSweptFace,
+        Portage::IntersectSweptFace,
+        Portage::Interpolate_1stOrder,
+        dim,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Tangram::MOF,
+        Tangram::SplitRnD<dim>,
+        Tangram::ClipRnD<dim>>
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
+      driver.run(executor);
+    } else if (interp_order == 2) {
+      Portage::MMDriver<
+        Portage::SearchSweptFace,
+        Portage::IntersectSweptFace,
+        Portage::Interpolate_2ndOrder,
+        dim,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Wonton::Jali_Mesh_Wrapper,
+        Wonton::Jali_State_Wrapper,
+        Tangram::MOF,
+        Tangram::SplitRnD<dim>,
+        Tangram::ClipRnD<dim>>
+          driver(sourceMeshWrapper, sourceStateWrapper,
+                 targetMeshWrapper, targetStateWrapper);
+      driver.set_remap_var_names(remap_fields);
+      driver.set_limiter(limiter);
+      driver.set_bnd_limiter(bnd_limiter);
+      driver.set_reconstructor_options(source_convex_cells, ims_tols);
+      driver.run(executor);
     }
   }
 
@@ -1716,9 +1592,14 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   // Because we use the one and only MOF, we do NOT need the material data
   // on the ghost cells
 
-  interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
-    target_IRFactory(targetMeshWrapper, ims_tols, target_convex_cells);
-  auto target_interface_reconstructor = target_IRFactory();
+  auto target_interface_reconstructor =
+      std::make_shared<Tangram::Driver<Tangram::MOF,
+                                       dim,
+                                       Wonton::Jali_Mesh_Wrapper,
+                                       Tangram::SplitRnD<dim>,
+                                       Tangram::ClipRnD<dim>
+                                       >
+                       >(targetMeshWrapper, ims_tols, target_convex_cells);
 
   target_interface_reconstructor->set_volume_fractions(target_cell_num_mats,
                                                        target_cell_mat_ids,
@@ -1905,9 +1786,14 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   }
  
  //Step 2: Reconstruct interface using the exact material layout on target
- interface_reconstructor_factory<dim, Wonton::Jali_Mesh_Wrapper>
-    target_IRFactory_Exact(targetMeshWrapper, ims_tols, target_convex_cells);
-  auto target_interface_reconstructor_exact = target_IRFactory_Exact();
+  auto target_interface_reconstructor_exact =
+      std::make_shared<Tangram::Driver<Tangram::MOF,
+                                       dim,
+                                       Wonton::Jali_Mesh_Wrapper,
+                                       Tangram::SplitRnD<dim>,
+                                       Tangram::ClipRnD<dim>
+                                       >
+                       >(targetMeshWrapper, ims_tols, target_convex_cells);
 
   target_interface_reconstructor_exact->set_volume_fractions(trgex_cell_num_mats,
                                                        trgex_cell_mat_ids,

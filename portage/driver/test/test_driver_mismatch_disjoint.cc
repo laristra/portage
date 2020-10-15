@@ -91,7 +91,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // integral values of the source field on to the target
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,

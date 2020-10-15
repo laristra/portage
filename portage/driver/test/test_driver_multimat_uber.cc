@@ -22,8 +22,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/driver/uberdriver.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -32,8 +31,7 @@ Please see the license file at the root of this repository, or at:
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/VOF.h"
@@ -254,7 +252,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -619,11 +617,11 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   
   double dblmin = -std::numeric_limits<double>::max();
@@ -980,11 +978,11 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -1321,11 +1319,11 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::VOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   
   double dblmin = -std::numeric_limits<double>::max();
