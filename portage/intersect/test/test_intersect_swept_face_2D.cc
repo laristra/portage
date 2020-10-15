@@ -160,6 +160,7 @@ public:
 protected:
   // useful constants and aliases
   Portage::NumericTolerances_t num_tols;
+  double epsilon = 1.0e-16;
 
   // source and target meshes and states
   std::shared_ptr<Jali::Mesh> source_mesh;
@@ -291,8 +292,8 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   int nb_self_weights = 0;
 
   ASSERT_EQ(weights_internal.size(), unsigned(5));
-  ASSERT_DOUBLE_EQ(target_area, source_area);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(target_area, source_area, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
@@ -307,27 +308,27 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 3.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
           default: FAIL() << "forward::internal: invalid self weights count";
         } break;
       case 5:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon); break;
       case 7:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
       default: FAIL() << "forward::internal: unexpected moment entity index";
     }
   }
@@ -344,8 +345,8 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(4));
-  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(target_area, 0.5 * source_area, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
@@ -360,23 +361,23 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
           default: FAIL() << "forward::boundary: invalid self weights count";
         } break;
       case 8:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 5.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
         break;
       default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
@@ -392,8 +393,8 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), unsigned(3));
-  ASSERT_DOUBLE_EQ(target_area, 0.0);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(target_area, 0.0, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
@@ -408,17 +409,17 @@ TEST_F(IntersectSweptForward2D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon); break;
           default: FAIL() << "forward::corner: invalid self weights count";
         } break;
       default: FAIL() << "forward::corner: unexpected moment entity index";
@@ -473,8 +474,8 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
 
   //source_mesh->ce
   ASSERT_EQ(weights_internal.size(), unsigned(5));
-  ASSERT_DOUBLE_EQ(source_area, target_area);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
@@ -489,27 +490,27 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 3.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
           default: FAIL() << "backward::internal: invalid self weights count";
         } break;
       case 1:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 1.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 1.5, epsilon);
+        ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
       case 3:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 1.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 2.5, epsilon);
+        ASSERT_NEAR(centroid[1], 1.5, epsilon); break;
       default: FAIL() << "backward::internal: unexpected moment entity index";
     }
   }
@@ -526,8 +527,8 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), weights_internal.size());
-  ASSERT_DOUBLE_EQ(source_area, target_area);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
@@ -542,25 +543,25 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
           default: FAIL() << "backward::boundary: invalid self weights count";
         } break;
       case 4:
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 2.5); break;
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 2.5, epsilon); break;
       case 6:
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 1.5); break;
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 1.5, epsilon); break;
       default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
   }
@@ -578,8 +579,8 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), weights_internal.size());
-  ASSERT_DOUBLE_EQ(source_area, target_area);
-  ASSERT_DOUBLE_EQ(self_contrib, 0.0);
+  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_NEAR(self_contrib, 0.0, epsilon);
 
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
@@ -594,27 +595,27 @@ TEST_F(IntersectSweptBackward2D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon); break;
           default: FAIL() << "backward::corner: invalid self weights count";
         } break;
       case 5:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon); break;
       case 7:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.5); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon); break;
       default: FAIL() << "backward::corner: unexpected moment entity index";
     }
   }
@@ -666,8 +667,8 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   int nb_self_weights = 0;
 
   ASSERT_EQ(weights_internal.size(), unsigned(3));
-  ASSERT_DOUBLE_EQ(source_area, target_area);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+  ASSERT_NEAR(source_area, target_area, epsilon);
+  ASSERT_NEAR(self_contrib, unit_face_area, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const area = std::abs(moments.weights[0]);
@@ -682,19 +683,19 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           default: FAIL() << "one-axis::internal: invalid self weights count";
         } break;
       case 7:
-        ASSERT_DOUBLE_EQ(area, unit_face_area);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+        ASSERT_NEAR(area, unit_face_area, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
       default: FAIL() << "one-axis::internal: unexpected moment entity index";
     }
   }
@@ -711,8 +712,8 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(2));
-  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+  ASSERT_NEAR(target_area, 0.5 * source_area, epsilon);
+  ASSERT_NEAR(self_contrib, unit_face_area, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const area = std::abs(moments.weights[0]);
@@ -727,13 +728,13 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon); break;
           default: FAIL() << "one-axis::boundary: invalid self weights count";
         } break;
       default: FAIL() << "one-axis::boundary: unexpected moment entity index";
@@ -753,8 +754,8 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), weights_boundary.size());
-  ASSERT_DOUBLE_EQ(target_area, 0.5 * source_area);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_face_area);
+  ASSERT_NEAR(target_area, 0.5 * source_area, epsilon);
+  ASSERT_NEAR(self_contrib, unit_face_area, epsilon);
 
   for (auto const& moments : weights_corner) {
     auto const area = std::abs(moments.weights[0]);
@@ -769,13 +770,13 @@ TEST_F(IntersectSweptOneAxis2D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(area, 2 * unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+            ASSERT_NEAR(area, 2 * unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(area, unit_face_area);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0); break;
+            ASSERT_NEAR(area, unit_face_area, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon); break;
           default: FAIL() << "one-axis::corner: invalid self weights count";
         } break;
       default: FAIL() << "one-axis::corner: unexpected moment entity index";

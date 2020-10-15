@@ -282,8 +282,8 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   int nb_self_weights = 0;
 
   ASSERT_EQ(weights_internal.size(), unsigned(nb_hex_faces + 1));
-  ASSERT_DOUBLE_EQ(source_volume, target_volume);
-  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
+  ASSERT_NEAR(source_volume, target_volume, epsilon);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
@@ -299,42 +299,42 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           case 4:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           default: FAIL() << "forward::internal: invalid self weights count";
         } break;
       case 14:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon);
+        ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
       case 16:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
+        ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
       case 22:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon);
+        ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
       default: FAIL() << "forward::internal: unexpected moment entity index";
     }
   }
@@ -351,8 +351,8 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(nb_hex_faces - 1));
-  ASSERT_NEAR(target_volume, 0.0, 1.0e-15);
-  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
+  ASSERT_NEAR(target_volume, 0.0, epsilon);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
@@ -368,32 +368,32 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           case 4:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           default: FAIL() << "forward::boundary: invalid self weights count";
         } break;
       case 26:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 5.5, epsilon);
+        ASSERT_NEAR(centroid[1], 5.5, epsilon);
+        ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
       default: FAIL() << "forward::boundary: unexpected moment entity index";
     }
   }
@@ -410,8 +410,8 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), unsigned(nb_hex_faces - 2));
-  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
-  ASSERT_DOUBLE_EQ(target_volume, self_contrib);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
+  ASSERT_NEAR(target_volume, self_contrib, epsilon);
 
   for (auto const& moments : weights_corner) {
     auto const volume = std::abs(moments.weights[0]);
@@ -427,25 +427,25 @@ TEST_F(IntersectSweptForward3D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 4.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 4.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 5.5, epsilon); break;
           case 4:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 5.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 5.5, epsilon); break;
           default: FAIL() << "forward::corner: invalid self weights count";
         } break;
       default: FAIL() << "forward::corner: unexpected moment entity index";
@@ -499,7 +499,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
 
   ASSERT_EQ(weights_internal.size(), unsigned(nb_hex_faces + 1));
   ASSERT_NEAR(source_volume, target_volume, epsilon);
-  ASSERT_DOUBLE_EQ(self_contrib, -unit_region_volume);
+  ASSERT_NEAR(self_contrib, -unit_region_volume, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
@@ -515,42 +515,42 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.5, epsilon);
+            ASSERT_NEAR(centroid[1], 2.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           case 4:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           default: FAIL() << "backward::internal: invalid self weights count";
         } break;
       case 4:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 1.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 2.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 1.5, epsilon);
+        ASSERT_NEAR(centroid[1], 2.5, epsilon);
+        ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
       case 10:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 1.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 2.5, epsilon);
+        ASSERT_NEAR(centroid[1], 1.5, epsilon);
+        ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
       case 12:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 2.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 1.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 2.5, epsilon);
+        ASSERT_NEAR(centroid[1], 2.5, epsilon);
+        ASSERT_NEAR(centroid[2], 1.5, epsilon); break;
       default: FAIL() << "backward::internal: unexpected moment entity index";
     }
   }
@@ -584,42 +584,42 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 3.5, epsilon); break;
           case 3:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.5, epsilon);
+            ASSERT_NEAR(centroid[1], 4.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           case 4:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.5);
-            ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.5, epsilon);
+            ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
           default: FAIL() << "backward::boundary: invalid self weights count";
         } break;
       case 16:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 3.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
+        ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
       case 22:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 2.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.5, epsilon);
+        ASSERT_NEAR(centroid[2], 2.5, epsilon); break;
       case 24:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[2], 1.5); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 4.5, epsilon);
+        ASSERT_NEAR(centroid[2], 1.5, epsilon); break;
       default: FAIL() << "backward::boundary: unexpected moment entity index";
     }
   }
@@ -654,7 +654,7 @@ TEST_F(IntersectSweptBackward3D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(volume, 2 * unit_region_volume, 1.0);
             ASSERT_NEAR(centroid[0], 5.0, epsilon);
             ASSERT_NEAR(centroid[1], 5.0, epsilon);
             ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
@@ -740,8 +740,8 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   int nb_self_weights = 0;
 
   ASSERT_EQ(weights_internal.size(), unsigned(3));
-  ASSERT_DOUBLE_EQ(source_volume, target_volume);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+  ASSERT_NEAR(source_volume, target_volume, epsilon);
+  ASSERT_NEAR(self_contrib, unit_region_volume, epsilon);
 
   for (auto const& moments : weights_internal) {
     auto const volume = std::abs(moments.weights[0]);
@@ -756,22 +756,22 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
       case internal_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 3.0, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 2.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 3.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 2.5, epsilon);
+            ASSERT_NEAR(centroid[1], 3.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           default: FAIL() << "one-axis::internal: invalid self weights count";
         } break;
       case 22:
-        ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-        ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-        ASSERT_DOUBLE_EQ(centroid[1], 3.0);
-        ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+        ASSERT_NEAR(volume, unit_region_volume, epsilon);
+        ASSERT_NEAR(centroid[0], 4.5, epsilon);
+        ASSERT_NEAR(centroid[1], 3.0, epsilon);
+        ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
       default: FAIL() << "one-axis::internal: unexpected moment entity index";
     }
   }
@@ -788,8 +788,8 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_boundary.size(), unsigned(2));
-  ASSERT_DOUBLE_EQ(target_volume, 0.5 * source_volume);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+  ASSERT_NEAR(target_volume, 0.5 * source_volume, epsilon);
+  ASSERT_NEAR(self_contrib, unit_region_volume, epsilon);
 
   for (auto const& moments : weights_boundary) {
     auto const volume = std::abs(moments.weights[0]);
@@ -804,15 +804,15 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
       case boundary_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 3.0); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 3.0, epsilon); break;
           default: FAIL() << "one-axis::boundary: invalid self weights count";
         } break;
       default: FAIL() << "one-axis::boundary: unexpected moment entity index";
@@ -832,8 +832,8 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
   nb_self_weights = 0;
 
   ASSERT_EQ(weights_corner.size(), weights_boundary.size());
-  ASSERT_DOUBLE_EQ(target_volume, 0.5 * source_volume);
-  ASSERT_DOUBLE_EQ(self_contrib, unit_region_volume);
+  ASSERT_NEAR(target_volume, 0.5 * source_volume, epsilon);
+  ASSERT_NEAR(self_contrib, unit_region_volume, epsilon);
 
   for (auto const& moments : weights_corner) {
     auto const volume = std::abs(moments.weights[0]);
@@ -848,15 +848,15 @@ TEST_F(IntersectSweptOneAxis3D, MomentsCheck) {
       case corner_cell:
         switch (++nb_self_weights) {
           case 1:
-            ASSERT_DOUBLE_EQ(volume, 2 * unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+            ASSERT_NEAR(volume, 2 * unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 5.0, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
           case 2:
-            ASSERT_DOUBLE_EQ(volume, unit_region_volume);
-            ASSERT_DOUBLE_EQ(centroid[0], 4.5);
-            ASSERT_DOUBLE_EQ(centroid[1], 5.0);
-            ASSERT_DOUBLE_EQ(centroid[2], 5.0); break;
+            ASSERT_NEAR(volume, unit_region_volume, epsilon);
+            ASSERT_NEAR(centroid[0], 4.5, epsilon);
+            ASSERT_NEAR(centroid[1], 5.0, epsilon);
+            ASSERT_NEAR(centroid[2], 5.0, epsilon); break;
           default: FAIL() << "one-axis::corner: invalid self weights count";
         } break;
       default: FAIL() << "one-axis::corner: unexpected moment entity index";
