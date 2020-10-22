@@ -4,16 +4,11 @@ COMPILER:
   - gcc6
   - gcc7
 
-BUILD_TYPE:
+CONFIG_TYPE:
   - base
   - debug
   - serial
   - thrust
-  - readme
 
 exclude:
-  - COMPILER: gcc6
-    BUILD_TYPE: readme
-  - COMPILER: gcc7
-    BUILD_TYPE: readme
 

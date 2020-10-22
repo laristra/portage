@@ -1,21 +1,20 @@
-# axis_varan_pr.yml
-# matrix of builds tested for pull requests on varan
+# axis_varan.yml
+# matrix of builds tested nightly on varan
 COMPILER:
   - intel18
   - gcc6
+  - gcc7
 
 CONFIG_TYPE:
   - base
+  - debug
   - serial
   - thrust
   - flecsi
-  - readme
-  - singlemat
 
 exclude:
   - COMPILER: intel18
     CONFIG_TYPE: flecsi
-  - COMPILER: gcc6
-    CONFIG_TYPE: readme 
-
+  - COMPILER: gcc7
+    CONFIG_TYPE: flecsi    
 

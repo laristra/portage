@@ -25,8 +25,7 @@ Please see the license file at the root of this repository, or at:
 
 #include "tangram/driver/driver.h"
 #include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"
 #include "tangram/reconstruct/MOF.h"
 #include "tangram/reconstruct/SLIC.h"
 #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -243,14 +242,14 @@ TEST(UberDriverSwept, ThreeMat2D_1stOrder) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -615,14 +614,14 @@ TEST(UberDriverSwept, ThreeMat2D_2ndOrder) {
   Portage::UberDriver<2,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace2D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -964,14 +963,14 @@ TEST(UberDriverSwept, ThreeMat3D_1stOrder) {
   Portage::UberDriver<3,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1399,14 +1398,14 @@ TEST(UberDriverSwept, ThreeMat3D_2ndOrder) {
   Portage::UberDriver<3,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
   // Set all_convex to false, this is a requirement for MM swept-face remap
   d.set_interface_reconstructor_options(false); 
 
-  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace3D>();
+  d.compute_interpolation_weights<Portage::SearchSweptFace, Portage::IntersectSweptFace>();
 
   double dblmax =  std::numeric_limits<double>::max();
 

@@ -27,8 +27,7 @@ Please see the license file at the root of this repository, or at:
 #include "tangram/driver/write_to_gmv.h"
 
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 
@@ -92,7 +91,7 @@ TEST(CellDriver, 2D_2ndOrder) {
         targetMeshWrapper, targetStateWrapper);
 
   auto candidates = d.search<Portage::SearchKDTree>();
-  auto srcwts = d.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto srcwts = d.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
@@ -182,7 +181,7 @@ TEST(CellDriver, 3D_2ndOrder) {
         targetMeshWrapper, targetStateWrapper, &executor);
 
   auto candidates = d.search<Portage::SearchKDTree>();
-  auto srcwts = d.intersect_meshes<Portage::IntersectR3D>(candidates);
+  auto srcwts = d.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   auto gradients = d.compute_source_gradient("temperature");
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(

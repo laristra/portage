@@ -39,8 +39,7 @@
 
 
 //Tangram includes
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"
 #ifndef IR_2D
   #ifdef TANGRAM_ENABLE_XMOF2D
     #include "tangram/reconstruct/xmof2D_wrapper.h"
@@ -715,11 +714,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,
@@ -731,11 +730,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::IR_2D, Tangram::SplitR2D, Tangram::ClipR2D>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
     d.interpolate<double, Portage::Entity_kind::CELL,
                   Portage::Interpolate_2ndOrder>("density", "density",
@@ -748,11 +747,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,
@@ -765,11 +764,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,

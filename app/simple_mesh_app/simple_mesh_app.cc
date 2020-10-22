@@ -225,7 +225,7 @@ int main(int argc, char** argv) {
     if (example.order == 1) {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -237,7 +237,7 @@ int main(int argc, char** argv) {
     } else {  // 2nd order
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -352,7 +352,7 @@ int main(int argc, char** argv) {
     if (example.order == 1) {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -364,7 +364,7 @@ int main(int argc, char** argv) {
     } else {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,

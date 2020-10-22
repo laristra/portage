@@ -29,11 +29,13 @@
 
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
+#include "tangram/intersect/split_rNd.h"   // included for the easy
+                                           // access of Split_RnD,
+                                           // Clip_RnD classes by apps
+                                           // instantiating this class
+#endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
-#endif
 
 #include "portage/search/search_kdtree.h"
 #include "portage/search/search_swept_face.h"
@@ -259,7 +261,7 @@ public:
 
   template<
     template <int, Entity_kind, class, class> class Search,
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
@@ -364,7 +366,7 @@ public:
 
   template<
     Entity_kind ONWHAT,
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >
@@ -431,7 +433,7 @@ public:
   */
 
   template<
-    template <Entity_kind, class, class, class,
+    template <int, Entity_kind, class, class, class,
               template <class, int, class, class> class,
               class, class> class Intersect
     >

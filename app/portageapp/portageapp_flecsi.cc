@@ -120,7 +120,7 @@ int main(int argc, char** argv) {
   if (order == 2) {
     Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_2ndOrder,
       2,
       Wonton::flecsi_mesh_t<mesh_t>,
@@ -140,7 +140,7 @@ int main(int argc, char** argv) {
   if (order == 1) {
      Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       2,
       Wonton::flecsi_mesh_t<mesh_t>,

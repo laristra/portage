@@ -607,74 +607,38 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
   Wonton::MPIExecutor_type mpiexecutor(MPI_COMM_WORLD);
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
   
-  if (dim == 2) {
-    if (interp_order == 1) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_1stOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-     for (auto &remap_var : remap_fields)
-       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
-                              std::numeric_limits<double>::max());
-      d.run(executor);
-    } else if (interp_order == 2) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR2D,
-        Portage::Interpolate_2ndOrder,
-        2,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-      d.set_limiter(limiter);
-      d.set_bnd_limiter(bnd_limiter);
-     for (auto &remap_var : remap_fields)
-       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
-                              std::numeric_limits<double>::max());
-      d.run(executor);
-    }
-  } else {  // 3D
-    if (interp_order == 1) {
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR3D,
-        Portage::Interpolate_1stOrder,
-        3,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-     for (auto &remap_var : remap_fields)
-       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
-                              std::numeric_limits<double>::max());
-      d.run(executor);
-    } else {  // 2nd order & 3D
-      Portage::MMDriver<
-        Portage::SearchKDTree,
-        Portage::IntersectR3D,
-        Portage::Interpolate_2ndOrder,
-        3,
-        Wonton::Jali_Mesh_Wrapper,
-        Wonton::Jali_State_Wrapper>
-          d(sourceMeshWrapper, sourceStateWrapper,
-            targetMeshWrapper, targetStateWrapper);
-      d.set_remap_var_names(remap_fields);
-      d.set_limiter(limiter);
-      d.set_bnd_limiter(bnd_limiter);
-     for (auto &remap_var : remap_fields)
-       d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
-                              std::numeric_limits<double>::max());
-      d.run(executor);
-    }
+  if (interp_order == 1) {
+    Portage::MMDriver<
+      Portage::SearchKDTree,
+      Portage::IntersectRnD,
+      Portage::Interpolate_1stOrder,
+      dim,
+      Wonton::Jali_Mesh_Wrapper,
+      Wonton::Jali_State_Wrapper>
+        d(sourceMeshWrapper, sourceStateWrapper,
+          targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    for (auto &remap_var : remap_fields)
+      d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                             std::numeric_limits<double>::max());
+    d.run(executor);
+  } else if (interp_order == 2) {
+    Portage::MMDriver<
+      Portage::SearchKDTree,
+      Portage::IntersectRnD,
+      Portage::Interpolate_2ndOrder,
+      dim,
+      Wonton::Jali_Mesh_Wrapper,
+      Wonton::Jali_State_Wrapper>
+        d(sourceMeshWrapper, sourceStateWrapper,
+          targetMeshWrapper, targetStateWrapper);
+    d.set_remap_var_names(remap_fields);
+    d.set_limiter(limiter);
+    d.set_bnd_limiter(bnd_limiter);
+    for (auto &remap_var : remap_fields)
+      d.set_remap_var_bounds(remap_var, -std::numeric_limits<double>::max(),
+                             std::numeric_limits<double>::max());
+    d.run(executor);
   }
 
   // Dump some timing information

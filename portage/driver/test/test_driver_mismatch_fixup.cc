@@ -104,7 +104,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   // Build the main driver object to test for default fixup options
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,

@@ -32,8 +32,7 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/search/search_points_by_cells.h"
@@ -191,7 +190,7 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-  template<Portage::Entity_kind, class, class, class,
+  template<int, Portage::Entity_kind, class, class, class,
   template <class, int, class, class> class,
   class, class> class Intersect,
   template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -514,7 +513,7 @@ protected:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-    template<Portage::Entity_kind, class, class, class,
+   template<int, Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
     class, class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -838,90 +837,44 @@ void print_usage() {
 }
 
 
-void runjob2(Controls<3> ctl0, std::string filename)
+
+template <int DIM>
+void runjob(Controls<DIM> ctl, std::string filename)
 {
-  const int DIM=2;
-  Controls<DIM> ctl;
-  if (DIM==2) ctl = truncateControl(ctl0);
-  
   if (ctl.source_file == "none") {
     std::shared_ptr<Wonton::Simple_Mesh> src_mesh =
-      std::make_shared<Wonton::Simple_Mesh>
+        DIM == 2 ?
+        std::make_shared<Wonton::Simple_Mesh>
         (ctl.smin[0], ctl.smin[1], ctl.smax[0], ctl.smax[1],
-         ctl.scells[0], ctl.scells[1]);
-    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh = 
-      std::make_shared<Wonton::Simple_Mesh>
+         ctl.scells[0], ctl.scells[1]) :
+        std::make_shared<Wonton::Simple_Mesh>
+        (ctl.smin[0], ctl.smin[1], ctl.smin[2],
+         ctl.smax[0], ctl.smax[1], ctl.smax[2],
+         ctl.scells[0], ctl.scells[1], ctl.scells[2]);
+    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh =
+        DIM == 2 ?
+        std::make_shared<Wonton::Simple_Mesh>
         (ctl.tmin[0], ctl.tmin[1], ctl.tmax[0], ctl.tmax[1],
-         ctl.tcells[0], ctl.tcells[1]);
-
+         ctl.tcells[0], ctl.tcells[1]) :
+        std::make_shared<Wonton::Simple_Mesh>
+        (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2],
+         ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
+         ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
+    
     runMSM<DIM> msmguy(ctl, src_mesh, tgt_mesh);
 
     std::cout << "starting msmapp..." << std::endl;
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR2D,
-		   Portage::Interpolate_1stOrder,
-		   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_1stOrder,
+                            Portage::SearchPointsByCells>();
 
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR2D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
-    }
-  } else {
-    Jali::MeshFactory jmf(MPI_COMM_WORLD);
-    std::shared_ptr<Jali::Mesh> src_mesh = jmf(ctl.source_file);
-    std::shared_ptr<Jali::Mesh> tgt_mesh = jmf(ctl.target_file);
-
-    runMSMJali<DIM> msmguy(ctl, src_mesh, tgt_mesh);
-
-    std::cout << "starting msmapp..." << std::endl;
-    std::cout << "running with input file " << filename << std::endl;
-
-    if (DIM==2) {
-      if (ctl.order == 1) {
-        msmguy.runit<Portage::IntersectR2D,
-                     Portage::Interpolate_1stOrder,
-                     Portage::SearchPointsByCells>();
-      } else if (ctl.order == 2) {
-        msmguy.runit<Portage::IntersectR2D,
-                     Portage::Interpolate_2ndOrder,
-                     Portage::SearchPointsByCells>();
-      }
-    }
-  }
-}
-
-
-void runjob3(Controls<3> ctl0, std::string filename)
-{
-  const int DIM=3;
-  Controls<DIM> ctl;
-  ctl = ctl0;
-  
-  if (ctl.source_file == "none") {
-    std::shared_ptr<Wonton::Simple_Mesh> src_mesh = std::make_shared<Wonton::Simple_Mesh>
-      (ctl.smin[0], ctl.smin[1], ctl.smin[2], ctl.smax[0], ctl.smax[1], ctl.smax[2],
-       ctl.scells[0], ctl.scells[1], ctl.scells[2]);
-    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh = std::make_shared<Wonton::Simple_Mesh>
-      (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2], ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
-       ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
-
-    runMSM<DIM> msmguy(ctl, src_mesh, tgt_mesh);
-
-    std::cout << "starting msmapp..." << std::endl;
-    std::cout << "running with input file " << filename << std::endl;
-
-    if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
-		   Portage::Interpolate_1stOrder,
-		   Portage::SearchPointsByCells>();
-
-    } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_2ndOrder,
+                            Portage::SearchPointsByCells>();
     }
   } else {
     Jali::MeshFactory jmf(MPI_COMM_WORLD);
@@ -934,13 +887,13 @@ void runjob3(Controls<3> ctl0, std::string filename)
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_1stOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_1stOrder,
+                            Portage::SearchPointsByCells>();
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_2ndOrder,
+                            Portage::SearchPointsByCells>();
     }
   }
 }
@@ -1053,8 +1006,8 @@ int main(int argc, char** argv) {
 
   // run the actual problem
   if (dimension == 2) {
-    runjob2(ctl, filename);
+    runjob<2>(truncateControl(ctl), filename);
   } else {
-    runjob3(ctl, filename);
+    runjob<3>(ctl, filename);
   }
 }

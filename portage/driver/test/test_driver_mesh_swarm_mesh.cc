@@ -34,8 +34,7 @@ Please see the license file at the root of this repository, or at:
 // portage includes
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/search/search_points_by_cells.h"
@@ -87,7 +86,7 @@ public:
    * @param faceted
    */
   template <
-    template<Wonton::Entity_kind,
+    template<int, Wonton::Entity_kind,
       class, class, class,
       template<class, int, class, class> class,
       class, class> class Intersect,
@@ -391,21 +390,21 @@ double compute_quadratic_field_3d(Wonton::Point<3> const& centroid) {
 // fails.
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinear) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadratic) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear,
@@ -413,7 +412,7 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -421,7 +420,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -429,7 +428,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -437,7 +436,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear,
@@ -446,7 +445,7 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
 
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -455,21 +454,21 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
 
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinear) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadratic) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear,
@@ -477,7 +476,7 @@ TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -485,7 +484,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -493,7 +492,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -501,7 +500,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear,
