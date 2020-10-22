@@ -155,4 +155,4 @@ TEST_P(Order2Test, SimpleMesh1D) {
 INSTANTIATE_TEST_CASE_P(
   Order2TestAll,
   Order2Test,
-  ::testing::Values(1, 2));
+  ::testing::Values(2));
