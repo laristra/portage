@@ -106,7 +106,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
                const TargetMeshType & target_mesh)
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-    const int numCells = sourceMesh_.num_owned_cells();
+    const int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
     std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numCells);
 
@@ -194,7 +194,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
                const TargetMeshType & target_mesh)
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-    const int numNodes = sourceMesh_.num_owned_nodes();
+    const int numNodes = sourceMesh_.num_owned_nodes() + sourceMesh_.num_ghost_nodes();
     std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numNodes);
 
