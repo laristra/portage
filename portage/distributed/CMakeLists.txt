@@ -61,7 +61,7 @@ if (ENABLE_UNIT_TESTS)
 
     portage_add_unittest(test_mpi_ghost_manager
                SOURCES test/test_mpi_ghost_manager.cc
-               LIBRARIES portage_distribute
+               LIBRARIES portage_distributed
                POLICY MPI
                THREADS 4)
   endif ()
