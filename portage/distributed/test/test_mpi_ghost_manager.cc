@@ -18,7 +18,7 @@
 #include "portage/distributed/mpi_ghost_manager.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
-#include "portage/intersect/intersect_r2d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 
 // jali
@@ -28,7 +28,7 @@
 #ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/reconstruct/MOF.h"
-#include "tangram/intersect/split_r2d.h"
+#include "tangram/intersect/split_rNd.h"
 #endif
 
 TEST(GhostManager, CommMatrices) {
@@ -193,7 +193,7 @@ TEST(GhostManager, UpdateValues) {
   Remapper remapper(source_mesh, source_state, target_mesh, target_state, &executor);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights    = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights    = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
   auto gradients  = remapper.compute_source_gradient("temperature");
 
   remapper.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
@@ -301,7 +301,8 @@ TEST(GhostManager, MultiMat) {
   using Remapper = Portage::CoreDriver<2, Wonton::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                                       Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>;
+                                       Tangram::MOF,
+                                       Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>;
 
   int rank = 0;
   int num_ranks = 1;
@@ -385,7 +386,7 @@ TEST(GhostManager, MultiMat) {
   Remapper remapper(source_mesh, source_state, target_mesh, target_state, &executor);
 
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights    = remapper.intersect_materials<Portage::IntersectR2D>(candidates);
+  auto weights    = remapper.intersect_materials<Portage::IntersectRnD>(candidates);
   auto gradients  = remapper.compute_source_material_gradient("density");
   remapper.interpolate_mat_var<double, Portage::Interpolate_2ndOrder>(
     "density", "density", weights, &gradients
