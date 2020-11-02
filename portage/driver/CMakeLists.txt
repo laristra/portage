@@ -163,7 +163,7 @@ if (ENABLE_UNIT_TESTS)
        SOURCES test/test_driver_core_single_mat.cc
        LIBRARIES portage_driver
        POLICY MPI
-       THREADS 1)
+       THREADS 2)
 
      portage_add_unittest(test_driver_part
        SOURCES test/test_driver_part.cc
