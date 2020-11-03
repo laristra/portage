@@ -106,8 +106,7 @@ class CoreDriver {
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
-  using SourceGhostManager = 
-	  Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
+  using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
                
 
  public:
@@ -144,9 +143,7 @@ class CoreDriver {
       mycomm_ = mpiexecutor->mpicomm;
       MPI_Comm_rank(mycomm_, &comm_rank_);
       MPI_Comm_size(mycomm_, &nprocs_);
-      source_ghost_manager_ptr_ = new SourceGhostManager(source_mesh_,
-                                                         source_state_,
-                                                         mycomm_);
+      source_ghost_manager_ = std::make_unique<SourceGhostManager>(source_mesh_, source_state_, mycomm_);
     }
 #endif
   }
@@ -158,9 +155,7 @@ class CoreDriver {
   CoreDriver & operator = (const CoreDriver &) = delete;
 
   /// Destructor
-  ~CoreDriver() {
-    if (source_ghost_manager_ptr_) delete source_ghost_manager_ptr_;
-  }
+  ~CoreDriver() = default;
 
   /// What entity kind is this defined on?
   Entity_kind onwhat() {return ONWHAT;}
@@ -742,9 +737,7 @@ class CoreDriver {
       // materials. Assumption is that the material cell list has
       // owned cells first followed by ghost cells
       if (nprocs_ > 1)
-        source_ghost_manager_ptr_->update_values(gradient_field.data(),
-                                                 material_id + 1,
-                                                 false);
+        source_ghost_manager_->update_values(gradient_field.data(), material_id + 1);
 #endif
       
     } else {
@@ -755,8 +748,7 @@ class CoreDriver {
 
 #ifdef WONTON_ENABLE_MPI
       if (nprocs_ > 1)
-          source_ghost_manager_ptr_->update_values(gradient_field.data(), 0,
-                                                   false);
+        source_ghost_manager_->update_values(gradient_field.data(), 0);
 #endif
         
 #ifdef PORTAGE_HAS_TANGRAM
@@ -1187,7 +1179,6 @@ class CoreDriver {
   SourceState & source_state_;  // May have to update ghost values
   TargetState & target_state_;
   Gradient gradient_;
-  SourceGhostManager *source_ghost_manager_ptr_ = nullptr;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
 
   int comm_rank_ = 0;
@@ -1196,6 +1187,7 @@ class CoreDriver {
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
+  std::unique_ptr<SourceGhostManager> source_ghost_manager_;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
