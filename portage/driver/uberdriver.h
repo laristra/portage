@@ -122,7 +122,7 @@ public:
     @param[in] executor  pointer to an executor allowing us choose between serial and parallel runs
   */
   UberDriver(SourceMesh const& source_mesh,
-              SourceState const& source_state,
+              SourceState & source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
               std::vector<std::string> const& source_vars_to_remap,
@@ -165,7 +165,7 @@ public:
     be mapped to the target mesh
   */
   UberDriver(SourceMesh const& source_mesh,
-              SourceState const& source_state,
+              SourceState & source_state,
               TargetMesh const& target_mesh,
               TargetState& target_state,
               Wonton::Executor_type const *executor = nullptr)
@@ -784,7 +784,7 @@ public:
   // Inputs specified by calling app
   SourceMesh const& source_mesh_;
   TargetMesh const& target_mesh_;
-  SourceState const& source_state_;
+  SourceState& source_state_;
   TargetState& target_state_;
   int dim_ = 0;
 
