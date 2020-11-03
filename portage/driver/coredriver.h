@@ -713,7 +713,7 @@ class CoreDriver {
     // owned+ghost and fill in the right entries; the ghost entries
     // are zeroed out)
     Vector<D> zerovec;
-    Wonton::vector<Vector<D>> gradient_field(nallent, zerovec);
+    std::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
 #ifdef PORTAGE_HAS_TANGRAM
