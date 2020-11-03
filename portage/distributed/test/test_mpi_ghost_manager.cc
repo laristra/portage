@@ -11,11 +11,11 @@
 #include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+#include "wonton/distributed/mpi_ghost_manager.h"
 
 // portage
 #include "portage/support/portage.h"
 #include "portage/driver/coredriver.h"
-#include "portage/distributed/mpi_ghost_manager.h"
 #include "portage/search/search_kdtree.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/intersect/intersect_rNd.h"
@@ -31,130 +31,12 @@
 #include "tangram/intersect/split_rNd.h"
 #endif
 
-TEST(GhostManager, CommMatrices) {
-
-  int rank = 0;
-  int num_ranks = 1;
-  MPI_Comm comm = MPI_COMM_WORLD;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &num_ranks);
-
-  ASSERT_GE(num_ranks, 1);
-
-  auto jali_mesh  = Jali::MeshFactory(comm)(0.0, 0.0, 1.0, 1.0, 7, 6);
-  auto jali_state = Jali::State::create(jali_mesh);
-  Wonton::Jali_Mesh_Wrapper mesh(*jali_mesh);
-  Wonton::Jali_State_Wrapper state(*jali_state);
-
-  using GhostManager = Portage::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
-                                                 Wonton::Jali_State_Wrapper,
-                                                 Wonton::CELL>;
-
-  std::vector<std::vector<int>> send[num_ranks]; /* owned cells that are ghost for some rank */
-  std::vector<std::vector<int>> take[num_ranks]; /* ghost cells that are owned by some rank */
-  std::vector<int> num_sent[num_ranks];          /* number of owned cells sent by each rank */
-  std::vector<int> num_take[num_ranks];          /* number of ghost cells received from each rank */
-  std::vector<MPI_Request> requests;             /* list of asynchronous MPI requests */
-
-  GhostManager ghost_manager(mesh, state, comm);
-  send[rank] = ghost_manager.owned_matrix();
-  take[rank] = ghost_manager.ghost_matrix();
-
-  for (int i = 0; i < num_ranks; ++i) {
-    num_sent[rank].emplace_back(send[rank][i].size());
-    num_take[rank].emplace_back(take[rank][i].size());
-    // store GID for owned cells to ease verification
-    for (int& id : send[rank][i]) {
-      id = mesh.get_global_id(id, Wonton::CELL);
-    }
-  }
-
-  if (rank > 0) {
-    MPI_Request request;
-    MPI_Isend(num_sent[rank].data(), num_ranks, MPI_INT, 0, rank, comm, &request);
-    requests.emplace_back(request);
-    MPI_Isend(num_take[rank].data(), num_ranks, MPI_INT, 0, rank, comm, &request);
-    requests.emplace_back(request);
-  } else {
-    for (int i = 1; i < num_ranks; ++i) {
-      MPI_Request request;
-      num_sent[i].resize(num_ranks, 0);
-      MPI_Irecv(num_sent[i].data(), num_ranks, MPI_INT, i, i, comm, &request);
-      requests.emplace_back(request);
-      num_take[i].resize(num_ranks, 0);
-      MPI_Irecv(num_take[i].data(), num_ranks, MPI_INT, i, i, comm, &request);
-      requests.emplace_back(request);
-    }
-  }
-
-  MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
-  requests.clear();
-
-  if (rank > 0) {
-    int const offset = num_ranks * num_ranks;
-    for (int i = 0; i < num_ranks; ++i) {
-      if (i != rank) {
-        int tag = num_ranks * (rank - 1) + i;
-        MPI_Request request;
-        MPI_Isend(send[rank][i].data(), send[rank][i].size(), MPI_INT, 0, tag, comm, &request);
-        requests.emplace_back(request);
-        MPI_Isend(take[rank][i].data(), take[rank][i].size(), MPI_INT, 0, tag + offset, comm, &request);
-        requests.emplace_back(request);
-      }
-    }
-  } else {
-    // check entities count
-    for (int i = 0; i < num_ranks; ++i) {
-      for (int j = 0; j < num_ranks; ++j) {
-        ASSERT_EQ(num_sent[i][j], num_take[j][i]);
-      }
-    }
-
-    int const offset = num_ranks * num_ranks;
-    for (int i = 1; i < num_ranks; ++i) {
-      send[i].resize(num_ranks);
-      take[i].resize(num_ranks);
-      for (int j = 0; j < num_ranks; ++j) {
-        if (i != j) {
-          int tag = num_ranks * (i - 1) + j;
-          MPI_Request request;
-          send[i][j].resize(num_sent[i][j]);
-          MPI_Irecv(send[i][j].data(), num_sent[i][j], MPI_INT, i, tag, comm, &request);
-          requests.emplace_back(request);
-          take[i][j].resize(num_take[i][j]);
-          MPI_Irecv(take[i][j].data(), num_take[i][j], MPI_INT, i, tag + offset, comm, &request);
-          requests.emplace_back(request);
-        }
-      }
-    }
-  }
-
-  MPI_Waitall(requests.size(), requests.data(), MPI_STATUS_IGNORE);
-
-  // check that we have a perfect matching on
-  // sent and received cells for each rank pair.
-  if (rank == 0) {
-    for (int i = 0; i < num_ranks; ++i) {
-      for (int j = 0; j < num_ranks; ++j) {
-        if (i == j) { continue; }
-        int const num_owned = send[i][j].size();
-        int const num_ghost = take[j][i].size();
-        ASSERT_EQ(num_owned, num_ghost);
-        for (int k = 0; k < num_owned; ++k) {
-          ASSERT_EQ(send[i][j][k], take[j][i][k]);
-        }
-      }
-    }
-  }
-
-  MPI_Barrier(comm);
-}
 
 TEST(GhostManager, UpdateValues) {
 
-  using GhostManager = Portage::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
-                                                 Wonton::Jali_State_Wrapper,
-                                                 Wonton::CELL>;
+  using GhostManager = Wonton::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
+                                                Wonton::Jali_State_Wrapper,
+                                                Wonton::CELL>;
 
   using Remapper = Portage::CoreDriver<2, Wonton::CELL,
                                        Wonton::Jali_Mesh_Wrapper,
@@ -294,9 +176,9 @@ TEST(GhostManager, UpdateValues) {
 #ifdef PORTAGE_HAS_TANGRAM
 TEST(GhostManager, MultiMat) {
 
-  using GhostManager = Portage::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
-                                                 Wonton::Jali_State_Wrapper,
-                                                 Wonton::CELL>;
+  using GhostManager = Wonton::MPI_GhostManager<Wonton::Jali_Mesh_Wrapper,
+                                                Wonton::Jali_State_Wrapper,
+                                                Wonton::CELL>;
 
   using Remapper = Portage::CoreDriver<2, Wonton::CELL,
                                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
