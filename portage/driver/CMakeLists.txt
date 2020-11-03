@@ -159,7 +159,12 @@ if (ENABLE_UNIT_TESTS)
          THREADS 4)
      endif (PORTAGE_HAS_TANGRAM)
 
-     portage_add_unittest(test_driver_core_single_mat
+     portage_add_unittest(test_driver_core_single_mat_serial
+       SOURCES test/test_driver_core_single_mat.cc
+       LIBRARIES portage_driver
+       POLICY SERIAL)
+
+     portage_add_unittest(test_driver_core_single_mat_parallel
        SOURCES test/test_driver_core_single_mat.cc
        LIBRARIES portage_driver
        POLICY MPI
