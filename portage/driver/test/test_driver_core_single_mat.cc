@@ -120,9 +120,13 @@ TEST(CellDriver, 2D_2ndOrder) {
   auto gradients = d.compute_source_gradient("density");
 
   double exact_gradient[2] = {1.0, 2.0};
-  for (int c = 0; c < nsrccells_all; c++)
-    for (int d = 0; d < 2; d++)
-      ASSERT_NEAR(exact_gradient[d], gradients[c][d], 1.0e-12);
+  for (int c = 0; c < nsrccells_all; c++) {
+    Wonton::Vector<2> const& nabla = gradients[c];
+    for (int dim = 0; dim < 2; dim++) {
+      ASSERT_NEAR(exact_gradient[dim], nabla[dim], 1.0e-12);
+    }
+  }
+
   
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
       "density", "density", srcwts, &gradients
@@ -252,10 +256,13 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   // Should get a gradient of 1.0, 2.0, 3.0
   double exact_gradient[3] = {1.0, 2.0, 3.0};
-  for (int c = 0; c < nsrccells_all; c++)
-    for (int d = 0; d < 3; d++)
-      ASSERT_NEAR(exact_gradient[d], gradients[c][d], 1.0e-12);
-  
+  for (int c = 0; c < nsrccells_all; c++) {
+    Wonton::Vector<3> const& nabla = gradients[c];
+    for (int dim = 0; dim < 3; dim++) {
+      ASSERT_NEAR(exact_gradient[dim], nabla[dim], 1.0e-12);
+    }
+  }
+
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
     "density", "DENS", srcwts, &gradients
   );
