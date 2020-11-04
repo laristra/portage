@@ -50,16 +50,17 @@ TEST(CellDriver, 2D_2ndOrder) {
   std::shared_ptr<Jali::State> sourceState;
   std::shared_ptr<Jali::State> targetState;
 
+  MPI_Comm comm = MPI_COMM_WORLD;
+
   // This is bypassing the redistribution step in parallel runs So the
   // two meshes have to be nearly identical and the partitioner should
   // give a nearly identical partitioning (best to use BLOCK
   // partitioner in Jali)
-
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  Jali::MeshFactory mesh_factory(comm);
+  mesh_factory.partitioner(Jali::Partitioner_type::BLOCK);
   
-  sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 4, 2);
-  targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 3);
+  sourceMesh = mesh_factory(0.0, 0.0, 1.0, 1.0, 4, 2);
+  targetMesh = mesh_factory(0.0, 0.0, 1.0, 1.0, 5, 3);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -69,45 +70,34 @@ TEST(CellDriver, 2D_2ndOrder) {
   Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
-  int nsrccells_all = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
                                                  Wonton::Entity_type::ALL);
 
   //-------------------------------------------------------------------
   // Now add density field to the mesh
   //-------------------------------------------------------------------
 
-  double source_mass = 0.0, source_mass_global = 0.0;
-  std::vector<double> srcdensity(nsrccells_all);
-  for (int c = 0; c < nsrccells_all; c++) {
+  double source_mass_local = 0.0, source_mass_global = 0.0;
+  std::vector<double> source_density(nsrccells);
+  for (int c = 0; c < nsrccells; c++) {
     Wonton::Point<2> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
-    srcdensity[c] = cen[0] + 2*cen[1];
+    source_density[c] = cen[0] + 2 * cen[1];
 
     if (sourceMeshWrapper.cell_get_type(c) == Wonton::PARALLEL_OWNED) {
-      double cvol = sourceMeshWrapper.cell_volume(c);
-      double cmass = cvol*srcdensity[c];
-      source_mass += cmass;
+      source_mass_local += (sourceMeshWrapper.cell_volume(c) * source_density[c]);
     }
   }
 
-#ifdef WONTON_ENABLE_MPI
-  MPI_Allreduce(&source_mass, &source_mass_global, 1, MPI_DOUBLE,
-                MPI_SUM, MPI_COMM_WORLD);
-#else
-  source_mass_global = source_mass;
-#endif
-
+  MPI_Allreduce(&source_mass_local, &source_mass_global, 1, MPI_DOUBLE, MPI_SUM, comm);
   
-  sourceStateWrapper.mesh_add_data(Wonton::Entity_kind::CELL,
-                                   "density", srcdensity.data());
-
-  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
-                                           "density", 0.0);
+  sourceStateWrapper.mesh_add_data(Wonton::Entity_kind::CELL, "density", source_density.data());
+  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,"density", 0.0);
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, default mismatch fixup options
 
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Wonton::MPIExecutor_type executor(comm);
   
   Portage::CoreDriver<2, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
@@ -119,11 +109,12 @@ TEST(CellDriver, 2D_2ndOrder) {
 
   auto gradients = d.compute_source_gradient("density");
 
+  // field gradient on ghost cells should be already updated at this point
   double exact_gradient[2] = {1.0, 2.0};
-  for (int c = 0; c < nsrccells_all; c++) {
-    Wonton::Vector<2> const& nabla = gradients[c];
+  for (int c = 0; c < nsrccells; c++) {
+    Wonton::Vector<2> const& approx_gradient = gradients[c];
     for (int dim = 0; dim < 2; dim++) {
-      ASSERT_NEAR(exact_gradient[dim], nabla[dim], 1.0e-12);
+      ASSERT_NEAR(exact_gradient[dim], approx_gradient[dim], 1.0e-12);
     }
   }
 
@@ -139,35 +130,27 @@ TEST(CellDriver, 2D_2ndOrder) {
 
 
   // Finally check that we got the right target density values
-  double *targetdensity;
-  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "density",
-                                   &targetdensity);
+  double* target_density;
+  targetStateWrapper.mesh_get_data(Wonton::CELL, "density", &target_density);
 
-  int ntrgcells_owned =
-      targetMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
-                                     Wonton::Entity_type::PARALLEL_OWNED);
+  int const num_owned_target_cells = targetMeshWrapper.num_owned_cells();
 
-  double target_mass = 0.0, target_mass_global = 0.0;
-  for (int c = 0; c < ntrgcells_owned; c++) {
+  double target_mass_local = 0.0, target_mass_global = 0.0;
+  for (int c = 0; c < num_owned_target_cells; c++) {
     double cvol = targetMeshWrapper.cell_volume(c);
-    double cmass = targetdensity[c]*cvol;
-    target_mass += cmass;
+    double cmass = target_density[c] * cvol;
+    target_mass_local += cmass;
   }
 
-#ifdef WONTON_ENABLE_MPI
-  MPI_Allreduce(&target_mass, &target_mass_global, 1, MPI_DOUBLE,
-                MPI_SUM, MPI_COMM_WORLD);
-#else
-  target_mass_global = target_mass;
-#endif
+  MPI_Allreduce(&target_mass_local, &target_mass_global, 1, MPI_DOUBLE, MPI_SUM, comm);
 
   ASSERT_NEAR(source_mass_global, target_mass_global, 1.0e-10);
 
-  for (int c = 0; c < ntrgcells_owned; c++) {
+  for (int c = 0; c < num_owned_target_cells; c++) {
     Wonton::Point<2> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
-    double trgdensity = cen[0] + 2*cen[1];
-    ASSERT_NEAR(targetdensity[c], trgdensity, 1.0e-10);
+    double const expected_density = cen[0] + 2 * cen[1];
+    ASSERT_NEAR(target_density[c], expected_density, 1.0e-10);
   }
 
 }  // CellDriver_2D_2ndOrder
@@ -184,11 +167,13 @@ TEST(CellDriver, 3D_2ndOrder) {
   std::shared_ptr<Jali::State> sourceState;
   std::shared_ptr<Jali::State> targetState;
 
-  Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.partitioner(Jali::Partitioner_type::BLOCK);
+  MPI_Comm comm = MPI_COMM_WORLD;
+
+  Jali::MeshFactory mesh_factory(comm);
+  mesh_factory.partitioner(Jali::Partitioner_type::BLOCK);
   
-  sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8);
-  targetMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
+  sourceMesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 8, 8, 8);
+  targetMesh = mesh_factory(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
 
   sourceState = Jali::State::create(sourceMesh);
   targetState = Jali::State::create(targetMesh);
@@ -199,50 +184,40 @@ TEST(CellDriver, 3D_2ndOrder) {
   Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
 
 
-  int nsrccells_all = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
-                                                     Wonton::Entity_type::ALL);
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
 
-  double source_mass = 0.0, source_mass_global = 0.0;
-  std::vector<double> srcdensity(nsrccells_all);
-  for (int c = 0; c < nsrccells_all; c++) {
+  double source_mass_local = 0.0, source_mass_global = 0.0;
+  std::vector<double> srcdensity(nsrccells);
+  for (int c = 0; c < nsrccells; c++) {
     Wonton::Point<3> cen;
     sourceMeshWrapper.cell_centroid(c, &cen);
     srcdensity[c] = cen[0] + 2*cen[1] + 3*cen[2];
 
     if (sourceMeshWrapper.cell_get_type(c) == Wonton::PARALLEL_OWNED) {
-      double cvol = sourceMeshWrapper.cell_volume(c);
-      double cmass = cvol*srcdensity[c];
-      source_mass += cmass;
+      source_mass_local += (sourceMeshWrapper.cell_volume(c) * srcdensity[c]);
     }
   }
 
-#ifdef WONTON_ENABLE_MPI
-  MPI_Allreduce(&source_mass, &source_mass_global, 1, MPI_DOUBLE,
-                MPI_SUM, MPI_COMM_WORLD);
-#else
-  source_mass_global = source_mass;
-#endif
-  
+  MPI_Allreduce(&source_mass_local, &source_mass_global, 1, MPI_DOUBLE, MPI_SUM, comm);
   
   //-------------------------------------------------------------------
   // Now add density field to the mesh
   //-------------------------------------------------------------------
 
-  sourceStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
-                                           "density", srcdensity.data());
+  sourceStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL, "density", srcdensity.data());
   
 
   //-------------------------------------------------------------------
   // Field(s) we have to remap
   //-------------------------------------------------------------------
 
-  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
-                                           "DENS", 0.0);
+  targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL, "density", 0.0);
 
   // Do the basic remap algorithm (search, intersect, interpolate) -
   // no redistribution, default mismatch fixup options
   
-  Wonton::MPIExecutor_type executor(MPI_COMM_WORLD);
+  Wonton::MPIExecutor_type executor(comm);
 
   Portage::CoreDriver<3, Wonton::Entity_kind::CELL,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper>
@@ -254,48 +229,40 @@ TEST(CellDriver, 3D_2ndOrder) {
 
   auto gradients = d.compute_source_gradient("density");
 
-  // Should get a gradient of 1.0, 2.0, 3.0
+  // field gradient on ghost cells should be already updated at this point
+  // we should get a gradient of 1.0, 2.0, 3.0
   double exact_gradient[3] = {1.0, 2.0, 3.0};
-  for (int c = 0; c < nsrccells_all; c++) {
-    Wonton::Vector<3> const& nabla = gradients[c];
+  for (int c = 0; c < nsrccells; c++) {
+    Wonton::Vector<3> const& approx_gradient = gradients[c];
     for (int dim = 0; dim < 3; dim++) {
-      ASSERT_NEAR(exact_gradient[dim], nabla[dim], 1.0e-12);
+      ASSERT_NEAR(exact_gradient[dim], approx_gradient[dim], 1.0e-12);
     }
   }
 
   d.interpolate_mesh_var<double, Portage::Interpolate_2ndOrder>(
-    "density", "DENS", srcwts, &gradients
+    "density", "density", srcwts, &gradients
   );
   
   // Finally check that we got the right target density values
-  double *targetdensity;
-  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "DENS",
-                                   &targetdensity);
+  double* target_density;
+  targetStateWrapper.mesh_get_data(Wonton::Entity_kind::CELL, "density", &target_density);
   
-  int ntrgcells_owned =
-      targetMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
-                                     Wonton::Entity_type::PARALLEL_OWNED);
-  double target_mass = 0.0, target_mass_global = 0.0;
-  for (int c = 0; c < ntrgcells_owned; c++) {
-    double cvol = targetMeshWrapper.cell_volume(c);
-    double cmass = targetdensity[c]*cvol;
-    target_mass += cmass;
+  int num_owned_target_cells = targetMeshWrapper.num_owned_cells();
+
+  double target_mass_local = 0.0, target_mass_global = 0.0;
+  for (int c = 0; c < num_owned_target_cells; c++) {
+    target_mass_local += (targetMeshWrapper.cell_volume(c) * target_density[c]);
   }
 
-#ifdef WONTON_ENABLE_MPI
-  MPI_Allreduce(&target_mass, &target_mass_global, 1, MPI_DOUBLE,
-                MPI_SUM, MPI_COMM_WORLD);
-#else
-  target_mass_global = target_mass;
-#endif
+  MPI_Allreduce(&target_mass_local, &target_mass_global, 1, MPI_DOUBLE, MPI_SUM, comm);
 
   ASSERT_NEAR(source_mass_global, target_mass_global, 1.0e-10);
 
-  for (int c = 0; c < ntrgcells_owned; c++) {
+  for (int c = 0; c < num_owned_target_cells; c++) {
     Wonton::Point<3> cen;
     targetMeshWrapper.cell_centroid(c, &cen);
-    double trgdensity = cen[0] + 2*cen[1] + 3*cen[2];
-    ASSERT_NEAR(targetdensity[c], trgdensity, 1.0e-10);
+    double expected_density = cen[0] + 2 * cen[1] + 3 * cen[2];
+    ASSERT_NEAR(target_density[c], expected_density, 1.0e-10);
   }
 
 }  // CellDriver_3D_2ndOrder
