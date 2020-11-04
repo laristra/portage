@@ -140,7 +140,7 @@ tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:FILEPATH=$tangram_
 portage_install_dir=$NGC/private/portage/${version}${compiler_suffix}${mpi_suffix}${thrust_suffix}${kokkos_suffix}${debug_suffix}
 
 
-if [[ $compiler == "gcc6" && $build_type != "serial" ]]; then
+if [[ $COMPILER == "gcc6" && $BUILD_TYPE != "serial" ]]; then
   flecsi_flags="-D PORTAGE_ENABLE_FleCSI:BOOL=True" # FleCSI found through Wonton
 fi
 
