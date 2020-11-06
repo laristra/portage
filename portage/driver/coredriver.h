@@ -737,7 +737,7 @@ class CoreDriver {
       // materials. Assumption is that the material cell list has
       // owned cells first followed by ghost cells
       if (nprocs_ > 1)
-        source_ghost_manager_->update_material_values(gradient_field.data(), material_id);
+        source_ghost_manager_->update_material_ghost_values(gradient_field.data(), material_id);
 #endif
       
     } else {
@@ -748,7 +748,7 @@ class CoreDriver {
 
 #ifdef WONTON_ENABLE_MPI
       if (nprocs_ > 1)
-        source_ghost_manager_->update_mesh_values(gradient_field.data());
+        source_ghost_manager_->update_mesh_ghost_values(gradient_field.data());
 #endif
         
 #ifdef PORTAGE_HAS_TANGRAM
