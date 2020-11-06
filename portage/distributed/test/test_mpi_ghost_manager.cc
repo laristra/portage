@@ -84,7 +84,7 @@ TEST(GhostManager, UpdateValues) {
 
   // fill ghost values on target mesh
   GhostManager ghost_manager(target_mesh, target_state, comm);
-  ghost_manager.update_values("temperature", true);
+  ghost_manager.update_ghost_values("temperature", true);
 
   // gather all sent/received values from all ranks to the master
   std::vector<std::vector<double>> send[num_ranks]; /* values of owned cells that are ghost for some rank */
@@ -276,7 +276,7 @@ TEST(GhostManager, MultiMat) {
 
   // fill ghost values on target mesh
   GhostManager ghost_manager(target_mesh, target_state, comm);
-  ghost_manager.update_values("density", true);
+  ghost_manager.update_ghost_values("density", true);
 
   for (int m = 1; m <= num_mats; ++m) {
 
