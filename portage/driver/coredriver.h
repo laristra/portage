@@ -21,7 +21,10 @@
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "wonton/distributed/mpi_ghost_manager.h"
+#endif
 
 #include "portage/support/portage.h"
 
