@@ -109,7 +109,9 @@ class CoreDriver {
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
+#ifdef WONTON_ENABLE_MPI
   using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
+#endif
                
 
  public:
