@@ -8,7 +8,6 @@ Please see the license file at the root of this repository, or at:
 #include <iostream>
 #include <portage/search/search_kdtree.h>
 #include <portage/intersect/intersect_r2d.h>
-#include <portage/driver/mmdriver.h>
 
 #include "gtest/gtest.h"
 

@@ -22,6 +22,10 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 
+#ifdef WONTON_ENABLE_MPI
+#include "wonton/distributed/mpi_ghost_manager.h"
+#endif
+
 #include "portage/support/portage.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -105,6 +109,11 @@ class CoreDriver {
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
+#ifdef WONTON_ENABLE_MPI
+  using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
+#endif
+               
+
  public:
   /*!
     @brief Constructor for the CORE remap driver.
@@ -121,7 +130,7 @@ class CoreDriver {
     be mapped to the target mesh
   */
   CoreDriver(SourceMesh const& source_mesh,
-             SourceState const& source_state,
+             SourceState& source_state,
              TargetMesh const& target_mesh,
              TargetState& target_state,
              Wonton::Executor_type const *executor = nullptr)
@@ -139,6 +148,7 @@ class CoreDriver {
       mycomm_ = mpiexecutor->mpicomm;
       MPI_Comm_rank(mycomm_, &comm_rank_);
       MPI_Comm_size(mycomm_, &nprocs_);
+      source_ghost_manager_ = std::make_unique<SourceGhostManager>(source_mesh_, source_state_, mycomm_);
     }
 #endif
   }
@@ -654,7 +664,7 @@ class CoreDriver {
       ONWHAT == Entity_kind::CELL and
       field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    std::vector<int> mat_cells;
+    std::vector<int> mat_cells_owned;
 
     if (multimat) {
       // cache gradient stencil first
@@ -676,10 +686,10 @@ class CoreDriver {
 
         // Filter out GHOST cells
         // SHOULD BE IN HANDLED IN THE STATE MANAGER (See ticket LNK-1589)
-        mat_cells.reserve(nallent);
+        mat_cells_owned.reserve(nallent);
         for (auto const& c : mat_cells_all)
           if (source_mesh_.cell_get_type(c) == PARALLEL_OWNED)
-            mat_cells.push_back(c);
+            mat_cells_owned.push_back(c);
       }
       else
         throw std::runtime_error("interface reconstructor not set");
@@ -703,28 +713,49 @@ class CoreDriver {
     // owned+ghost and fill in the right entries; the ghost entries
     // are zeroed out)
     Vector<D> zerovec;
-    Wonton::vector<Vector<D>> gradient_field(nallent, zerovec);
+    std::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
 #ifdef PORTAGE_HAS_TANGRAM
     if (multimat) {
-      Wonton::vector<Vector<D>> owned_gradient_field(mat_cells.size());
+      Wonton::vector<Vector<D>> owned_gradient_field(mat_cells_owned.size());
 
+      // This gradient computation kernel uses the index of a cell in
+      // a material not a mesh
       kernel->set_material(material_id);
       kernel->set_interface_reconstructor(interface_reconstructor_);
-      Wonton::transform(mat_cells.begin(),
-                         mat_cells.end(),
-                         owned_gradient_field.begin(), *kernel);
+      Wonton::transform(mat_cells_owned.begin(),
+                        mat_cells_owned.end(),
+                        owned_gradient_field.begin(), *kernel);
+
+      // Transform cell index in mesh back to cell index in mat and put the
+      // computed gradient in gradient vector for material cell list
       int i = 0;
-      for (auto const& c : mat_cells) {
+      for (auto const& c : mat_cells_owned) {
         int cm = source_state_.cell_index_in_material(c, material_id);
         gradient_field[cm] = owned_gradient_field[i++];
       }
+
+#ifdef WONTON_ENABLE_MPI
+      // update ghosts with gradient of the field for this material.
+      // update_values uses m=0 for mesh and m=1..N for
+      // materials. Assumption is that the material cell list has
+      // owned cells first followed by ghost cells
+      if (nprocs_ > 1)
+        source_ghost_manager_->update_material_ghost_values(gradient_field.data(), material_id);
+#endif
+      
     } else {
 #endif
       Wonton::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                         source_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         gradient_field.begin(), *kernel);
+                        source_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                        gradient_field.begin(), *kernel);
+
+#ifdef WONTON_ENABLE_MPI
+      if (nprocs_ > 1)
+        source_ghost_manager_->update_mesh_ghost_values(gradient_field.data());
+#endif
+        
 #ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
@@ -1150,7 +1181,7 @@ class CoreDriver {
  private:
   SourceMesh const & source_mesh_;
   TargetMesh const & target_mesh_;
-  SourceState const & source_state_;
+  SourceState & source_state_;  // May have to update ghost values
   TargetState & target_state_;
   Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
@@ -1161,6 +1192,7 @@ class CoreDriver {
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
+  std::unique_ptr<SourceGhostManager> source_ghost_manager_;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
@@ -1225,13 +1257,13 @@ class CoreDriver {
       }
       nvals += cellids.size();
 
-      double const * matfracptr;
+      double * matfracptr;
       source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
       int const num_cell_ids = cellids.size();
       for (int ic = 0; ic < num_cell_ids; ic++)
         cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
 
-      Wonton::Point<D> const *matcenvec;
+      Wonton::Point<D> *matcenvec;
       
       // handle the case where we don't have centroids in the state manager at all
       if (source_state_.get_entity("mat_centroids")==Entity_kind::UNKNOWN_KIND) {
