@@ -858,13 +858,13 @@ public:
     executor  An executor encoding parallel run parameters (if its parallel executor)
   */
 
-  void instantiate_core_drivers(Wonton::Executor_type const *executor = nullptr) {
+  void instantiate_core_drivers() {
 
     if (remap_kind_[NODE]) {
       search_completed_[NODE] = false;
       mesh_intersection_completed_[NODE] = false;
       auto driver_node = new NodeRemapper(source_mesh_, source_state_,
-                                          target_mesh_, target_state_, executor);
+                                          target_mesh_, target_state_, executor_);
       driver_node_ = std::unique_ptr<NodeRemapper>(driver_node);
     }
 
@@ -872,7 +872,7 @@ public:
       search_completed_[CELL] = false;
       mesh_intersection_completed_[CELL] = false;
       auto driver_cell = new CellRemapper(source_mesh_, source_state_,
-                                          target_mesh_, target_state_, executor);
+                                          target_mesh_, target_state_, executor_);
       driver_cell_ = std::unique_ptr<CellRemapper>(driver_cell);
     }
   }  // UberDriver::instantiate_core_drivers
