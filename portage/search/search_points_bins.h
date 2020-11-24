@@ -17,9 +17,33 @@ using namespace Meshfree;
 
 /**
  * @class SearchPointsBins.
- * @brief A lightweight linear-time search kernel for particles based on
- *        source points binning using a helper grid. It is only valid
- *        for gather weight forms.
+ *
+ * @brief A lightweight search algorithm in linearithmic time for particles.
+ *
+ * Principle:
+ * It filters the neighbors included in the support of the shape function
+ * of a given point defined by the smoothing lengths. It is valid for gather
+ * weight forms in which the shape functions are assigned to target points.
+ * As such and simply put: it retrieves the source neighbors of a target point.
+ * But it is important to note that it is related to a particular weight form.
+ *
+ * Details:
+ * It assigns a local box to each target point based on its smoothing lengths.
+ * The smoothing lengths encode the axis lengths of the support which has an
+ * elliptical shape. As such, they define the local search area of the point.
+ * It creates a helper grid that encloses those boxes during the initialization
+ * step. After that, the source neighbors in the radius of a given
+ * target point will be binned into the cells of that helper grid using
+ * coordinates hashing. To query the source neighbors of a given target point,
+ * it will first retrieve the cells that overlap the bounding box of the target
+ * point, then it will scan each cell and verify that each included point is
+ * geometrically within the search radius.
+ *
+ * Performance considerations:
+ * - restrict to cartesian grid with fixed cell size per dimension (for GPU).
+ * - disable spatial reordering: it is not a k-nearest neighbor search.
+ * - minimal footprint and data operations: no internal data recopy.
+ * - direct queries: no strides, no cell boundary check.
  *
  * @tparam dim: dimension of source/target points.
  * @tparam SourceSwarm: source point cloud type.
@@ -36,6 +60,18 @@ public:
 
   /**
    * @brief Create an instance of the search kernel.
+   *
+   * It constructs the helper grid based on the smoothing lengths
+   * defined on target points. It determines the spatial extents of
+   * the search by creating a bounding box enclosing the search
+   * radii of all target points. It discretizes this bounding box
+   * by deducing the number of sides per axis from the total radius
+   * for that axis. Hence the number of bins is simply given by the
+   * product of the number of sides. It finally puts each source
+   * point to the corresponding bin by hashing its coordinates:
+   *  (x,y,z) -> (i,j,k) -> i'.
+   * Note that the helper grid is virtual and not explicitly stored.
+   * It is only used to retrieve the source bin for each target point.
    *
    * @param source_swarm: the source points.
    * @param target_swarm: the target points.
@@ -57,6 +93,11 @@ public:
 
     static_assert(dim > 0 and dim < 4, "invalid dimension");
 
+    /*
+     * verify that the correct weight form is supplied.
+     * it only supports gather weight form since it filters
+     * the source neighbors included in the support of each target point.
+     */
     if (center == Scatter)
       throw std::runtime_error("scatter weight form not supported");
 
@@ -65,7 +106,13 @@ public:
     double radius[dim];
     Wonton::Point<dim> p_min, p_max;
 
-    // step 1: construct helper grid from target points
+    /* ------------------------------------------------------------
+     *  step 1: create search bounding box from target points.
+     * ------------------------------------------------------------
+     * It determines the spatial extents per axis by creating a
+     * bounding box that encloses the support of each target point.
+     * It deduces the total search radius per axis: sum_i=1^n |h_i|.
+     */
     for (int d = 0; d < dim; ++d) {
       p_min[d] = std::numeric_limits<double>::max();
       p_max[d] = std::numeric_limits<double>::lowest();
@@ -83,7 +130,19 @@ public:
       }
     }
 
-    // step 2: deduce number of bins from search radii
+    /* -------------------------------------------------------------------
+     *  step 2: discretize it and deduce number of bins.
+     * -------------------------------------------------------------------
+     * It discretizes the bounding box by computing the spatial step 'ds'
+     * which is a scaled mean radius per axis: ds = (r/n) sum_i=1^n |h_i|.
+     * For a given axis, it determines the number of cell sides by dividing
+     * the search radius by the spatial step: ns = (p_max - p_min) / ds,
+     * provided that it does not exceed the default maximum number of sides.
+     * The number of bins is simply deduced by the product of the number of
+     * sides per axis: n_bins = ns[0].ns[1].ns[2].
+     * The scale factor 'r' is chosen for compatibility reasons with the
+     * legacy search algorithm.
+     */
     int const max_sides = get_max_sides(num_target_points);
     int num_bins = 1;
 
@@ -95,7 +154,13 @@ public:
       num_bins *= sides_[d];
     }
 
-    // step 3: push source points into bins
+    /* --------------------------------------------------------------
+     *  step 3: filter source points and push them to the bins
+     * --------------------------------------------------------------
+     * After resizing the container, it puts each source point to the
+     * correct bin by hashing its coordinates while discarding those
+     * outside the helper grid extents.
+     */
     bucket_.resize(num_bins);
 
     for (int s = 0; s < num_source_points; ++s) {
@@ -115,7 +180,14 @@ public:
   }
 
   /**
-   * @brief Retrieve source neighbors within the radius of a given target point.
+   * @brief Filter source neighbors within the radius of a given target point.
+   *
+   * It queries the source neighbors of a given target point using the
+   * prebuilt helper grid. It first creates a bounding box that encloses the
+   * local search area of the target point. It then filters the grid cells
+   * that overlap this local bounding box. Afterwards, it scans those cells
+   * while verifying that each included source point is actually within the
+   * support of the given target point.
    *
    * @param target_id: the given target point.
    * @return the filtered list of source neighbors.
@@ -125,14 +197,30 @@ public:
     auto const p = target_swarm_.get_particle_coordinates(id);
     auto const h = radius_scale_ * Wonton::Point<dim>(search_radius_[id]);
 
-    // step 1: build bounding box of the radius of target point
+    /* --------------------------------------------------------------
+     *  step 1: build local bounding box centered at target point
+     * --------------------------------------------------------------
+     * It determines the extents of the local search area based on
+     * the support of the target point.
+     */
     Wonton::Point<dim> box_min, box_max;
     for (int d = 0; d < dim; ++d) {
       box_min[d] = p[d] - h[d];
       box_max[d] = p[d] + h[d];
     }
 
-    // step 2: filter cells overlapped by the bounding box
+    /* --------------------------------------------------------------
+     *  step 2: filter cells overlapped by the bounding box
+     * --------------------------------------------------------------
+     * It retrieves the cells of the helper grid that overlap with
+     * the local bounding box. It first determines the indices of the
+     * cells that overlap with the box extents. After that, it will
+     * retrieve all cells included in that index range for each axis
+     * in a local cell list.
+     * Note that the helper grid cells are virtually stored in a flat
+     * array: each cell can be accessed using the cached number of
+     * sides as a stride.
+     */
     std::vector<int> cells;
     auto const first = deduce_cell_index(box_min);
     auto const last  = deduce_cell_index(box_max);
@@ -163,7 +251,14 @@ public:
       }
     }
 
-    // step 3: scan cells and check distance of each included source point
+    /* --------------------------------------------------------------
+     *  step 3: scan retrieved cells and verify each source point.
+     * --------------------------------------------------------------
+     * It finally scans the cell list and verify that each included
+     * source point is actually inside the local search area of the
+     * target point. If so, it will be added the filtered list of
+     * neighbors.
+     */
     std::vector<int> neighbors;
     for (int c : cells) {
       for (int s : bucket_[c]) {
@@ -187,6 +282,12 @@ private:
   /**
    * @brief Retrieve the maximum number of sides for the helper grid.
    *
+   * It defines the default maximum number of sides to limit the
+   * number of cells of the helper grid. It corresponds to the
+   * d^th root of the number of target points scaled by a factor.
+   * The scaling factor is chosen for compatibility reasons with
+   * the legacy search algorithm.
+   *
    * @param num_points: the number of points of the swarm.
    * @return the maximum allowed number of sides for the grid.
    */
@@ -198,6 +299,12 @@ private:
 
   /**
    * @brief Deduce cell indices (i,j,k) from physical coordinates (x,y,z).
+   *
+   * It computes the index of the helper grid cell that contains the given
+   * point. For each axis, it computes the relative position of the point
+   * from the helper grid origin. The index of cell is then given by:
+   * i =  ns * (p - p_min) / (p_max - p_min). After that, we just ensure
+   * that the resulting index does not exceed the maximum for each axis.
    *
    * @param p: current point coordinates.
    * @return index of the cell containing the point in helper grid.
@@ -218,6 +325,12 @@ private:
   /**
    * @brief Deduce bin index i' from physical coordinates (x,y,z).
    *
+   * It retrieve the index of bin that should contain the given source point
+   * and is done in two steps. First, it computes the index (i,j,k) of the
+   * helper grid cell that contains the given source point. It then deduces
+   * the bin index i' in the flat array using the number of sides per axis
+   * as strides: i' = i + j * ns[0] + k * ns[0] * ns[1].
+   *
    * @param p: current point coordinates.
    * @return index of the bin containing the point.
    */
@@ -233,13 +346,20 @@ private:
     }
   }
 
-  SourceSwarm const& source_swarm_;                         /** source points */
-  TargetSwarm const& target_swarm_;                         /** target points */
-  Wonton::vector<Wonton::Point<dim>> const& search_radius_; /** search radius per target point */
-  double radius_scale_ = 1.;                                /** radii scale factor */
-  Wonton::Point<dim> orig_, span_;                          /** helper grid */
-  std::vector<std::vector<int>> bucket_;                    /** source points bins */
-  int sides_[dim] {};                                       /** sides per axis */
+  /** reference to source points */
+  SourceSwarm const& source_swarm_;
+  /** reference to target points */
+  TargetSwarm const& target_swarm_;
+  /** reference to search radii per target point */
+  Wonton::vector<Wonton::Point<dim>> const& search_radius_;
+  /** search radii scale factor */
+  double radius_scale_ = 1.;
+  /** helper grid extents */
+  Wonton::Point<dim> orig_, span_;
+  /** source points bins */
+  std::vector<std::vector<int>> bucket_;
+  /** number of sides per axis */
+  int sides_[dim] {};
 };
 
 } // namespace Portage
