@@ -360,23 +360,16 @@ class CoreDriver {
            typeid(DummyInterfaceReconstructor<SourceMesh, D,
                   Matpoly_Splitter, Matpoly_Clipper>));
 
-    // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-    // interface_reconstructor_ =
-    //     std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
-    //                                      SourceMesh,
-    //                                      Matpoly_Splitter,
-    //                                      Matpoly_Clipper>
-    //                      >(source_mesh_, tols, true);
-    interface_reconstructor_ =
-        std::unique_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                        SourceMesh,
-                                        Matpoly_Splitter,
-                                        Matpoly_Clipper>
-                        >(new Tangram::Driver<InterfaceReconstructorType, D,
-                          SourceMesh,
-                          Matpoly_Splitter,
-                          Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
-                                           reconstructor_all_convex_));
+    using IR = Tangram::Driver<InterfaceReconstructorType, D, SourceMesh,
+                               Matpoly_Splitter, Matpoly_Clipper>;
+
+    interface_reconstructor_ = std::make_unique<IR>(source_mesh_,
+                                                    reconstructor_tols_,
+                                                    reconstructor_all_convex_);
+
+    if (not interface_reconstructor_) {
+      throw std::runtime_error("could not initialize interface reconstructor");
+    }
 
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
