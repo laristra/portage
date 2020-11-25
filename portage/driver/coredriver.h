@@ -1166,16 +1166,16 @@ class CoreDriver {
   TargetState & target_state_;
   Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
-
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
-
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
   std::unique_ptr<SourceGhostManager> source_ghost_manager_;
+  int comm_rank_ = 0;
+  int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
+
+  std::unique_ptr<MismatchFixup> mismatch_fixer_;
 
 #ifdef PORTAGE_HAS_TANGRAM
   bool cached_multimat_stenc_ = false;
@@ -1282,10 +1282,7 @@ class CoreDriver {
       }
     }
   }
-
-#endif
-
-  std::unique_ptr<MismatchFixup> mismatch_fixer_;
+#endif // PORTAGE_HAS_TANGRAM
 
 };  // CoreDriver
 
