@@ -104,7 +104,7 @@ template <int D,
           >
 class CoreDriver {
 
-  // useful alias
+  // useful aliases
   using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
@@ -116,7 +116,11 @@ class CoreDriver {
 #ifdef WONTON_ENABLE_MPI
   using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
 #endif
-               
+
+#ifdef PORTAGE_HAS_TANGRAM
+  using InterfaceReconstructor = Tangram::Driver<InterfaceReconstructorType, D,
+                                                 SourceMesh, Matpoly_Splitter, Matpoly_Clipper>;
+#endif
 
  public:
   /*!
@@ -307,8 +311,7 @@ class CoreDriver {
     argument.
   */
   void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
     reconstructor_tols_ = tols; 
     reconstructor_all_convex_ = all_convex; 
   }
@@ -359,17 +362,12 @@ class CoreDriver {
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
 
-    assert(typeid(InterfaceReconstructorType<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper >) !=
-           typeid(DummyInterfaceReconstructor<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper>));
+    assert(typeid(InterfaceReconstructor) !=
+           typeid(DummyInterfaceReconstructor<SourceMesh, D, Matpoly_Splitter, Matpoly_Clipper>));
 
-    using IR = Tangram::Driver<InterfaceReconstructorType, D, SourceMesh,
-                               Matpoly_Splitter, Matpoly_Clipper>;
-
-    interface_reconstructor_ = std::make_unique<IR>(source_mesh_,
-                                                    reconstructor_tols_,
-                                                    reconstructor_all_convex_);
+    interface_reconstructor_ = std::make_shared<InterfaceReconstructor>(source_mesh_,
+                                                                        reconstructor_tols_,
+                                                                        reconstructor_all_convex_);
 
     if (not interface_reconstructor_) {
       throw std::runtime_error("could not initialize interface reconstructor");
@@ -1202,10 +1200,10 @@ class CoreDriver {
 
   // Pointer to the interface reconstructor object (required by the
   // interface to be shared)
-  std::shared_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                  SourceMesh,
-                                  Matpoly_Splitter, Matpoly_Clipper>
-                  > interface_reconstructor_;
+  // Note: this is a shared pointer but was initialized as a unique pointer
+  // in 'intersect_materials' in the previous code. It may cause memory
+  // issues at runtime.
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
   
 
   // Convert volume fraction and centroid data from compact
