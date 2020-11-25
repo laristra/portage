@@ -109,6 +109,10 @@ class CoreDriver {
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
+  using MismatchFixup = MismatchFixer<D, ONWHAT,
+                                      SourceMesh, SourceState,
+                                      TargetMesh, TargetState>;
+
 #ifdef WONTON_ENABLE_MPI
   using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
 #endif
@@ -1087,22 +1091,9 @@ class CoreDriver {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           executor_));
+      mismatch_fixer_ = std::make_unique<MismatchFixup>(source_mesh_, source_state_,
+                                                        target_mesh_, target_state_,
+                                                        executor_);
     }
 
     return mismatch_fixer_->check_mismatch(source_weights);
@@ -1114,8 +1105,7 @@ class CoreDriver {
 
     @returns   Whether the meshes are mismatched
   */
-  bool
-  has_mismatch() {
+  bool has_mismatch() const {
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
     return mismatch_fixer_->has_mismatch();
   }
@@ -1162,13 +1152,13 @@ class CoreDriver {
 
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
 
-    if (source_state_.field_type(ONWHAT, src_var_name) ==
-        Field_type::MESH_FIELD)
+    if (source_state_.field_type(ONWHAT, src_var_name) == Field_type::MESH_FIELD) {
       return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
-                                  global_lower_bound, global_upper_bound,
-                                  conservation_tol, maxiter,
-                                  partial_fixup_type, empty_fixup_type);
-    return false;
+                                           global_lower_bound, global_upper_bound,
+                                           conservation_tol, maxiter,
+                                           partial_fixup_type, empty_fixup_type);
+    } else
+      return false;
   }
   
  private:
@@ -1297,9 +1287,7 @@ class CoreDriver {
 
 #endif
 
-  std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                SourceMesh, SourceState,
-                                TargetMesh, TargetState>> mismatch_fixer_;
+  std::unique_ptr<MismatchFixup> mismatch_fixer_;
 
 };  // CoreDriver
 
