@@ -104,15 +104,23 @@ template <int D,
           >
 class CoreDriver {
 
-  // useful alias
+  // useful aliases
   using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
 
+  using MismatchFixup = MismatchFixer<D, ONWHAT,
+                                      SourceMesh, SourceState,
+                                      TargetMesh, TargetState>;
+
 #ifdef WONTON_ENABLE_MPI
   using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
 #endif
-               
+
+#ifdef PORTAGE_HAS_TANGRAM
+  using InterfaceReconstructor = Tangram::Driver<InterfaceReconstructorType, D,
+                                                 SourceMesh, Matpoly_Splitter, Matpoly_Clipper>;
+#endif
 
  public:
   /*!
@@ -303,8 +311,7 @@ class CoreDriver {
     argument.
   */
   void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
     reconstructor_tols_ = tols; 
     reconstructor_all_convex_ = all_convex; 
   }
@@ -355,28 +362,16 @@ class CoreDriver {
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
 
-    assert(typeid(InterfaceReconstructorType<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper >) !=
-           typeid(DummyInterfaceReconstructor<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper>));
+    assert(typeid(InterfaceReconstructor) !=
+           typeid(DummyInterfaceReconstructor<SourceMesh, D, Matpoly_Splitter, Matpoly_Clipper>));
 
-    // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-    // interface_reconstructor_ =
-    //     std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
-    //                                      SourceMesh,
-    //                                      Matpoly_Splitter,
-    //                                      Matpoly_Clipper>
-    //                      >(source_mesh_, tols, true);
-    interface_reconstructor_ =
-        std::unique_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                        SourceMesh,
-                                        Matpoly_Splitter,
-                                        Matpoly_Clipper>
-                        >(new Tangram::Driver<InterfaceReconstructorType, D,
-                          SourceMesh,
-                          Matpoly_Splitter,
-                          Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
-                                           reconstructor_all_convex_));
+    interface_reconstructor_ = std::make_shared<InterfaceReconstructor>(source_mesh_,
+                                                                        reconstructor_tols_,
+                                                                        reconstructor_all_convex_);
+
+    if (not interface_reconstructor_) {
+      throw std::runtime_error("could not initialize interface reconstructor");
+    }
 
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
@@ -1094,22 +1089,9 @@ class CoreDriver {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           executor_));
+      mismatch_fixer_ = std::make_unique<MismatchFixup>(source_mesh_, source_state_,
+                                                        target_mesh_, target_state_,
+                                                        executor_);
     }
 
     return mismatch_fixer_->check_mismatch(source_weights);
@@ -1121,8 +1103,7 @@ class CoreDriver {
 
     @returns   Whether the meshes are mismatched
   */
-  bool
-  has_mismatch() {
+  bool has_mismatch() const {
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
     return mismatch_fixer_->has_mismatch();
   }
@@ -1169,13 +1150,13 @@ class CoreDriver {
 
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
 
-    if (source_state_.field_type(ONWHAT, src_var_name) ==
-        Field_type::MESH_FIELD)
+    if (source_state_.field_type(ONWHAT, src_var_name) == Field_type::MESH_FIELD) {
       return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
-                                  global_lower_bound, global_upper_bound,
-                                  conservation_tol, maxiter,
-                                  partial_fixup_type, empty_fixup_type);
-    return false;
+                                           global_lower_bound, global_upper_bound,
+                                           conservation_tol, maxiter,
+                                           partial_fixup_type, empty_fixup_type);
+    } else
+      return false;
   }
   
  private:
@@ -1185,16 +1166,16 @@ class CoreDriver {
   TargetState & target_state_;
   Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
-
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
-
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
   std::unique_ptr<SourceGhostManager> source_ghost_manager_;
+  int comm_rank_ = 0;
+  int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
+
+  std::unique_ptr<MismatchFixup> mismatch_fixer_;
 
 #ifdef PORTAGE_HAS_TANGRAM
   bool cached_multimat_stenc_ = false;
@@ -1219,10 +1200,10 @@ class CoreDriver {
 
   // Pointer to the interface reconstructor object (required by the
   // interface to be shared)
-  std::shared_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                  SourceMesh,
-                                  Matpoly_Splitter, Matpoly_Clipper>
-                  > interface_reconstructor_;
+  // Note: this is a shared pointer but was initialized as a unique pointer
+  // in 'intersect_materials' in the previous code. It may cause memory
+  // issues at runtime.
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
   
 
   // Convert volume fraction and centroid data from compact
@@ -1301,12 +1282,7 @@ class CoreDriver {
       }
     }
   }
-
-#endif
-
-  std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                SourceMesh, SourceState,
-                                TargetMesh, TargetState>> mismatch_fixer_;
+#endif // PORTAGE_HAS_TANGRAM
 
 };  // CoreDriver
 
