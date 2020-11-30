@@ -28,7 +28,6 @@ set -x
 umask 007
 
 BUILD_TYPE=$1
-build_type=$2
 version=$2
 if [[ $version == "" ]]; then
     version=dev
