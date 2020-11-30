@@ -12,8 +12,8 @@
 # specified, it will install to /install_prefix/wonton/dev-blah-blah
 #
 # WORKSPACE   -  where the code is checked out
-# CONFIG_TYPE -  base, debug, serial, readme, thrust, kokkos
-# COMPILER    -  intel, gcc6, gcc7
+# CONFIG_TYPE -  base, debug, serial, readme, thrust, coverage
+# COMPILER    -  intel, gcc7
 # BRANCH_NAME -  master
 #
 # The exit code determines if the test succeeded or failed.
