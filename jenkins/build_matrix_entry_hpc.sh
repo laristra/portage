@@ -137,8 +137,8 @@ portage_install_dir=$NGC/private/portage/${version}${compiler_suffix}${mpi_suffi
 
 
 # Coverage
-cov_flags=
-if [[ $build_type == "coverage" ]]; then
+cov_flags=""
+if [[ $CONFIG_TYPE == "coverage" ]]; then
     cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage' -D CMAKE_EXE_LINKER_FLAGS=-coverage"
     cmake_build_type=Debug
     export PATH=$NGC/private/bin:${PATH}
