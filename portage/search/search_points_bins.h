@@ -21,23 +21,16 @@ using namespace Meshfree;
  * @brief A lightweight search algorithm in linearithmic time for particles.
  *
  * Principle:
- * It filters the neighbors included in the support of the shape function
- * of a given point defined by the smoothing lengths. It is valid for gather
- * weight forms in which the shape functions are assigned to target points.
- * As such and simply put: it retrieves the source neighbors of a target point.
- * But it is important to note that it is related to a particular weight form.
+ * It retrieves the source neighbors of each target point based on its
+ * smoothing lengths. It is suited only for gather weight forms.
  *
  * Details:
- * It assigns a local box to each target point based on its smoothing lengths.
- * The smoothing lengths encode the axis lengths of the support which has an
- * elliptical shape. As such, they define the local search area of the point.
- * It creates a helper grid that encloses those boxes during the initialization
- * step. After that, the source neighbors in the radius of a given
- * target point will be binned into the cells of that helper grid using
- * coordinates hashing. To query the source neighbors of a given target point,
- * it will first retrieve the cells that overlap the bounding box of the target
- * point, then it will scan each cell and verify that each included point is
- * geometrically within the search radius.
+ * During the initialization step, it creates a cartesian grid that encloses
+ * the bounding boxes of all target points based on their smoothing lengths.
+ * After that, it puts the source points into the grid cells that contain them
+ * using coordinates hashing. To find the source neighbors of a target point,
+ * it retrieves the cells that overlap the bounding box enclosing the target
+ * point, and all points included in those cells are retrieved and filtered.
  *
  * Performance considerations:
  * - restrict to cartesian grid with fixed cell size per dimension (for GPU).
