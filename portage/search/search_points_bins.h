@@ -66,20 +66,20 @@ public:
    *
    * @param source_swarm: the source points.
    * @param target_swarm: the target points.
-   * @param source_extents: search radius of each source point (unused).
-   * @param target_radius: search radius of each target point.
+   * @param source_search_radius: search radius of each source point (unused).
+   * @param target_search_radius: search radius of each target point.
    * @param center: weight form (gather only)
    * @param radius_scale: scale factor for search radius.
    */
   SearchPointsBins(SourceSwarm const& source_swarm,
                    TargetSwarm const& target_swarm,
                    Wonton::vector<Wonton::Point<dim>> const& /* unused */,
-                   Wonton::vector<Wonton::Point<dim>> const& target_radius,
+                   Wonton::vector<Wonton::Point<dim>> const& target_search_radius,
                    WeightCenter const center = Gather,
                    double radius_scale = 1.)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
-      search_radius_(target_radius),
+      search_radius_(target_search_radius),
       radius_scale_(radius_scale) {
 
     static_assert(dim > 0 and dim < 4, "invalid dimension");
@@ -113,7 +113,7 @@ public:
 
     for (int t = 0; t < num_target_points; ++t) {
       auto const& p = target_swarm.get_particle_coordinates(t);
-      auto const h = radius_scale * Wonton::Point<dim>(target_radius[t]);
+      auto const h = radius_scale * Wonton::Point<dim>(target_search_radius[t]);
       for (int d = 0; d < dim; ++d) {
         p_min[d] = std::min(p_min[d], p[d] - h[d]);
         p_max[d] = std::max(p_max[d], p[d] + h[d]);
