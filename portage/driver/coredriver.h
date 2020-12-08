@@ -22,6 +22,10 @@
 #include "wonton/support/Point.h"
 #include "wonton/support/CoordinateSystem.h"
 
+#ifdef WONTON_ENABLE_MPI
+#include "wonton/distributed/mpi_ghost_manager.h"
+#endif
+
 #include "portage/support/portage.h"
 
 #ifdef PORTAGE_HAS_TANGRAM
@@ -100,10 +104,23 @@ template <int D,
           >
 class CoreDriver {
 
-  // useful alias
+  // useful aliases
   using Gradient = Limited_Gradient<D, ONWHAT, SourceMesh, SourceState,
                                     InterfaceReconstructorType,
                                     Matpoly_Splitter, Matpoly_Clipper, CoordSys>;
+
+  using MismatchFixup = MismatchFixer<D, ONWHAT,
+                                      SourceMesh, SourceState,
+                                      TargetMesh, TargetState>;
+
+#ifdef WONTON_ENABLE_MPI
+  using SourceGhostManager = Wonton::MPI_GhostManager<SourceMesh, SourceState, ONWHAT>;
+#endif
+
+#ifdef PORTAGE_HAS_TANGRAM
+  using InterfaceReconstructor = Tangram::Driver<InterfaceReconstructorType, D,
+                                                 SourceMesh, Matpoly_Splitter, Matpoly_Clipper>;
+#endif
 
  public:
   /*!
@@ -121,7 +138,7 @@ class CoreDriver {
     be mapped to the target mesh
   */
   CoreDriver(SourceMesh const& source_mesh,
-             SourceState const& source_state,
+             SourceState& source_state,
              TargetMesh const& target_mesh,
              TargetState& target_state,
              Wonton::Executor_type const *executor = nullptr)
@@ -139,6 +156,7 @@ class CoreDriver {
       mycomm_ = mpiexecutor->mpicomm;
       MPI_Comm_rank(mycomm_, &comm_rank_);
       MPI_Comm_size(mycomm_, &nprocs_);
+      source_ghost_manager_ = std::make_unique<SourceGhostManager>(source_mesh_, source_state_, mycomm_);
     }
 #endif
   }
@@ -293,8 +311,7 @@ class CoreDriver {
     argument.
   */
   void set_interface_reconstructor_options(bool all_convex,
-                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols =
-                                             std::vector<Tangram::IterativeMethodTolerances_t>()) {
+                                           const std::vector<Tangram::IterativeMethodTolerances_t> &tols = {}) {
     reconstructor_tols_ = tols; 
     reconstructor_all_convex_ = all_convex; 
   }
@@ -345,28 +362,16 @@ class CoreDriver {
     int nmats = source_state_.num_materials();
     // Make sure we have a valid interface reconstruction method instantiated
 
-    assert(typeid(InterfaceReconstructorType<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper >) !=
-           typeid(DummyInterfaceReconstructor<SourceMesh, D,
-                  Matpoly_Splitter, Matpoly_Clipper>));
+    assert(typeid(InterfaceReconstructor) !=
+           typeid(DummyInterfaceReconstructor<SourceMesh, D, Matpoly_Splitter, Matpoly_Clipper>));
 
-    // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-    // interface_reconstructor_ =
-    //     std::make_unique<Tangram::Driver<InterfaceReconstructorType, D,
-    //                                      SourceMesh,
-    //                                      Matpoly_Splitter,
-    //                                      Matpoly_Clipper>
-    //                      >(source_mesh_, tols, true);
-    interface_reconstructor_ =
-        std::unique_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                        SourceMesh,
-                                        Matpoly_Splitter,
-                                        Matpoly_Clipper>
-                        >(new Tangram::Driver<InterfaceReconstructorType, D,
-                          SourceMesh,
-                          Matpoly_Splitter,
-                          Matpoly_Clipper>(source_mesh_, reconstructor_tols_,
-                                           reconstructor_all_convex_));
+    interface_reconstructor_ = std::make_shared<InterfaceReconstructor>(source_mesh_,
+                                                                        reconstructor_tols_,
+                                                                        reconstructor_all_convex_);
+
+    if (not interface_reconstructor_) {
+      throw std::runtime_error("could not initialize interface reconstructor");
+    }
 
     int ntargetcells = target_mesh_.num_entities(CELL, PARALLEL_OWNED);
 
@@ -626,7 +631,9 @@ class CoreDriver {
    * @param field_name: the variable name.
    * @param limiter_type: gradient limiter to use on internal regions.
    * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param material_id: material index.
    * @param source_part: the source mesh part to consider if any.
+   * @return the gradient field.
    *
    * Remark: the gradient computation cannot be done in parallel yet
    * for multiple fields due to some side effects. Indeed the same
@@ -652,7 +659,7 @@ class CoreDriver {
       ONWHAT == Entity_kind::CELL and
       field_type == Field_type::MULTIMATERIAL_FIELD;
 
-    std::vector<int> mat_cells;
+    std::vector<int> mat_cells_owned;
 
     if (multimat) {
       // cache gradient stencil first
@@ -674,10 +681,10 @@ class CoreDriver {
 
         // Filter out GHOST cells
         // SHOULD BE IN HANDLED IN THE STATE MANAGER (See ticket LNK-1589)
-        mat_cells.reserve(nallent);
+        mat_cells_owned.reserve(nallent);
         for (auto const& c : mat_cells_all)
           if (source_mesh_.cell_get_type(c) == PARALLEL_OWNED)
-            mat_cells.push_back(c);
+            mat_cells_owned.push_back(c);
       }
       else
         throw std::runtime_error("interface reconstructor not set");
@@ -701,34 +708,81 @@ class CoreDriver {
     // owned+ghost and fill in the right entries; the ghost entries
     // are zeroed out)
     Vector<D> zerovec;
-    Wonton::vector<Vector<D>> gradient_field(nallent, zerovec);
+    std::vector<Vector<D>> gradient_field(nallent, zerovec);
 
     // populate it by invoking the kernel on each source entity.
 #ifdef PORTAGE_HAS_TANGRAM
     if (multimat) {
-      Wonton::vector<Vector<D>> owned_gradient_field(mat_cells.size());
+      Wonton::vector<Vector<D>> owned_gradient_field(mat_cells_owned.size());
 
+      // This gradient computation kernel uses the index of a cell in
+      // a material not a mesh
       kernel->set_material(material_id);
       kernel->set_interface_reconstructor(interface_reconstructor_);
-      Wonton::transform(mat_cells.begin(),
-                         mat_cells.end(),
-                         owned_gradient_field.begin(), *kernel);
+      Wonton::transform(mat_cells_owned.begin(),
+                        mat_cells_owned.end(),
+                        owned_gradient_field.begin(), *kernel);
+
+      // Transform cell index in mesh back to cell index in mat and put the
+      // computed gradient in gradient vector for material cell list
       int i = 0;
-      for (auto const& c : mat_cells) {
+      for (auto const& c : mat_cells_owned) {
         int cm = source_state_.cell_index_in_material(c, material_id);
         gradient_field[cm] = owned_gradient_field[i++];
       }
+
+#ifdef WONTON_ENABLE_MPI
+      // update ghosts with gradient of the field for this material.
+      // update_values uses m=0 for mesh and m=1..N for
+      // materials. Assumption is that the material cell list has
+      // owned cells first followed by ghost cells
+      if (nprocs_ > 1)
+        source_ghost_manager_->update_material_ghost_values(gradient_field.data(), material_id);
+#endif
+      
     } else {
 #endif
       Wonton::transform(source_mesh_.begin(ONWHAT, PARALLEL_OWNED),
-                         source_mesh_.end(ONWHAT, PARALLEL_OWNED),
-                         gradient_field.begin(), *kernel);
+                        source_mesh_.end(ONWHAT, PARALLEL_OWNED),
+                        gradient_field.begin(), *kernel);
+
+#ifdef WONTON_ENABLE_MPI
+      if (nprocs_ > 1)
+        source_ghost_manager_->update_mesh_ghost_values(gradient_field.data());
+#endif
+        
 #ifdef PORTAGE_HAS_TANGRAM
     }
 #endif
     if (source_part != nullptr) { delete kernel; }
 
     return gradient_field;
+  }
+
+  /**
+   * @brief Compute gradient of the field per material.
+   *
+   * @param field_name: the variable name.
+   * @param limiter_type: gradient limiter to use on internal regions.
+   * @param boundary_limiter_type: gradient limiter to use on boundary.
+   * @param source_part: the source mesh part to consider if any.
+   * @return the gradient field per material.
+   */
+  std::vector<Wonton::vector<Vector<D>>> compute_source_material_gradient(
+    std::string const field_name,
+    Limiter_type limiter_type = NOLIMITER,
+    Boundary_Limiter_type boundary_limiter_type = BND_NOLIMITER,
+    const Part<SourceMesh, SourceState>* source_part = nullptr) {
+
+    int const num_mats = source_state_.num_materials();
+    std::vector<Wonton::vector<Vector<D>>> gradient_fields(num_mats);
+
+    for (int m = 0; m < num_mats; ++m) {
+      gradient_fields[m] = compute_source_gradient(field_name, limiter_type,
+                                                   boundary_limiter_type, m,
+                                                   source_part);
+    }
+    return gradient_fields;
   }
 
   /**
@@ -1035,22 +1089,9 @@ class CoreDriver {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
-      // Intel 18.0.1 does not recognize std::make_unique even with -std=c++14 flag *ugh*
-      // mismatch_fixer_ = std::make_unique<MismatchFixer<D, ONWHAT,
-      //                                                  SourceMesh, SourceState,
-      //                                                  TargetMesh,  TargetState>
-      //                                    >
-      //     (source_mesh_, source_state_, target_mesh_, target_state_,
-      //      source_weights, executor_);
-
-      mismatch_fixer_ = std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                                      SourceMesh, SourceState,
-                                                      TargetMesh,  TargetState>
-                                        >(new MismatchFixer<D, ONWHAT,
-                                          SourceMesh, SourceState,
-                                          TargetMesh,  TargetState>
-                                          (source_mesh_, source_state_, target_mesh_, target_state_,
-                                           executor_));
+      mismatch_fixer_ = std::make_unique<MismatchFixup>(source_mesh_, source_state_,
+                                                        target_mesh_, target_state_,
+                                                        executor_);
     }
 
     return mismatch_fixer_->check_mismatch(source_weights);
@@ -1062,8 +1103,7 @@ class CoreDriver {
 
     @returns   Whether the meshes are mismatched
   */
-  bool
-  has_mismatch() {
+  bool has_mismatch() const {
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
     return mismatch_fixer_->has_mismatch();
   }
@@ -1110,31 +1150,32 @@ class CoreDriver {
 
     assert(mismatch_fixer_ && "check_mismatch must be called first!");
 
-    if (source_state_.field_type(ONWHAT, src_var_name) ==
-        Field_type::MESH_FIELD)
+    if (source_state_.field_type(ONWHAT, src_var_name) == Field_type::MESH_FIELD) {
       return mismatch_fixer_->fix_mismatch(src_var_name, trg_var_name,
-                                  global_lower_bound, global_upper_bound,
-                                  conservation_tol, maxiter,
-                                  partial_fixup_type, empty_fixup_type);
-    return false;
+                                           global_lower_bound, global_upper_bound,
+                                           conservation_tol, maxiter,
+                                           partial_fixup_type, empty_fixup_type);
+    } else
+      return false;
   }
   
  private:
   SourceMesh const & source_mesh_;
   TargetMesh const & target_mesh_;
-  SourceState const & source_state_;
+  SourceState & source_state_;  // May have to update ghost values
   TargetState & target_state_;
   Gradient gradient_;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
-
-  int comm_rank_ = 0;
-  int nprocs_ = 1;
-
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
+  std::unique_ptr<SourceGhostManager> source_ghost_manager_;
+  int comm_rank_ = 0;
+  int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
+
+  std::unique_ptr<MismatchFixup> mismatch_fixer_;
 
 #ifdef PORTAGE_HAS_TANGRAM
   bool cached_multimat_stenc_ = false;
@@ -1159,10 +1200,10 @@ class CoreDriver {
 
   // Pointer to the interface reconstructor object (required by the
   // interface to be shared)
-  std::shared_ptr<Tangram::Driver<InterfaceReconstructorType, D,
-                                  SourceMesh,
-                                  Matpoly_Splitter, Matpoly_Clipper>
-                  > interface_reconstructor_;
+  // Note: this is a shared pointer but was initialized as a unique pointer
+  // in 'intersect_materials' in the previous code. It may cause memory
+  // issues at runtime.
+  std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
   
 
   // Convert volume fraction and centroid data from compact
@@ -1197,13 +1238,13 @@ class CoreDriver {
       }
       nvals += cellids.size();
 
-      double const * matfracptr;
+      double * matfracptr;
       source_state_.mat_get_celldata("mat_volfracs", m, &matfracptr);
       int const num_cell_ids = cellids.size();
       for (int ic = 0; ic < num_cell_ids; ic++)
         cell_mat_volfracs_full[cellids[ic]*nmats+m] = matfracptr[ic];
 
-      Wonton::Point<D> const *matcenvec;
+      Wonton::Point<D> *matcenvec;
       
       // handle the case where we don't have centroids in the state manager at all
       if (source_state_.get_entity("mat_centroids")==Entity_kind::UNKNOWN_KIND) {
@@ -1241,12 +1282,7 @@ class CoreDriver {
       }
     }
   }
-
-#endif
-
-  std::unique_ptr<MismatchFixer<D, ONWHAT,
-                                SourceMesh, SourceState,
-                                TargetMesh, TargetState>> mismatch_fixer_;
+#endif // PORTAGE_HAS_TANGRAM
 
 };  // CoreDriver
 

@@ -18,8 +18,7 @@ target_include_directories(portage_distributed INTERFACE
 # Add header files
 set(portage_distributed_HEADERS
     mpi_bounding_boxes.h
-    mpi_particle_distribute.h
-    )
+    mpi_particle_distribute.h)
 
 # Not yet allowed for INTERFACE libraries
 # 
@@ -58,6 +57,12 @@ if (ENABLE_UNIT_TESTS)
                    LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
+
+    portage_add_unittest(test_mpi_ghost_manager
+               SOURCES test/test_mpi_ghost_manager.cc
+               LIBRARIES portage_distributed
+               POLICY MPI
+               THREADS 4)
   endif ()
 endif(ENABLE_UNIT_TESTS)
 

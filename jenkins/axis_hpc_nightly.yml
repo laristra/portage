@@ -10,10 +10,14 @@ CONFIG_TYPE:
   - serial
   - thrust
   - readme
+  - coverage
 
 exclude:
   - COMPILER: gcc6
     CONFIG_TYPE: readme
   - COMPILER: gcc7
     CONFIG_TYPE: readme
-
+  - COMPILER: intel18
+    CONFIG_TYPE: coverage
+  - COMPILER: gcc6
+    CONFIG_TYPE: coverage

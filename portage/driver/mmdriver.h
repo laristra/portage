@@ -127,7 +127,7 @@ class MMDriver {
     be mapped to the target mesh.
   */
   MMDriver(SourceMesh_Wrapper const& sourceMesh,
-           SourceState_Wrapper const& sourceState,
+           SourceState_Wrapper & sourceState,
            TargetMesh_Wrapper const& targetMesh,
            TargetState_Wrapper& targetState)
       : source_mesh_(sourceMesh),
@@ -428,7 +428,7 @@ class MMDriver {
 
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                 SourceState_Wrapper2 const & source_state2,
+                 SourceState_Wrapper2 & source_state2,
                  std::vector<std::string> const &src_meshvar_names,
                  std::vector<std::string> const &trg_meshvar_names,
                  std::vector<std::string> const &src_matvar_names,
@@ -450,7 +450,7 @@ class MMDriver {
 
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int node_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                 SourceState_Wrapper2 const & source_state2,
+                 SourceState_Wrapper2 & source_state2,
                  std::vector<std::string> const &src_meshvar_names,
                  std::vector<std::string> const &trg_meshvar_names,
                  Wonton::Executor_type const *executor = nullptr);
@@ -472,7 +472,7 @@ class MMDriver {
   */
   
   template<class SourceState_Wrapper2,Entity_kind onwhat>
-  void compute_bounds(SourceState_Wrapper2 const& source_state2,
+  void compute_bounds(SourceState_Wrapper2 & source_state2,
                    std::vector<std::string> const& src_meshvar_names,
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
@@ -505,7 +505,7 @@ class MMDriver {
         int nsrcents = source_mesh_.num_entities(onwhat,
                                                  Entity_type::PARALLEL_OWNED);
         
-        double const *source_data;
+        double *source_data;
         source_state_.mesh_get_data(onwhat, src_var, &source_data);
         double lower_bound = *std::min_element(source_data, source_data + nsrcents);
         double upper_bound = *std::max_element(source_data, source_data + nsrcents);
@@ -726,7 +726,7 @@ class MMDriver {
  private:
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
-  SourceState_Wrapper const& source_state_;
+  SourceState_Wrapper & source_state_;
   TargetState_Wrapper& target_state_;
   std::unordered_map<std::string, std::string> source_target_varname_map_;
   std::unordered_map<std::string, Limiter_type> limiters_;
@@ -790,7 +790,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
              InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
              >::cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                           SourceState_Wrapper2 const & source_state2,
+                           SourceState_Wrapper2 & source_state2,
                            std::vector<std::string> const &src_meshvar_names,
                            std::vector<std::string> const &trg_meshvar_names,
                            std::vector<std::string> const &src_matvar_names,
@@ -1026,7 +1026,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
              InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
              >::node_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                           SourceState_Wrapper2 const & source_state2,
+                           SourceState_Wrapper2 & source_state2,
                            std::vector<std::string> const &src_meshvar_names,
                            std::vector<std::string> const &trg_meshvar_names,
                            Wonton::Executor_type const *executor) {

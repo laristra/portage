@@ -12,8 +12,8 @@
 # specified, it will install to /install_prefix/wonton/dev-blah-blah
 #
 # WORKSPACE   -  where the code is checked out
-# CONFIG_TYPE -  base, debug, serial, readme, thrust, kokkos
-# COMPILER    -  intel, gcc6, gcc7
+# CONFIG_TYPE -  base, debug, serial, readme, thrust, coverage
+# COMPILER    -  intel, gcc7
 # BRANCH_NAME -  master
 #
 # The exit code determines if the test succeeded or failed.
@@ -28,7 +28,6 @@ set -x
 umask 007
 
 BUILD_TYPE=$1
-build_type=$2
 version=$2
 if [[ $version == "" ]]; then
     version=dev
@@ -138,8 +137,8 @@ portage_install_dir=$NGC/private/portage/${version}${compiler_suffix}${mpi_suffi
 
 
 # Coverage
-cov_flags=
-if [[ $build_type == "coverage" ]]; then
+cov_flags=""
+if [[ $CONFIG_TYPE == "coverage" ]]; then
     cov_flags="-D CMAKE_C_FLAGS='-coverage' -D CMAKE_CXX_FLAGS='-coverage' -D CMAKE_EXE_LINKER_FLAGS=-coverage"
     cmake_build_type=Debug
     export PATH=$NGC/private/bin:${PATH}

@@ -6,7 +6,7 @@ Please see the license file at the root of this repository, or at:
 
 cmake_minimum_required(VERSION 3.13)
 
-project(portage CXX)
+project(portage CXX C)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
