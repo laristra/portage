@@ -58,13 +58,11 @@ public:
    * defined on target points. It determines the spatial extents of
    * the search by creating a bounding box enclosing the search
    * radii of all target points. It discretizes this bounding box
-   * by deducing the number of sides per axis from the total radius
+   * by deducing the number of edges per axis from the total radius
    * for that axis. Hence the number of bins is simply given by the
-   * product of the number of sides. It finally puts each source
+   * product of the number of edges. It finally puts each source
    * point to the corresponding bin by hashing its coordinates:
    *  (x,y,z) -> (i,j,k) -> i'.
-   * Note that the helper grid is virtual and not explicitly stored.
-   * It is only used to retrieve the source bin for each target point.
    *
    * @param source_swarm: the source points.
    * @param target_swarm: the target points.
@@ -110,7 +108,7 @@ public:
       p_min[d] = std::numeric_limits<double>::max();
       p_max[d] = std::numeric_limits<double>::lowest();
       radius[d] = 0.;
-      sides_[d] = 0;
+      num_edges_[d] = 0;
     }
 
     for (int t = 0; t < num_target_points; ++t) {
@@ -128,23 +126,24 @@ public:
      * -------------------------------------------------------------------
      * It discretizes the bounding box by computing the spatial step 'ds'
      * which is a scaled mean radius per axis: ds = (r/n) sum_i=1^n |h_i|.
-     * For a given axis, it determines the number of cell sides by dividing
-     * the search radius by the spatial step: ns = (p_max - p_min) / ds,
-     * provided that it does not exceed the default maximum number of sides.
-     * The number of bins is simply deduced by the product of the number of
-     * sides per axis: n_bins = ns[0].ns[1].ns[2].
+     * For a given axis, it determines the number of edges by dividing
+     * the search radius by the spatial step: m = (p_max - p_min) / ds,
+     * provided that it does not exceed the maximum number of edges
+     * defaulted to max[1, ceil(pow(r n, 1/d))]. The number of bins is
+     * simply deduced by the product of the number of edges per axis:
+     * n_bins = m[0].m[1].m[2].
      * The scale factor 'r' is chosen for compatibility reasons with the
      * legacy search algorithm.
      */
-    int const max_sides = get_max_sides(num_target_points);
+    int const num_max_edges = get_max_edges(num_target_points);
     int num_bins = 1;
 
     for (int d = 0; d < dim; ++d) {
       orig_[d] = p_min[d];
       span_[d] = p_max[d] - p_min[d];
       double const step = 2 * radius[d] / num_target_points;
-      sides_[d] = std::min(static_cast<int>(span_[d] / step), max_sides);
-      num_bins *= sides_[d];
+      num_edges_[d] = std::min(static_cast<int>(span_[d] / step), num_max_edges);
+      num_bins *= num_edges_[d];
     }
 
     /* --------------------------------------------------------------
@@ -212,7 +211,7 @@ public:
      * in a local cell list.
      * Note that the helper grid cells are virtually stored in a flat
      * array: each cell can be accessed using the cached number of
-     * sides as a stride.
+     * edges as a stride.
      */
     std::vector<int> cells;
     auto const first = deduce_cell_index(box_min);
@@ -231,14 +230,14 @@ public:
     } else if (dim == 2) {
       for (int j = first[1]; j <= last[1]; ++j) {
         for (int i = first[0]; i <= last[0]; ++i) {
-          cells.emplace_back(i + j * sides_[0]);
+          cells.emplace_back(i + j * num_edges_[0]);
         }
       }
     } else if (dim == 3) {
       for (int k = first[2]; k <= last[2]; ++k) {
         for (int j = first[1]; j <= last[1]; ++j) {
           for (int i = first[0]; i <= last[0]; ++i) {
-            cells.emplace_back(i + j * sides_[0] + k * sides_[0] * sides_[1]);
+            cells.emplace_back(i + j * num_edges_[0] + k * num_edges_[0] * num_edges_[1]);
           }
         }
       }
@@ -273,18 +272,18 @@ public:
 
 private:
   /**
-   * @brief Retrieve the maximum number of sides for the helper grid.
+   * @brief Retrieve the maximum number of edges per axis for the helper grid.
    *
-   * It defines the default maximum number of sides to limit the
+   * It defines the default maximum number of edges to limit the
    * number of cells of the helper grid. It corresponds to the
    * d^th root of the number of target points scaled by a factor.
    * The scaling factor is chosen for compatibility reasons with
    * the legacy search algorithm.
    *
    * @param num_points: the number of points of the swarm.
-   * @return the maximum allowed number of sides for the grid.
+   * @return the maximum allowed number of edges for the grid.
    */
-  int get_max_sides(int num_points) const {
+  int get_max_edges(int num_points) const {
     double const factor = 0.1;
     double const num_per_axis = std::pow(factor * num_points, 1./dim);
     return std::max(static_cast<int>(std::ceil(num_per_axis)), 1);
@@ -306,10 +305,10 @@ private:
     std::array<int, dim> cell;
 
     for (int d = 0; d < dim; ++d) {
-      assert(sides_[d] > 0);
+      assert(num_edges_[d] > 0);
       double const shift = p[d] - orig_[d];
       assert(shift >= 0 and shift <= span_[d]);
-      cell[d] = std::min(static_cast<int>(std::floor(shift * sides_[d] / span_[d])), sides_[d] - 1);
+      cell[d] = std::min(static_cast<int>(std::floor(shift * num_edges_[d] / span_[d])), num_edges_[d] - 1);
     }
 
     return cell;
@@ -321,7 +320,7 @@ private:
    * It retrieve the index of bin that should contain the given source point
    * and is done in two steps. First, it computes the index (i,j,k) of the
    * helper grid cell that contains the given source point. It then deduces
-   * the bin index i' in the flat array using the number of sides per axis
+   * the bin index i' in the flat array using the number of edges per axis
    * as strides: i' = i + j * ns[0] + k * ns[0] * ns[1].
    *
    * @param p: current point coordinates.
@@ -333,8 +332,8 @@ private:
     // step 2: (i,j,k) to i'
     switch (dim) {
       case 1: return cell[0];
-      case 2: return cell[0] + cell[1] * sides_[0];
-      case 3: return cell[0] + cell[1] * sides_[0] + cell[2] * sides_[0] * sides_[1];
+      case 2: return cell[0] + cell[1] * num_edges_[0];
+      case 3: return cell[0] + cell[1] * num_edges_[0] + cell[2] * num_edges_[0] * num_edges_[1];
       default: return -1;
     }
   }
@@ -351,8 +350,8 @@ private:
   Wonton::Point<dim> orig_, span_;
   /** source points bins */
   std::vector<std::vector<int>> bucket_;
-  /** number of sides per axis */
-  int sides_[dim] {};
+  /** number of edges per axis */
+  int num_edges_[dim] {};
 };
 
 } // namespace Portage
