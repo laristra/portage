@@ -161,7 +161,7 @@ TEST_P(Order2Test, SimpleMesh1D) {
                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
-  double stdval, mass1(0.0);
+  double stdval(0.0), mass1(0.0);
   for (int c = 0; c < ncells_tgt; ++c) {
     double vol = tgtmesh_wrapper.cell_volume(c);
     if (itest == 1) {
@@ -179,7 +179,9 @@ TEST_P(Order2Test, SimpleMesh1D) {
     } 
     // there is no clear definition of linearity preservation in curvilinear coordinates
     // instaead, we use a mass conservation test.
-    if (itest < 4) ASSERT_NEAR(stdval, outvals[c], TOL);
+    if (itest < 4) {
+      ASSERT_NEAR(stdval, outvals[c], TOL);
+    }
     mass1 += stdval * vol;
   }
 
