@@ -5,6 +5,7 @@ Please see the license file at the root of this repository, or at:
 */
 
 
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <portage/search/search_kdtree.h>
@@ -36,16 +37,22 @@ class Order2Test : public ::testing::TestWithParam<int> {
 };
 
 
+// Tests 1-2 Cartesian coordinates for constant and linear functions
+// Tests 3-4 Cylindrical coordinates for constant and linear functions
+
 TEST_P(Order2Test, SimpleMesh1D) {
   int itest = GetParam();
 
   // Create simple meshes
   std::shared_ptr<Wonton::Simple_Mesh> srcmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 4);
-  std::shared_ptr<Wonton::Simple_Mesh> tgtmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 7);
+  std::shared_ptr<Wonton::Simple_Mesh> tgtmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 8);
 
   // Create mesh wrappers
-  Wonton::Simple_Mesh_Wrapper srcmesh_wrapper(*srcmesh);
-  Wonton::Simple_Mesh_Wrapper tgtmesh_wrapper(*tgtmesh);
+  auto CoordSys = Wonton::CoordSysType::Cartesian;
+  if (itest == 3 || itest == 4) CoordSys = Wonton::CoordSysType::CylindricalAxisymmetric;
+
+  Wonton::Simple_Mesh_Wrapper srcmesh_wrapper(*srcmesh, true, true, true, CoordSys);
+  Wonton::Simple_Mesh_Wrapper tgtmesh_wrapper(*tgtmesh, true, true, true, CoordSys);
 
   // count cells
   int ncells_src = srcmesh_wrapper.num_owned_cells();
@@ -56,16 +63,26 @@ TEST_P(Order2Test, SimpleMesh1D) {
   Wonton::Simple_State tgtstate(tgtmesh);
 
   // Define a state vector with constant value and add it to the source state
+  double mass0(0.0);
   Wonton::Point<1> xc;
   std::vector<double> data(ncells_src);
 
   for (int c = 0; c < ncells_src; ++c) {
+    double vol = srcmesh_wrapper.cell_volume(c);
     if (itest == 1) {
       data[c] = 1.25;
-    } else if (itest == 2) {
+    } else if (itest == 2 || itest == 3) {
       srcmesh_wrapper.cell_centroid(c, &xc);
       data[c] = xc[0];
+    } else if (itest == 4) {
+      Wonton::Point<1> a, b;
+      std::vector<int> nodes;
+      srcmesh_wrapper.cell_get_nodes(c, &nodes);
+      srcmesh_wrapper.node_get_coordinates(nodes[0], &a);
+      srcmesh_wrapper.node_get_coordinates(nodes[1], &b);
+      data[c] = fabs(std::pow(b[0], 3) - std::pow(a[0], 3)) / (3 * vol);
     }
+    mass0 += data[c] * vol;
   }
   srcstate.add("cellvars", Wonton::Entity_kind::CELL, &(data[0]));
 
@@ -92,9 +109,13 @@ TEST_P(Order2Test, SimpleMesh1D) {
     std::vector<std::vector<double>> xwts;
 
     // Compute the moments
-    BOX_INTERSECT::intersection_moments<1>(tgt_cell_coords[c],
-                                           src_cell_coords,
-                                           &xcells, &xwts);
+    if (itest == 1 || itest == 2) {
+      BOX_INTERSECT::intersection_moments<1>(
+          tgt_cell_coords[c], src_cell_coords, &xcells, &xwts);
+    } else if (itest == 3 || itest == 4) {
+      BOX_INTERSECT::intersection_moments<1, Wonton::CylindricalRadialCoordinates>(
+          tgt_cell_coords[c], src_cell_coords, &xcells, &xwts);
+    }
 
     // Pack the results into a vector of true Portage::Weights_t
     int num_intersect_cells = xcells.size();
@@ -140,19 +161,32 @@ TEST_P(Order2Test, SimpleMesh1D) {
                     outvals.begin(), interpolator);
 
   // Make sure we retrieved the correct value for each cell on the target
-  double stdval;
+  double stdval, mass1(0.0);
   for (int c = 0; c < ncells_tgt; ++c) {
+    double vol = tgtmesh_wrapper.cell_volume(c);
     if (itest == 1) {
       stdval = 1.25;
-    } else if (itest == 2) {
+    } else if (itest == 2 || itest == 3) {
       tgtmesh_wrapper.cell_centroid(c, &xc);
       stdval = xc[0];
+    } else if (itest == 4) {
+      Wonton::Point<1> a, b;
+      std::vector<int> nodes;
+      tgtmesh_wrapper.cell_get_nodes(c, &nodes);
+      tgtmesh_wrapper.node_get_coordinates(nodes[0], &a);
+      tgtmesh_wrapper.node_get_coordinates(nodes[1], &b);
+      stdval = fabs(std::pow(b[0], 3) - std::pow(a[0], 3)) / (3 * vol);
     } 
-    ASSERT_NEAR(stdval, outvals[c], TOL);
+    // there is no clear definition of linearity preservation in curvilinear coordinates
+    // instaead, we use a mass conservation test.
+    if (itest < 4) ASSERT_NEAR(stdval, outvals[c], TOL);
+    mass1 += stdval * vol;
   }
+
+  ASSERT_NEAR(mass0, mass1, TOL);
 }
 
 INSTANTIATE_TEST_CASE_P(
   Order2TestAll,
   Order2Test,
-  ::testing::Values(1,2));
+  ::testing::Values(1,2,3,4));
