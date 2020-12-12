@@ -49,7 +49,8 @@ TEST_P(Order2Test, SimpleMesh1D) {
 
   // Create mesh wrappers
   auto CoordSys = Wonton::CoordSysType::Cartesian;
-  if (itest == 3 || itest == 4) CoordSys = Wonton::CoordSysType::CylindricalAxisymmetric;
+  if (itest == 3 || itest == 4) CoordSys = Wonton::CoordSysType::CylindricalRadial;
+  if (itest == 5 || itest == 6) CoordSys = Wonton::CoordSysType::SphericalRadial;
 
   Wonton::Simple_Mesh_Wrapper srcmesh_wrapper(*srcmesh, true, true, true, CoordSys);
   Wonton::Simple_Mesh_Wrapper tgtmesh_wrapper(*tgtmesh, true, true, true, CoordSys);
@@ -74,13 +75,20 @@ TEST_P(Order2Test, SimpleMesh1D) {
     } else if (itest == 2 || itest == 3) {
       srcmesh_wrapper.cell_centroid(c, &xc);
       data[c] = xc[0];
-    } else if (itest == 4) {
+    } else if (itest == 4 || itest == 5) {
       Wonton::Point<1> a, b;
       std::vector<int> nodes;
       srcmesh_wrapper.cell_get_nodes(c, &nodes);
       srcmesh_wrapper.node_get_coordinates(nodes[0], &a);
       srcmesh_wrapper.node_get_coordinates(nodes[1], &b);
       data[c] = fabs(std::pow(b[0], 3) - std::pow(a[0], 3)) / (3 * vol);
+    } else if (itest == 6) {
+      Wonton::Point<1> a, b;
+      std::vector<int> nodes;
+      srcmesh_wrapper.cell_get_nodes(c, &nodes);
+      srcmesh_wrapper.node_get_coordinates(nodes[0], &a);
+      srcmesh_wrapper.node_get_coordinates(nodes[1], &b);
+      data[c] = fabs(std::pow(b[0], 4) - std::pow(a[0], 4)) / (4 * vol);
     }
     mass0 += data[c] * vol;
   }
@@ -114,6 +122,9 @@ TEST_P(Order2Test, SimpleMesh1D) {
           tgt_cell_coords[c], src_cell_coords, &xcells, &xwts);
     } else if (itest == 3 || itest == 4) {
       BOX_INTERSECT::intersection_moments<1, Wonton::CylindricalRadialCoordinates>(
+          tgt_cell_coords[c], src_cell_coords, &xcells, &xwts);
+    } else if (itest == 5 || itest == 6) {
+      BOX_INTERSECT::intersection_moments<1, Wonton::SphericalRadialCoordinates>(
           tgt_cell_coords[c], src_cell_coords, &xcells, &xwts);
     }
 
@@ -169,13 +180,20 @@ TEST_P(Order2Test, SimpleMesh1D) {
     } else if (itest == 2 || itest == 3) {
       tgtmesh_wrapper.cell_centroid(c, &xc);
       stdval = xc[0];
-    } else if (itest == 4) {
+    } else if (itest == 4 || itest == 5) {
       Wonton::Point<1> a, b;
       std::vector<int> nodes;
       tgtmesh_wrapper.cell_get_nodes(c, &nodes);
       tgtmesh_wrapper.node_get_coordinates(nodes[0], &a);
       tgtmesh_wrapper.node_get_coordinates(nodes[1], &b);
       stdval = fabs(std::pow(b[0], 3) - std::pow(a[0], 3)) / (3 * vol);
+    } else if (itest == 6) {
+      Wonton::Point<1> a, b;
+      std::vector<int> nodes;
+      tgtmesh_wrapper.cell_get_nodes(c, &nodes);
+      tgtmesh_wrapper.node_get_coordinates(nodes[0], &a);
+      tgtmesh_wrapper.node_get_coordinates(nodes[1], &b);
+      stdval = fabs(std::pow(b[0], 4) - std::pow(a[0], 4)) / (4 * vol);
     } 
     // there is no clear definition of linearity preservation in curvilinear coordinates
     // instaead, we use a mass conservation test.
@@ -191,4 +209,4 @@ TEST_P(Order2Test, SimpleMesh1D) {
 INSTANTIATE_TEST_CASE_P(
   Order2TestAll,
   Order2Test,
-  ::testing::Values(1,2,3,4));
+  ::testing::Values(1,2,3,4,5,6));
