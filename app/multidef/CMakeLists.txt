@@ -7,3 +7,8 @@ Please see the license file at the root of this repository, or at:
 add_executable(portage_multidef_check main.cc dummy.cc)
 target_link_libraries(portage_multidef_check PRIVATE portage)
 
+if (ENABLE_APP_TESTS)
+  add_subdirectory(test)
+endif (ENABLE_APP_TESTS)
+
+
