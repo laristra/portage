@@ -45,7 +45,7 @@ TEST_P(Order2Test, SimpleMesh1D) {
 
   // Create simple meshes
   std::shared_ptr<Wonton::Simple_Mesh> srcmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 4);
-  std::shared_ptr<Wonton::Simple_Mesh> tgtmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 8);
+  std::shared_ptr<Wonton::Simple_Mesh> tgtmesh = std::make_shared<Wonton::Simple_Mesh>(0.0, 1.0, 7);
 
   // Create mesh wrappers
   auto CoordSys = Wonton::CoordSysType::Cartesian;
