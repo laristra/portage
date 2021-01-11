@@ -1,10 +1,11 @@
 {
   "mesh": {
     "dimension": 3,
-    "source": "../../../test_data/cast_source.exo",
-    "target": "../../../test_data/cast_target.exo",
+    "source": "cast_source.exo",
+    "target": "cast_target.exo",
     "conformal": true,
-    "export": true
+    "export": false,
+    "results": "data_dim_3_blocks"
   },
   "remap": {
     "kind": "cell",

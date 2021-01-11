@@ -423,11 +423,10 @@ int main(int argc, char* argv[]) {
   } else
     return params.abort("part-by-part node remap is not supported", false);
 
+  MPI_Barrier(comm);
+
   /* ------------------------------------------------------------------------ */
   if (params.dump) {
-
-    MPI_Barrier(comm);
-
     if (my_rank == 0)
       std::printf("\nDump data to exodus files ... ");
 
@@ -439,54 +438,60 @@ int main(int argc, char* argv[]) {
 
     MPI_Barrier(comm);
 
-    std::vector<int> index_helper;
-    std::vector<int> local_index;
-    std::vector<int> global_index;
-    std::vector<double> local_field;
-    std::vector<double> global_field;
-    double* field_data = nullptr;
-
-    local_index.resize(nb_target_cells);
-    local_field.resize(nb_target_cells);
-
-    // dump each field in a separate file
-    for (auto&& field : params.fields) {
-      // retrieve cell global indices and field values for current rank
-      for (auto c = 0; c < nb_target_cells; ++c)
-        local_index[c] = target_mesh->GID(c, Jali::Entity_kind::CELL);
-
-      target_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
-      std::copy(field_data, field_data + nb_target_cells, local_field.begin());
-
-      // append local index and values lists to master rank global lists
-      Portage::collate(comm, my_rank, nb_ranks, local_index, global_index);
-      Portage::collate(comm, my_rank, nb_ranks, local_field, global_field);
-
-      if (my_rank == 0) {
-        // sort field values by global ID
-        Portage::argsort(global_index, index_helper);
-        Portage::reorder(global_index, index_helper);
-        Portage::reorder(global_field, index_helper);
-
-        // dump sorted data eventually
-        std::ofstream file("remap_"+ field.first +".dat");
-        file << std::scientific;
-        file.precision(17);
-
-        for (long c = 0; c < nb_target_cells; ++c)
-          file << global_index[c] << "\t" << global_field[c] << std::endl;
-
-        index_helper.clear();
-        global_index.clear();
-        global_field.clear();
-      }
-
-      MPI_Barrier(comm);
-    }
-
     if (my_rank == 0)
       std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
   }
+
+  if (my_rank == 0)
+    std::printf("\nDumping remapped fields ... ");
+
+  std::vector<int> index_helper;
+  std::vector<int> local_index;
+  std::vector<int> global_index;
+  std::vector<double> local_field;
+  std::vector<double> global_field;
+  double* field_data = nullptr;
+
+  local_index.resize(nb_target_cells);
+  local_field.resize(nb_target_cells);
+
+  // dump each field in a separate file
+  for (auto&& field : params.fields) {
+    // retrieve cell global indices and field values for current rank
+    for (auto c = 0; c < nb_target_cells; ++c)
+      local_index[c] = target_mesh->GID(c, Jali::Entity_kind::CELL);
+
+    target_state_wrapper.mesh_get_data(Wonton::CELL, field.first, &field_data);
+    std::copy(field_data, field_data + nb_target_cells, local_field.begin());
+
+    // append local index and values lists to master rank global lists
+    Portage::collate(comm, my_rank, nb_ranks, local_index, global_index);
+    Portage::collate(comm, my_rank, nb_ranks, local_field, global_field);
+
+    if (my_rank == 0) {
+      // sort field values by global ID
+      Portage::argsort(global_index, index_helper);
+      Portage::reorder(global_index, index_helper);
+      Portage::reorder(global_field, index_helper);
+
+      // dump sorted data eventually
+      std::ofstream file(params.results+"_"+ field.first +".dat");
+      file << std::scientific;
+      file.precision(17);
+
+      for (long c = 0; c < nb_target_cells; ++c)
+        file << global_index[c] << "\t" << global_field[c] << std::endl;
+
+      index_helper.clear();
+      global_index.clear();
+      global_field.clear();
+    }
+
+    MPI_Barrier(comm);
+  }
+
+  if (my_rank == 0)
+    std::printf(" done. \e[32m(%.3f s)\e[0m\n", timer::elapsed(tic));
 
   delete source_model;  // no effect if nullptr
   delete target_model;

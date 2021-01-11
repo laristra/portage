@@ -1,10 +1,11 @@
 {
   "mesh": {
     "dimension": 2,
-    "source": "../../../test_data/semi2-coarse.exo",
-    "target": "../../../test_data/semi2-fine.exo",
+    "source": "semi2-coarse.exo",
+    "target": "semi2-fine.exo",
     "conformal": true,
-    "export": true
+    "export": false,
+    "results": "data_dim_2_analytic"
   },
   "remap": {
     "kind": "cell",

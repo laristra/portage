@@ -26,7 +26,7 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_MPI)
     endif()
 
     # build tests as well
-#    if (ENABLE_APP_TESTS)
-#        add_subdirectory(test)
-#    endif()
+    if (ENABLE_APP_TESTS)
+        add_subdirectory(test)
+    endif()
 endif()
