@@ -82,6 +82,11 @@ if (ENABLE_UNIT_TESTS)
       LIBRARIES portage_interpolate  
       POLICY SERIAL)
 
+    portage_add_unittest(test_interpolate_1d
+      SOURCES test/test_interp_1d.cc
+      LIBRARIES portage_interpolate  
+      POLICY SERIAL)
+
     portage_add_unittest(test_quadfit
       SOURCES  test/test_quadfit.cc
       LIBRARIES portage_interpolate  
