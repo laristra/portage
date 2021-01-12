@@ -809,6 +809,7 @@ void print_usage() {
       -nomm do not do the direct mesh-mesh remap\n\
     example file format: \n\
     note: do not include this line or text before and including \":\" in lines below\n\
+    dimension, double:                      3\n\
     source mesh min, double:          0. 0. 0.\n\
     source mesh max, double:          1. 1. 1.\n\
     target mesh min, double:         .2 .2 .2\n\
