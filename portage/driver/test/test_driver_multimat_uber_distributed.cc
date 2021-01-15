@@ -6,7 +6,7 @@
 
 #include "portage/support/portage.h"
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -15,17 +15,17 @@
 #include <type_traits>
 #include <vector> 
 
-//This test is distributed
-#include "mpi.h"
 #include "gtest/gtest.h"
 
-//Tangram includes
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/MOF.h"
+//Wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
+//This test is distributed
+#ifdef WONTON_ENABLE_MPI
+#include "mpi.h"
+#endif
 
 //Portage includes
 #include "portage/driver/uberdriver.h"
@@ -37,9 +37,20 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-//Wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
+
+//Tangram includes
+#include "tangram/intersect/split_rNd.h"
+#ifndef IR_2D
+  #ifdef TANGRAM_ENABLE_XMOF2D
+    #include "tangram/reconstruct/xmof2D_wrapper.h"
+    #define IR_2D XMOF2D_Wrapper
+  #else
+    #define IR_2D MOF
+  #endif
+#endif
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 
@@ -629,7 +640,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
       mass += rho[ic]*cellvol;
     }
   
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr<<std::setprecision(13)<<"On rank "<<commRank<<" Mat "<<m
     <<": volume = "<<volume<<", mass = "<<mass<<std::endl;  
  
@@ -703,11 +714,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::XMOF2D_Wrapper>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,
@@ -719,11 +730,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::XMOF2D_Wrapper>
+                       Tangram::IR_2D, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
     d.interpolate<double, Portage::Entity_kind::CELL,
                   Portage::Interpolate_2ndOrder>("density", "density",
@@ -736,11 +747,11 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,
@@ -753,19 +764,18 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
                        Wonton::Flat_Mesh_Wrapper<>, 
                        Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                        Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                       Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                       Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
         
-    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+    d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
 
     d.interpolate<double, Portage::Entity_kind::CELL,
                   Portage::Interpolate_2ndOrder>("density", "density",
     					       dblmin, dblmax, Portage::Limiter_type::NOLIMITER,
                      Portage::Boundary_Limiter_type::BND_NOLIMITER);
-  }
- else
+  } else
    std::cerr<<"Remapping requested for dim != 2 or 3"<<std::endl;
 
   //-------------------------------------------------------------------
@@ -785,7 +795,7 @@ TEST(UberDriver2D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
@@ -808,8 +818,8 @@ TEST(UberDriver2D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
-  mf.partitioner(Jali::Partitioner_type::BLOCK); 
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
+  mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 7, 7);
   targetMesh = mf(0.0, 0.0, 1.0, 1.0, 5, 5);
@@ -831,7 +841,7 @@ TEST(UberDriver3D, Layer_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -855,7 +865,7 @@ TEST(UberDriver3D, Layer_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK); 
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 7, 7, 7);
@@ -879,7 +889,7 @@ TEST(UberDriver2D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -902,7 +912,7 @@ TEST(UberDriver2D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 1.0, 1.0, 10, 10);
@@ -925,7 +935,7 @@ TEST(UberDriver3D, NestedBox_Const1stOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
@@ -948,7 +958,7 @@ TEST(UberDriver3D, NestedBox_Linear2ndOrder)
   std::shared_ptr<Jali::State> targetState;
 
   Jali::MeshFactory mf(MPI_COMM_WORLD);
-  mf.included_entities({Jali::Entity_kind::ALL_KIND});
+  mf.included_entities(Jali::Entity_kind::ALL_KIND);
   mf.partitioner(Jali::Partitioner_type::BLOCK);
 
   sourceMesh = mf(0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 10, 10, 10);
@@ -961,4 +971,4 @@ TEST(UberDriver3D, NestedBox_Linear2ndOrder)
   run<3, NESTED_BOX>(sourceMesh, targetMesh, sourceState, targetState, LINEAR);
 }
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

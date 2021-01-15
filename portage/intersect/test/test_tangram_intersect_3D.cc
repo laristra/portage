@@ -10,12 +10,13 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
-#include "tangram/support/MatPoly.h"
-
-#include "portage/intersect/intersect_r3d.h"
-
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
+
+#include "tangram/support/MatPoly.h"
+
+#include "portage/intersect/intersect_rNd.h"
 
 double eps = 1.e-8;
 

@@ -8,7 +8,7 @@
 #include <memory>
 #include "gtest/gtest.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
@@ -17,11 +17,12 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/driver/coredriver.h"
@@ -183,7 +184,7 @@ protected:
             return 1.;
           }
         }
-      } case Partial::SHIFTED_CONSERVATIVE: {
+      } case Partial::GLOBALLY_CONSERVATIVE: {
 
         /* Correct target cell density for shifted-conservative fixup scheme. */
         auto compute_shifted_density = [](double mass_source,
@@ -275,7 +276,7 @@ public:
                       target_mesh_wrapper, target_state_wrapper);
 
     auto candidates = remapper.search<Portage::SearchKDTree>();
-    auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+    auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
     for (int i = 0; i < nb_parts; ++i) {
       // interpolate density part-by-part while fixing mismatched values
@@ -356,9 +357,9 @@ TEST_F(PartMismatchTest, Constant_Extrapolate) {
 }
 
 TEST_F(PartMismatchTest, ShiftedConservative_LeaveEmpty) {
-  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::LEAVE_EMPTY);
+  unitTest(Partial::GLOBALLY_CONSERVATIVE, Empty::LEAVE_EMPTY);
 }
 
 TEST_F(PartMismatchTest, ShiftedConservative_Extrapolate) {
-  unitTest(Partial::SHIFTED_CONSERVATIVE, Empty::EXTRAPOLATE);
+  unitTest(Partial::GLOBALLY_CONSERVATIVE, Empty::EXTRAPOLATE);
 }

@@ -21,6 +21,8 @@ Please see the license file at the root of this repository, or at:
 #include <numeric>
 #include <stdexcept>
 
+#include "wonton/support/wonton.h"
+
 #include "portage/support/portage.h"
 
 /*!
@@ -44,7 +46,7 @@ using Wonton::Weights_t;
 // processor. This is useful for meshes where the partitioning of cells
 // on ranks is not mutually exclusive.
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 template<Entity_kind onwhat, class Mesh_Wrapper>
 void get_unique_entity_masks(Mesh_Wrapper const &mesh,
@@ -132,7 +134,7 @@ class MismatchFixer {
       target_mesh_(target_mesh), target_state_(target_state),
       global_check_(global_check) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       distributed_ = true;
@@ -151,7 +153,7 @@ class MismatchFixer {
   /// @param[in] sources_and_weights Intersection sources and moments (vols, centroids)
   /// @returns whether the mesh domains are mismatched
   bool check_mismatch(
-    Portage::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
+    Wonton::vector<std::vector<Weights_t>> const & source_ents_and_weights) {
     
     // If we have already computed the mismatch, just return the result
     if (computed_mismatch_) return mismatch_;
@@ -166,7 +168,7 @@ class MismatchFixer {
     // don't form a strict tiling (no overlaps) after redistribution
 
     std::vector<int> source_ent_masks(nsourceents_, 1);
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       get_unique_entity_masks<onwhat, SourceMesh_Wrapper>(source_mesh_,
                                                           &source_ent_masks,
@@ -186,7 +188,7 @@ class MismatchFixer {
                         0.0);
 
     global_source_volume_ = source_volume_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&source_volume_, &global_source_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
@@ -206,7 +208,7 @@ class MismatchFixer {
 
 
     global_target_volume_ = target_volume_;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&target_volume_, &global_target_volume_, 1, MPI_DOUBLE,
                     MPI_SUM, mycomm_);
@@ -231,7 +233,7 @@ class MismatchFixer {
                                           xsect_volumes_.end(), 0.0);
 
     global_xsect_volume_ = xsect_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_)
       MPI_Allreduce(&xsect_volume, &global_xsect_volume_, 1,
                     MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -247,11 +249,11 @@ class MismatchFixer {
 
       mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0) 
         std::cerr << "\n** MESH MISMATCH -" <<
             " some source cells are not fully covered by the target mesh\n";
 
-#ifdef DEBUG
       // Find one source cell (or dual cell) that is not fully covered
       // by the target mesh and output its ID. Unfortunately, that means
       // processing all source cells. We initialize each source cell to
@@ -282,6 +284,7 @@ class MismatchFixer {
           break;
         }
 #endif
+
     }
 
     // Are some target cells not fully covered by source cells?
@@ -292,11 +295,11 @@ class MismatchFixer {
 
       mismatch_ = true;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank_ == 0)
         std::cerr << "\n** MESH MISMATCH -" <<
             " some target cells are not fully covered by the source mesh\n";
 
-#ifdef DEBUG
       // Find one target cell that is not fully covered by the source mesh and
       // output its ID
       for (auto it = target_mesh_.begin(onwhat, Entity_type::PARALLEL_OWNED);
@@ -354,19 +357,19 @@ class MismatchFixer {
   ///
   /// partial_fixup_type can be one of three types:
   ///
-  /// CONSTANT - Fields will see no perturbations BUT REMAP WILL BE
-  ///            NON-CONSERVATIVE (constant preserving, not linearity
-  ///            preserving)
-  /// LOCALLY_CONSERVATIVE - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
-  ///                        will preserve the integral quantities received from
-  ///                        source mesh overlap) but perturbations will
-  ///                        occur in the field (constant fields may not stay
-  ///                        constant if there is mismatch)
-  /// SHIFTED_CONSERVATIVE - REMAP WILL BE CONSERVATIVE and field
-  ///                        perturbations will be minimum but field
-  ///                        values may be shifted (Constant fields
-  ///                        will be shifted to different constant; no
-  ///                        guarantees on linearity preservation)
+  /// CONSTANT              - Fields will see no perturbations BUT REMAP WILL BE
+  ///                         NON-CONSERVATIVE (constant preserving,
+  ///                         not linearity preserving)
+  /// LOCALLY_CONSERVATIVE  - REMAP WILL BE LOCALLY CONSERVATIVE (target cells
+  ///                         will preserve the integral quantities received
+  ///                         from source mesh overlap) but perturbations will
+  ///                         occur in the field (constant fields may not stay
+  ///                         constant if there is mismatch)
+  /// GLOBALLY_CONSERVATIVE - REMAP WILL BE GLOBALLY CONSERVATIVE (integral
+  ///                         values of field on source and target will match);
+  ///                         field perturbations will be minimized to the
+  ///                         extent possible (constant fields will shift to a
+  ///                         different constant; not linearity preserving)
   ///
   /// empty_fixup_type can be one of two types:
   ///
@@ -381,7 +384,7 @@ class MismatchFixer {
                     double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                     int maxiter = 5,
                     Partial_fixup_type partial_fixup_type =
-                    Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                    Partial_fixup_type::GLOBALLY_CONSERVATIVE,
                     Empty_fixup_type empty_fixup_type =
                     Empty_fixup_type::EXTRAPOLATE) {
 
@@ -389,9 +392,9 @@ class MismatchFixer {
     // Make sure the user isn't trying to do a global fixup without a global check.
     // A serial run will always proceed.
     if (distributed_ && !global_check_ && 
-                        partial_fixup_type==Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+                        partial_fixup_type==Partial_fixup_type::GLOBALLY_CONSERVATIVE) {
      throw std::runtime_error( 
-       "Cannot implement SHIFTED_CONSERVATIVE in a distributed run without MPI!");
+       "Cannot implement GLOBALLY_CONSERVATIVE in a distributed run without MPI!");
     }
 
     // Make sure the user isn't trying to extrapolate into empty cels without having
@@ -425,7 +428,7 @@ class MismatchFixer {
                             double conservation_tol = 1e2*std::numeric_limits<double>::epsilon(),
                             int maxiter = 5,
                             Partial_fixup_type partial_fixup_type =
-                            Partial_fixup_type::SHIFTED_CONSERVATIVE,
+                            Partial_fixup_type::GLOBALLY_CONSERVATIVE,
                             Empty_fixup_type empty_fixup_type =
                             Empty_fixup_type::EXTRAPOLATE) {
 
@@ -490,7 +493,7 @@ class MismatchFixer {
           }
           if (nave)
             aveval /= nave;
-#ifdef DEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
           else
             std::cerr <<
                 "No owned neighbors of empty entity to extrapolate data from\n";
@@ -508,7 +511,7 @@ class MismatchFixer {
 
       return true;
 
-    } else if (partial_fixup_type == Partial_fixup_type::SHIFTED_CONSERVATIVE) {
+    } else if (partial_fixup_type == Partial_fixup_type::GLOBALLY_CONSERVATIVE) {
     
       // At this point assume that all cells have some value in them
       // for the variable
@@ -523,7 +526,7 @@ class MismatchFixer {
                              source_ent_volumes_.begin(), 0.0);
 
       double global_source_sum = source_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_ && global_check_)
         MPI_Allreduce(&source_sum, &global_source_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
@@ -534,7 +537,7 @@ class MismatchFixer {
                              target_ent_volumes_.begin(), 0.0);
 
       double global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (distributed_ && global_check_)
         MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                       mycomm_);
@@ -566,7 +569,7 @@ class MismatchFixer {
           }
         }
         global_covered_target_volume = covered_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&covered_target_volume, &global_covered_target_volume,
                         1, MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -597,8 +600,10 @@ class MismatchFixer {
               target_data[t] = global_lower_bound;
 
               if (!hit_lobound) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
                 std::cerr << "Hit lower bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
+#endif
                 hit_lobound = true;
               }
 
@@ -615,8 +620,10 @@ class MismatchFixer {
               target_data[t] = global_upper_bound;
 
               if (!hit_hibound) {
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
                 std::cerr << "Hit upper bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
+#endif
                 hit_hibound = true;
               }
 
@@ -643,7 +650,7 @@ class MismatchFixer {
                                         target_ent_volumes_.begin(), 0.0);
 
         global_target_sum = target_sum;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&target_sum, &global_target_sum, 1, MPI_DOUBLE, MPI_SUM,
                         mycomm_);
@@ -659,7 +666,7 @@ class MismatchFixer {
         global_diff = global_target_sum - global_source_sum;
 
         global_adj_target_volume = adj_target_volume;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (distributed_ && global_check_)
           MPI_Allreduce(&adj_target_volume, &global_adj_target_volume, 1,
                         MPI_DOUBLE, MPI_SUM, mycomm_);
@@ -680,8 +687,9 @@ class MismatchFixer {
       }  // while leftover is not zero
 
       if (fabs(reldiff) > conservation_tol) {
+        // We actually want to tell users about this
         if (rank_ == 0) {
-          std::cerr << "Redistribution not entirely successfully for variable " <<
+          std::cerr << "Redistribution of conserved quantity (due to mesh mismatch) not entirely successfully for variable " <<
               src_var_name << "\n";
           std::cerr << "Relative conservation error is " << reldiff << "\n";
           std::cerr << "Absolute conservation error is " << global_diff << "\n";
@@ -691,8 +699,7 @@ class MismatchFixer {
 
       return true;
     } else {
-      std::cerr << "Unknown Partial fixup type\n";
-      return false;
+      throw std::runtime_error("Unknown Partial fixup type");
     }
 
   }  // fix_mismatch_meshvar
@@ -717,7 +724,7 @@ class MismatchFixer {
   bool computed_mismatch_ = false;
   bool global_check_=true;
   bool computed_layers_=false;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
@@ -754,10 +761,10 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
 
     int global_nempty = nempty;
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed_ && global_check_) {
       int *nempty_all = new int[nprocs_];
       MPI_Gather(&nempty, 1, MPI_INT, nempty_all, 1, MPI_INT, 0, mycomm_);

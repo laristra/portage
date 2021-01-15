@@ -11,6 +11,11 @@ Please see the license file at the root of this repository, or at:
 #include <sstream>
 #include <vector>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/support/Vector.h"
+
 // portage includes
 #include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -20,11 +25,9 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/search_kdtree.h"
 #include "portage/support/portage.h"
 
-// wonton includes
-#include "wonton/support/Point.h"
-
 // App includes
 #include "corner_get_centroid.h"
+#include "MomentumRemapDefs.h"
 
 const int SGH = 1;
 const int CCH = 2;
@@ -383,7 +386,7 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
          trgmesh_wrapper, trgstate_wrapper);
 
   auto candidates = cd.template search<Portage::SearchKDTree>();
-  auto srcwts = cd.template intersect_meshes<Portage::IntersectRND<D>::template Intersect>(candidates);
+  auto srcwts = cd.template intersect_meshes<Portage::IntersectRnD>(candidates);
 
   // -- we need to register fields that we want to remap
   std::vector<std::string> field_names;
@@ -414,19 +417,18 @@ void MomentumRemap<D, Mesh_Wrapper>::RemapND(
   // -- create linear reconstruction (limited or unlimited) 
   //    of density and specific momentum on the target mesh
   int ncells_all = ncells_trg + trgmesh_wrapper.num_ghost_cells();
-  std::vector<Portage::vector<Wonton::Vector<D>>> gradients(
-      field_names.size(), Portage::vector<Wonton::Vector<D>>(ncells_all));
+  std::vector<Wonton::vector<Wonton::Vector<D>>> gradients(
+      field_names.size(), Wonton::vector<Wonton::Vector<D>>(ncells_all));
 
   if (method_ == SGH) {
+    using Gradient = Portage::Limited_Gradient<D, Wonton::CELL,
+                                               Mesh_Wrapper, State_Wrapper>;
+    Gradient gradient_kernel(trgmesh_wrapper, trgstate_wrapper);
+
     for (int i = 0; i < num_fields; ++i) {
-      Portage::Limited_Gradient<D, Wonton::Entity_kind::CELL, 
-                                Mesh_Wrapper, State_Wrapper>
-          gradient_kernel(trgmesh_wrapper, trgstate_wrapper,
-                          field_names[i], limiter, Portage::BND_NOLIMITER);
-
-      Portage::vector<Wonton::Vector<D>> gradient(ncells_all);
-
-      Portage::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
+      Wonton::vector<Wonton::Vector<D>> gradient(ncells_all);
+      gradient_kernel.set_interpolation_variable(field_names[i], limiter, Portage::BND_NOLIMITER);
+      Wonton::transform(trgmesh_wrapper.begin(Wonton::Entity_kind::CELL),
                          trgmesh_wrapper.end(Wonton::Entity_kind::CELL),
                          gradients[i].begin(), gradient_kernel);
     }

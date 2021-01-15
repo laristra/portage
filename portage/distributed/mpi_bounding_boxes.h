@@ -8,7 +8,7 @@ Please see the license file at the root of this repository, or at:
 #define MPI_BOUNDING_BOXES_H_
 
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 
 #include <cassert>
 #include <algorithm>
@@ -19,9 +19,10 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <set>
 
-#include "portage/support/portage.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 #include "wonton/state/state_vector_uni.h"
+#include "portage/support/portage.h"
 #include "mpi.h"
 
 /*!
@@ -91,7 +92,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_rank(comm_, &commRank);
 
     dim_ = source_mesh.space_dimension();
-    assert(dim_ == target_mesh.space_dimension());
+    assert(dim_ == static_cast<int>(target_mesh.space_dimension()));
 
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
@@ -163,7 +164,7 @@ class MPI_Bounding_Boxes {
     MPI_Comm_rank(comm_, &commRank);
 
     int dim = dim_ = source_mesh_flat.space_dimension();
-    assert(dim == target_mesh.space_dimension());
+    assert(dim == static_cast<int>(target_mesh.space_dimension()));
 
     // sendFlags, which partitions to send data
     // this is computed via intersection of whole partition bounding boxes
@@ -399,9 +400,10 @@ class MPI_Bounding_Boxes {
     // Is the a multimaterial problem? If so we need to pass the cell indices
     // in addition to the field values
     if (nmats>0){
-      #ifdef ENABLE_DEBUG
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
-      #endif
+#endif
+
       /////////////////////////////////////////////////////////
       // get the material ids across all nodes
       /////////////////////////////////////////////////////////
@@ -978,7 +980,7 @@ class MPI_Bounding_Boxes {
     case, needs to get converted to gid. We always convert local ids to gids
     before distributing.
    */
-  std::vector<GID_t> to_gid(std::vector<int> const& in, vector<GID_t>const& gids) const {
+  std::vector<GID_t> to_gid(std::vector<int> const& in, std::vector<GID_t>const& gids) const {
     std::vector<GID_t> result;
     result.reserve(in.size());
     for (auto x:in) result.push_back(gids[x]);
@@ -1325,6 +1327,6 @@ class MPI_Bounding_Boxes {
 
 } // namespace Portage
 
-#endif  // PORTAGE_ENABLE_MPI
+#endif  // WONTON_ENABLE_MPI
 
 #endif // MPI_Bounding_Boxes_H_

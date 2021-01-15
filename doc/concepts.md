@@ -159,10 +159,10 @@ The available intersectors for meshes in Portage are:
   the [Clipper](www.angusj.com/delphi/clipper.php) library for polygon
   intersection and clipping (Unit tested in Portage but not used
   widely in the App tests)
-- Portage::IntersectR2D - 2d, fast, exact polygonal intersection
+- Portage::IntersectRnD<2> - 2d, fast, exact polygonal intersection
   method based on the [r3d](https://github.com/laristra/r3d, 
   https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
-- Portage::IntersectR3D - 3d, fast, exact polyhedral intersection
+- Portage::IntersectRnD<3> - 3d, fast, exact polyhedral intersection
   method based on the [r3d](https://github.com/laristra/r3d,
   https://github.com/devonmpowell/r3d.git(commit d6799a58)) library.
 

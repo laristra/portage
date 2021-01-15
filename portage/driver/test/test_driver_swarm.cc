@@ -14,9 +14,16 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+#include "wonton/swarm/swarm_state.h"
+#include "wonton/mesh/simple/simple_mesh.h"
+#include "wonton/mesh/simple/simple_mesh_wrapper.h"
+#include "wonton/state/simple/simple_state.h"
+#include "wonton/state/simple/simple_state_wrapper.h"
+
 #include "portage/driver/driver_swarm.h"
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 #include "portage/support/operator.h"
@@ -24,11 +31,6 @@ Please see the license file at the root of this repository, or at:
 
 #include "portage/support/portage.h"
 #include "portage/search/search_points_by_cells.h"
-#include "wonton/support/Point.h"
-#include "wonton/mesh/simple/simple_mesh.h"
-#include "wonton/mesh/simple/simple_mesh_wrapper.h"
-#include "wonton/state/simple/simple_state.h"
-#include "wonton/state/simple/simple_state_wrapper.h"
 
 namespace {
 // avoid long namespaces
@@ -81,7 +83,7 @@ public:
       int const num_owned_target = target_swarm.num_owned_particles();
       int const npoints[] = { 2, 4, 8 };
 
-      domains_ = Portage::vector<oper::Domain>(num_owned_target);
+      domains_ = Wonton::vector<oper::Domain>(num_owned_target);
       operator_data_.resize(num_owned_target, std::vector<Wonton::Point<dim>>(npoints[dim-1]));
 
       int npdim = static_cast<int>(std::pow(1.001 * num_owned_target, 1./dim));
@@ -171,15 +173,14 @@ public:
                 double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                 Swarm<dim>, SwarmState<dim>,
-                                 Swarm<dim>, SwarmState<dim>>;
+                                 Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     // Fill the source state data with the specified profile
     const int nb_source = source_swarm.num_owned_particles();
     const int nb_target = target_swarm.num_owned_particles();
 
-    Portage::vector<double> source_data(nb_source);
-    Portage::vector<double> target_data(nb_target, 0.0);
+    Wonton::vector<double> source_data(nb_source);
+    Wonton::vector<double> target_data(nb_target, 0.0);
 
     // Create the source data for given function
     for (int i = 0; i < nb_source; ++i) {
@@ -255,15 +256,14 @@ public:
                    double expected_answer) {
 
     using Remapper = SwarmDriver<Search, Accumulate, Estimate, dim,
-                                 Swarm<dim>, SwarmState<dim>,
-                                 Swarm<dim>, SwarmState<dim>>;
+                                 Wonton::Swarm<dim>, Wonton::SwarmState<dim>>;
 
     // Fill the source state data with the specified profile
     int const nb_source = source_swarm.num_owned_particles();
     int const nb_target = target_swarm.num_owned_particles();
 
     // Create the source data for given function
-    Portage::vector<double> source_data(nb_source);
+    Wonton::vector<double> source_data(nb_source);
 
     for (int p = 0; p < nb_source; ++p) {
       auto coord = source_swarm.get_particle_coordinates(p);
@@ -335,23 +335,23 @@ public:
 
 protected:
   // swarms and states
-  Swarm<dim> source_swarm;
-  Swarm<dim> target_swarm;
-  SwarmState<dim> source_state;
-  SwarmState<dim> target_state;
+  Wonton::Swarm<dim> source_swarm;
+  Wonton::Swarm<dim> target_swarm;
+  Wonton::SwarmState<dim> source_state;
+  Wonton::SwarmState<dim> target_state;
 
   // smoothing lengths
-  Portage::vector<std::vector<std::vector<double>>> smoothing_lengths_;
+  Wonton::vector<std::vector<std::vector<double>>> smoothing_lengths_;
 
   // kernel and geometry specifications
-  Portage::vector<Weight::Kernel> kernels_ {};
-  Portage::vector<Weight::Geometry> geometries_ {};
+  Wonton::vector<Weight::Kernel> kernels_ {};
+  Wonton::vector<Weight::Geometry> geometries_ {};
 
   // operator info
   WeightCenter center_;
   oper::Type operator_;
-  Portage::vector<oper::Domain> domains_;
-  Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
+  Wonton::vector<oper::Domain> domains_;
+  Wonton::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 /**
@@ -621,8 +621,7 @@ TEST(Part, 2D) {
 
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 2,
-                               Swarm<2>, SwarmState<2>,
-                               Swarm<2>, SwarmState<2>>;
+                               Wonton::Swarm<2>, Wonton::SwarmState<2>>;
 
   int const nb_per_axis = 4;
   Wonton::Simple_Mesh mesh(-1.0, -1.0, 1.0, 1.0, nb_per_axis, nb_per_axis);
@@ -648,18 +647,18 @@ TEST(Part, 2D) {
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states
-  Swarm<2> source_swarm(mesh_wrapper, Wonton::CELL);
-  Swarm<2> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0);
-  SwarmState<2> source_state(state_wrapper, Wonton::CELL);
-  SwarmState<2> target_state(target_swarm);
+  Wonton::Swarm<2> source_swarm(mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<2> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0);
+  Wonton::SwarmState<2> source_state(state_wrapper, Wonton::CELL);
+  Wonton::SwarmState<2> target_state(target_swarm);
 
   // keep all target swarm points from overlying any source points
-  Portage::vector<double> target_data(nb_target, 0.0);
+  Wonton::vector<double> target_data(nb_target, 0.0);
   target_state.add_field("indicate", target_data);
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing;
-  Portage::vector<Wonton::Point<2>> extents;
-  Portage::vector<Wonton::Point<2>> dummy;
+  Wonton::vector<std::vector<std::vector<double>>> smoothing;
+  Wonton::vector<Wonton::Point<2>> extents;
+  Wonton::vector<Wonton::Point<2>> dummy;
   Weight::faceted_setup_cell<2, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, smoothing,
                                                           extents, 1.0, 2.0);
 
@@ -668,7 +667,7 @@ TEST(Part, 2D) {
                     smoothing, extents, dummy, Scatter);
 
   std::vector<std::string> const fields_names = {"indicate" };
-  Portage::vector<std::vector<std::vector<double>>> psmoothing;
+  Wonton::vector<std::vector<std::vector<double>>> psmoothing;
   Weight::faceted_setup_cell<2, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, psmoothing,
                                                             dummy, 0.25, 1.0);
 
@@ -676,8 +675,8 @@ TEST(Part, 2D) {
                                LocalRegression,
                                basis::Unitary,
                                oper::LastOperator,
-                               Portage::vector<oper::Domain>(0),
-                               Portage::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
+                               Wonton::vector<oper::Domain>(0),
+                               Wonton::vector<std::vector<Point<2>>>(0,std::vector<Point<2>>(0)),
                                "indicate", 0.25, psmoothing);
 
   remapper.run();
@@ -695,8 +694,7 @@ TEST(Part, 3D) {
 
   using Remapper = SwarmDriver<Portage::SearchPointsByCells,
                                Accumulate, Estimate, 3,
-                               Swarm<3>, SwarmState<3>,
-                               Swarm<3>, SwarmState<3>>;
+                               Wonton::Swarm<3>, Wonton::SwarmState<3>>;
 
   int const nb_per_axis = 4;
   Wonton::Simple_Mesh mesh(-1.0, -1.0, -1.0, 1.0, 1.0, 1.0,
@@ -723,18 +721,18 @@ TEST(Part, 3D) {
   Wonton::Simple_State_Wrapper state_wrapper(state);
 
   // create source and target swarms and states
-  Swarm<3> source_swarm(mesh_wrapper, Wonton::CELL);
-  Swarm<3> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-  SwarmState<3> source_state(state_wrapper, Wonton::CELL);
-  SwarmState<3> target_state(target_swarm);
+  Wonton::Swarm<3> source_swarm(mesh_wrapper, Wonton::CELL);
+  Wonton::Swarm<3> target_swarm(nb_target, 1, 0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+  Wonton::SwarmState<3> source_state(state_wrapper, Wonton::CELL);
+  Wonton::SwarmState<3> target_state(target_swarm);
 
   // keep all target swarm points from overlying any source points
-  Portage::vector<double> target_data(nb_target, 0.0);
+  Wonton::vector<double> target_data(nb_target, 0.0);
   target_state.add_field("indicate", target_data);
 
-  Portage::vector<std::vector<std::vector<double>>> smoothing;
-  Portage::vector<Wonton::Point<3>> extents;
-  Portage::vector<Wonton::Point<3>> dummy;
+  Wonton::vector<std::vector<std::vector<double>>> smoothing;
+  Wonton::vector<Wonton::Point<3>> extents;
+  Wonton::vector<Wonton::Point<3>> dummy;
   Weight::faceted_setup_cell<3, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, smoothing,
                                                             extents, 1.0, 2.0);
 
@@ -743,7 +741,7 @@ TEST(Part, 3D) {
                     smoothing, extents, dummy, Scatter);
 
   std::vector<std::string> const fields_names = {"indicate" };
-  Portage::vector<std::vector<std::vector<double>>> psmoothing;
+  Wonton::vector<std::vector<std::vector<double>>> psmoothing;
   Weight::faceted_setup_cell<3, Wonton::Simple_Mesh_Wrapper>(mesh_wrapper, psmoothing,
                                                              dummy, 0.25, 1.0);
 
@@ -751,8 +749,8 @@ TEST(Part, 3D) {
                                LocalRegression,
                                basis::Unitary,
                                oper::LastOperator,
-                               Portage::vector<oper::Domain>(0),
-                               Portage::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
+                               Wonton::vector<oper::Domain>(0),
+                               Wonton::vector<std::vector<Point<3>>>(0,std::vector<Point<3>>(0)),
                                "indicate", 0.25, psmoothing);
 
   remapper.run();

@@ -11,19 +11,10 @@ Please see the license file at the root of this repository, or at:
 
 # Swarm test
 add_executable(swarmapp swarmapp.cc)
-target_link_libraries(swarmapp portage
-  ${EXTRA_LIBS} ${LAPACKX_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(swarmapp PRIVATE portage)
 
 # Compare
 add_executable(swarmcompare swarmcompare.cc)
-
-#TCMalloc option
-set(ENABLE_TCMALLOC TRUE CACHE BOOL "Use TCMalloc")
-if(ENABLE_TCMALLOC)
-  set(TCMALLOC_LIB "${HOME}" CACHE STRING "Set the TCMalloc library")
-
-  target_link_libraries(swarmapp ${TCMALLOC_LIB})
-endif(ENABLE_TCMALLOC)
 
 # Profiling option (to allow pausing and resuming profiling during execution)
 set(ENABLE_PROFILE FALSE CACHE BOOL "Enable VTune Profiling")
@@ -31,9 +22,9 @@ if(ENABLE_PROFILE)
   set(VTUNE_INCLUDE_DIR "${HOME}" CACHE PATH "Set the locaiton of VTune include")
   set(VTUNE_LIB "${HOME}" CACHE STRING "Set the VTune library")
 
-  include_directories(${VTUNE_INCLUDE_DIR})
+  target_include_directories(swarmcompare PRIVATE ${VTUNE_INCLUDE_DIR})
 
-  target_link_libraries(swarmapp ${VTUNE_LIB})
+  target_link_libraries(swarmapp PRIVATE ${VTUNE_LIB})
 endif(ENABLE_PROFILE)
 
 

@@ -5,31 +5,24 @@ Please see the license file at the root of this repository, or at:
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <iostream>
 #include <memory>
-
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/xmof2D_wrapper.h"
-#include "tangram/reconstruct/SLIC.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-
-#include "portage/driver/uberdriver.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
+#include "portage/driver/uberdriver.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -37,6 +30,16 @@ Please see the license file at the root of this repository, or at:
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
 #include "JaliState.h"
+
+#include "tangram/intersect/split_rNd.h"
+#include "tangram/reconstruct/SLIC.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
+#ifdef TANGRAM_ENABLE_XMOF2D
+  #include "tangram/reconstruct/xmof2D_wrapper.h"
+#endif
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
 
 double TOL = 1e-6;
 
@@ -60,6 +63,8 @@ double TOL = 1e-6;
 // target mesh side
 
 
+#ifdef TANGRAM_ENABLE_XMOF2D
+// this test won't pass with MOF
 TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;
@@ -247,7 +252,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -418,7 +423,7 @@ TEST(UberDriver, ThreeMat2D_MOF_MixedOrderRemap) {
     ASSERT_NEAR(targettemp[i], meshtemp, 1.0e-10);
 
 }  // ThreeMat2D_MOF_MixedOrderRemap
-
+#endif
 
 
 
@@ -612,11 +617,11 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   
   double dblmin = -std::numeric_limits<double>::max();
@@ -720,8 +725,8 @@ TEST(UberDriver, ThreeMat3D_MOF_MixedOrderRemap) {
     // MOF cannot match moments and centroids as well as it can volume
     // fractions - so use looser tolerances
     for (int ic = 0; ic < nmatcells; ic++)
-      for (int d = 0; d < 3; d++)
-        ASSERT_NEAR(matcen_trg[m][ic][d], matcen_remap[ic][d], 1.0e-8);
+      for (int dim = 0; dim < 3; dim++)
+        ASSERT_NEAR(matcen_trg[m][ic][dim], matcen_remap[ic][dim], 1.0e-8);
 
     double const *density_remap;
     targetStateWrapper.mat_get_celldata("density", m, &density_remap);
@@ -957,7 +962,6 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
   targetStateWrapper.add_material("mat1", dummymatcells);
 
   targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
-  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
   targetStateWrapper.mat_add_celldata<double>("density", 0.0);
 
   targetStateWrapper.mesh_add_data<double>(Wonton::Entity_kind::CELL,
@@ -974,11 +978,11 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
   Portage::UberDriver<2,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmin = -std::numeric_limits<double>::max();
   double dblmax =  std::numeric_limits<double>::max();
@@ -1093,16 +1097,13 @@ TEST(UberDriver, TwoMat2D_VOF_MixedOrderRemap) {
     targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
     targetStateWrapper.mat_get_celldata("density", m, &rho);
 
-    Wonton::Point<2> totcen;
     double volume = 0.0, mass = 0.0;
-      int const num_matcells = matcells.size();
+    int const num_matcells = matcells.size();
     for (int ic = 0; ic < num_matcells; ic++) {
       double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
       volume += cellvol;
       mass += rho[ic]*cellvol;
-      totcen += rho[ic]*matcen_trg[m][ic]*cellvol;
     }
-    totcen /= mass;
 
     ASSERT_NEAR(matvol[m], volume, 1.0e-10);
     ASSERT_NEAR(matmass[m], mass, 1.0e-10);
@@ -1318,11 +1319,11 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
   Portage::UberDriver<3,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR3D, Tangram::ClipR3D>
+                      Tangram::VOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
       d(sourceMeshWrapper, sourceStateWrapper,
         targetMeshWrapper, targetStateWrapper, &executor);
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR3D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   
   double dblmin = -std::numeric_limits<double>::max();
@@ -1460,4 +1461,4 @@ TEST(UberDriver, TwoMat3D_VOF_MixedOrderRemap) {
 
 }  // ThreeMat3D_VOF_MixedOrderRemap
 
-#endif  // ifdef HAVE_TANGRAM
+#endif  // ifdef PORTAGE_HAS_TANGRAM

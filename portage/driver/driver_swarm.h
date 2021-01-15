@@ -15,6 +15,9 @@
 #include <type_traits>
 #include <cmath>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/support/basis.h"
@@ -24,13 +27,13 @@
 #include "portage/accumulate/accumulate.h"
 #include "portage/estimate/estimate.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_particle_distribute.h"
 #endif
 
 namespace Portage { namespace Meshfree {
   // avoid very long type names.
-  using SmoothingLengths = Portage::vector<std::vector<std::vector<double>>>;
+  using SmoothingLengths = Wonton::vector<std::vector<std::vector<double>>>;
 
 /**
  * @brief Provides an interface to remap variables from one swarm to another.
@@ -123,8 +126,8 @@ public:
               TargetSwarm const& target_swarm,
               TargetState& target_state,
               SmoothingLengths const& smoothing_lengths,
-              Portage::vector<Weight::Kernel> const& kernel_types,
-              Portage::vector<Weight::Geometry> const& geom_types,
+              Wonton::vector<Weight::Kernel> const& kernel_types,
+              Wonton::vector<Weight::Geometry> const& geom_types,
               WeightCenter const center = Gather)
       : source_swarm_(source_swarm),
         target_swarm_(target_swarm),
@@ -169,8 +172,8 @@ public:
               TargetSwarm const& target_swarm,
               TargetState& target_state,
               SmoothingLengths const& smoothing_lengths,
-              Portage::vector<Point<dim>> const& source_extents,
-              Portage::vector<Point<dim>> const& target_extents,
+              Wonton::vector<Point<dim>> const& source_extents,
+              Wonton::vector<Point<dim>> const& target_extents,
               WeightCenter const center = Gather)
       : source_swarm_(source_swarm),
         target_swarm_(target_swarm),
@@ -184,7 +187,7 @@ public:
 
    int const swarm_size = get_swarm_size();
 
-#ifdef DEBUG
+#ifndef NDEBUG
    int const nb_source = source_swarm_.num_particles(Wonton::PARALLEL_OWNED);
    int const nb_target = target_swarm_.num_particles(Wonton::PARALLEL_OWNED);
 
@@ -248,8 +251,8 @@ public:
                            EstimateType const estimator_type = LocalRegression,
                            basis::Type const basis_type = basis::Unitary,
                            oper::Type const operator_spec = oper::LastOperator,
-                           Portage::vector<oper::Domain> const& operator_domains = {},
-                           Portage::vector<std::vector<Point<dim>>> const& operator_data = {},
+                           Wonton::vector<oper::Domain> const& operator_domains = {},
+                           Wonton::vector<std::vector<Point<dim>>> const& operator_data = {},
                            std::string part_field = "NONE",
                            double part_tolerance = 0.0,
                            SmoothingLengths const& part_smoothing = {}) {
@@ -265,7 +268,7 @@ public:
     operator_spec_    = operator_spec;
     operator_domains_ = operator_domains;
     operator_data_    = operator_data;
-#ifdef DEBUG
+#ifndef NDEBUG
     if (operator_spec_ != oper::LastOperator) {
       unsigned const num_target_particles = target_swarm_.num_owned_particles();
       assert(operator_domains_.size() == num_target_particles);
@@ -301,22 +304,24 @@ public:
   void run(Wonton::Executor_type const* executor = nullptr, bool report_time = true) {
 
     int rank   = 0;
-    int nprocs = 1;
-    bool distributed = false;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
+    bool distributed = false;
     MPI_Comm comm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const*>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       comm = mpiexecutor->mpicomm;
       MPI_Comm_rank(comm, &rank);
+      int nprocs = 0;
       MPI_Comm_size(comm, &nprocs);
       distributed = nprocs > 1;
     }
 #endif
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (rank == 0)
       std::cout << "in SwarmDriver::run() ... " << std::endl;
+#endif
 
     // useful aliases
     using Searcher = Search<dim, SourceSwarm, TargetSwarm>;
@@ -339,7 +344,7 @@ public:
     // ranks.
     // For the scatter scheme, the smoothing_lengths will also
     // be changed.
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     if (distributed) {
       MPI_Particle_Distribute<dim> distributor(mpiexecutor);
       //For scatter scheme, the smoothing_lengths_, kernel_types_
@@ -355,14 +360,14 @@ public:
 #endif
 
     // SEARCH
-    Portage::vector<std::vector<int>> candidates(nb_target);
+    Wonton::vector<std::vector<int>> candidates(nb_target);
 
     // Get an instance of the desired search algorithm type which is expected
     // to be a functor with an operator() of the right form
     Searcher search(source_swarm_, target_swarm_,
                     source_extents_, target_extents_, weight_center_);
 
-    Portage::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+    Wonton::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
                        target_swarm_.end(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
                        candidates.begin(), search);
 
@@ -385,7 +390,7 @@ public:
       std::vector<double> target_field_part(nb_target);
 
       // create accumulator to evaluate weight function on source cells
-      Portage::vector<Weight::Kernel> step_kern(nb_source, Weight::STEP);
+      Wonton::vector<Weight::Kernel> step_kern(nb_source, Weight::STEP);
       Accumulator accumulator(source_swarm_, target_swarm_,
                               estimator_type_, weight_center_,
                               step_kern, geom_types_, part_smoothing_, basis_type_,
@@ -441,11 +446,11 @@ public:
                            geom_types_, smoothing_lengths_, basis_type_,
                            operator_spec_, operator_domains_, operator_data_);
 
-    Portage::vector<std::vector<Weights_t>> source_points_and_multipliers(nb_target);
+    Wonton::vector<std::vector<Weights_t>> source_points_and_multipliers(nb_target);
 
     // For each particle in the target swarm get the shape functions
     // (multipliers for source particle values)
-    Portage::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
+    Wonton::transform(target_swarm_.begin(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
                        target_swarm_.end(Wonton::PARTICLE, Wonton::PARALLEL_OWNED),
                        candidates.begin(), source_points_and_multipliers.begin(),
                        accumulate);
@@ -454,16 +459,20 @@ public:
 
     // ESTIMATE (one variable at a time)
     nb_fields = source_vars_.size();
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (rank == 0)
       std::cout << "number of variables to remap is " << nb_fields << std::endl;
+#endif
 
     // Get an instance of the desired interpolate algorithm type
     Estimator estimator(source_state_);
 
     for (int i = 0; i < nb_fields; ++i) {
       //amh: ?? add back accuracy output statement??
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
       if (rank == 0)
         std::cout << "Remap "<< source_vars_[i] <<" to "<< target_vars_[i] << std::endl;
+#endif
 
       estimator.set_variable(source_vars_[i]);
 
@@ -481,9 +490,9 @@ public:
 
       // TODO: perform a deep-copy back to target state
       auto& target_data = target_state_.get_field(target_vars_[i]);
-      Portage::pointer<double> target_field(target_data.data());
+      Wonton::pointer<double> target_field(target_data.data());
 
-      Portage::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
+      Wonton::transform(target_swarm_.begin(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
                          target_swarm_.end(Entity_kind::PARTICLE, Entity_type::PARALLEL_OWNED),
                          source_points_and_multipliers.begin(),
                          target_field, estimator);
@@ -499,6 +508,7 @@ public:
         std::cout << "  Swarm Accumulate Time Rank " << rank << " (s): " << tot_seconds_xsect << std::endl;
         std::cout << "  Swarm Estimate Time Rank " << rank << " (s): " << tot_seconds_interp << std::endl;
 
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)      
         // put out neighbor statistics
         int nnbrmax = 0;
         int nnbrmin = nb_target;
@@ -534,6 +544,7 @@ public:
         std::cout << "Min number of neighbors: " << nnbrmin << std::endl;
         std::cout << "Avg number of neighbors: " << nnbravg << std::endl;
         std::cout << "Std Dev for number of neighbors: " << nnbrsdev << std::endl;
+#endif
       }
     }
 
@@ -557,7 +568,7 @@ protected:
    * @param weight_center: weight center type.
    */
   void check_sizes(WeightCenter const weight_center) {
-#ifdef DEBUG
+#ifndef NDEBUG
     unsigned const swarm_size = get_swarm_size();
     assert(smoothing_lengths_.size() == swarm_size);
     assert(kernel_types_.size() == swarm_size);
@@ -622,18 +633,18 @@ private:
   std::vector<std::string> target_vars_ {};
   WeightCenter weight_center_ = Gather;
   SmoothingLengths smoothing_lengths_ {};
-  Portage::vector<Weight::Kernel> kernel_types_ {};
-  Portage::vector<Weight::Geometry> geom_types_ {};
-  Portage::vector<Point<dim>> source_extents_ {};
-  Portage::vector<Point<dim>> target_extents_ {};
+  Wonton::vector<Weight::Kernel> kernel_types_ {};
+  Wonton::vector<Weight::Geometry> geom_types_ {};
+  Wonton::vector<Point<dim>> source_extents_ {};
+  Wonton::vector<Point<dim>> target_extents_ {};
   EstimateType estimator_type_ {};
   basis::Type basis_type_ {};
   oper::Type operator_spec_ {};
-  Portage::vector<oper::Domain> operator_domains_ {};
-  Portage::vector<std::vector<Point<dim>>> operator_data_ {};
+  Wonton::vector<oper::Domain> operator_domains_ {};
+  Wonton::vector<std::vector<Point<dim>>> operator_data_ {};
   std::string part_field_ = "";
   double part_tolerance_ = 0.0;
-  Portage::vector<std::vector<std::vector<double>>> part_smoothing_ {};
+  Wonton::vector<std::vector<std::vector<double>>> part_smoothing_ {};
 };  // class SwarmDriver
 
 }}  // namespace Portage::Meshfree

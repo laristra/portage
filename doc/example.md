@@ -70,7 +70,7 @@ Now, we are ready to call a driver to perform remap of `inputData` from
 ~~~cpp
 Portage::MMDriver<
 	Portage::SearchKDTree,
-	Portage::IntersectR3D,
+	Portage::IntersectRnD<3>,
 	Portage::Interpolate_2ndOrder,
 	dim,
 	Wonton::Simple_Mesh_Wrapper,

@@ -10,15 +10,15 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <cassert>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Matrix.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/support/weight.h"
 #include "portage/support/basis.h"
 #include "portage/support/operator.h"
-#include "portage/swarm/swarm.h"
-
-// wonton includes
-#include "wonton/support/Matrix.h"
 
 namespace Portage { namespace Meshfree {
 
@@ -70,12 +70,12 @@ class Accumulate {
    */
   Accumulate(SourceSwarm const& source, TargetSwarm const& target,
              EstimateType estimate, WeightCenter center,
-             Portage::vector<Weight::Kernel> const& kernels,
-             Portage::vector<Weight::Geometry> const& geometries,
-             Portage::vector<std::vector<std::vector<double>>> const& smoothing,
+             Wonton::vector<Weight::Kernel> const& kernels,
+             Wonton::vector<Weight::Geometry> const& geometries,
+             Wonton::vector<std::vector<std::vector<double>>> const& smoothing,
              basis::Type basis, oper::Type operator_spec = oper::LastOperator,
-             Portage::vector<oper::Domain> const& operator_domain = {},
-             Portage::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
+             Wonton::vector<oper::Domain> const& operator_domain = {},
+             Wonton::vector<std::vector<Wonton::Point<dim>>> const& operator_data = {})
     : source_(source),
       target_(target),
       estimate_(estimate),
@@ -88,7 +88,7 @@ class Accumulate {
       operator_domain_(operator_domain),
       operator_data_(operator_data)
   {
-#ifdef DEBUG
+#ifndef NDEBUG
     // check sizes of inputs are consistent
     size_t n_particles = (center == Gather ? target_.num_owned_particles()
                                            : source_.num_particles());
@@ -167,12 +167,16 @@ class Accumulate {
         // Calculate weights and moment matrix (P*W*transpose(P))
 	      std::vector<double> weight_val(source_particles.size());
         Wonton::Matrix moment(nbasis,nbasis,0.);
+        int const num_source_particles = source_particles.size();
+        std::vector<std::vector<double>> basis_values(num_source_particles);
+
         size_t iB = 0;
         if (not zilchit) {
           for (auto const& particleB : source_particles) {
             weight_val[iB] = weight(particleA, particleB); // save weights for later
             Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-            auto basis = basis::shift<dim>(basis_, x, y);
+            auto& basis = basis_values[iB];
+            basis = basis::shift<dim>(basis_, x, y);
             for (size_t i=0; i<nbasis; i++) {
               for (size_t j=0; j<nbasis; j++) {
                 moment[i][j] += basis[i]*basis[j]*weight_val[iB];
@@ -182,22 +186,35 @@ class Accumulate {
           }
         }
 
-        // Calculate inverse(P*W*transpose(P))*P*W
         iB = 0;
 
+        // optimize for unitary basis
+        if (nbasis == 1) {
+          for (auto const& particleB : source_particles) {
+            std::vector<double> pair_result(nbasis, 0.);
+            if (not zilchit) {
+              pair_result[0] = (basis_values[iB][0] * weight_val[iB] / moment[0][0]);
+            }
+            // If an operator is being applied, adjust final weights.
+            apply_operator(particleA, nbasis, x, pair_result);
+            result.emplace_back(particleB, pair_result);
+            iB++;
+          }
+          return result;
+        }
+
+        // calculate inverse(P*W*transpose(P))*P*W otherwise
         for (auto const& particleB : source_particles) {
-	        std::vector<double> pair_result(nbasis);
-          Wonton::Point<dim> y = source_.get_particle_coordinates(particleB);
-	        std::vector<double> basis = basis::shift<dim>(basis_, x, y);
-
-          // recast as a Portage::Matrix
-          Wonton::Matrix basis_matrix(nbasis,1);
-          for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
-
+	        std::vector<double> pair_result(nbasis,0.);
           // solve the linear system
           if (not zilchit) {
+            auto const& basis = basis_values[iB];
+            // recast as a Portage::Matrix
+            Wonton::Matrix basis_matrix(nbasis,1);
+            for (size_t i=0; i<nbasis; i++) basis_matrix[i][0] = basis[i];
+
             std::string error="check";
-#ifdef HAVE_LAPACKE
+#ifdef WONTON_HAS_LAPACKE
             Wonton::Matrix pair_result_matrix = moment.solve(basis_matrix, "lapack-sytr", error);
 #else
             Wonton::Matrix pair_result_matrix = moment.solve(basis_matrix, "inverse", error);
@@ -208,56 +225,69 @@ class Accumulate {
               //if (basis_matrix.is_singular() == 2 or error != "none") {
               //  bad_count++;
               //}
-          } else {
-            for (size_t i=0; i<nbasis; i++)
-              pair_result[i] = 0.;
           }
 
           // If an operator is being applied, adjust final weights.
-          if (estimate_ == OperatorRegression) {
-            auto ijet = basis::inverse_jet<dim>(basis_, x);
-            std::vector<std::vector<double>> basisop;
-            oper::apply<dim>(operator_spec_, basis_,
-                             operator_domain_[particleA],
-                             operator_data_[particleA], basisop);
-            int const num_basis = nbasis;
-            int const opsize = oper::size_info(operator_spec_, basis_,
-                                            operator_domain_[particleA])[0];
-            std::vector<double> operator_result(opsize, 0.);
-
-            for (int j = 0; j < opsize; j++) {
-              for (int k = 0; k < num_basis; k++) {
-                for (int m = 0; m < num_basis; m++) {
-                  operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
-                }
-              }
-            }
-            for (int j = 0; j < num_basis; j++)
-              pair_result[j] = operator_result[j];
-          }
+          apply_operator(particleA, nbasis, x, pair_result);
           result.emplace_back(particleB, pair_result);
           iB++;
         }
 	      break;
       }
       default:  // invalid estimate
-	      assert(false);
+	      throw std::runtime_error("invalid estimate type");
     }
     return result;
   }
 
  private:
+  /**
+   * @brief Adjust weights if a user-defined operator is specified.
+   *
+   * @param particleA: target particle index.
+   * @param nbasis: number of weight basis
+   * @param x: target particle coordinates.
+   * @param pair_result:the corrected weights.
+   */
+  void apply_operator(size_t particleA, size_t nbasis,
+                      Wonton::Point<dim> const& x,
+                      std::vector<double>& pair_result) const {
+
+    if (estimate_ == OperatorRegression) {
+      auto ijet = basis::inverse_jet<dim>(basis_, x);
+      std::vector<std::vector<double>> basisop;
+      oper::apply<dim>(operator_spec_, basis_,
+                       operator_domain_[particleA],
+                       operator_data_[particleA], basisop);
+      int const num_basis = nbasis;
+      int const opsize = oper::size_info(operator_spec_, basis_,
+                                         operator_domain_[particleA])[0];
+      std::vector<double> operator_result(opsize, 0.);
+
+      for (int j = 0; j < opsize; j++) {
+        for (int k = 0; k < num_basis; k++) {
+          for (int m = 0; m < num_basis; m++) {
+            operator_result[j] += pair_result[k]*ijet[k][m]*basisop[m][j];
+          }
+        }
+      }
+      for (int j = 0; j < num_basis; j++)
+        pair_result[j] = operator_result[j];
+    }
+  }
+
+
   SourceSwarm const& source_;
   TargetSwarm const& target_;
   EstimateType estimate_;
   WeightCenter center_;
-  Portage::vector<Weight::Kernel> const& kernels_;
-  Portage::vector<Weight::Geometry> const& geometries_;
-  Portage::vector<std::vector<std::vector<double>>> const& smoothing_;
+  Wonton::vector<Weight::Kernel> const& kernels_;
+  Wonton::vector<Weight::Geometry> const& geometries_;
+  Wonton::vector<std::vector<std::vector<double>>> const& smoothing_;
   basis::Type basis_;
   oper::Type operator_spec_;
-  Portage::vector<oper::Domain> operator_domain_;
-  Portage::vector<std::vector<Wonton::Point<dim>>> operator_data_;
+  Wonton::vector<oper::Domain> operator_domain_;
+  Wonton::vector<std::vector<Wonton::Point<dim>>> operator_data_;
 };
 
 }}

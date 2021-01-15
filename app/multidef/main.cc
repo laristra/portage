@@ -14,5 +14,5 @@ Please see the license file at the root of this repository, or at:
 
 int main(int argc, char **argv) {
   std::cout << "Test app to see if we get multiply defined symbols\n";
-  return 1;
+  return 0;
 }

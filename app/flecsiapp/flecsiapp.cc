@@ -15,6 +15,7 @@ Please see the license file at the root of this repository, or at:
 #include "flecsi-sp/burton/factory.h"
 
 //wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/flecsi/flecsi_mesh_wrapper.h"
 #include "wonton/state/flecsi/flecsi_state_wrapper.h"
 
@@ -23,10 +24,10 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 
 // system includes
-#include <cassert>
 #include <cmath>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace math = flecsi::sp::math;
 namespace mesh = flecsi::sp::burton;
@@ -48,7 +49,7 @@ public:
   using portage_1st_order_driver_t =
       Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR2D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       mesh_t::num_dimensions,
       flecsi_mesh_t,
@@ -103,7 +104,7 @@ public:
   using portage_1st_order_driver_t =
       Portage::MMDriver<
       Portage::SearchKDTree,
-      Portage::IntersectR3D,
+      Portage::IntersectRnD,
       Portage::Interpolate_1stOrder,
       mesh_t::num_dimensions,
       flecsi_mesh_t,
@@ -188,7 +189,8 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
 
   // the result should the same
   for ( auto c : mesh_b.cells() )
-    assert( std::fabs(b[c]- 1.0) <= flecsi_2d::test_tolerance );
+    if (std::fabs(b[c]- 1.0) > flecsi_2d::test_tolerance)
+      throw std::runtime_error("remapped values deviate from expected values");
   
   // now try something more complicated
 
@@ -210,7 +212,8 @@ void run_2d(size_t num_x, size_t num_y, std::string& output_prefix)
   for ( auto c : mesh_b.cells() ) 
     total_b += c->volume() * b[c];
  
-  assert(std::fabs(total_a-total_b) <= flecsi_2d::test_tolerance);
+  if (std::fabs(total_a-total_b) > flecsi_2d::test_tolerance)
+    throw std::runtime_error("total values on source and target differ");
 
   // write out results  
   mesh::write_mesh(output_prefix+"_a.vtk", mesh_a, false);
@@ -266,8 +269,10 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   remapper.run();
 
  // the result should the same
-  for ( auto c : mesh_b.cells() )
-    assert( std::fabs(b[c]- 1.0) <= flecsi_3d::test_tolerance );
+  for ( auto c : mesh_b.cells() ) {
+    if (std::fabs(b[c] - 1.0) > flecsi_3d::test_tolerance)
+      std::printf("Remapped values deviate from expected values");
+  }
 
   // now try something more complicated
 
@@ -289,7 +294,8 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
   for ( auto c : mesh_b.cells() )
     total_b += c->volume() * b[c];
 
-  assert(std::fabs(total_a-total_b) <= flecsi_3d::test_tolerance);
+  if (std::fabs(total_a-total_b) > flecsi_3d::test_tolerance)
+    throw std::runtime_error("total value on source and target meshes differ");
 
   // write out results
   mesh::write_mesh(output_prefix+"_a.vtk", mesh_a, false);
@@ -303,7 +309,7 @@ void run_3d(size_t num_x, size_t num_y, size_t num_z, std::string& output_prefix
 ////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char** argv)
 {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm comm = MPI_COMM_WORLD;
 

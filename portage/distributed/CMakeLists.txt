@@ -5,27 +5,64 @@ Please see the license file at the root of this repository, or at:
 ]]
 #-----------------------------------------------------------------------------~#
 
+project(portage_distributed)
 
-#-----------------------------------------------------------------------------~#
+add_library(portage_distributed INTERFACE)
 
-set(distributed_HEADERS
+target_include_directories(portage_distributed INTERFACE
+  $<BUILD_INTERFACE:${portage_SOURCE_DIR}>
+  $<BUILD_INTERFACE:${portage_BINARY_DIR}>
+  $<INSTALL_INTERFACE:include>
+  )
+
+# Add header files
+set(portage_distributed_HEADERS
     mpi_bounding_boxes.h
-    mpi_particle_distribute.h
-    PARENT_SCOPE)
+    mpi_particle_distribute.h)
+
+# Not yet allowed for INTERFACE libraries
+# 
+# set_target_properties(portage_distributed PROPERTIES
+#   PUBLIC_HEADER "${portage_distributed_HEADERS}")
+#
+# Directly install files instead
+#
+install(FILES ${portage_distributed_HEADERS} DESTINATION include/portage/distributed)
+
+target_link_libraries(portage_distributed INTERFACE portage_support)
+
+target_link_libraries(portage INTERFACE portage_distributed)
+
+install(TARGETS portage_distributed
+  EXPORT portage_LIBRARIES
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+  PUBLIC_HEADER DESTINATION include/portage/distributed
+  INCLUDES DESTINATION include/portage/distributed
+  )
+
+
 
 if (ENABLE_UNIT_TESTS)
-  if (Jali_DIR)
-    cinch_add_unit(test_mpi_bounding_boxes
+  if (WONTON_ENABLE_Jali)
+    portage_add_unittest(test_mpi_bounding_boxes
                    SOURCES test/test_mpi_bounding_boxes.cc
-                   LIBRARIES portage  ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                   LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
 
-    cinch_add_unit(test_mpi_particle_distribute
+    portage_add_unittest(test_mpi_particle_distribute
                    SOURCES test/test_mpi_particle_distribute.cc
-                   LIBRARIES portage  ${Jali_LIBRARIES} ${Jali_TPL_LIBRARIES}
+                   LIBRARIES portage_distributed
                    POLICY MPI
                    THREADS 4)
-  endif (Jali_DIR)
+
+    portage_add_unittest(test_mpi_ghost_manager
+               SOURCES test/test_mpi_ghost_manager.cc
+               LIBRARIES portage_distributed
+               POLICY MPI
+               THREADS 4)
+  endif ()
 endif(ENABLE_UNIT_TESTS)
 
