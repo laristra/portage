@@ -5,7 +5,7 @@
 */
 
 #include "portage/support/portage.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 
 #include <cmath>
 #include <iomanip>
@@ -14,17 +14,14 @@
 #include <type_traits>
 #include <vector> 
 
+//Wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/jali/jali_mesh_wrapper.h"
+#include "wonton/state/jali/jali_state_wrapper.h"
+
 //This test is distributed
 #include "mpi.h"
 #include "gtest/gtest.h"
-
-//Tangram includes
-#include "tangram/driver/driver.h"
-#include "tangram/driver/write_to_gmv.h"
-#include "tangram/intersect/split_r2d.h"
-#include "tangram/intersect/split_r3d.h"
-#include "tangram/reconstruct/MOF.h"
-#include "tangram/reconstruct/VOF.h"
 
 //Portage includes
 #include "portage/driver/uberdriver.h"
@@ -37,9 +34,12 @@
 #include "JaliStateVector.h"
 #include "JaliState.h"
 
-//Wonton includes
-#include "wonton/mesh/jali/jali_mesh_wrapper.h"
-#include "wonton/state/jali/jali_state_wrapper.h"
+//Tangram includes
+#include "tangram/driver/driver.h"
+#include "tangram/driver/write_to_gmv.h"
+#include "tangram/intersect/split_rNd.h"
+#include "tangram/reconstruct/MOF.h"
+#include "tangram/reconstruct/VOF.h"
 
 // Tests for distributed multi-material remap with 1st and 
 // 2nd Order Accurate Remap on 4 ranks. 
@@ -631,7 +631,7 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
       mass += rho[ic]*cellvol;
     }
   
-#ifdef DEBUG
+#ifndef NDEBUG
     std::cerr<<std::setprecision(13)<<"On rank "<<commRank<<" Mat "<<m
     <<": volume = "<<volume<<", mass = "<<mass<<std::endl;  
  
@@ -670,44 +670,44 @@ void run(std::shared_ptr<Jali::Mesh> &sourceMesh,
   Wonton::Executor_type *executor = (numpe > 1) ? &mpiexecutor : nullptr;
 
   if ((dim == 2) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_1stOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+		      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 2) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR2D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_2ndOrder, 2,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR2D, Tangram::ClipR2D>
+		      Tangram::MOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 3) && (dtype == CONSTANT)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_1stOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+		      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
     d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
     d.run(executor);  // run in parallel
   } else if ((dim == 3) && (dtype == LINEAR)){
-    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectR3D,
+    Portage::MMDriver<Portage::SearchKDTree, Portage::IntersectRnD,
 		      Portage::Interpolate_2ndOrder, 3,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
 		      Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-		      Tangram::MOF, Tangram::SplitR3D, Tangram::ClipR3D>
+		      Tangram::MOF, Tangram::SplitRnD<3>, Tangram::ClipRnD<3>>
     d(sourceMeshWrapper, sourceStateWrapper, targetMeshWrapper, targetStateWrapper);
     d.set_remap_var_names(remap_fields);
     d.set_limiter(Portage::Limiter_type::NOLIMITER);
@@ -1071,12 +1071,12 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
                       Wonton::Flat_Mesh_Wrapper<>, 
                       Wonton::Flat_State_Wrapper<Wonton::Flat_Mesh_Wrapper<>>,
                       Wonton::Jali_Mesh_Wrapper, Wonton::Jali_State_Wrapper,
-                      Tangram::VOF, Tangram::SplitR2D, Tangram::ClipR2D>
+                      Tangram::VOF, Tangram::SplitRnD<2>, Tangram::ClipRnD<2>>
     d(source_mesh_flat, source_state_flat,
         targetMeshWrapper, targetStateWrapper, &mpiexecutor);
 
 
-  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectR2D>();
+  d.compute_interpolation_weights<Portage::SearchKDTree, Portage::IntersectRnD>();
 
   double dblmax =  std::numeric_limits<double>::max();
 
@@ -1088,4 +1088,4 @@ TEST(MMDriver, TwoMat2D_VOF_1stOrderRemap) {
 
 }  // TwoMat2D_VOF_1stOrderRemap
 
-#endif  // ifdef have_tangram
+#endif  // ifdef PORTAGE_HAS_TANGRAM

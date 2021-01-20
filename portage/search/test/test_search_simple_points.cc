@@ -9,22 +9,24 @@ Please see the license file at the root of this repository, or at:
 
 #include "gtest/gtest.h"
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+#include "wonton/swarm/swarm.h"
+
 #include "portage/support/portage.h"
 #include "portage/search/search_simple_points.h"
-#include "portage/swarm/swarm.h"
 #include "portage/accumulate/accumulate.h"
-#include "wonton/support/Point.h"
 
 TEST(search_simple_points, scatter_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -74,14 +76,14 @@ TEST(search_simple_points, scatter_2d) {
 
 TEST(search_simple_points, scatter_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {
@@ -144,14 +146,14 @@ TEST(search_simple_points, scatter_3d) {
 
 TEST(search_simple_points, gather_2d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 3x3 target swarm on a 4x4 source swarm
   // each target point should have four candidate source points
-  Portage::vector<Wonton::Point<2>> source_points(16);
-  Portage::vector<Wonton::Point<2>> source_extent(16);
-  Portage::vector<Wonton::Point<2>> target_points(9);
-  Portage::vector<Wonton::Point<2>> target_extent(9);
+  Wonton::vector<Wonton::Point<2>> source_points(16);
+  Wonton::vector<Wonton::Point<2>> source_extent(16);
+  Wonton::vector<Wonton::Point<2>> target_points(9);
+  Wonton::vector<Wonton::Point<2>> target_extent(9);
 
   for (int j = 0; j < 4; ++j) {
     for (int i = 0; i < 4; ++i) {
@@ -200,14 +202,14 @@ TEST(search_simple_points, gather_2d) {
 
 TEST(search_simple_points, gather_3d) {
 
-  using Portage::Meshfree::Swarm;
+  using Wonton::Swarm;
 
   // overlay a 2x2x2 target swarm on a 3x3x3 source swarm
   // each target point should have eight candidate source points
-  Portage::vector<Wonton::Point<3>> source_points(27);
-  Portage::vector<Wonton::Point<3>> source_extent(27);
-  Portage::vector<Wonton::Point<3>> target_points(8);
-  Portage::vector<Wonton::Point<3>> target_extent(8);
+  Wonton::vector<Wonton::Point<3>> source_points(27);
+  Wonton::vector<Wonton::Point<3>> source_extent(27);
+  Wonton::vector<Wonton::Point<3>> target_points(8);
+  Wonton::vector<Wonton::Point<3>> target_extent(8);
 
   for (int k = 0; k < 3; ++k) {
     for (int j = 0; j < 3; ++j) {

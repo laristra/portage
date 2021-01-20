@@ -11,10 +11,11 @@ Please see the license file at the root of this repository, or at:
 #include "gtest/gtest.h"
 #include "mpi.h"
 
-#include "portage/support/portage.h"
-
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
+#include "portage/support/portage.h"
 #include "portage/driver/mmdriver.h"
 
 #include "Mesh.hh"
@@ -85,12 +86,12 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
   target_var_names.push_back("cellvars");
 
   // Build the main driver object to test for default fixup options
-  // Default fixup options are SHIFTED_CONSERVATIVE, so even if the
+  // Default fixup options are GLOBALLY_CONSERVATIVE, so even if the
   // meshes are disjoint the algorithm will attempt to distribute the
   // integral values of the source field on to the target
 
   Portage::MMDriver<Portage::SearchKDTree,
-                  Portage::IntersectR2D,
+                  Portage::IntersectRnD,
                   Portage::Interpolate_1stOrder,
                   2,
                   Wonton::Jali_Mesh_Wrapper,
@@ -105,7 +106,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
   remapper.run();
 
-  // Verify that we got the fields we wanted (SHIFTED CONSERVATIVE
+  // Verify that we got the fields we wanted (GLOBALLY CONSERVATIVE
   // means the total source value of 3.0 will be distributed equally
   // over the two target cells)
   for (int c = 0; c < ncells_target; c++) {
@@ -137,12 +138,12 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::EXTRAPOLATE);
 
   remapper.run();
 
-  // With SHIFTED_CONSERVATIVE, the integral of the source field which
+  // With GLOBALLY_CONSERVATIVE, the integral of the source field which
   // is 3.0 will be spread out about the target cells
   for (int c = 0; c < ncells_target; c++) {
     ASSERT_NEAR(1.5, targetvec[c], TOL);
@@ -172,7 +173,7 @@ TEST(Test_Mismatch_Fixup, Test_Methods) {
 
 
 
-  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::SHIFTED_CONSERVATIVE);
+  remapper.set_partial_fixup_type(Portage::Partial_fixup_type::GLOBALLY_CONSERVATIVE);
   remapper.set_empty_fixup_type(Portage::Empty_fixup_type::LEAVE_EMPTY);
 
   remapper.run();

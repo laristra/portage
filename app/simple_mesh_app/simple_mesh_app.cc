@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <memory>
 #include <stdexcept>
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
 #include <mpi.h>
 #else
 #define PORTAGE_SERIAL_ONLY
@@ -23,6 +23,8 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 
 // wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/state_vector_uni.h"
@@ -136,7 +138,7 @@ int main(int argc, char** argv) {
   // Even though Simple_Mesh is serial only, we still need to initialize MPI
   // for other Portage code.
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
@@ -223,7 +225,7 @@ int main(int argc, char** argv) {
     if (example.order == 1) {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -235,7 +237,7 @@ int main(int argc, char** argv) {
     } else {  // 2nd order
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -350,7 +352,7 @@ int main(int argc, char** argv) {
     if (example.order == 1) {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_1stOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -362,7 +364,7 @@ int main(int argc, char** argv) {
     } else {
       Portage::MMDriver<
         Portage::SearchKDTree,
-        Portage::IntersectR3D,
+        Portage::IntersectRnD,
         Portage::Interpolate_2ndOrder,
         3,
         Simple_Mesh_Wrapper,
@@ -414,7 +416,7 @@ int main(int argc, char** argv) {
   }
   std::cout << "finishing simple_mesh app..." << std::endl;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   MPI_Finalize();
 #endif
 }

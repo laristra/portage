@@ -15,15 +15,17 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <cmath>
 
+// wonton includes
+#include "wonton/support/wonton.h"
+#include "wonton/support/Vector.h"
+#include "wonton/support/CoordinateSystem.h"
+
 // portage includes
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
 #include "portage/driver/parts.h"
 
-// wonton includes
-#include "wonton/support/CoordinateSystem.h"
-
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "tangram/driver/driver.h"
 #include "tangram/driver/CellMatPoly.h"
 #include "tangram/support/MatPoly.h"
@@ -100,7 +102,7 @@ template<int D,
          >
 class Interpolate_1stOrder {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -109,7 +111,7 @@ class Interpolate_1stOrder {
  public:
 
   // Constructor with interface reconstructor
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
@@ -171,7 +173,7 @@ class Interpolate_1stOrder {
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -199,9 +201,7 @@ class Interpolate_1stOrder {
 
   T operator() (int const targetEntityId,
                      std::vector<Weights_t> const & sources_and_weights) const {
-    std::cerr << "Interpolation operator not implemented for this entity type"
-              << std::endl;
-    return T(0.0);
+    throw std::runtime_error("Interpolation operator not implemented for this entity type");
   }
   
   constexpr static int order = 1;
@@ -215,7 +215,7 @@ class Interpolate_1stOrder {
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
 };  // interpolate_1st_order base
@@ -251,7 +251,7 @@ class Interpolate_1stOrder<
     TargetMeshType, TargetStateType
   >;
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -259,7 +259,7 @@ class Interpolate_1stOrder<
 
  public:
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
@@ -324,7 +324,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::CELL, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -415,7 +415,7 @@ class Interpolate_1stOrder<
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
   Parts const* parts_;
@@ -449,7 +449,7 @@ class Interpolate_1stOrder<
   Matpoly_Splitter, Matpoly_Clipper, CoordSys> {
 
   // useful aliases
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   using InterfaceReconstructor =
       Tangram::Driver<InterfaceReconstructorType, D, SourceMeshType,
                       Matpoly_Splitter, Matpoly_Clipper>;
@@ -458,7 +458,7 @@ class Interpolate_1stOrder<
  public:
 
   // Constructor with interface reconstructor
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   Interpolate_1stOrder(SourceMeshType const & source_mesh,
                        TargetMeshType const & target_mesh,
                        SourceStateType const & source_state,
@@ -518,7 +518,7 @@ class Interpolate_1stOrder<
   // uniform interface
 
   void set_interpolation_variable(std::string const & interp_var_name,
-                                  Portage::vector<Wonton::Vector<D>>* gradients = nullptr) {
+                                  Wonton::vector<Wonton::Vector<D>>* gradients = nullptr) {
     interp_var_name_ = interp_var_name;
     field_type_ = source_state_.field_type(Entity_kind::NODE, interp_var_name);
     if (field_type_ == Field_type::MESH_FIELD)
@@ -526,7 +526,7 @@ class Interpolate_1stOrder<
                                   &source_vals_);
     else {
       source_state_.mat_get_celldata(interp_var_name, matid_, &source_vals_);
-      std::cerr << "Cannot remap NODE-centered multi-material data" << "\n";
+      throw std::runtime_error("Cannot remap NODE-centered multi-material data");
     }
   }  // set_interpolation_variable
 
@@ -600,7 +600,7 @@ class Interpolate_1stOrder<
   int matid_ = 0;
   Field_type field_type_ = Field_type::UNKNOWN_TYPE_FIELD;
   NumericTolerances_t num_tols_;
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   std::shared_ptr<InterfaceReconstructor> interface_reconstructor_;
 #endif
 };  // interpolate_1st_order specialization for nodes

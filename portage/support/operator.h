@@ -12,8 +12,10 @@
 #include <vector>
 #include <stdexcept>
 
-#include "portage/support/basis.h"
+#include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
+
+#include "portage/support/basis.h"
 
 namespace Portage { namespace Meshfree { namespace oper {
 

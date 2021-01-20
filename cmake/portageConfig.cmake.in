@@ -1,0 +1,66 @@
+#-----------------------------------------------------------------------------
+# This file is part of the Ristra Portate project.
+# Please see the license file at the root of this repository, or at:
+#    https://github.com/laristra/portage/blob/master/LICENSE
+#
+# Portage configuration file template
+#
+#-----------------------------------------------------------------------------
+
+set(PORTAGE_VERSION_MAJOR @PORTAGE_VERSION_MAJOR@ CACHE STRING "Major version of PORTAGE")
+set(PORTAGE_VERSION_MINOR @PORTAGE_VERSION_MINOR@ CACHE STRING "Minor version of PORTAGE")
+set(PORTAGE_VERSION_MINOR @PORTAGE_VERSION_PATCH@ CACHE STRING "Patch version of PORTAGE")
+
+# Portage installation path
+set(PORTAGE_ROOT @CMAKE_INSTALL_PREFIX@ CACHE PATH "Path to Portage installation")
+
+# Portage library
+set(PORTAGE_LIBRARIES @PORTAGE_LIBRARIES@ CACHE STRING "Name of Portage Library target")
+
+# Tangram
+set(PORTAGE_ENABLE_TANGRAM @PORTAGE_ENABLE_TANGRAM@ CACHE BOOL "Is Tangram enabled?")
+set(TANGRAM_ROOT @TANGRAM_ROOT@ CACHE STRING "Path to Tangram installation")
+
+# Wonton
+set(WONTON_ROOT @WONTON_ROOT@ CACHE PATH "Path to Wonton installation")
+
+# PORTAGE options
+
+set(PORTAGE_ENABLE_MPI @PORTAGE_ENABLE_MPI@ CACHE BOOL "Enable MPI Parallelism dfor Portage")
+
+set(PORTAGE_ENABLE_THRUST @PORTAGE_ENABLE_THRUST@ CACHE BOOL "Enable NVIDIA Thrust")
+
+set(PORTAGE_ENABLE_FleCSI @PORTAGE_ENABLE_FleCSI@ CACHE BOOL "Use FleCSI")
+
+set(PORTAGE_ENABLE_Jali @PORTAGE_ENABLE_Jali@ CACHE STRING "Use Jali")
+
+
+# Find target dependencies
+
+# Temporarily modify CMAKE module path so we can find our custom
+# modules for packages that don't have config files
+
+set(SAVED_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.15)
+  list(PREPEND CMAKE_MODULE_PATH @CMAKE_INSTALL_PREFIX@/lib/cmake/portage/module
+s)
+else ()
+  set(CMAKE_MODULE_PATH "@CMAKE_INSTALL_PREFIX@/lib/cmake/portage/modules;${CMAKE_MODULE_PATH}")
+endif ()
+
+include(CMakeFindDependencyMacro)
+
+if (PORTAGE_ENABLE_TANGRAM)
+  find_dependency(TANGRAM REQUIRED NAMES tangram)
+endif ()
+
+find_dependency(WONTON REQUIRED NAMES wonton)
+
+# Restore original CMAKE_MODULE_PATH
+set(CMAKE_MODULE_PATH ${SAVED_CMAKE_MODULE_PATH})
+
+#
+# Import Portage targets
+#
+
+include("@CMAKE_INSTALL_PREFIX@/lib/cmake/portage/portageTargets.cmake")

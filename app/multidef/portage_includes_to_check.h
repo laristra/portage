@@ -11,13 +11,11 @@ Please see the license file at the root of this repository, or at:
 // 0. Make sure you have include guards so that multiple inclusions of
 // the include file in a source file is ok
 // 1. Move it to a .cc file
-// 2. Make it inline
-// 3. Make it static
-// 4. Enclose it in its own namespace
+// 2. Make it static inline (Clang is not happy with just static or just inline)
+// 3. Enclose it in its own namespace
 //
 // Option 3 and 4 will cause each translation unit (compiled source file) to
 // have it's own copy of the function
-
 
 #include "portage/accumulate/accumulate.h"
 
@@ -31,11 +29,12 @@ Please see the license file at the root of this repository, or at:
 #include "portage/driver/mmdriver.h"
 #include "portage/driver/parts.h"
 #include "portage/driver/uberdriver.h"
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
 #include "portage/driver/write_to_gmv.h"
 #endif
 
 #include "portage/estimate/estimate.h"
+
 #include "portage/interpolate/gradient.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
@@ -53,7 +52,6 @@ Please see the license file at the root of this repository, or at:
 #include "portage/search/kdtree.h"
 #include "portage/search/search_direct_product.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/search/search_kdtree_nanoflann.h"
 #include "portage/search/search_points_by_cells.h"
 #include "portage/search/search_simple.h"
 #include "portage/search/search_simple_points.h"
@@ -65,7 +63,3 @@ Please see the license file at the root of this repository, or at:
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/support/weight.h"
-
-#include "portage/swarm/swarm.h"
-#include "portage/swarm/swarm_state.h"
-

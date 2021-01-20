@@ -10,9 +10,12 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
-#include "wonton/support/Point.h"
+
 using Wonton::Point;
 
 /// file-local namespace

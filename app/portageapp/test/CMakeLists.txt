@@ -25,11 +25,11 @@ endmacro(ADD_SPECIFIC_APPTEST)
 macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
   set(SUFFIX "rect_${DIM}d_${ENTITY}_f${FIELDORDER}_r${REMAPORDER}")
 
-  if (Jali_DIR)
+  if (WONTON_ENABLE_Jali)
     ADD_SPECIFIC_APPTEST(jali ${SUFFIX})
-  endif (Jali_DIR)
+  endif ()
 
-  if (ENABLE_FleCSI)
+  if (WONTON_ENABLE_FleCSI)
     # For now, the flecsi app is hard-coded for 2d, cell-centered
     # remap with the field and remap order being the same
     if (${DIM} MATCHES "2" AND
@@ -37,12 +37,12 @@ macro(ADD_PORTAGEAPP_TEST DIM ENTITY FIELDORDER REMAPORDER)
 	${FIELDORDER} MATCHES ${REMAPORDER})
       ADD_SPECIFIC_APPTEST(flecsi ${SUFFIX})
     endif()
-  endif (ENABLE_FleCSI)
+  endif ()
 endmacro(ADD_PORTAGEAPP_TEST)
 
 # all of these scripts use mpirun to launch the job, so only include them
 # if we know about MPI
-if (ENABLE_MPI)
+if (WONTON_ENABLE_MPI)
   ADD_PORTAGEAPP_TEST(2 cell 0 1)
   ADD_PORTAGEAPP_TEST(2 cell 1 1)
   ADD_PORTAGEAPP_TEST(2 cell 1 2)
@@ -60,10 +60,10 @@ if (ENABLE_MPI)
   ADD_PORTAGEAPP_TEST(3 node 1 2)
   ADD_PORTAGEAPP_TEST(3 node 2 2)
 
-  if (Jali_DIR)
+  if (WONTON_ENABLE_Jali)
     ADD_SPECIFIC_APPTEST(jali_rect 3d_cell_gen_r2)
-  endif (Jali_DIR)
-endif (ENABLE_MPI)
+  endif ()
+endif ()
 
 
 macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
@@ -79,6 +79,8 @@ macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
             ../../../test_data/coarse_poly2D.exo
             ../../../test_data/fine_poly2D.exo 
             ../../../test_data/3dvoro-voronoized-10k.exo
+	    ../../../test_data/sector5.exo
+	    ../../../test_data/sector6.exo
        DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   add_test(NAME portageapp_jali_unstruc_${SUFFIX}
     COMMAND ./portageapp_jali_unstruc_${SUFFIX}.sh)
@@ -88,7 +90,7 @@ macro(ADD_UNSTRUC_TEST DIM ENTITY FIELDORDER REMAPORDER)
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
 endmacro(ADD_UNSTRUC_TEST)
 
-if (ENABLE_MPI AND Jali_DIR)
+if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
   ADD_UNSTRUC_TEST(2 cell 0 1)
   ADD_UNSTRUC_TEST(2 cell 1 1)
   ADD_UNSTRUC_TEST(2 cell 1 2)
@@ -110,10 +112,12 @@ if (ENABLE_MPI AND Jali_DIR)
 
   ADD_SPECIFIC_APPTEST(jali_unstruc 2d_cell_gen_r2)
   ADD_SPECIFIC_APPTEST(jali_unstruc 3d_cell_gen_r2)
-endif (ENABLE_MPI AND Jali_DIR)
+
+  ADD_SPECIFIC_APPTEST(jali_radial 3d_node_f1_r2)
+endif ()
 
 #multi-material tests
-if (Jali_DIR AND TANGRAM_FOUND)
+if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
   file(COPY portageapp_multimat_jali_unstruc_2d_cell_f1_r2.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY gold/GOLD_multimat_jali_unstruc_2d_cell_f1_r2.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
   file(COPY ../../../test_data/reg10x10.exo
@@ -140,7 +144,17 @@ if (Jali_DIR AND TANGRAM_FOUND)
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
 
-endif (Jali_DIR AND TANGRAM_FOUND)
+
+  file(COPY portageapp_rgmd_jali_tjunction_2d_swept.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY gold/GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_rgmd_jali_tjunction_2d_swept
+    COMMAND ./portageapp_rgmd_jali_tjunction_2d_swept.sh)
+  set_property(TEST portageapp_rgmd_jali_tjunction_2d_swept
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
+
+endif ()
 
 ####################################################################
 
@@ -175,7 +189,7 @@ endmacro(ADD_DISTRIBUTED_APPTEST)
 # These tests don't test whether the remap is correct or reproduces a certain
 # function. They only test whether serial and parallel match. Hence higher 
 # order fields or remap order changes don't really test anything new.
-if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
 
   # 2D, t-junction, constant fields, vary number of processors with triple point
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 1)
@@ -197,6 +211,6 @@ if (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
   # 3D, pure source cells, constant fields, vary number of processors
   ADD_DISTRIBUTED_APPTEST(4 srcpurecells 3 4 8 1,2,3 1)
 
-endif (ENABLE_MPI AND Jali_DIR AND TANGRAM_FOUND)
+endif ()
 
 

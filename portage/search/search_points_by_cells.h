@@ -11,6 +11,9 @@ Please see the license file at the root of this repository, or at:
 #include <cmath>
 #include <list>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 #include "portage/support/portage.h"
 
 #include "portage/accumulate/accumulate.h"
@@ -50,8 +53,8 @@ public:
   */
   SearchPointsByCells(SourceSwarm const& source_swarm,
                       TargetSwarm const& target_swarm,
-                      Portage::vector<Point<dim>> const& source_extents,
-                      Portage::vector<Point<dim>> const& target_extents,
+                      Wonton::vector<Point<dim>> const& source_extents,
+                      Wonton::vector<Point<dim>> const& target_extents,
                       Meshfree::WeightCenter center = Meshfree::Scatter)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
@@ -65,7 +68,7 @@ public:
     int const nb_target = target_swarm_.num_particles();
     bool const do_scatter = (center == Scatter);
 
-#ifdef DEBUG
+#ifndef NDEBUG
     // check sizes
     if (do_scatter) {
       assert(unsigned(nb_source) == source_extents_.size());
@@ -142,8 +145,8 @@ private:
   // Aggregate data members
   SourceSwarm const& source_swarm_;
   TargetSwarm const& target_swarm_;
-  Portage::vector<Point<dim>> source_extents_;
-  Portage::vector<Point<dim>> target_extents_;
+  Wonton::vector<Point<dim>> source_extents_;
+  Wonton::vector<Point<dim>> target_extents_;
   std::shared_ptr<Meshfree::Pairs::CellPairFinder> pair_finder_;  // unavoidable
   Meshfree::WeightCenter center_ = Meshfree::Scatter;
 

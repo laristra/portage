@@ -18,26 +18,31 @@
 #include <limits>
 #include <cmath>
 
-#ifdef HAVE_TANGRAM
-  #include "tangram/driver/driver.h"
+#include "wonton/support/wonton.h"
+#include "wonton/mesh/flat/flat_mesh_wrapper.h"
+#include "wonton/state/flat/flat_state_mm_wrapper.h"
+#include "wonton/support/Point.h"
+#include "wonton/state/state_vector_multi.h"
+
+#ifdef PORTAGE_HAS_TANGRAM
+#include "tangram/driver/driver.h"
+#include "tangram/intersect/split_rNd.h"   // included for the easy
+                                           // access of Split_RnD,
+                                           // Clip_RnD classes by apps
+                                           // instantiating this class
 #endif
 
 #include "portage/intersect/dummy_interface_reconstructor.h"
 #include "portage/support/portage.h"
 #include "portage/support/timer.h"
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
-#include "wonton/mesh/flat/flat_mesh_wrapper.h"
-#include "wonton/state/flat/flat_state_mm_wrapper.h"
-#include "wonton/support/Point.h"
-#include "wonton/state/state_vector_multi.h"
 #include "portage/driver/fix_mismatch.h"
 #include "portage/driver/coredriver.h"
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   #include "portage/distributed/mpi_bounding_boxes.h"
 #endif
 
@@ -85,7 +90,7 @@ using namespace Wonton;
   the problem and the source mesh class as template parameters
 */
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
@@ -102,7 +107,7 @@ template <template <int, Entity_kind, class, class> class Search,
           class Matpoly_Clipper = void>
 class MMDriver {
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // alias for interface reconstructor parameterized on the mesh type.
   // it will be used for gradient field computation.
   template<typename SourceMesh>
@@ -122,7 +127,7 @@ class MMDriver {
     be mapped to the target mesh.
   */
   MMDriver(SourceMesh_Wrapper const& sourceMesh,
-           SourceState_Wrapper const& sourceState,
+           SourceState_Wrapper & sourceState,
            TargetMesh_Wrapper const& targetMesh,
            TargetState_Wrapper& targetState)
       : source_mesh_(sourceMesh),
@@ -174,7 +179,7 @@ class MMDriver {
     source_target_varname_map_.clear();
 
     int nvars = source_remap_var_names.size();
-#ifdef DEBUG
+#ifndef NDEBUG
     for (int i = 0; i < nvars; ++i) {
       Entity_kind srckind = source_state_.get_entity(source_remap_var_names[i]);
       Entity_kind trgkind = target_state_.get_entity(target_remap_var_names[i]);
@@ -192,7 +197,7 @@ class MMDriver {
       limiters_[source_remap_var_names[i]] = Limiter_type::BARTH_JESPERSEN;
       bnd_limiters_[source_remap_var_names[i]] = Boundary_Limiter_type::BND_NOLIMITER;
       partial_fixup_types_[target_remap_var_names[i]] =
-          Partial_fixup_type::SHIFTED_CONSERVATIVE;
+          Partial_fixup_type::GLOBALLY_CONSERVATIVE;
       empty_fixup_types_[target_remap_var_names[i]] =
           Empty_fixup_type::EXTRAPOLATE;
     }
@@ -243,10 +248,25 @@ class MMDriver {
   }
 
   /*!
+    @brief set flag whether we want to check for mesh mismatch
+
+    @param do_check_mismatch  boolean flag indicating if we want to check for
+                              boundary mismatch between meshes
+
+    This check is used to determine if the boundaries of the two
+    meshes overlap exactly. If they don't conservation is
+    violated. Callers can ask to compensate for the mismatch when
+    interpolating a mesh variable.
+  */
+  void set_check_mismatch_flag(const bool do_check_mismatch) {
+    do_check_mismatch_ = do_check_mismatch;
+  }
+  
+  /*!
     @brief set repair method in partially filled cells for all variables
     @param fixup_type Can be Partial_fixup_type::CONSTANT,
                       Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                      Partial_fixup_type::SHIFTED_CONSERVATIVE
+                      Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(Partial_fixup_type fixup_type) {
     for (auto const& stpair : source_target_varname_map_) {
@@ -260,7 +280,7 @@ class MMDriver {
     @param target_var_name Target mesh variable to set fixup option for
     @param fixup_type  Can be Partial_fixup_type::CONSTANT,
                        Partial_fixup_type::LOCALLY_CONSERVATIVE,
-                       Partial_fixup_type::SHIFTED_CONSERVATIVE
+                       Partial_fixup_type::GLOBALLY_CONSERVATIVE
   */
   void set_partial_fixup_type(std::string const& target_var_name,
                               Partial_fixup_type fixup_type) {
@@ -319,7 +339,7 @@ class MMDriver {
       double_lower_bounds_[target_var_name] = lower_bound;
       double_upper_bounds_[target_var_name] = upper_bound;
     } else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
   /*!
@@ -332,10 +352,10 @@ class MMDriver {
     if (typeid(T) == typeid(double))
       conservation_tol_[target_var_name] = conservation_tol;
     else
-      std::cerr << "Type not supported \n";
+      throw std::runtime_error("Remap variable type not supported");
   }
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   /*!
     @brief set options for interface reconstructor driver  
     @param all_convex Should be set to false if the source mesh contains 
@@ -408,7 +428,7 @@ class MMDriver {
 
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                 SourceState_Wrapper2 const & source_state2,
+                 SourceState_Wrapper2 & source_state2,
                  std::vector<std::string> const &src_meshvar_names,
                  std::vector<std::string> const &trg_meshvar_names,
                  std::vector<std::string> const &src_matvar_names,
@@ -430,7 +450,7 @@ class MMDriver {
 
   template<class SourceMesh_Wrapper2, class SourceState_Wrapper2>
   int node_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                 SourceState_Wrapper2 const & source_state2,
+                 SourceState_Wrapper2 & source_state2,
                  std::vector<std::string> const &src_meshvar_names,
                  std::vector<std::string> const &trg_meshvar_names,
                  Wonton::Executor_type const *executor = nullptr);
@@ -452,12 +472,12 @@ class MMDriver {
   */
   
   template<class SourceState_Wrapper2,Entity_kind onwhat>
-  void compute_bounds(SourceState_Wrapper2 const& source_state2,
+  void compute_bounds(SourceState_Wrapper2 & source_state2,
                    std::vector<std::string> const& src_meshvar_names,
                    std::vector<std::string> const& trg_meshvar_names,
                    Wonton::Executor_type const *executor = nullptr) {
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
@@ -485,12 +505,12 @@ class MMDriver {
         int nsrcents = source_mesh_.num_entities(onwhat,
                                                  Entity_type::PARALLEL_OWNED);
         
-        double const *source_data;
+        double *source_data;
         source_state_.mesh_get_data(onwhat, src_var, &source_data);
         double lower_bound = *std::min_element(source_data, source_data + nsrcents);
         double upper_bound = *std::max_element(source_data, source_data + nsrcents);
         
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
         if (mycomm != MPI_COMM_NULL) {
           double global_bounds[2] = { 0.0, 0.0 };
           MPI_Allreduce(&lower_bound, global_bounds+0, 1, MPI_DOUBLE, MPI_MIN, mycomm);
@@ -530,24 +550,30 @@ class MMDriver {
           std::string *errmsg = nullptr) {
     std::string message;
 
+#ifndef NDEBUG
     auto tic = timer::now();
 
-    bool distributed = false;
     int comm_rank = 0;
-    int nprocs = 1;
+#endif
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
+    bool distributed = false;
+
     MPI_Comm mycomm = MPI_COMM_NULL;
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
+#ifndef NDEBUG      
       MPI_Comm_rank(mycomm, &comm_rank);
+#endif
+      int nprocs = 0;
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1)
         distributed = true;
     }
 #endif
-#ifdef ENABLE_DEBUG
+
+#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -590,7 +616,7 @@ class MMDriver {
 
     // Default is serial run (if MPI is not enabled or the
     // communicator is not defined or the number of processors is 1)
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
     // Create a new mesh wrapper that we can use for redistribution
     // of the source mesh as necessary (so that every target cell
     // sees any source cell that it overlaps with)
@@ -602,7 +628,9 @@ class MMDriver {
     if (distributed) {
       MPI_Bounding_Boxes distributor(mpiexecutor);
       if (distributor.is_redistribution_needed(source_mesh_, target_mesh_)) {
+#ifndef NDEBUG
         tic = timer::now();
+#endif
         
         source_mesh_flat.initialize(source_mesh_);
         
@@ -618,7 +646,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG)
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -671,12 +699,12 @@ class MMDriver {
           src_meshvar_names.push_back(srcvarname);
           trg_meshvar_names.push_back(trgvarname);
         } else if (ftype == Field_type::MULTIMATERIAL_FIELD)
-          std::cerr << "Cannot handle multi-material fields on nodes\n";
+          throw std::runtime_error("Cannot handle multi-material fields on nodes\n");
       }
     }
 
     if (not src_meshvar_names.empty()) {
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
       if (redistributed_source)
         node_remap<Flat_Mesh_Wrapper<>, Flat_State_Wrapper<Flat_Mesh_Wrapper<>>>
             (source_mesh_flat, source_state_flat,
@@ -698,7 +726,7 @@ class MMDriver {
  private:
   SourceMesh_Wrapper const& source_mesh_;
   TargetMesh_Wrapper const& target_mesh_;
-  SourceState_Wrapper const& source_state_;
+  SourceState_Wrapper & source_state_;
   TargetState_Wrapper& target_state_;
   std::unordered_map<std::string, std::string> source_target_varname_map_;
   std::unordered_map<std::string, Limiter_type> limiters_;
@@ -712,9 +740,10 @@ class MMDriver {
   double consttol_ =  100*std::numeric_limits<double>::epsilon();
   int max_fixup_iter_ = 5;
   NumericTolerances_t num_tols_ = DEFAULT_NUMERIC_TOLERANCES<D>;
+  bool do_check_mismatch_ = true;
 
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   // The following tolerances as well as the all-convex flag are
   // required for the interface reconstructor driver. The size of the
   // tols vector is currently set to two since MOF requires two
@@ -739,7 +768,7 @@ class MMDriver {
 // remap routine specialization for cells
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
@@ -761,27 +790,26 @@ int MMDriver<Search, Intersect, Interpolate, D,
              InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
              >::cell_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                           SourceState_Wrapper2 const & source_state2,
+                           SourceState_Wrapper2 & source_state2,
                            std::vector<std::string> const &src_meshvar_names,
                            std::vector<std::string> const &trg_meshvar_names,
                            std::vector<std::string> const &src_matvar_names,
                            std::vector<std::string> const &trg_matvar_names,
                            Wonton::Executor_type const *executor) {
-  
-  int comm_rank = 0;
-  int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifndef NDEBUG
+  int comm_rank = 0;
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
     MPI_Comm_rank(mycomm, &comm_rank);
-    MPI_Comm_size(mycomm, &nprocs);
   }
 #endif
+#endif
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -793,7 +821,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   for (auto & stpair : source_target_varname_map_)
     source_remap_var_names.push_back(stpair.first);
 
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user did NOT set tolerances for Tangram, use Portage tolerances
     if (reconstructor_tols_.empty()) {
       reconstructor_tols_ = { {1000, num_tols_.min_absolute_distance,
@@ -819,17 +847,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_cell(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_cell.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_cell.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  
   
   // SEARCH
   auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
+#ifdef PORTAGE_HAS_TANGRAM
   int nmats = source_state2.num_materials();
+#endif
 
   //--------------------------------------------------------------------
   // REMAP MESH FIELDS FIRST (this requires just mesh-mesh intersection)
@@ -838,29 +868,32 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_cell.template intersect_meshes<Intersect>(candidates);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_cell.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_cell.check_mismatch(source_ents_and_weights);
 
   // compute bounds (for all variables) if required for mismatch
-  if (coredriver_cell.has_mismatch())
+  if (do_check_mismatch_ && coredriver_cell.has_mismatch())
     compute_bounds<SourceState_Wrapper2, CELL>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on cells to remap is " <<
         nvars << std::endl;
   }
 #endif
+#endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, CELL,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
@@ -889,7 +922,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_cell.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_cell.has_mismatch()) {
       coredriver_cell.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
@@ -901,10 +934,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_interp += timer::elapsed(tic, true);
 #endif
 
+#ifdef PORTAGE_HAS_TANGRAM
   if (nmats > 1) {
     //--------------------------------------------------------------------
     // REMAP MULTIMATERIAL FIELDS NEXT, ONE MATERIAL AT A TIME
@@ -912,9 +946,11 @@ int MMDriver<Search, Intersect, Interpolate, D,
     
     auto source_ents_and_weights_mat =
         coredriver_cell.template intersect_materials<Intersect>(candidates);
+
+    if (Interpolator::order == 2) { coredriver_cell.cache_multimat_gradient_stencils(); }
     
     int nmatvars = src_matvar_names.size();
-    std::vector<Portage::vector<Vector<D>>> matgradients(nmats);
+    std::vector<Wonton::vector<Vector<D>>> matgradients(nmats);
 
     for (int i = 0; i < nmatvars; ++i) {
       std::string const& srcvar = src_matvar_names[i];
@@ -940,20 +976,24 @@ int MMDriver<Search, Intersect, Interpolate, D,
       }
     }  // nmatvars
   }
+#endif
 
 
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Cell remap on Rank " <<
+  std::cout << "Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
+
+#if defined(VERBOSE_OUTPUT)
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for cells
@@ -964,7 +1004,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 // remap routine specialization for nodes
 
 template <template <int, Entity_kind, class, class> class Search,
-          template <Entity_kind, class, class, class,
+          template <int, Entity_kind, class, class, class,
                     template <class, int, class, class> class,
                     class, class> class Intersect,
           template<int, Entity_kind, class, class, class, class, class,
@@ -986,25 +1026,25 @@ int MMDriver<Search, Intersect, Interpolate, D,
              InterfaceReconstructorType, Matpoly_Splitter,
              Matpoly_Clipper
              >::node_remap(SourceMesh_Wrapper2 const & source_mesh2,
-                           SourceState_Wrapper2 const & source_state2,
+                           SourceState_Wrapper2 & source_state2,
                            std::vector<std::string> const &src_meshvar_names,
                            std::vector<std::string> const &trg_meshvar_names,
                            Wonton::Executor_type const *executor) {
-  
-  int comm_rank = 0;
-  int nprocs = 1;
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifndef NDEBUG
+  int comm_rank = 0;
+
+#ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
   auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
   if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
     mycomm = mpiexecutor->mpicomm;
     MPI_Comm_rank(mycomm, &comm_rank);
-    MPI_Comm_size(mycomm, &nprocs);
   }
 #endif
+#endif
 
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -1017,7 +1057,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     source_remap_var_names.push_back(stpair.first);
 
   
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
     // If user set tolerances for Tangram, but not for Portage,
     // use Tangram tolerances
     if (!num_tols_.user_tolerances && (!reconstructor_tols_.empty()) ) {
@@ -1040,7 +1080,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
       coredriver_node(source_mesh2, source_state2, target_mesh_, target_state_, executor);
 
   coredriver_node.set_num_tols(num_tols_);
-#ifdef HAVE_TANGRAM
+#ifdef PORTAGE_HAS_TANGRAM
   coredriver_node.set_interface_reconstructor_options(reconstructor_all_convex_,
                                                       reconstructor_tols_);
 #endif  
@@ -1048,7 +1088,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // SEARCH
 
   auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
   //--------------------------------------------------------------------
@@ -1058,29 +1098,32 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_node.template intersect_meshes<Intersect>(candidates);
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
-  coredriver_node.check_mismatch(source_ents_and_weights);
+  if (do_check_mismatch_)
+    coredriver_node.check_mismatch(source_ents_and_weights);
 
   // compute bounds if required for mismatch
-  if (coredriver_node.has_mismatch())
+  if (do_check_mismatch_ && coredriver_node.has_mismatch())
     compute_bounds<SourceState_Wrapper2, NODE>
         (source_state2, src_meshvar_names, trg_meshvar_names, executor);
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG)
   tic = timer::now();
 
+#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on nodes to remap is " <<
         nvars << std::endl;
   }
 #endif
+#endif
 
-  Portage::vector<Vector<D>> gradients;
+  Wonton::vector<Vector<D>> gradients;
   // to check interpolation order
   using Interpolator = Interpolate<D, NODE,
                                    SourceMesh_Wrapper2, TargetMesh_Wrapper,
@@ -1108,7 +1151,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
 
     // fix mismatch if necessary
-    if (coredriver_node.has_mismatch()) {
+    if (do_check_mismatch_ && coredriver_node.has_mismatch()) {
       coredriver_node.fix_mismatch(srcvar, trgvar,
                                    double_lower_bounds_[trgvar],
                                    double_upper_bounds_[trgvar],
@@ -1120,18 +1163,21 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifdef ENABLE_DEBUG
+#if !defined(NDEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
-  std::cout << "Transform Time for Node remap on Rank " <<
+  std::cout << "Time for Node remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
-  std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
+
+#if defined(VERBOSE_OUTPUT)
+     std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
+#endif
 #endif
   return 1;
 }  // remap specialization for nodes

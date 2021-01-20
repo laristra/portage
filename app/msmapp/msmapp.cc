@@ -14,25 +14,13 @@ Please see the license file at the root of this repository, or at:
 #include <string>
 #include <limits>
 
-#ifdef PORTAGE_ENABLE_MPI
-#include <mpi.h>
-#else
-#define PORTAGE_SERIAL_ONLY
-#endif
-
-// portage includes
-#include "portage/support/portage.h"
-#include "portage/driver/mmdriver.h"
-#include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
-#include "portage/interpolate/interpolate_1st_order.h"
-#include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/search/search_points_by_cells.h"
-#include "portage/accumulate/accumulate.h"
-#include "portage/estimate/estimate.h"
+// jali includes
+#include "Mesh.hh"
+#include "MeshFactory.hh"
+#include "JaliState.h"
 
 // wonton includes
+#include "wonton/support/wonton.h"
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
@@ -40,10 +28,22 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
 
-// jali includes
-#include "Mesh.hh"
-#include "MeshFactory.hh"
-#include "JaliState.h"
+// portage includes
+#include "portage/support/portage.h"
+#include "portage/driver/mmdriver.h"
+#include "portage/driver/driver_mesh_swarm_mesh.h"
+#include "portage/intersect/intersect_rNd.h"
+#include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/search/search_points_by_cells.h"
+#include "portage/accumulate/accumulate.h"
+#include "portage/estimate/estimate.h"
+
+#ifdef WONTON_ENABLE_MPI
+#include <mpi.h>
+#else
+#define PORTAGE_SERIAL_ONLY
+#endif
 
 template<size_t dim>
 struct Controls {
@@ -190,7 +190,7 @@ public:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-  template<Portage::Entity_kind, class, class, class,
+  template<int, Portage::Entity_kind, class, class, class,
   template <class, int, class, class> class,
   class, class> class Intersect,
   template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -264,8 +264,8 @@ public:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMesh->num_entities(Portage::Entity_kind::CELL,
                                               Portage::Entity_type::ALL);
@@ -513,7 +513,7 @@ protected:
   // Perform comparison. First remap using traditional mesh techniques. Second remap using particles as intermediary.
   // Report timing and accuracy.
   template <
-    template<Portage::Entity_kind, class, class, class,
+   template<int, Portage::Entity_kind, class, class, class,
     template<class, int, class, class> class,
     class, class> class Intersect,
     template<int, Portage::Entity_kind, class, class, class, class, class,
@@ -578,8 +578,8 @@ protected:
     remap_fields.emplace_back("nodedata");
 
     // If an operator is requested, collect the information required.
-    Portage::vector<std::vector<Portage::Point<Dimension>>> data;
-    Portage::vector<Portage::Meshfree::oper::Domain> domains;
+    Wonton::vector<std::vector<Portage::Point<Dimension>>> data;
+    Wonton::vector<Portage::Meshfree::oper::Domain> domains;
     if (controls_.oper8tor == "VolumeIntegral") {
       int numcells = targetMeshWrapper.num_owned_cells();
       domains.resize(numcells);
@@ -809,6 +809,7 @@ void print_usage() {
       -nomm do not do the direct mesh-mesh remap\n\
     example file format: \n\
     note: do not include this line or text before and including \":\" in lines below\n\
+    dimension, double:                      3\n\
     source mesh min, double:          0. 0. 0.\n\
     source mesh max, double:          1. 1. 1.\n\
     target mesh min, double:         .2 .2 .2\n\
@@ -837,90 +838,44 @@ void print_usage() {
 }
 
 
-void runjob2(Controls<3> ctl0, std::string filename)
+
+template <int DIM>
+void runjob(Controls<DIM> ctl, std::string filename)
 {
-  const int DIM=2;
-  Controls<DIM> ctl;
-  if (DIM==2) ctl = truncateControl(ctl0);
-  
   if (ctl.source_file == "none") {
     std::shared_ptr<Wonton::Simple_Mesh> src_mesh =
-      std::make_shared<Wonton::Simple_Mesh>
+        DIM == 2 ?
+        std::make_shared<Wonton::Simple_Mesh>
         (ctl.smin[0], ctl.smin[1], ctl.smax[0], ctl.smax[1],
-         ctl.scells[0], ctl.scells[1]);
-    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh = 
-      std::make_shared<Wonton::Simple_Mesh>
+         ctl.scells[0], ctl.scells[1]) :
+        std::make_shared<Wonton::Simple_Mesh>
+        (ctl.smin[0], ctl.smin[1], ctl.smin[2],
+         ctl.smax[0], ctl.smax[1], ctl.smax[2],
+         ctl.scells[0], ctl.scells[1], ctl.scells[2]);
+    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh =
+        DIM == 2 ?
+        std::make_shared<Wonton::Simple_Mesh>
         (ctl.tmin[0], ctl.tmin[1], ctl.tmax[0], ctl.tmax[1],
-         ctl.tcells[0], ctl.tcells[1]);
-
+         ctl.tcells[0], ctl.tcells[1]) :
+        std::make_shared<Wonton::Simple_Mesh>
+        (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2],
+         ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
+         ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
+    
     runMSM<DIM> msmguy(ctl, src_mesh, tgt_mesh);
 
     std::cout << "starting msmapp..." << std::endl;
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR2D,
-		   Portage::Interpolate_1stOrder,
-		   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_1stOrder,
+                            Portage::SearchPointsByCells>();
 
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR2D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
-    }
-  } else {
-    Jali::MeshFactory jmf(MPI_COMM_WORLD);
-    std::shared_ptr<Jali::Mesh> src_mesh = jmf(ctl.source_file);
-    std::shared_ptr<Jali::Mesh> tgt_mesh = jmf(ctl.target_file);
-
-    runMSMJali<DIM> msmguy(ctl, src_mesh, tgt_mesh);
-
-    std::cout << "starting msmapp..." << std::endl;
-    std::cout << "running with input file " << filename << std::endl;
-
-    if (DIM==2) {
-      if (ctl.order == 1) {
-        msmguy.runit<Portage::IntersectR2D,
-                     Portage::Interpolate_1stOrder,
-                     Portage::SearchPointsByCells>();
-      } else if (ctl.order == 2) {
-        msmguy.runit<Portage::IntersectR2D,
-                     Portage::Interpolate_2ndOrder,
-                     Portage::SearchPointsByCells>();
-      }
-    }
-  }
-}
-
-
-void runjob3(Controls<3> ctl0, std::string filename)
-{
-  const int DIM=3;
-  Controls<DIM> ctl;
-  ctl = ctl0;
-  
-  if (ctl.source_file == "none") {
-    std::shared_ptr<Wonton::Simple_Mesh> src_mesh = std::make_shared<Wonton::Simple_Mesh>
-      (ctl.smin[0], ctl.smin[1], ctl.smin[2], ctl.smax[0], ctl.smax[1], ctl.smax[2],
-       ctl.scells[0], ctl.scells[1], ctl.scells[2]);
-    std::shared_ptr<Wonton::Simple_Mesh> tgt_mesh = std::make_shared<Wonton::Simple_Mesh>
-      (ctl.tmin[0], ctl.tmin[1], ctl.tmin[2], ctl.tmax[0], ctl.tmax[1], ctl.tmax[2],
-       ctl.tcells[0], ctl.tcells[1], ctl.tcells[2]);
-
-    runMSM<DIM> msmguy(ctl, src_mesh, tgt_mesh);
-
-    std::cout << "starting msmapp..." << std::endl;
-    std::cout << "running with input file " << filename << std::endl;
-
-    if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
-		   Portage::Interpolate_1stOrder,
-		   Portage::SearchPointsByCells>();
-
-    } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_2ndOrder,
+                            Portage::SearchPointsByCells>();
     }
   } else {
     Jali::MeshFactory jmf(MPI_COMM_WORLD);
@@ -933,13 +888,13 @@ void runjob3(Controls<3> ctl0, std::string filename)
     std::cout << "running with input file " << filename << std::endl;
 
     if (ctl.order == 1) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_1stOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_1stOrder,
+                            Portage::SearchPointsByCells>();
     } else if (ctl.order == 2) {
-      msmguy.runit<Portage::IntersectR3D,
-                   Portage::Interpolate_2ndOrder,
-                   Portage::SearchPointsByCells>();
+      msmguy.template runit<Portage::IntersectRnD,
+                            Portage::Interpolate_2ndOrder,
+                            Portage::SearchPointsByCells>();
     }
   }
 }
@@ -1041,7 +996,7 @@ int main(int argc, char** argv) {
     throw std::runtime_error("error in input file");
   }
 
-#ifdef PORTAGE_ENABLE_MPI
+#ifdef WONTON_ENABLE_MPI
   int mpi_init_flag;
   MPI_Initialized(&mpi_init_flag);
   if (!mpi_init_flag)
@@ -1052,8 +1007,8 @@ int main(int argc, char** argv) {
 
   // run the actual problem
   if (dimension == 2) {
-    runjob2(ctl, filename);
+    runjob<2>(truncateControl(ctl), filename);
   } else {
-    runjob3(ctl, filename);
+    runjob<3>(ctl, filename);
   }
 }

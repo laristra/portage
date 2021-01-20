@@ -15,29 +15,32 @@ Please see the license file at the root of this repository, or at:
 #include <limits>
 
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+// wonton includes
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
 #include "mpi.h"
 #endif
 
-// portage includes
-#include "portage/driver/mmdriver.h"
-#include "portage/driver/driver_mesh_swarm_mesh.h"
-#include "portage/intersect/intersect_r2d.h"
-#include "portage/intersect/intersect_r3d.h"
-#include "portage/interpolate/interpolate_1st_order.h"
-#include "portage/interpolate/interpolate_2nd_order.h"
-#include "portage/search/search_points_by_cells.h"
-#include "portage/accumulate/accumulate.h"
-#include "portage/estimate/estimate.h"
-#include "portage/support/operator.h"
-
-// wonton includes
 #include "wonton/mesh/simple/simple_mesh.h"
 #include "wonton/mesh/simple/simple_mesh_wrapper.h"
 #include "wonton/state/simple/simple_state.h"
 #include "wonton/state/simple/simple_state_mm_wrapper.h"
 #include "wonton/state/state_vector_uni.h"
 #include "wonton/mesh/flat/flat_mesh_wrapper.h"
+
+
+// portage includes
+#include "portage/driver/mmdriver.h"
+#include "portage/driver/driver_mesh_swarm_mesh.h"
+#include "portage/intersect/intersect_rNd.h"
+#include "portage/interpolate/interpolate_1st_order.h"
+#include "portage/interpolate/interpolate_2nd_order.h"
+#include "portage/search/search_points_by_cells.h"
+#include "portage/accumulate/accumulate.h"
+#include "portage/estimate/estimate.h"
+#include "portage/support/operator.h"
 
 namespace {
 // avoid long namespaces
@@ -83,7 +86,7 @@ public:
    * @param faceted
    */
   template <
-    template<Wonton::Entity_kind,
+    template<int, Wonton::Entity_kind,
       class, class, class,
       template<class, int, class, class> class,
       class, class> class Intersect,
@@ -166,7 +169,7 @@ public:
     mesh_remap.run();  // run in serial (executor argument defaults to nullptr)
 
     // Set up the operator information if needed
-    Portage::vector<std::vector<Wonton::Point<dim>>> data;
+    Wonton::vector<std::vector<Wonton::Point<dim>>> data;
     std::vector<double> exact;
     oper::Domain domain_types[3] = {oper::Interval,
                                     oper::Quadrilateral,
@@ -230,7 +233,7 @@ public:
 
     // Check the answer
     double toterr = 0.;
-#ifdef ENABLE_DEBUG
+#ifndef NDEBUG
     auto& cell_field1 = target_state_one.get<Field>("celldata")->get_data();
     auto& node_field1 = target_state_one.get<Field>("nodedata")->get_data();
 #endif
@@ -247,7 +250,7 @@ public:
         double const value = compute_initial_field(c);
         double const swarm_error = cell_field2[i] - value;
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           double const mesh_error  = cell_field1[i] - value;
           //  dump diagnostics for each cell
           switch (dim) {
@@ -263,7 +266,7 @@ public:
         toterr = std::max(toterr, std::abs(swarm_error));
       }
 
-      #if ENABLE_DEBUG
+      #ifndef NDEBUG
         std::printf("\n\nL^inf NORM OF MSM CELL ERROR = %lf\n\n", toterr);
       #endif
       ASSERT_LT(toterr, epsilon);
@@ -276,7 +279,7 @@ public:
           double const value = compute_initial_field(p);
           double const swarm_error = node_field2[i] - value;
 
-          #if ENABLE_DEBUG
+          #ifndef NDEBUG
             double const mesh_error  = node_field1[i] - value;
 
             //  dump diagnostics for each node
@@ -293,7 +296,7 @@ public:
           toterr = std::max(toterr, std::abs(swarm_error));
         }
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           std::printf("\n\nL^inf NORM OF MSM NODE ERROR = %lf\n\n", toterr);
         #endif
         ASSERT_LT(toterr, epsilon);
@@ -305,7 +308,7 @@ public:
         target_flat_mesh.cell_centroid(i, &c);
         double const error = cell_field2[i] - exact[i];
 
-        #if ENABLE_DEBUG
+        #ifndef NDEBUG
           switch (dim) {
             case 2: std::printf("cell: %4d coord: (%5.3lf, %5.3lf)", i, c[0], c[1]); break;
             case 3: std::printf("cell: %4d coord: (%5.3lf, %5.3lf, %5.3lf)", i, c[0], c[1], c[2]); break;
@@ -317,7 +320,7 @@ public:
         toterr = std::max(toterr, std::abs(error));
       }
 
-      #if ENABLE_DEBUG
+      #ifndef NDEBUG
         std::printf("\n\nL^inf NORM OF MSM OPERATOR ERROR = %lf\n\n", toterr);
       #endif
       ASSERT_LT(toterr, epsilon);
@@ -337,7 +340,7 @@ protected:
   Wonton::Simple_State_Wrapper<Wonton::Simple_Mesh_Wrapper> target_state_two;
 
   // Operator domains and data
-  Portage::vector<oper::Domain> domains_;
+  Wonton::vector<oper::Domain> domains_;
 };
 
 // Class which constructs a pair of simple 2-D meshes, target
@@ -387,21 +390,21 @@ double compute_quadratic_field_3d(Wonton::Point<3> const& centroid) {
 // fails.
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinear) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadratic) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear,
@@ -409,7 +412,7 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinearScatter) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -417,7 +420,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatter) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -425,7 +428,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticGatherFaceted) {
 }
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -433,7 +436,7 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticScatterFaceted) {
 }
 
 TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_linear_field_2d, .75, basis::Linear,
@@ -442,7 +445,7 @@ TEST_F(MSMDriverTest2D, 2D1stOrderLinearIntegrate) {
 
 
 TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
-  unitTest<Portage::IntersectR2D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 2>
     (&compute_quadratic_field_2d, .75, basis::Quadratic,
@@ -451,21 +454,21 @@ TEST_F(MSMDriverTest2D, 2D2ndOrderQuadraticIntegrate) {
 
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinear) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear);
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadratic) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic);
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear,
@@ -473,7 +476,7 @@ TEST_F(MSMDriverTest3D, 3D1stOrderLinearScatter) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -481,7 +484,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatter) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -489,7 +492,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticGatherFaceted) {
 }
 
 TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_2ndOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_quadratic_field_3d, 1.5, basis::Quadratic,
@@ -497,7 +500,7 @@ TEST_F(MSMDriverTest3D, 3D2ndOrderQuadraticScatterFaceted) {
 }
 
 TEST_F(MSMDriverTest3D, 3D1stOrderLinearIntegrate) {
-  unitTest<Portage::IntersectR3D,
+  unitTest<Portage::IntersectRnD,
            Portage::Interpolate_1stOrder,
            Portage::SearchPointsByCells, 3>
     (&compute_linear_field_3d, .75, basis::Linear,

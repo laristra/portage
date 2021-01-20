@@ -7,17 +7,22 @@
 #include <iostream>
 #include <memory>
 #include "gtest/gtest.h"
-#ifdef PORTAGE_ENABLE_MPI
+
+#include "wonton/support/wonton.h"
+
+#ifdef WONTON_ENABLE_MPI
   #include "mpi.h"
 #endif
 
 #include "wonton/mesh/jali/jali_mesh_wrapper.h"
 #include "wonton/state/jali/jali_state_wrapper.h"
+
 #include "portage/search/search_kdtree.h"
-#include "portage/intersect/intersect_r2d.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/interpolate/interpolate_1st_order.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/driver/coredriver.h"
+
 #include "Mesh.hh"
 #include "MeshFactory.hh"
 #include "JaliStateVector.h"
@@ -261,7 +266,7 @@ TEST_F(PartOrderOneTest, PiecewiseConstantField) {
 
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   for (int i = 0; i < 2; ++i) {
 
@@ -318,7 +323,7 @@ TEST_F(PartOrderOneTest, GlobalRemapComparison) {
 
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   for (int i = 0; i < 2; ++i) {
     // interpolate density for current part
@@ -385,7 +390,7 @@ TEST_F(PartOrderTwoTest, PiecewiseLinearField) {
 
   // process remap
   auto candidates = remapper.search<Portage::SearchKDTree>();
-  auto weights = remapper.intersect_meshes<Portage::IntersectR2D>(candidates);
+  auto weights = remapper.intersect_meshes<Portage::IntersectRnD>(candidates);
 
   for (int i = 0; i < 2; ++i) {
     // test for mismatch and compute volumes

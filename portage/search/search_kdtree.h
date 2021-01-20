@@ -10,11 +10,13 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <memory>
 
+#include "wonton/support/wonton.h"
+#include "wonton/support/Point.h"
+
 // portage includes
 #include "portage/support/portage.h"
 #include "portage/search/BoundBox.h"
 #include "portage/search/kdtree.h"
-#include "wonton/support/Point.h"
 
 namespace Portage {
 
@@ -62,8 +64,7 @@ class SearchKDTree {
   */
   std::vector<int> operator() (const int entityId) const {
     std::vector<int> candidates;
-    std::cerr << "Search not implemented for generic entity kind" << std::endl;
-    return candidates;
+    throw std::runtime_error("Search not implemented for generic entity kind");
   }
 
  private:
@@ -105,7 +106,7 @@ class SearchKDTree<D, Entity_kind::CELL, SourceMeshType, TargetMeshType> {
                const TargetMeshType & target_mesh)
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-    const int numCells = sourceMesh_.num_owned_cells();
+    const int numCells = sourceMesh_.num_owned_cells() + sourceMesh_.num_ghost_cells();
     std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numCells);
 
@@ -193,7 +194,7 @@ class SearchKDTree<D, Entity_kind::NODE, SourceMeshType, TargetMeshType> {
                const TargetMeshType & target_mesh)
       : sourceMesh_(source_mesh), targetMesh_(target_mesh)  {
 
-    const int numNodes = sourceMesh_.num_owned_nodes();
+    const int numNodes = sourceMesh_.num_owned_nodes() + sourceMesh_.num_ghost_nodes();
     std::vector<Portage::IsotheticBBox<D>> bboxes;
     bboxes.reserve(numNodes);
 
