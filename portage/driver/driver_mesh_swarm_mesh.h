@@ -226,7 +226,7 @@ public:
       MPI_Comm_rank(mycomm, &rank);
       MPI_Comm_size(mycomm, &nprocs);
       if (nprocs > 1) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
         std::cerr << "Cannot run Mesh-Swarm-Mesh driver in distributed mode yet";
         std::cerr << std::endl;
 #endif
@@ -234,7 +234,7 @@ public:
       }
     }
 #endif
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     if (rank == 0)
       std::cout << "in MSM_Driver::run() ... " << std::endl;
 
@@ -445,7 +445,7 @@ public:
       }
     }
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     float elapsed = timer::elapsed(tic);
     std::cout << "Mesh-Swarm-Mesh Time for Rank " << rank << " (s): " << elapsed << std::endl;
 #endif

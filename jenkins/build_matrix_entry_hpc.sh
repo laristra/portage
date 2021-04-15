@@ -129,8 +129,10 @@ wonton_install_dir=$NGC/private/wonton/${wonton_version}${compiler_suffix}${mpi_
 wonton_flags="-D WONTON_ROOT:FILEPATH=$wonton_install_dir"
 
 # TANGRAM
-tangram_install_dir=$NGC/private/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}${thrust_suffix}${kokkos_suffix}${debug_suffix}
-tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:FILEPATH=$tangram_install_dir"
+if [[ $CONFIG_TYPE != "singlemat" ]]; then
+    tangram_install_dir=$NGC/private/tangram/${tangram_version}${compiler_suffix}${mpi_suffix}${thrust_suffix}${kokkos_suffix}${debug_suffix}
+    tangram_flags="-D PORTAGE_ENABLE_TANGRAM=True -D TANGRAM_ROOT:FILEPATH=$tangram_install_dir"
+fi
 
 # Build up an install dir name
 portage_install_dir=$NGC/private/portage/${version}${compiler_suffix}${mpi_suffix}${thrust_suffix}${kokkos_suffix}${debug_suffix}

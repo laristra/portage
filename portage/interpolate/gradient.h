@@ -334,6 +334,12 @@ namespace Portage {
       valid_neigh_[m][cell].clear();
       valid_neigh_[m][cell].reserve(size);
 
+#ifdef PORTAGE_HAS_TANGRAM
+    std::vector<std::shared_ptr<Tangram::CellMatPoly<D>>> cmp_ptrs;
+    if (interface_reconstructor_ != nullptr)
+      cmp_ptrs = interface_reconstructor_->cell_matpoly_ptrs();
+#endif
+
       // Loop over cell where grad is needed and its neighboring cells
       for (auto&& neigh_global : neighbors_[c]) {
 #ifdef PORTAGE_HAS_TANGRAM
@@ -350,47 +356,58 @@ namespace Portage {
         if (neigh_local >= 0) {
           std::vector<int> cell_mats;
           state_.cell_get_mats(neigh_global, &cell_mats);
-          int const nb_mats = cell_mats.size();
+          int nb_mats = cell_mats.size();
 
-          if (nb_mats > 1 && interface_reconstructor_) /* multi-material cell */ {
-            // Get cell's cellmatpoly
-            auto cell_matpoly = interface_reconstructor_->cell_matpoly_data(neigh_global);
+          bool non_materialistic_cells = !nb_mats || (m - 1 == -1);
+            // nb_mats == 0 -- no materials
+            // m - 1 == -1 -- intersect with mesh not a particular material
 
-            // Collect all the matpolys in this cell for the material of interest
-            auto matpolys = cell_matpoly.get_matpolys(m - 1);
+          bool pure_cell = non_materialistic_cells || (nb_mats == 1);
 
-            // If there are multiple matpolys in this cell for the material of interest,
-            // aggregate moments to compute new centroid
-            double mvol = 0.0;
-            Point<D> centroid;
-            for (auto&& poly : matpolys) {
-              auto moments = poly.moments();
-              mvol += moments[0];
+          if (!pure_cell) {
+            assert(interface_reconstructor_ != nullptr);
+            assert(cmp_ptrs[neigh_global] != nullptr);
+            nb_mats = cmp_ptrs[neigh_global]->num_materials();
+            cell_mats = cmp_ptrs[neigh_global]->cell_matids();
+            pure_cell = (nb_mats == 1);
+          }
+
+          bool stencil_cell_has_mat = pure_cell ? non_materialistic_cells || (cell_mats[0] == m - 1) :
+                                                  cmp_ptrs[neigh_global]->is_cell_material(m - 1); 
+
+          if (stencil_cell_has_mat) {
+            if (!pure_cell) /* multi-material cell */ {
+              // Collect all the matpolys in this cell for the material of interest
+              auto matpolys = cmp_ptrs[neigh_global]->get_matpolys(m - 1);
+
+              // If there are multiple matpolys in this cell for the material of interest,
+              // aggregate moments to compute new centroid
+              double mvol = 0.0;
+              Point<D> centroid;
+              for (auto&& poly : matpolys) {
+                auto moments = poly.moments();
+                mvol += moments[0];
+                for (int k = 0; k < D; k++)
+                  centroid[k] += moments[k + 1];
+              }
+
+              // There are cases where r3d returns a single zero volume poly which
+              // ultimately produces a nan, so here we are explicitly filtering this
+              // case.
+              if (mvol==0.) continue;
+
               for (int k = 0; k < D; k++)
-                centroid[k] += moments[k + 1];
-            }
+                centroid[k] /= mvol;
 
-            // There are cases where r3d returns a single zero volume poly which
-            // ultimately produces a nan, so here we are explicitly filtering this
-            // case.
-            if (mvol==0.) continue;
+              list_coords.emplace_back(centroid);
 
-            for (int k = 0; k < D; k++)
-              centroid[k] /= mvol;
-
-            list_coords.emplace_back(centroid);
-
-            // Populate least squares vectors with centroid for material
-            // of interest and field value in the current cell for that material
-            // mark as valid
-            valid_neigh_[m][cell].emplace_back(neigh_local);
-            // save cell centroid as a reference point of the stencil
-            if (neigh_global == c) { reference_[m][cell] = centroid; }
-
-          } else if (nb_mats == 1) /* single-material cell */ {
-
-            // Ensure that the single material is the material of interest
-            if (cell_mats[0] == (m - 1)) {
+              // Populate least squares vectors with centroid for material
+              // of interest and field value in the current cell for that material
+              // mark as valid
+              valid_neigh_[m][cell].emplace_back(neigh_local);
+              // save cell centroid as a reference point of the stencil
+              if (neigh_global == c) { reference_[m][cell] = centroid; }
+            } else { /* single-material cell */
               // Get the cell-centered value for this material
               Point<D> centroid;
               mesh_.cell_centroid(neigh_global, &centroid);
@@ -401,7 +418,7 @@ namespace Portage {
             }
           }
         }
-#endif
+#else
         // If we get here, we must have mesh data which is cell-centered
         // and not dependent on material, so just get the centroid and value
         if (m == 0) {
@@ -412,6 +429,7 @@ namespace Portage {
           // save cell centroid as a reference point of the stencil
           if (neigh_global == c) { reference_[m][cell] = centroid; }
         }
+#endif
       }
       return list_coords;
     }
@@ -466,7 +484,7 @@ namespace Portage {
       int const m = material_id_ + 1;
       int const c = get_relative_index(cellid, m);
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       auto print = [](Wonton::Matrix const& M, std::string const& desc) {
         std::cout << desc << ": [";
         for (int i = 0; i < M.rows(); ++i) {
@@ -510,6 +528,8 @@ namespace Portage {
           maxval = std::max(list_values[i], maxval);
         }
 
+        std::vector<Point<D>> coords;
+#ifdef PORTAGE_HAS_TANGRAM
         /* Per page 278 of [Kucharik, M. and Shaskov, M, "Conservative
            Multi-material Remap for Staggered Multi-material Arbitrary
            Lagrangian-Eulerian Methods," Journal of Computational Physics,
@@ -526,14 +546,57 @@ namespace Portage {
            limits at multi-material cells and boundary cells without limiting
            the gradient to 0. */
 
+        std::vector<std::shared_ptr<Tangram::CellMatPoly<D>>> cmp_ptrs;
+        if (interface_reconstructor_ != nullptr)
+          cmp_ptrs = interface_reconstructor_->cell_matpoly_ptrs();
+
+        std::vector<int> cell_mats;
+        state_.cell_get_mats(cellid, &cell_mats);
+        int nb_mats = cell_mats.size();
+
+        bool non_materialistic_cells = !nb_mats || (m - 1 == -1);
+          // nb_mats == 0 -- no materials
+          // m - 1 == -1 -- intersect with mesh not a particular material
+
+        bool pure_cell = non_materialistic_cells || (nb_mats == 1);
+
+        if (!pure_cell) {
+          assert(interface_reconstructor_ != nullptr);
+          assert(cmp_ptrs[cellid] != nullptr);
+          nb_mats = cmp_ptrs[cellid]->num_materials();
+          cell_mats = cmp_ptrs[cellid]->cell_matids();
+          pure_cell = (nb_mats == 1);
+        }
+
+        bool stencil_cell_has_mat = pure_cell ? non_materialistic_cells || (cell_mats[0] == m - 1) :
+                                                cmp_ptrs[cellid]->is_cell_material(m - 1);
+
+        if (stencil_cell_has_mat) {
+          if (!pure_cell) /* multi-material cell */ {
+            // Collect all the matpolys in this cell for the material of interest
+            auto matpolys = cmp_ptrs[cellid]->get_matpolys(m - 1);
+
+            // Get vertices of all material polygons for given material
+            for (auto&& poly : matpolys) {
+              auto points = poly.points();
+              coords.insert(coords.end(), points.begin(), points.end());
+            }
+          } else /* single-material cell */ {
+            mesh_.cell_get_coordinates(cellid, &coords);
+          }
+        }
+#else
+        mesh_.cell_get_coordinates(cellid, &coords);
+#endif
         // Find the min and max of the reconstructed function in the cell
         // Since the reconstruction is linear, this will occur at one of
         // the nodes of the cell. So find the values of the reconstructed
-        // function at the nodes of the cell
-        std::vector<Point<D>> cellcoords;
-        mesh_.cell_get_coordinates(cellid, &cellcoords);
+        // function at the nodes of the cell. For multi-material problems,
+        // the reconstruction is defined over material polytopes instead of
+        // cells, so the reconstruction is evaluated in vertices of these
+        // polytopes.
 
-        for (auto&& coord : cellcoords) {
+        for (auto&& coord : coords) {
           auto vec = coord - reference_[m][c];
           double diff = dot(grad, vec);
           double extremeval = (diff > 0.) ? maxval : minval;

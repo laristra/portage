@@ -213,8 +213,8 @@ Thrust and TCMalloc in your build.  The cmake command for this is:
 
 INTEL_VERSION=18.0.5
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.2.8
-TANGRAM_VERSION=1.0.4
+WONTON_VERSION="dev"
+TANGRAM_VERSION="dev"
 
 TPL_PREFIX=/usr/projects/ngc/private
 
@@ -249,8 +249,8 @@ export MODULEPATH=""
 
 INTEL_VERSION=18.0.1
 MPI_VERSION=2.1.2
-WONTON_VERSION=1.2.8
-TANGRAM_VERSION=1.0.4
+WONTON_VERSION="dev"
+TANGRAM_VERSION="dev"
 
 TPL_PREFIX=/usr/local/codes/ngc/private
 

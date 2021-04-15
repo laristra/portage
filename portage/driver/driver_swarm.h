@@ -318,7 +318,7 @@ public:
     }
 #endif
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     if (rank == 0)
       std::cout << "in SwarmDriver::run() ... " << std::endl;
 #endif
@@ -459,7 +459,7 @@ public:
 
     // ESTIMATE (one variable at a time)
     nb_fields = source_vars_.size();
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     if (rank == 0)
       std::cout << "number of variables to remap is " << nb_fields << std::endl;
 #endif
@@ -469,7 +469,7 @@ public:
 
     for (int i = 0; i < nb_fields; ++i) {
       //amh: ?? add back accuracy output statement??
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       if (rank == 0)
         std::cout << "Remap "<< source_vars_[i] <<" to "<< target_vars_[i] << std::endl;
 #endif
@@ -508,7 +508,7 @@ public:
         std::cout << "  Swarm Accumulate Time Rank " << rank << " (s): " << tot_seconds_xsect << std::endl;
         std::cout << "  Swarm Estimate Time Rank " << rank << " (s): " << tot_seconds_interp << std::endl;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)      
+#if defined(PORTAGE_DEBUG)
         // put out neighbor statistics
         int nnbrmax = 0;
         int nnbrmin = nb_target;

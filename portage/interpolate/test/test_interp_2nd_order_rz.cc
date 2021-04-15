@@ -19,10 +19,12 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/state/simple/simple_state_wrapper.h"
 
 // portage includes
+#include "portage/driver/coredriver.h"
 #include "portage/interpolate/interpolate_2nd_order.h"
 #include "portage/intersect/simple_intersect_for_tests.h"
+#include "portage/intersect/intersect_rNd.h"
 #include "portage/support/portage.h"
-#include "portage/driver/coredriver.h"
+#include "portage/search/search_kdtree.h"
 
 class Order2Test : public ::testing::TestWithParam<int> {
  protected:
@@ -104,7 +106,7 @@ TEST_P(Order2Test, SimpleMesh) {
   // Interpolate from source to target mesh using the independent calculation
   // in simple_intersect_for_tests.h
   std::vector<double> outvals(ncells_target);
-  std::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
+  Wonton::vector<std::vector<Portage::Weights_t>> sources_and_weights(ncells_target);
 
   // Loop over target cells
   for (int c = 0; c < ncells_target; ++c) {
@@ -158,35 +160,45 @@ TEST_P(Order2Test, SimpleMesh) {
 
   interpolator.set_interpolation_variable("cellvars", &gradients);
 
-  Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
-                     targetMeshWrapper.end(Wonton::Entity_kind::CELL),
-                     sources_and_weights.begin(),
-                     outvals.begin(), interpolator);
+  // two ways to calculate weights: loop = 0 - via intersection of boxes
+  //                                loop = 1 - via core driver
+  for (int loop = 0; loop < 2; ++loop) {
+    if (loop == 0) {
+      // use weights calculated before
+    } else if (loop == 1) {
+      auto candidates = driver.search<Portage::SearchKDTree>();
+      sources_and_weights = driver.intersect_meshes<Portage::IntersectRnD>(candidates);
+    }
+    
+    Wonton::transform(targetMeshWrapper.begin(Wonton::Entity_kind::CELL),
+                      targetMeshWrapper.end(Wonton::Entity_kind::CELL),
+                      sources_and_weights.begin(),
+                      outvals.begin(), interpolator);
 
-  // error analysis
-  double stdval, mass1(0.0), errl2(0.0);
-  for (int c = 0; c < ncells_target; ++c) {
-    targetMeshWrapper.cell_centroid(c, &xc);
-    vol = targetMeshWrapper.cell_volume(c);
+    // error analysis
+    double stdval, mass1(0.0), errl2(0.0);
+    for (int c = 0; c < ncells_target; ++c) {
+      targetMeshWrapper.cell_centroid(c, &xc);
+      vol = targetMeshWrapper.cell_volume(c);
 
-    stdval = coefs[0]
-           + coefs[1] * xc[0] + coefs[2] * xc[1] 
-           + coefs[3] * xc[0] * xc[1] * xc[1];
-    ASSERT_NEAR(stdval, outvals[c], TOL_L8);
+      stdval = coefs[0]
+             + coefs[1] * xc[0] + coefs[2] * xc[1] 
+             + coefs[3] * xc[0] * xc[1] * xc[1];
+      ASSERT_NEAR(stdval, outvals[c], TOL_L8);
 
-    mass1 += outvals[c] * vol;
-    errl2 += std::pow(stdval - outvals[c], 2);
+      mass1 += outvals[c] * vol;
+      errl2 += std::pow(stdval - outvals[c], 2);
+    }
+    errl2 = sqrt(errl2 / ncells_target);
+
+    std::cout << "masses: " << mass0 << " " << mass1
+              << " tols: " << TOL_L2 << " " << TOL_L8 << std::endl;
+    std::cout << "mass error:     " << mass0 - mass1 << std::endl;
+    std::cout << "solution error: " << errl2 << std::endl;
+
+    ASSERT_NEAR(mass0, mass1, 1.0e-14);
+    ASSERT_NEAR(0.0, errl2, TOL_L2);
   }
-  errl2 = sqrt(errl2 / ncells_target);
-
-  std::cout << "masses: " << mass0 << " " << mass1
-            << " tols: " << TOL_L2 << " " << TOL_L8 << std::endl;
-  std::cout << "mass error:     " << mass0 - mass1 << std::endl;
-  std::cout << "solution error: " << errl2 << std::endl;
-
-  ASSERT_NEAR(mass0, mass1, 1.0e-14);
-  ASSERT_NEAR(0.0, errl2, TOL_L2);
-
 }
 
 

@@ -550,7 +550,7 @@ class MMDriver {
           std::string *errmsg = nullptr) {
     std::string message;
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
     auto tic = timer::now();
 
     int comm_rank = 0;
@@ -563,7 +563,7 @@ class MMDriver {
     auto mpiexecutor = dynamic_cast<Wonton::MPIExecutor_type const *>(executor);
     if (mpiexecutor && mpiexecutor->mpicomm != MPI_COMM_NULL) {
       mycomm = mpiexecutor->mpicomm;
-#ifndef NDEBUG      
+#ifdef PORTAGE_DEBUG
       MPI_Comm_rank(mycomm, &comm_rank);
 #endif
       int nprocs = 0;
@@ -573,7 +573,7 @@ class MMDriver {
     }
 #endif
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     if (comm_rank == 0)
       std::cout << "in MMDriver::run()...\n";
 
@@ -628,7 +628,7 @@ class MMDriver {
     if (distributed) {
       MPI_Bounding_Boxes distributor(mpiexecutor);
       if (distributor.is_redistribution_needed(source_mesh_, target_mesh_)) {
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
         tic = timer::now();
 #endif
         
@@ -646,7 +646,7 @@ class MMDriver {
         
         redistributed_source = true;
         
-#if !defined(NDEBUG)
+#if defined(PORTAGE_DEBUG)
         float tot_seconds_dist = timer::elapsed(tic);
         std::cout << "Redistribution Time Rank " << comm_rank << " (s): " <<
             tot_seconds_dist << std::endl;
@@ -797,7 +797,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &trg_matvar_names,
                            Wonton::Executor_type const *executor) {
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   int comm_rank = 0;
 #ifdef WONTON_ENABLE_MPI
   MPI_Comm mycomm = MPI_COMM_NULL;
@@ -809,7 +809,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 #endif
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -854,7 +854,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // SEARCH
   auto candidates = coredriver_cell.template search<Portage::SearchKDTree>();
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
 #ifdef PORTAGE_HAS_TANGRAM
@@ -868,7 +868,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_cell.template intersect_meshes<Intersect>(candidates);
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
@@ -882,15 +882,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
   
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#if !defined(NDEBUG)
+#if defined(PORTAGE_DEBUG)
   tic = timer::now();
 
-#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on cells to remap is " <<
         nvars << std::endl;
   }
-#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -934,7 +932,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   tot_seconds_interp += timer::elapsed(tic, true);
 #endif
 
@@ -979,21 +977,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 
 
-#if !defined(NDEBUG)
+#if defined(PORTAGE_DEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Time for Cell remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
 
-#if defined(VERBOSE_OUTPUT)
   std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
-#endif
 #endif
   return 1;
 }  // remap specialization for cells
@@ -1031,7 +1027,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
                            std::vector<std::string> const &trg_meshvar_names,
                            Wonton::Executor_type const *executor) {
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   int comm_rank = 0;
 
 #ifdef WONTON_ENABLE_MPI
@@ -1044,7 +1040,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
 #endif
 #endif
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   float tot_seconds = 0.0;
   float tot_seconds_srch = 0.0;
   float tot_seconds_xsect = 0.0;
@@ -1088,7 +1084,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // SEARCH
 
   auto candidates = coredriver_node.template search<Portage::SearchKDTree>();
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   tot_seconds_srch = timer::elapsed(tic, true);
 #endif
   //--------------------------------------------------------------------
@@ -1098,7 +1094,7 @@ int MMDriver<Search, Intersect, Interpolate, D,
   // INTERSECT MESHES
   auto source_ents_and_weights =
       coredriver_node.template intersect_meshes<Intersect>(candidates);
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
   tot_seconds_xsect += timer::elapsed(tic);
 #endif
   // check for mesh mismatch
@@ -1112,15 +1108,13 @@ int MMDriver<Search, Intersect, Interpolate, D,
 
   // INTERPOLATE (one variable at a time)
   int nvars = src_meshvar_names.size();
-#if !defined(NDEBUG)
+#if defined(PORTAGE_DEBUG)
   tic = timer::now();
 
-#if defined(VERBOSE_OUTPUT)
   if (comm_rank == 0) {
     std::cout << "Number of mesh variables on nodes to remap is " <<
         nvars << std::endl;
   }
-#endif
 #endif
 
   Wonton::vector<Vector<D>> gradients;
@@ -1163,21 +1157,19 @@ int MMDriver<Search, Intersect, Interpolate, D,
     }
   }
 
-#if !defined(NDEBUG)
+#if defined(PORTAGE_DEBUG)
   tot_seconds_interp += timer::elapsed(tic);
   tot_seconds = tot_seconds_srch + tot_seconds_xsect + tot_seconds_interp;
 
   std::cout << "Time for Node remap on Rank " <<
       comm_rank << " (s): " << tot_seconds << std::endl;
 
-#if defined(VERBOSE_OUTPUT)
      std::cout << "   Search Time Rank " << comm_rank << " (s): " <<
       tot_seconds_srch << std::endl;
   std::cout << "   Intersect Time Rank " << comm_rank << " (s): " <<
       tot_seconds_xsect << std::endl;
   std::cout << "   Interpolate Time Rank " << comm_rank << " (s): " <<
       tot_seconds_interp << std::endl;
-#endif
 #endif
   return 1;
 }  // remap specialization for nodes

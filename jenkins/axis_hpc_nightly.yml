@@ -10,6 +10,7 @@ CONFIG_TYPE:
   - serial
   - thrust
   - readme
+  - singlemat
   - coverage
 
 exclude:

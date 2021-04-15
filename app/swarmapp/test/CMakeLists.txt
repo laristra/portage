@@ -11,11 +11,11 @@ message(STATUS "Adding swarmapp test")
 
 # this app can be run in serial or mpi mode - set an environment
 # variable so that either will work
-if(PORTAGE_ENABLE_MPI)
+if(WONTON_ENABLE_MPI)
   set(RUN_COMMAND "mpirun -np 1")
 else()
   set(RUN_COMMAND "")
-endif(PORTAGE_ENABLE_MPI)
+endif(WONTON_ENABLE_MPI)
 
 macro(ADD_SWARMAPP_TEST EXAMPLE DISTRIBUTION)
   file(COPY swarmapp_test-${EXAMPLE}-${DISTRIBUTION}.sh

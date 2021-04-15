@@ -23,8 +23,9 @@ mpirun -np 1 ${TESTAPPDIR}/portageapp_rgmd_jali \
     --perturb_source=pseudorandom \
     --source_convex_cells=n \
     --output_meshes=y \
-    --remap_order=2
+    --remap_order=2 \
+    --field_filename="tjunction_2d_swept"
 
 # Compare the values for the field
-$CMPAPPDIR/apptest_cmp GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv target_mm_0_iteration_0.gmv 1e-9
+$CMPAPPDIR/apptest_cmp GOLD_portageapp_rgmd_jali_tjunction_2d_swept.gmv tjunction_2d_swept0_iteration_0.gmv 1e-9
 

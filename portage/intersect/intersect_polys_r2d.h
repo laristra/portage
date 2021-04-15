@@ -12,11 +12,12 @@ Please see the license file at the root of this repository, or at:
 #include <vector>
 #include <algorithm>
 
+#include "wonton/support/CoordinateSystem.h"
 #include "wonton/support/wonton.h"
 #include "wonton/support/Point.h"
 
 extern "C" {
-#include "wonton/intersect/r3d/r2d.h"
+#include "r2d.h"
 }
 
 #include "portage/support/portage.h"
@@ -31,11 +32,15 @@ std::vector<double>
 intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
                     std::vector<Wonton::Point<2>> const & target_poly,
                     NumericTolerances_t num_tols,
-                    bool trg_convex=true) {
+                    bool trg_convex=true,
+                    Wonton::CoordSysType coord_sys = Wonton::CoordSysType::Cartesian) {
 
-  std::vector<double> moments(3, 0);
+  int poly_order = 1;  // max degree of moments to calculate
+  if (coord_sys == Wonton::CoordSysType::CylindricalAxisymmetric)
+    poly_order = 2;
 
-  const int POLY_ORDER = 1;  // max degree of moments to calculate
+  int nmoments = R2D_NUM_MOMENTS(poly_order);
+  std::vector<double> moments(nmoments, 0);
 
   // Initialize source polygon
 
@@ -72,12 +77,15 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
     r2d_clip(&srcpoly_r2d, &faces[0], size2);
 
     // find the moments (up to quadratic order) of the clipped poly
-    r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-    r2d_reduce(&srcpoly_r2d, om, POLY_ORDER);
+    r2d_real om[nmoments];
+    r2d_reduce(&srcpoly_r2d, om, poly_order);
 
-    // Copy moments:
-    for (int j = 0; j < 3; ++j)
+    // Copy and optionally shift moments:
+    for (int j = 0; j < nmoments; ++j)
       moments[j] = om[j];
+
+    if (coord_sys == Wonton::CoordSysType::CylindricalAxisymmetric)
+      Wonton::CylindricalAxisymmetricCoordinates::shift_moments_list<2>(moments);
 
   } else {  // case 2:  target_poly is non-convex
 
@@ -125,8 +133,8 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
       // Have R2D compute first and second moments of polygon and
       // get its centroid from that
       
-      r2d_real fspoly_moments[R2D_NUM_MOMENTS(POLY_ORDER)];
-      r2d_reduce(&fspoly, fspoly_moments, POLY_ORDER);
+      r2d_real fspoly_moments[R2D_NUM_MOMENTS(poly_order)];
+      r2d_reduce(&fspoly, fspoly_moments, poly_order);
       
       cen[0] = cenr2d.xy[0] = fspoly_moments[1]/fspoly_moments[0];
       cen[1] = cenr2d.xy[1] = fspoly_moments[2]/fspoly_moments[0];
@@ -162,8 +170,8 @@ intersect_polys_r2d(std::vector<Wonton::Point<2>> const & source_poly,
       r2d_clip(&srcpoly_r2d_copy, &faces[0], 3);
       
       // find the moments (up to quadratic order) of the clipped poly
-      r2d_real om[R2D_NUM_MOMENTS(POLY_ORDER)];
-      r2d_reduce(&srcpoly_r2d_copy, om, POLY_ORDER);
+      r2d_real om[R2D_NUM_MOMENTS(poly_order)];
+      r2d_reduce(&srcpoly_r2d_copy, om, poly_order);
       
       // Accumulate moments:
       for (int j = 0; j < 3; ++j)

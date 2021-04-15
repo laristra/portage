@@ -76,7 +76,7 @@ public:
                    Wonton::vector<Wonton::Point<dim>> const& /* unused */,
                    Wonton::vector<Wonton::Point<dim>> const& target_search_radius,
                    WeightCenter const center = Gather,
-                   double radius_scale = 1.)
+                   double radius_scale = 2.)
     : source_swarm_(source_swarm),
       target_swarm_(target_swarm),
       search_radius_(target_search_radius),

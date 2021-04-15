@@ -75,6 +75,10 @@ namespace RGMDApp {
   enum Mesh_perturb_type {
     NO, SHIFT, PSEUDORANDOM, ROTATE
   };
+  struct Recon_params_type {
+    std::vector<double> ball_radii;
+    std::vector<double> ball_center;
+  };
 }
 
 /*! 
@@ -233,9 +237,10 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
                    material_interfaces[iline].normal);
   }  
 
-  get_material_moments<Mesh_Wrapper>(mesh, material_interfaces, mesh_material_IDs, 
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    vol_tol, dst_tol, decompose_cells);
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, material_interfaces, mesh_material_IDs, 
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
+      vol_tol, dst_tol, decompose_cells);
 
   int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
   assert(unsigned(ncells) == cell_num_mats.size());
@@ -314,9 +319,10 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
                    material_interfaces[iline].normal);
   }  
 
-  get_material_moments<Mesh_Wrapper>(mesh, material_interfaces, mesh_material_IDs, 
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    vol_tol, dst_tol, decompose_cells);  
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, material_interfaces, mesh_material_IDs, 
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
+      vol_tol, dst_tol, decompose_cells);  
 }
 
 template<class Mesh_Wrapper>
@@ -328,16 +334,24 @@ void ball_material_data(const Mesh_Wrapper& mesh,
                         std::vector< Wonton::Point<2> >& cell_mat_centroids,
                         const double vol_tol,
                         const double dst_tol,
+                        RGMDApp::Recon_params_type recon_params,
                         bool decompose_cells) {
   mesh_material_IDs = {1, 0};
   Wonton::Point<2> circle_cen(0.75, 0.75);
+  if(!recon_params.ball_center.empty()) {
+    circle_cen[0] = recon_params.ball_center[0];
+    circle_cen[1] = recon_params.ball_center[1];
+  }
   double circle_rad = 0.25;
+  if(!recon_params.ball_radii.empty())
+    circle_rad = recon_params.ball_radii[0];
   int nquadrant_samples = 90;
 
-  get_material_moments<Mesh_Wrapper>(mesh, mesh_material_IDs, 
-    circle_cen, circle_rad, nquadrant_samples,
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
-    vol_tol, dst_tol, decompose_cells);  
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, mesh_material_IDs, 
+      circle_cen, circle_rad, nquadrant_samples,
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
+      vol_tol, dst_tol, decompose_cells);  
 }
 
 template<class Mesh_Wrapper>
@@ -381,9 +395,10 @@ void srcpurecells_material_data(const Mesh_Wrapper& mesh,
                    material_interfaces[iplane].normal);
   }
 
-  get_material_moments<Mesh_Wrapper>(mesh, material_interfaces, mesh_material_IDs, 
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    vol_tol, dst_tol, decompose_cells);
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, material_interfaces, mesh_material_IDs, 
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
+      vol_tol, dst_tol, decompose_cells);
 
   int ncells = mesh.num_owned_cells() + mesh.num_ghost_cells();
   assert(unsigned(ncells) == cell_num_mats.size());
@@ -467,9 +482,10 @@ void tjunction_material_data(const Mesh_Wrapper& mesh,
                    material_interfaces[iplane].normal);
   }
 
-  get_material_moments<Mesh_Wrapper>(mesh, material_interfaces, mesh_material_IDs, 
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
-    vol_tol, dst_tol, decompose_cells);  
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, material_interfaces, mesh_material_IDs, 
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids,
+      vol_tol, dst_tol, decompose_cells);  
 }
 
 template<class Mesh_Wrapper>
@@ -481,16 +497,27 @@ void ball_material_data(const Mesh_Wrapper& mesh,
                         std::vector< Wonton::Point<3> >& cell_mat_centroids,
                         const double vol_tol,
                         const double dst_tol,
+                        RGMDApp::Recon_params_type recon_params,
                         bool decompose_cells) {
   mesh_material_IDs = {2, 0, 1};
   Wonton::Point<3> spheres_cen(0.75, 0.75, 0.75);
+  if(!recon_params.ball_center.empty()) {
+    spheres_cen[0] = recon_params.ball_center[0];
+    spheres_cen[1] = recon_params.ball_center[1];
+    spheres_cen[2] = recon_params.ball_center[2];
+  }
   std::vector<double> sphere_rads = {0.2495, 0.25};
+  if(!recon_params.ball_radii.empty()) {
+    sphere_rads[0] = recon_params.ball_radii[0];
+    sphere_rads[1] = recon_params.ball_radii[1];
+  }
   int nquadrant_samples = 24;
 
-  get_material_moments<Mesh_Wrapper>(mesh, mesh_material_IDs, 
-    spheres_cen, sphere_rads, nquadrant_samples,
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
-    vol_tol, dst_tol, decompose_cells);  
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh, mesh_material_IDs, 
+      spheres_cen, sphere_rads, nquadrant_samples,
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
+      vol_tol, dst_tol, decompose_cells);  
 }
 
 template<class Mesh_Wrapper>
@@ -525,6 +552,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                            double srclo, double srchi,
                            RGMDApp::Mesh_perturb_type mesh_perturb,
                            RGMDApp::Problem_type problem,
+                           RGMDApp::Recon_params_type recon_params,
                            std::vector<std::string> material_field_expressions,
                            std::string field_filename,
                            bool mesh_output, int rank, int numpe,
@@ -575,6 +603,7 @@ int main(int argc, char** argv) {
   Portage::Limiter_type limiter = Portage::Limiter_type::NOLIMITER;
   Portage::Boundary_Limiter_type bnd_limiter = Portage::Boundary_Limiter_type::BND_NOLIMITER;
   double srclo = 0.0, srchi = 1.0;  // bounds of generated mesh in each dir
+  RGMDApp::Recon_params_type recon_params;
 
 #if ENABLE_TIMINGS
   bool only_threads = false;
@@ -623,7 +652,8 @@ int main(int argc, char** argv) {
     else if (keyword == "remap_order") {
       interp_order = stoi(valueword);
       assert(interp_order > 0 && interp_order < 3);
-    } else if (keyword == "material_fields") {
+    } else if (keyword == "material_fields" or keyword == "ball_radii" or
+               keyword == "ball_center") {
       // Expecting comma-separated quoted expressions
       std::string const& exprlist = valueword;
       std::size_t expr_beg = 0;
@@ -639,7 +669,12 @@ int main(int argc, char** argv) {
           expr = exprlist.substr(expr_beg, expr_end-expr_beg);
           expr_beg = expr_end+1;
         }
-        material_field_expressions.push_back(expr);
+        if (keyword == "material_fields")
+          material_field_expressions.push_back(expr);
+        else if (keyword == "ball_radii")
+          recon_params.ball_radii.push_back(std::stod(expr));
+        else if (keyword == "ball_center")
+          recon_params.ball_center.push_back(std::stod(expr));
       }
     } else if (keyword == "limiter") {
       if (valueword == "barth_jespersen" || valueword == "BARTH_JESPERSEN")
@@ -739,10 +774,32 @@ int main(int argc, char** argv) {
       MPI_Abort(MPI_COMM_WORLD, -1);
     }
   if (not intersect) {
-    if (nsourcecells != ntargetcells)
+    if (nsourcecells != ntargetcells) {
       std::cerr << "Need the same mesh topology for a swept-face remap\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
     if (source_convex_cells)
       std::cerr << "source_convex_cells should be false with a swept remap\n";
+  }
+  if (dim == 2) {
+    if (!recon_params.ball_center.empty() && recon_params.ball_center.size() != 2) {
+      std::cerr << "ball_center should contain 2 components separated be a comma\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+    if (!recon_params.ball_radii.empty() && recon_params.ball_radii.size() != 1) {
+      std::cerr << "ball_radii should contain one number in 2D\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+  }
+  if (dim == 3) {
+    if (!recon_params.ball_center.empty() && recon_params.ball_center.size() != 3) {
+      std::cerr << "ball_center should contain 3 components separated be commas\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
+    if (!recon_params.ball_radii.empty() && recon_params.ball_radii.size() != 2) {
+      std::cerr << "ball_radii should contain 2 radii for two concentric spheres\n";
+      MPI_Abort(MPI_COMM_WORLD, -1);
+    }
   }
 
 #if ENABLE_TIMINGS
@@ -838,7 +895,7 @@ int main(int argc, char** argv) {
         run<2>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order, intersect,
                srclo, srchi, mesh_perturb,
-               problem, material_field_expressions,
+               problem, recon_params, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], i, profiler);
         break;
@@ -846,7 +903,7 @@ int main(int argc, char** argv) {
         run<3>(source_mesh, target_mesh, source_convex_cells, target_convex_cells,
                limiter, bnd_limiter, interp_order, intersect,
                srclo, srchi, mesh_perturb,
-               problem, material_field_expressions,
+               problem, recon_params, material_field_expressions,
                field_filename, mesh_output,
                rank, numpe, entityKind, l1_err[i], l2_err[i], i, profiler);
         break;
@@ -938,6 +995,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                    double srclo, double srchi,
                    RGMDApp::Mesh_perturb_type mesh_perturb,
                    RGMDApp::Problem_type problem,
+                   RGMDApp::Recon_params_type recon_params,
                    std::vector<std::string> material_field_expressions,
                    std::string field_filename, bool mesh_output,
                    int rank, int numpe, Jali::Entity_kind entityKind,
@@ -1104,6 +1162,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                     cell_mat_centroids,
                                                     vol_tol,
                                                     dst_tol,
+                                                    recon_params,
                                                     !source_convex_cells);
       break;
     case RGMDApp::Problem_type::ROTOR:
@@ -1607,9 +1666,14 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                        target_cell_mat_centroids);
   target_interface_reconstructor->reconstruct(executor);
 
-  if (mesh_output) {  
-    std::string filename = "target_mm_" + std::to_string(rank) + 
-			   "_iteration_" + std::to_string(iteration) + ".gmv";
+  if (mesh_output) {
+    std::string filename_prefix;
+    if (!field_filename.empty())
+      filename_prefix = field_filename;
+    else
+      filename_prefix = "target_mm_";
+    std::string filename = filename_prefix + std::to_string(rank) +
+                           "_iteration_" + std::to_string(iteration) + ".gmv";
     Portage::write_to_gmv<dim>(targetMeshWrapper, targetStateWrapper,
                                target_interface_reconstructor, fieldnames,
                                filename);
@@ -1767,6 +1831,7 @@ template<int dim> void run(std::shared_ptr<Jali::Mesh> sourceMesh,
                                                     trgex_cell_mat_centroids,
                                                     vol_tol,
                                                     dst_tol,
+                                                    recon_params,
                                                     !target_convex_cells);
       break;
     case RGMDApp::Problem_type::ROTOR:

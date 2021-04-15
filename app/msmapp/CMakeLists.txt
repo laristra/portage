@@ -29,9 +29,9 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali)
     target_link_libraries(msmapp PRIVATE ${VTUNE_LIB})
   endif(ENABLE_PROFILE)
 
-
-  #if (ENABLE_APP_TESTS)
-  #  add_subdirectory(test)
-  #endif (ENABLE_APP_TESTS)
+  # add app tests if needed
+  if (ENABLE_APP_TESTS)
+    add_subdirectory(test)
+  endif (ENABLE_APP_TESTS)
 
 endif ()

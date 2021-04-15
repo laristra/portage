@@ -17,7 +17,7 @@ Please see the license file at the root of this repository, or at:
 #include "wonton/support/Vector.h"
 
 extern "C" {
-#include "wonton/intersect/r3d/r3d.h"
+#include "r3d.h"
 }
 
 #include "portage/support/portage.h"
@@ -122,8 +122,10 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
               face_vert_ids[i]);
 
 
-  r3d_init_poly(&src_r3dpoly, verts, num_verts, face_vert_ids, face_num_verts,
-                num_faces);
+  int ok = r3d_init_poly(&src_r3dpoly, verts, num_verts, face_vert_ids,
+                         face_num_verts, num_faces);
+  if (!ok)
+    throw std::runtime_error("intersect_polys_r3d.h: Failed to initialize R3D polyhedron");
 
   // Finished building source poly; now intersect with tets of target cell
 
@@ -163,7 +165,9 @@ intersect_polys_r3d(const facetedpoly_t &srcpoly,
     // make a copy of src_r3dpoly first because it will get modified
     // in the process of clipping
     r3d_poly src_r3dpoly_copy = src_r3dpoly;
-    r3d_clip(&src_r3dpoly_copy, &faces[0], 4);
+    ok = r3d_clip(&src_r3dpoly_copy, &faces[0], 4);
+    if (!ok)
+      throw std::runtime_error("intersect_polys_r3d.h: r3d clip failed");
 
     // find the moments (up to quadratic order) of the clipped poly
     const int POLY_ORDER = 1;

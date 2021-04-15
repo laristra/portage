@@ -410,6 +410,381 @@ TEST(MMDriver, ThreeMat2D_MOF_2ndOrderRemap) {
 }  // ThreeMat2D_MOF_2ndOrderRemap
 #endif
 
+// Similar problem, but made to test discrepancy in volume tolerances
+// between Portage and Tangram, which can result in CellMatPoly's with
+// less materials than the source state indicates
+TEST(MMDriver, VolumeTolerancesDiscrepancy) {
+  // Source and target meshes
+  std::shared_ptr<Jali::Mesh> sourceMesh;
+  std::shared_ptr<Jali::Mesh> targetMesh;
+  // Source and target mesh state
+  std::shared_ptr<Jali::State> sourceState;
+  std::shared_ptr<Jali::State> targetState;
+
+  sourceMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4);
+  targetMesh = Jali::MeshFactory(MPI_COMM_WORLD)(0.0, 0.0, 1.0, 1.0, 4, 4);
+
+  sourceState = Jali::State::create(sourceMesh);
+  targetState = Jali::State::create(targetMesh);
+
+  Wonton::Jali_Mesh_Wrapper sourceMeshWrapper(*sourceMesh);
+  Wonton::Jali_Mesh_Wrapper targetMeshWrapper(*targetMesh);
+  Wonton::Jali_State_Wrapper sourceStateWrapper(*sourceState);
+  Wonton::Jali_State_Wrapper targetStateWrapper(*targetState);
+
+  // The material distribution is an orthogonal T-junction
+  // near the center of the domain with a "thick" top of T,
+  // i.e. a thin vertical strip of mat1 is injected on both
+  // sides of x=0.5 line, which is aligned with the mesh 
+  // interface for the 4x4 mesh. If cell's position is given
+  // by a pair (i, j), 0<=i,j<=3, and the width of mat1 on
+  // the left of x=0.5 mesh line is h and on the right is 2h,
+  // then cells with i == 1 are two-material and contain h/4 of
+  // mat1. Horizontal interface between mat2 and mat3 is distance
+  // eps < h below the mesh line y=0.5. As such, cells with i == 2,
+  // j != 1 are two-material and contain h/2 of mat1. Cell (2, 1)
+  // is 3-material with h/2 of mat1 and eps*(0.25-2h) of mat3.
+  // 
+  //
+  //    0,1           0.5,1         1,1
+  //     *------------::------------*
+  //     |            ::            |
+  //     |            ::        3   |
+  //     |            ::     mat3   |
+  //     |            ::            |
+  //     |            ::            |
+  //     |     0      :+............|1,0.5
+  //     |   mat0     ::            |
+  //     |            ::            |
+  //     |            ::     mat2   |
+  //     |            ::        2   |
+  //     |            ::            |
+  //     *------------::------------*
+  //    0,0           0.5,0         1,0
+  //
+  // By choosing the same target mesh and Portage volume tolerance
+  // below eps*(0.25-2h) we will make it "expect" the described number
+  // of material in all cells.
+  // By choosing Tangram volume tolerance to be between h/4 and h/2
+  // we will make cells with i == 1 single-material and cells
+  // with i == 2 two-material with h/2 of mat1.
+
+
+  constexpr int nmats = 4;
+  std::string matnames[nmats] = {"mat0", "mat1", "mat2", "mat3"};
+
+  double h = 1.2e-15;
+  double eps = 1.0e-15;
+  double dst_tol = sqrt(2)*std::numeric_limits<double>::epsilon();
+  double portage_vol_tol = 2.3e-16;
+  double tangram_vol_tol = 4.5e-16;
+
+  // Extents of the materials in the overall domain
+
+  Wonton::Point<2> matlo[nmats], mathi[nmats];
+  matlo[0] = Wonton::Point<2>(0.0,       0.0);
+  mathi[0] = Wonton::Point<2>(0.5 - h,   1.0);
+  matlo[1] = Wonton::Point<2>(0.5 - h,   0.0);
+  mathi[1] = Wonton::Point<2>(0.5 + 2*h, 1.0);
+  matlo[2] = Wonton::Point<2>(0.5 + 2*h, 0.0);
+  mathi[2] = Wonton::Point<2>(1.0,       0.5 - eps);
+  matlo[3] = Wonton::Point<2>(0.5 + 2*h, 0.5 - eps);
+  mathi[3] = Wonton::Point<2>(1.0,       1.0);
+
+  double matvol[nmats] = {0.5 - h, 3*h, (0.5 - 2*h)*(0.5 - eps), (0.5 - 2*h)*(0.5 + eps)};
+
+  std::vector<int> matcells_src[nmats];
+  std::vector<double> matvf_src[nmats];
+  std::vector<Wonton::Point<2>> matcen_src[nmats];
+
+  //density rho(x,y) = (m+1)^2*(x+y)
+  std::vector<double> matrho_src[nmats];
+
+  //-------------------------------------------------------------------
+  // COMPUTE MATERIAL DATA ON SOURCE SIDE - VOLUME FRACTIONS, CENTROID
+  // CELL LISTS
+  //-------------------------------------------------------------------
+  //
+  // Based on the material geometry, make a list of SOURCE cells that
+  // are in each material and collect their material volume fractions
+  // and material centroids
+
+  int nsrccells = sourceMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
+  for (int c = 0; c < nsrccells; c++) {
+    std::vector<Wonton::Point<2>> ccoords;
+    sourceMeshWrapper.cell_get_coordinates(c, &ccoords);
+
+    double cellvol = sourceMeshWrapper.cell_volume(c);
+
+    Wonton::Point<2> cell_lo, cell_hi;
+    BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
+
+    std::vector<double> xmoments;
+    for (int m = 0; m < nmats; m++) {
+      if (BOX_INTERSECT::intersect_boxes<2>(matlo[m], mathi[m],
+                                            cell_lo, cell_hi, &xmoments)) {
+        if (xmoments[0] >= portage_vol_tol) {
+          matcells_src[m].push_back(c);
+          matvf_src[m].push_back(xmoments[0]/cellvol);
+
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
+                                xmoments[2]/xmoments[0]);
+          matcen_src[m].push_back(mcen);
+          matrho_src[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]));
+        }
+      }
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // Now add the material and material cells to the source state
+  //-------------------------------------------------------------------
+
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.add_material(matnames[m], matcells_src[m]);
+
+  // Create multi-material variables to store the volume fractions and
+  // centroids for each material in the cells
+  for (int m = 0; m < nmats; m++) {
+    sourceStateWrapper.mat_add_celldata("mat_volfracs", m, &(matvf_src[m][0]));
+    sourceStateWrapper.mat_add_celldata("mat_centroids", m, &(matcen_src[m][0]));
+  }
+
+  // Add linear  density profile for each material
+  for (int m = 0; m < nmats; m++)
+    sourceStateWrapper.mat_add_celldata("density", m, &(matrho_src[m][0]));
+
+
+  double matmass[nmats];
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    sourceStateWrapper.mat_get_cells(m, &matcells);
+    double const *vf;
+    double const *rho;
+    sourceStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
+    sourceStateWrapper.mat_get_celldata("density", m, &rho);
+
+    matmass[m] = 0.0;
+    double volume = 0.0;
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
+      double cellvol = vf[ic]*sourceMeshWrapper.cell_volume(matcells[ic]);
+      volume += cellvol;
+      matmass[m] += rho[ic]*cellvol;
+    }
+
+    ASSERT_NEAR(matvol[m], volume, portage_vol_tol);
+  }
+
+
+  //-------------------------------------------------------------------
+  // Field(s) we have to remap
+  //-------------------------------------------------------------------
+
+  std::vector<std::string> remap_fields = {"density"};
+
+
+  //-------------------------------------------------------------------
+  // Add the materials and fields to the target mesh.
+  //-------------------------------------------------------------------
+
+  std::vector<int> dummymatcells;
+  targetStateWrapper.add_material("mat0", dummymatcells);
+  targetStateWrapper.add_material("mat1", dummymatcells);
+  targetStateWrapper.add_material("mat2", dummymatcells);
+
+  targetStateWrapper.mat_add_celldata<double>("mat_volfracs");
+  targetStateWrapper.mat_add_celldata<Wonton::Point<2>>("mat_centroids");
+  targetStateWrapper.mat_add_celldata<double>("density", 0.0);
+
+  //-------------------------------------------------------------------
+  //  Create custom tolerances
+  //-------------------------------------------------------------------
+
+  std::vector<Tangram::IterativeMethodTolerances_t> ims_tols(2);
+  ims_tols[0] = {1000, dst_tol, tangram_vol_tol};
+  ims_tols[1] = {100, dst_tol, dst_tol};
+
+
+  //-------------------------------------------------------------------
+  //  Run the remap driver using MOF-2D as the interface
+  //  reconstructor which is guaranteed to recover the correct
+  //  geometry of the T-junction.
+  //-------------------------------------------------------------------
+
+  Portage::MMDriver<
+    Portage::SearchKDTree,
+    Portage::IntersectRnD,
+    Portage::Interpolate_2ndOrder,
+    2,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_State_Wrapper,
+    Wonton::Jali_Mesh_Wrapper,
+    Wonton::Jali_State_Wrapper,
+    Tangram::MOF,
+    Tangram::SplitRnD<2>,
+    Tangram::ClipRnD<2>>
+      d(sourceMeshWrapper, sourceStateWrapper,
+        targetMeshWrapper, targetStateWrapper);
+
+  d.set_remap_var_names(remap_fields);
+  d.set_limiter(Portage::Limiter_type::NOLIMITER);
+  d.set_bnd_limiter(Portage::Boundary_Limiter_type::BND_NOLIMITER);
+  // Set Tangram tolerances
+  d.set_reconstructor_options(true, ims_tols);
+  // Set Portage tolerances
+  d.set_num_tols(dst_tol, portage_vol_tol);
+  d.run();  // run in serial
+
+  //-------------------------------------------------------------------
+  // Based on the material geometry and prescribed tolerances, make a 
+  // list of the TARGET cells that are in each material and collect 
+  // their material volume fractions and material centroids
+  //-------------------------------------------------------------------
+
+  // Expected extents of the materials after filtering
+
+  Wonton::Point<2> exp_matlo[nmats], exp_mathi[nmats];
+  exp_matlo[0] = Wonton::Point<2>(0.0,       0.0);
+  exp_mathi[0] = Wonton::Point<2>(0.5,       1.0);
+  exp_matlo[1] = Wonton::Point<2>(0.5,       0.0);
+  exp_mathi[1] = Wonton::Point<2>(0.5 + 2*h, 1.0);
+  exp_matlo[2] = Wonton::Point<2>(0.5 + 2*h, 0.0);
+  exp_mathi[2] = Wonton::Point<2>(1.0,       0.5);
+  exp_matlo[3] = Wonton::Point<2>(0.5 + 2*h, 0.5);
+  exp_mathi[3] = Wonton::Point<2>(1.0,       1.0);
+
+  double exp_matvol[nmats] = {0.5, 2*h, 0.25 - h, 0.25 - h};
+
+  std::vector<int> matcells_trg[nmats];
+  std::vector<double> matvf_trg[nmats];
+  std::vector<Wonton::Point<2>> matcen_trg[nmats];
+  std::vector<double> matrho_trg[nmats];
+
+  int ntrgcells = targetMeshWrapper.num_entities(Wonton::Entity_kind::CELL,
+                                                 Wonton::Entity_type::ALL);
+  for (int c = 0; c < ntrgcells; c++) {
+    std::vector<Wonton::Point<2>> ccoords;
+    targetMeshWrapper.cell_get_coordinates(c, &ccoords);
+
+    double cellvol = targetMeshWrapper.cell_volume(c);
+
+    Wonton::Point<2> cell_lo, cell_hi;
+    BOX_INTERSECT::bounding_box<2>(ccoords, &cell_lo, &cell_hi);
+
+    std::vector<double> xmoments;
+    for (int m = 0; m < nmats; m++) {
+      if (BOX_INTERSECT::intersect_boxes<2>(exp_matlo[m], exp_mathi[m],
+                                            cell_lo, cell_hi, &xmoments)) {
+        if (xmoments[0] > tangram_vol_tol) {
+          matcells_trg[m].push_back(c);
+          matvf_trg[m].push_back(xmoments[0]/cellvol);
+
+          Wonton::Point<2> mcen(xmoments[1]/xmoments[0],
+                                xmoments[2]/xmoments[0]);
+          matcen_trg[m].push_back(mcen);
+          matrho_trg[m].push_back((m+1)*(m+1)*(mcen[0]+mcen[1]));
+        }
+      }
+    }
+  }
+
+  //-------------------------------------------------------------------
+  // CHECK REMAPPING RESULTS ON TARGET MESH SIDE
+  //-------------------------------------------------------------------
+
+  //-------------------------------------------------------------------
+  // First we check that we got 'nmats' materials in the target state
+  //-------------------------------------------------------------------
+
+  ASSERT_EQ(nmats, targetStateWrapper.num_materials());
+  for (int m = 0; m < nmats; m++)
+  ASSERT_EQ(matnames[m], targetStateWrapper.material_name(m));
+
+  // We compare the material sets calculated by the remapper to
+  // the ones calculated independently above
+
+  std::vector<int> matcells_remap[nmats];
+  for (int m = 0; m < nmats; m++) {
+    targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
+    int nmatcells = matcells_remap[m].size();
+
+    ASSERT_EQ(matcells_trg[m].size(), unsigned(nmatcells));
+
+    std::sort(matcells_remap[m].begin(), matcells_remap[m].end());
+    std::sort(matcells_trg[m].begin(), matcells_trg[m].end());
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_EQ(matcells_remap[m][ic], matcells_trg[m][ic]);
+  }
+
+  // Then check volume fracs and centroids with independently calculated vals
+  // Also check density against analytical function
+  for (int m = 0; m < nmats; m++) {
+    targetStateWrapper.mat_get_cells(m, &matcells_remap[m]);
+    int nmatcells = matcells_remap[m].size();
+
+    double const *matvf_remap;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &matvf_remap);
+
+    for (int ic = 0; ic < nmatcells; ic++)
+      ASSERT_NEAR(matvf_trg[m][ic], matvf_remap[ic], 
+                  tangram_vol_tol/targetMeshWrapper.cell_volume(matcells_remap[m][ic]));
+
+    Wonton::Point<2> const *matcen_remap;
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &matcen_remap);
+
+    // Total MOF error is based on aggregating products of volume fraction
+    // and discrepancy in centroids for every material. Hence, we can't expect
+    // this product for a given material to be smaller than the product of the
+    // volume fraction of all the other materials and the tolerance on 
+    // discrepancy in centroids
+    for (int ic = 0; ic < nmatcells; ic++) {
+      double cen_dst_tol = (matvf_trg[m][ic] != 1.0) ? std::max(ims_tols[1].fun_eps,
+        (1.0 - matvf_trg[m][ic])*ims_tols[1].fun_eps/matvf_trg[m][ic]) :
+        ims_tols[1].fun_eps;
+      ASSERT_NEAR((matcen_trg[m][ic] - matcen_remap[ic]).norm(), 0.0, 
+                  cen_dst_tol);
+    }
+
+    double const *density_remap;
+    targetStateWrapper.mat_get_celldata("density", m, &density_remap);
+
+    // Using the formula for density and bound on the accuracy for
+    // centroids, we derive the acceptable error for the field
+    for (int ic = 0; ic < nmatcells; ic++) {
+      double cen_dst_tol = (matvf_trg[m][ic] != 1.0) ? std::max(ims_tols[1].fun_eps,
+        (1.0 - matvf_trg[m][ic])*ims_tols[1].fun_eps/matvf_trg[m][ic]) :
+        ims_tols[1].fun_eps;
+      double rho_tol = 9*(m+1)*(m+1)*2*cen_dst_tol; // stencil has nine cells
+      ASSERT_NEAR(matrho_trg[m][ic], density_remap[ic], rho_tol);
+    }
+  }
+
+  // Also check total material volume on the target side
+  for (int m = 0; m < nmats; m++) {
+    std::vector<int> matcells;
+    targetStateWrapper.mat_get_cells(m, &matcells);
+    double *vf, *rho;
+    Wonton::Point<2> *cen;
+    targetStateWrapper.mat_get_celldata("mat_volfracs", m, &vf);
+    targetStateWrapper.mat_get_celldata("mat_centroids", m, &cen);
+    targetStateWrapper.mat_get_celldata("density", m, &rho);
+
+    Wonton::Point<2> totcen;
+    double volume = 0.0;
+    int const num_matcells = matcells.size();
+    for (int ic = 0; ic < num_matcells; ic++) {
+      double cellvol = vf[ic]*targetMeshWrapper.cell_volume(matcells[ic]);
+      volume += cellvol;
+    }
+
+    ASSERT_NEAR(exp_matvol[m], volume, ntrgcells*tangram_vol_tol);
+  }
+}  // VolumeTolerancesDiscrepancy
+
+
 TEST(MMDriver, ThreeMat3D_MOF_2ndOrderRemap) {
   // Source and target meshes
   std::shared_ptr<Jali::Mesh> sourceMesh;

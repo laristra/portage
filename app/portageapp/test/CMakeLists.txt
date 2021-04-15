@@ -154,6 +154,16 @@ if (WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
     TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
     CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
 
+
+  file(COPY portageapp_rgmd_jali_ball_limiter.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  file(COPY gold/GOLD_portageapp_rgmd_jali_ball_limiter.gmv DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+  add_test(NAME portageapp_rgmd_jali_ball_limiter
+    COMMAND ./portageapp_rgmd_jali_ball_limiter.sh)
+  set_property(TEST portageapp_rgmd_jali_ball_limiter
+    PROPERTY ENVIRONMENT
+    TESTAPPDIR=${CMAKE_CURRENT_BINARY_DIR}/..
+    CMPAPPDIR=${CMAKE_BINARY_DIR}/app/apptest_cmp)
+
 endif ()
 
 ####################################################################
@@ -194,10 +204,8 @@ if (WONTON_ENABLE_MPI AND WONTON_ENABLE_Jali AND PORTAGE_ENABLE_TANGRAM)
   # 2D, t-junction, constant fields, vary number of processors with triple point
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 1)
-  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 1)
   ADD_DISTRIBUTED_APPTEST(2 tjunction 2 5 7 1,2,3 2)
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 5 7 1,2,3 2)
-  ADD_DISTRIBUTED_APPTEST(8 tjunction 2 5 7 1,2,3 2)
   
   # 2D, t-junction, linear fields, larger meshes 
   ADD_DISTRIBUTED_APPTEST(4 tjunction 2 51 71 x,y,x+.3*y 2)

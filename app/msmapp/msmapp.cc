@@ -319,6 +319,10 @@ public:
     //Check the answer
     double totmerr=0., totserr=0., totint=0.;
 
+    //Create a diagnostics vector solely for the purpose of outputing to
+    //a file so we can run an app test
+    std::vector<double> diagnostics(6);
+
     auto& cellvecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("celldata"))->get_data();
     auto& cellvecout2 = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper2.get("celldata"))->get_data();
     auto& nodevecout = std::static_pointer_cast<Wonton::StateVectorUni<>>(targetStateWrapper.get("nodedata"))->get_data();
@@ -354,9 +358,13 @@ public:
         totmerr = std::max(totmerr, std::fabs(merror));
         totserr = std::max(totserr, std::fabs(serror));
       }
-
+      
       std::printf("\n\nLinf NORM OF MM CELL ERROR: %le\n\n", totmerr);
       std::printf("\n\nLinf NORM OF MSM CELL ERROR: %le\n\n", totserr);
+
+      //Update diagnostics
+      diagnostics[0]=totmerr;
+      diagnostics[1]=totserr;
 
       if (controls_.print_detail == 1) {
         if (Dimension==2) {
@@ -391,6 +399,10 @@ public:
 
       std::printf("\n\nLinf NORM OF MM NODE ERROR: %lf\n\n", totmerr);
       std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+      
+      //Update diagnostics
+      diagnostics[2]=totmerr;
+      diagnostics[3]=totserr;
     }
 
     if (controls_.print_detail == 1) {
@@ -446,6 +458,12 @@ public:
     if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
+    //Update diagnostics
+    diagnostics[4]=totserr;
+    
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
+      std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
+
     if (controls_.print_detail == 1) {
       if (Dimension==2) {
         std::printf("Node Node-coord-1-2 Exact Mesh-Swarm-Mesh Error\n");
@@ -474,7 +492,19 @@ public:
     }
 
     std::printf("\n\nLinf NORM OF MSM NODE ERROR: %lf\n\n", totserr);
+    
+    //Update diagnostics
+    diagnostics[5]=totserr;
 
+
+    //Print diagnostics to a file
+    std::ofstream file("diagnostics.dat");
+    file << std::scientific;
+    file.precision(13);
+    for (auto&& value : diagnostics) {
+	      file << "-1 " << value <<std::endl;
+    }
+    file.close();
   }
 
   //Constructor
@@ -757,6 +787,9 @@ protected:
     if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
       std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
 
+    if (oper8tor == Portage::Meshfree::oper::VolumeIntegral)
+      std::printf("\n\nTOTAL INTEGRAL: %le\n\n", totint);
+
     if (controls_.print_detail == 1) {
       if (Dimension==2) {
         std::printf("Node Node-coord-1-2 Exact Mesh-Swarm-Mesh Error\n");
@@ -817,10 +850,10 @@ void print_usage() {
     number source cells, int:        28 32 20\n\
     number target cells, int:        26 30 23\n\
     order, int, choice of 1 or 2:           2\n\
-    example, int, choice of -1...3:         3\n\
+    example, int, choice of -2...3:         3\n\
     double, smoothing factor:             1.5\n\
     double, boundary factor:              0.5\n\
-    string, part id field:             a_name\n\
+    string, part id field:   a_name (or NONE)\n\
     double, part id tolerance:          0.125\n\
     print detail, choice of 0 or 1:         1\n\
     geometry:                        tensor  \n\
@@ -1011,4 +1044,8 @@ int main(int argc, char** argv) {
   } else {
     runjob<3>(ctl, filename);
   }
+
+#ifdef WONTON_ENABLE_MPI
+  MPI_Finalize();
+#endif
 }

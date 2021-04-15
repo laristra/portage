@@ -49,7 +49,7 @@ protected:
                                                   Tangram::SplitRnD<3>,
                                                   Tangram::ClipRnD<3>>;
 #else
-  using Intersector = Portage::IntersectSweptFace3D<3,
+  using Intersector = Portage::IntersectSweptFace<3,
                                                     Wonton::Entity_kind::CELL,
                                                     Wonton::Jali_Mesh_Wrapper,
                                                     Wonton::Jali_State_Wrapper,

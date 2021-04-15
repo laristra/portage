@@ -5,7 +5,7 @@
 # ------------------------------------------------------------------------------
 
 # cannot build jali apps without MPI.
-if (WONTON_ENABLE_MPI AND WONTON_ENABLE_MPI)
+if (WONTON_ENABLE_Jali AND WONTON_ENABLE_MPI)
 
     # create binary
     add_executable(part-remap part-remap.cc)

@@ -12,7 +12,7 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
 #include <sstream>
 #endif
 
@@ -22,7 +22,7 @@ Please see the license file at the root of this repository, or at:
 
 // portage includes
 extern "C" {
-#include "wonton/intersect/r3d/r2d.h"
+#include "r2d.h"
 }
 #include "portage/support/portage.h"
 #include "portage/intersect/dummy_interface_reconstructor.h"
@@ -67,7 +67,7 @@ bool poly2_is_convex(std::vector<Wonton::Point<2>> const& pverts,
   return true;
 }
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
 static inline
 void throw_validity_error_2d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
@@ -245,7 +245,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                std::shared_ptr<InterfaceReconstructor2D> ir)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
         targetMeshWrapper(target_mesh), interface_reconstructor(ir),
-        num_tols_(num_tols) {}
+        num_tols_(num_tols) { verify_coord_sys_(); }
 #endif
 
   /// Constructor WITHOUT interface reconstructor
@@ -255,7 +255,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
                TargetMeshType const & target_mesh,
                NumericTolerances_t num_tols)
       : sourceMeshWrapper(source_mesh), sourceStateWrapper(source_state),
-        targetMeshWrapper(target_mesh), num_tols_(num_tols) {}
+        targetMeshWrapper(target_mesh), num_tols_(num_tols) { verify_coord_sys_(); }
 
   /// \brief Set the source mesh material that we have to intersect against
 
@@ -274,7 +274,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
     if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r2d:" <<
@@ -300,6 +300,13 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     int nsrc = src_cells.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
+
+#ifdef PORTAGE_HAS_TANGRAM
+    std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> cmp_ptrs;
+    if (interface_reconstructor != nullptr)
+      cmp_ptrs = interface_reconstructor->cell_matpoly_ptrs();
+#endif
+
     for (int i = 0; i < nsrc; i++) {
       int s = src_cells[i];
 
@@ -311,17 +318,29 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
 
-      if (!nmats || (matid_ == -1) || (nmats == 1 && cellmats[0] == matid_)) {
-        // ---------- Intersection with pure cell ---------------
-        // nmats == 0 -- no materials ==> single material
+      bool non_materialistic_cells = !nmats || (matid_ == -1);
+        // nmats == 0 -- no materials
         // matid_ == -1 -- intersect with mesh not a particular material
-        // nmats == 1 && cellmats[0] == matid -- intersection with pure cell
-        //                                       containing matid
 
-        std::vector<Wonton::Point<2>> source_poly;
-        sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
+      bool pure_cell = non_materialistic_cells || (nmats == 1);
 
-#ifndef NDEBUG
+      if (!pure_cell) {
+        assert(interface_reconstructor != nullptr);
+        assert(cmp_ptrs[s] != nullptr);
+        nmats = cmp_ptrs[s]->num_materials();
+        cellmats = cmp_ptrs[s]->cell_matids();
+        pure_cell = (nmats == 1);
+      }
+
+      bool source_cell_has_mat = pure_cell ? non_materialistic_cells || (cellmats[0] == matid_) :
+                                             cmp_ptrs[s]->is_cell_material(matid_);
+      if (source_cell_has_mat) {
+        if (pure_cell) {
+          // ---------- Intersection with pure cell ---------------
+          std::vector<Wonton::Point<2>> source_poly;
+          sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
+
+#ifdef PORTAGE_DEBUG
         if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
           std::stringstream sstr;
           sstr << "In intersect_r2d:" <<
@@ -341,51 +360,39 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             double cvol = sourceMeshWrapper.cell_volume(s);
             throw_validity_error_2d(Wonton::CELL, s, true, svol, cvol);
           }
-        }
 #endif
 
-        // If target polygon is convex we don't care if the source
-        // polygon is non-convex because R2D can deal with it.
-        if (trg_convex)
-          this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
-                                                num_tols_);
-        else {
-          bool src_convex = poly2_is_convex(source_poly, num_tols_);
+          // If target polygon is convex we don't care if the source
+          // polygon is non-convex because R2D can deal with it.
+          auto sys = sourceMeshWrapper.mesh_get_coordinate_system();
+          if (trg_convex) {
+            this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
+                                                  num_tols_, true, sys);
+          } else {
+            bool src_convex = poly2_is_convex(source_poly, num_tols_);
 
-          // flip the order of the polygons and indicate whether the second
-          // polygon (source masquerading as the target) is non-convex or not
-          // If it is non-convex it will be triangulated and the triangles
-          // intersected with the first polygon
+            // flip the order of the polygons and indicate whether the second
+            // polygon (source masquerading as the target) is non-convex or not
+            // If it is non-convex it will be triangulated and the triangles
+            // intersected with the first polygon
+            
+            this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
+                                                  num_tols_, src_convex, sys);
+          }
           
-          this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                                  num_tols_, src_convex);
-        }
-        
-      } else {  // multi-material case
-        // How can I check that I didn't get DummyInterfaceReconstructor
-        //
-        // static_assert(InterfaceReconstructorType<SourceMeshType, 2> !=
-        //               DummyInterfaceReconstructor<SourceMeshType, 2>);
-
-        assert(interface_reconstructor != nullptr);  // cannot be nullptr
-
-        if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
-            cellmats.end()) {
+        } else {
           // mixed cell containing this material - intersect with
           // polygon approximation of this material in the cell
           // (obtained from interface reconstruction)
 
-          Tangram::CellMatPoly<2> const& cellmatpoly =
-              interface_reconstructor->cell_matpoly_data(s);
           std::vector<Tangram::MatPoly<2>> matpolys =
-              cellmatpoly.get_matpolys(matid_);
+              cmp_ptrs[s]->get_matpolys(matid_);
 
           this_wt.weights.resize(3, 0.0);
           for (auto& matpoly : matpolys) {
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
           // Lets check the volume of the source material polygon
-
           std::vector<double> smom = matpoly.moments();
           if (smom[0] < 0.0) {
             std::stringstream sstr;
@@ -395,13 +402,15 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             throw std::runtime_error(sstr.str());
           }
 #endif
-           
+            
             std::vector<Wonton::Point<2>> source_poly = matpoly.points();
 
+            auto sys = sourceMeshWrapper.mesh_get_coordinate_system();
             std::vector<double> momvec = intersect_polys_r2d(source_poly,
                                                              target_poly,
                                                              num_tols_,
-                                                             trg_convex);
+                                                             trg_convex,
+                                                             sys);
 
             for (int k = 0; k < 3; k++)
               this_wt.weights[k] += momvec[k];
@@ -410,7 +419,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       }
 #else  // No Tangram
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
       if (sourceMeshWrapper.num_entities(SIDE, ALL) == 0) {
         std::stringstream sstr;
         sstr << "In intersect_r2d:" <<
@@ -436,10 +445,11 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.cell_get_coordinates(s, &source_poly);
 
-      if (trg_convex)
+      auto sys = sourceMeshWrapper.mesh_get_coordinate_system();
+      if (trg_convex) {
         this_wt.weights = intersect_polys_r2d(source_poly, target_poly,
-                                              num_tols_);
-      else {
+                                              num_tols_, true, sys);
+      } else {
         bool src_convex = poly2_is_convex(source_poly, num_tols_);
 
         // flip the order of the polygons and indicate whether the second
@@ -448,7 +458,7 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
         // intersected with the first polygon
         
         this_wt.weights = intersect_polys_r2d(target_poly, source_poly,
-                                              num_tols_, src_convex);
+                                              num_tols_, src_convex, sys);
       }        
 #endif
 
@@ -465,6 +475,14 @@ class IntersectR2D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
 
   /// Assignment operator (disabled)
   IntersectR2D & operator = (const IntersectR2D &) = delete;
+
+ private:
+  void verify_coord_sys_() { 
+    if (sourceMeshWrapper.mesh_get_coordinate_system() != 
+        targetMeshWrapper.mesh_get_coordinate_system()) {
+      throw std::runtime_error("Source and target meshes use different coordinate systems.\n");
+    }
+  }
 
  private:
   SourceMeshType const & sourceMeshWrapper;
@@ -539,7 +557,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
     
     bool trg_convex = poly2_is_convex(target_poly, num_tols_);
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
     if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r2d:" <<
@@ -571,7 +589,7 @@ class IntersectR2D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
       std::vector<Wonton::Point<2>> source_poly;
       sourceMeshWrapper.dual_cell_get_coordinates(s, &source_poly);
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
       if (sourceMeshWrapper.num_entities(WEDGE, ALL) == 0) {
         std::stringstream sstr;
         sstr << "In intersect_r2d:" <<
