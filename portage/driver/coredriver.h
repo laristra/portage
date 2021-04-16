@@ -156,7 +156,7 @@ class CoreDriver {
       mycomm_ = mpiexecutor->mpicomm;
       MPI_Comm_rank(mycomm_, &comm_rank_);
       MPI_Comm_size(mycomm_, &nprocs_);
-      source_ghost_manager_ = std::make_unique<SourceGhostManager>(source_mesh_, source_state_, mycomm_);
+      source_ghost_manager_ = std::make_shared<SourceGhostManager>(source_mesh_, source_state_, mycomm_);
     }
 #endif
   }
@@ -664,7 +664,7 @@ class CoreDriver {
     if (multimat) {
       // cache gradient stencil first
       if (not cached_multimat_stenc_) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
         std::cerr << "Warning: gradient stencil matrices for ";
         std::cerr << "multi-material fields were not cached yet." << std::endl;
         std::cerr << "Please invoke 'cache_multimat_gradient_stencils' ";
@@ -803,7 +803,7 @@ class CoreDriver {
                             Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
                 << ONWHAT << ". Skipping!" << std::endl;
 #endif
@@ -875,7 +875,7 @@ class CoreDriver {
                        Wonton::vector<Vector<D>>* gradients = nullptr) {
 
     if (source_state_.get_entity(srcvarname) != ONWHAT) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       std::cerr << "Variable " << srcvarname << " not defined on Entity_kind "
                 << ONWHAT << ". Skipping!" << std::endl;
 #endif
@@ -1089,7 +1089,7 @@ class CoreDriver {
 
     // Instantiate mismatch fixer for later use
     if (not mismatch_fixer_) {
-      mismatch_fixer_ = std::make_unique<MismatchFixup>(source_mesh_, source_state_,
+      mismatch_fixer_ = std::make_shared<MismatchFixup>(source_mesh_, source_state_,
                                                         target_mesh_, target_state_,
                                                         executor_);
     }
@@ -1169,13 +1169,13 @@ class CoreDriver {
   Wonton::Executor_type const *executor_;
 
 #ifdef WONTON_ENABLE_MPI
-  std::unique_ptr<SourceGhostManager> source_ghost_manager_;
+  std::shared_ptr<SourceGhostManager> source_ghost_manager_;
   int comm_rank_ = 0;
   int nprocs_ = 1;
   MPI_Comm mycomm_ = MPI_COMM_NULL;
 #endif
 
-  std::unique_ptr<MismatchFixup> mismatch_fixer_;
+  std::shared_ptr<MismatchFixup> mismatch_fixer_;
 
 #ifdef PORTAGE_HAS_TANGRAM
   bool cached_multimat_stenc_ = false;

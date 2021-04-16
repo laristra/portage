@@ -7,11 +7,11 @@ message(STATUS "Adding momentum remap test")
 
 # this app can be run in serial or mpi mode - set an environment
 # variable so that either will work
-if(ENABLE_MPI)
+if(WONTON_ENABLE_MPI)
   set(RUN_COMMAND "mpirun -np 1")
 else()
   set(RUN_COMMAND "")
-endif(ENABLE_MPI)
+endif(WONTON_ENABLE_MPI)
 
 macro(ADD_MOMENTUM_TEST DIM TEST_NUM)
   file(COPY momentumapp${DIM}_test${TEST_NUM}.sh

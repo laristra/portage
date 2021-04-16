@@ -249,7 +249,7 @@ class MismatchFixer {
 
       mismatch_ = true;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       if (rank_ == 0) 
         std::cerr << "\n** MESH MISMATCH -" <<
             " some source cells are not fully covered by the target mesh\n";
@@ -295,7 +295,7 @@ class MismatchFixer {
 
       mismatch_ = true;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       if (rank_ == 0)
         std::cerr << "\n** MESH MISMATCH -" <<
             " some target cells are not fully covered by the source mesh\n";
@@ -493,7 +493,7 @@ class MismatchFixer {
           }
           if (nave)
             aveval /= nave;
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
           else
             std::cerr <<
                 "No owned neighbors of empty entity to extrapolate data from\n";
@@ -600,7 +600,7 @@ class MismatchFixer {
               target_data[t] = global_lower_bound;
 
               if (!hit_lobound) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
                 std::cerr << "Hit lower bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
 #endif
@@ -620,7 +620,7 @@ class MismatchFixer {
               target_data[t] = global_upper_bound;
 
               if (!hit_hibound) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
                 std::cerr << "Hit upper bound for cell " << t <<
                     " (and maybe other cells) on rank " << rank_ << "\n";
 #endif
@@ -761,7 +761,7 @@ class MismatchFixer {
     }
     int nempty = emptyents.size();
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
 
     int global_nempty = nempty;
 #ifdef WONTON_ENABLE_MPI

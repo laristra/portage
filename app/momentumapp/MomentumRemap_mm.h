@@ -131,10 +131,11 @@ void MomentumRemap_mm<D, Mesh_Wrapper, State_Wrapper>::InitMaterials(
   double dst_tol = 100 * std::numeric_limits<double>::epsilon();
   double vol_tol = 100 * std::numeric_limits<double>::epsilon();
 
-  get_material_moments<Mesh_Wrapper>(mesh, material_IDs, 
-    circle_cen, circle_rad, nquadrant_samples,
-    cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
-    vol_tol, dst_tol, false);  
+  get_material_moments<Mesh_Wrapper, Wonton::CartesianCoordinates>(
+      mesh,material_IDs, 
+      circle_cen, circle_rad, nquadrant_samples,
+      cell_num_mats, cell_mat_ids, cell_mat_volfracs, cell_mat_centroids, 
+      vol_tol, dst_tol, false);  
 
   // Count the number of local materials and gather their IDs
   std::set<int> mat_ids;

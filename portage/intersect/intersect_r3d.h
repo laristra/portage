@@ -11,13 +11,13 @@ Please see the license file at the root of this repository, or at:
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
 #include <sstream>
 #endif
 
 // portage includes
 extern "C" {
-#include "wonton/intersect/r3d/r3d.h"
+#include "r3d.h"
 }
 
 #include "portage/support/portage.h"
@@ -38,7 +38,7 @@ using Wonton::SIDE;
 using Wonton::WEDGE;
 using Wonton::ALL;
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
 static inline
 void throw_validity_error_3d(Wonton::Entity_kind ekind, int entity_id,
                              bool in_source_mesh,
@@ -263,7 +263,7 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     targetMeshWrapper.decompose_cell_into_tets(tgt_cell, &target_tet_coords,
                                                rectangular_mesh_);
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
     // Check the tetrahedral sides of the cell
     if (targetMeshWrapper.num_entities(SIDE, ALL) == 0) {
       std::stringstream sstr;
@@ -291,6 +291,13 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
     int nsrc = src_cells.size();
     std::vector<Weights_t> sources_and_weights(nsrc);
     int ninserted = 0;
+
+#ifdef PORTAGE_HAS_TANGRAM
+    std::vector<std::shared_ptr<Tangram::CellMatPoly<3>>> cmp_ptrs;
+    if (interface_reconstructor != nullptr)
+      cmp_ptrs = interface_reconstructor->cell_matpoly_ptrs();
+#endif
+
     for (int i = 0; i < nsrc; i++) {
       int s = src_cells[i];
 
@@ -302,18 +309,30 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
       std::vector<int> cellmats;
       sourceStateWrapper.cell_get_mats(s, &cellmats);
 
-      if (!nmats || (matid_ == -1) || (nmats == 1 && cellmats[0] == matid_)) {
-        // ---------- Intersection with pure cell ---------------
-        // nmats == 0 -- no materials ==> single material
+      bool non_materialistic_cells = !nmats || (matid_ == -1);
+        // nmats == 0 -- no materials
         // matid_ == -1 -- intersect with mesh not a particular material
-        // nmats == 1 && cellmats[0] == matid -- intersection with pure cell
-        //                                       containing matid
 
-        facetedpoly_t srcpoly;
-        sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
-                                                &srcpoly.points);
+      bool pure_cell = non_materialistic_cells || (nmats == 1);
 
-#ifndef NDEBUG
+      if (!pure_cell) {
+        assert(interface_reconstructor != nullptr);
+        assert(cmp_ptrs[s] != nullptr);
+        nmats = cmp_ptrs[s]->num_materials();
+        cellmats = cmp_ptrs[s]->cell_matids();
+        pure_cell = (nmats == 1);
+      }
+
+      bool source_cell_has_mat = pure_cell ? non_materialistic_cells || (cellmats[0] == matid_) :
+                                             cmp_ptrs[s]->is_cell_material(matid_);
+      if (source_cell_has_mat) {
+        if (pure_cell) {
+          // ---------- Intersection with pure cell ---------------
+          facetedpoly_t srcpoly;
+          sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
+                                                  &srcpoly.points);
+
+#ifdef PORTAGE_DEBUG
         // Check validity of source cell (unfortunately may be
         // repeated if it is an intersection candidate for multiple
         // target cells)
@@ -337,27 +356,23 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             double cvol = sourceMeshWrapper.cell_volume(s);
             throw_validity_error_3d(Wonton::CELL, s, true, svol, cvol);
           }
-        }        
 #endif
 
-        this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
-                                              num_tols_);
+          this_wt.weights = intersect_polys_r3d(srcpoly, target_tet_coords,
+                                                num_tols_);
 
-      } else if (std::find(cellmats.begin(), cellmats.end(), matid_) !=
-                 cellmats.end()) {
-        // mixed cell containing this material - intersect with
-        // polygon approximation of this material in the cell
-        // (obtained from interface reconstruction)
+        } else if (cmp_ptrs[s]->is_cell_material(matid_)) {
+          // mixed cell containing this material - intersect with
+          // polygon approximation of this material in the cell
+          // (obtained from interface reconstruction)
 
-        Tangram::CellMatPoly<3> const& cellmatpoly =
-            interface_reconstructor->cell_matpoly_data(s);
-        std::vector<Tangram::MatPoly<3>> matpolys =
-            cellmatpoly.get_matpolys(matid_);
+          std::vector<Tangram::MatPoly<3>> matpolys =
+              cmp_ptrs[s]->get_matpolys(matid_);
 
-        this_wt.weights.resize(4,0.0);
-        for (const auto& matpoly : matpolys) {
+          this_wt.weights.resize(4,0.0);
+          for (const auto& matpoly : matpolys) {
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
           // Lets check the volume of the source material polyhedron
 
           std::vector<double> smom = matpoly.moments();
@@ -369,21 +384,21 @@ class IntersectR3D<Entity_kind::CELL, SourceMeshType, SourceStateType, TargetMes
             throw std::runtime_error(sstr.str());
           }
 #endif
-          
-          facetedpoly_t srcpoly = get_faceted_matpoly(matpoly);
-          std::vector<double> momvec = intersect_polys_r3d(srcpoly,
-                                          target_tet_coords, num_tols_);
-          for (int k = 0; k < 4; k++)
-            this_wt.weights[k] += momvec[k];
+            
+            facetedpoly_t srcpoly = get_faceted_matpoly(matpoly);
+            std::vector<double> momvec = intersect_polys_r3d(srcpoly,
+                                            target_tet_coords, num_tols_);
+            for (int k = 0; k < 4; k++)
+              this_wt.weights[k] += momvec[k];
+          }
         }
-
       }
 #else  // No Tangram
       facetedpoly_t srcpoly;
       sourceMeshWrapper.cell_get_facetization(s, &srcpoly.facetpoints,
                                               &srcpoly.points);
       
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
       // Check validity of source cell (unfortunately may be
       // repeated if it is an intersection candidate for multiple
       // target cells)
@@ -514,7 +529,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
 
     targetMeshWrapper.dual_wedges_get_coordinates(tgt_node, &target_tet_coords);
 
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
     if (targetMeshWrapper.num_entities(WEDGE, ALL) == 0) {
       std::stringstream sstr;
       sstr << "In intersect_r3d:" <<
@@ -551,7 +566,7 @@ class IntersectR3D<Entity_kind::NODE, SourceMeshType, SourceStateType, TargetMes
                                                    &srcpoly.points);
 
       
-#ifndef NDEBUG
+#ifdef PORTAGE_DEBUG
       // Lets check that the wedges in the source dual cell have
       // positive volume
 

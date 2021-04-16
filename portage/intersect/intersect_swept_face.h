@@ -486,34 +486,43 @@ namespace Portage {
       // For the multimaterial case, add only the moments for the material
       // the intersector is working on. 
 #ifdef PORTAGE_HAS_TANGRAM
-      int const nb_mats = source_state_.cell_get_num_mats(source_id);
+      std::vector<std::shared_ptr<Tangram::CellMatPoly<2>>> cmp_ptrs;
+      if (interface_reconstructor != nullptr)
+        cmp_ptrs = interface_reconstructor->cell_matpoly_ptrs();
+
+      int nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
-      // nb_mats == 0 -- no materials ==> single material
-      // material_id_ == -1 -- intersect with mesh not a particular material
-      // nb_mats == 1 && cellmats[0] == material_id_ -- intersection with pure cell
-      //                                                containing material_id_      
-      bool const source_cell_mat = 
-        (std::find(cellmats.begin(), cellmats.end(), material_id_) != cellmats.end());
-      bool const single_mat_src_cell = !nb_mats || (material_id_ == -1) || 
-                                       (nb_mats == 1 && source_cell_mat);
 
-      if (single_mat_src_cell) {
+      bool non_materialistic_cells = !nb_mats || (material_id_ == -1);
+        // nb_mats == 0 -- no materials
+        // material_id_ == -1 -- intersect with mesh not a particular material
+
+      bool pure_cell = non_materialistic_cells || (nb_mats == 1);
+
+      if (!pure_cell) {
+        assert(interface_reconstructor != nullptr);
+        assert(cmp_ptrs[source_id] != nullptr);
+        nb_mats = cmp_ptrs[source_id]->num_materials();
+        cellmats = cmp_ptrs[source_id]->cell_matids();
+        pure_cell = (nb_mats == 1);
+      }
+
+      bool source_cell_has_mat = pure_cell ? non_materialistic_cells || (cellmats[0] == material_id_) :
+                                             cmp_ptrs[source_id]->is_cell_material(material_id_);                                 
+
+      if (source_cell_has_mat) {
+        if (pure_cell) {
 #endif
-        // add source cell moments in the first place
-        swept_moments.emplace_back(source_id, compute_source_moments(source_id));
+          // add source cell moments in the first place
+          swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
 #ifdef PORTAGE_HAS_TANGRAM
-      } else if (source_cell_mat) {
-        // mixed cell should contain this material
-        assert(interface_reconstructor != nullptr);
-
-        // add source cell moments in the first place: 
-        // obtain the aggregated moments of all MatPoly's with material_id_
-        Tangram::CellMatPoly<2> const& cellmatpoly =
-          interface_reconstructor->cell_matpoly_data(source_id);
-
-        swept_moments.emplace_back(source_id, cellmatpoly.material_moments(material_id_));
+        } else {
+          // add source cell moments in the first place: 
+          // obtain the aggregated moments of all MatPoly's with material_id_
+          swept_moments.emplace_back(source_id, cmp_ptrs[source_id]->material_moments(material_id_));
+        }
       }
 #endif
 
@@ -586,20 +595,22 @@ namespace Portage {
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
 #ifdef PORTAGE_HAS_TANGRAM
-          if (single_mat_src_cell) {
+          if (source_cell_has_mat) {
+            if (pure_cell) {
 #endif          
-            swept_moments.emplace_back(source_id, moments);
+              swept_moments.emplace_back(source_id, moments);
 #ifdef PORTAGE_HAS_TANGRAM
-          } else if (source_cell_mat) {
-            //The volume we take out of the source cell's face group should be positive
-            double clip_volume = -moments[0];
-            //Update the moments with values only for the material with material_id_
-            //contained in the face group
-            moments = compute_face_group_moments(source_id, edges[i], clip_volume);
-            //The weights in this case should be negative, so we reverse the sign
-            for(double& moment : moments) moment *= -1;
+            } else {
+              // The volume we take out of the source cell's face group should be positive
+              double clip_volume = -moments[0];
+              // Update the moments with values only for the material with material_id_
+              // contained in the face group
+              moments = compute_face_group_moments(source_id, edges[i], clip_volume);
+              // The weights in this case should be negative, so we reverse the sign
+              for (double& moment : moments) moment *= -1;
 
-            swept_moments.emplace_back(source_id, moments);
+              swept_moments.emplace_back(source_id, moments);
+            }
           }
 #endif            
         } else {
@@ -622,31 +633,34 @@ namespace Portage {
           }
           // append to list as current neighbor moment.
 #ifdef PORTAGE_HAS_TANGRAM
-          int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
+          int adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
-          // adj_cell_nb_mats == 0 -- no materials ==> single material
-          // material_id_ == -1 -- intersect with mesh not a particular material
-          // adj_cell_nb_mats == 1 && adj_cellmats[0] == material_id_ -- intersection with pure cell
-          //                                                             containing material_id_      
-          bool const adj_cell_mat = 
-            (std::find(adj_cellmats.begin(), adj_cellmats.end(), material_id_) != adj_cellmats.end());
-          bool const single_mat_adj_cell = !adj_cell_nb_mats || (material_id_ == -1) || 
-                                            (adj_cell_nb_mats == 1 && adj_cell_mat);
 
-          if (single_mat_adj_cell) {
+          bool pure_adj_cell = non_materialistic_cells || (adj_cell_nb_mats == 1);
+
+          if (!pure_adj_cell) {
+            assert(interface_reconstructor != nullptr);
+            assert(cmp_ptrs[neigh] != nullptr);
+            adj_cell_nb_mats = cmp_ptrs[neigh]->num_materials();
+            adj_cellmats = cmp_ptrs[neigh]->cell_matids();
+            pure_adj_cell = (adj_cell_nb_mats == 1);
+          }
+
+          bool adj_cell_mat = pure_adj_cell ? non_materialistic_cells || (adj_cellmats[0] == material_id_) :
+                                              cmp_ptrs[neigh]->is_cell_material(material_id_);
+
+          if (adj_cell_mat) {
+            if (pure_adj_cell) {
 #endif
-            swept_moments.emplace_back(neigh, moments);
+              swept_moments.emplace_back(neigh, moments);
 #ifdef PORTAGE_HAS_TANGRAM
-          } else {
-            //Skip if the neighboring cell doesn't contain material_id_
-            if (!adj_cell_mat)
-              continue;
-
-            //Compute moments only for the material with material_id_
-            //contained in the face group of the neighboring cell
-            swept_moments.emplace_back(neigh, 
-              compute_face_group_moments(neigh, edges[i], moments[0]));
+            } else {
+                //Compute moments only for the material with material_id_
+                //contained in the face group of the neighboring cell
+                swept_moments.emplace_back(neigh, 
+                  compute_face_group_moments(neigh, edges[i], moments[0]));
+            }
           }
 #endif  
         }
@@ -1000,36 +1014,45 @@ namespace Portage {
       std::vector<Weights_t> swept_moments;
 
 #ifdef PORTAGE_HAS_TANGRAM
-      int const nb_mats = source_state_.cell_get_num_mats(source_id);
+      std::vector<std::shared_ptr<Tangram::CellMatPoly<3>>> cmp_ptrs;
+      if (interface_reconstructor != nullptr)
+        cmp_ptrs = interface_reconstructor->cell_matpoly_ptrs();
+
+      int nb_mats = source_state_.cell_get_num_mats(source_id);
       std::vector<int> cellmats;
       source_state_.cell_get_mats(source_id, &cellmats);
-      // nb_mats == 0 -- no materials ==> single material
-      // material_id_ == -1 -- intersect with mesh not a particular material
-      // nb_mats == 1 && cellmats[0] == material_id_ -- intersection with pure cell
-      //                                                containing material_id_      
-      bool const source_cell_mat = 
-        (std::find(cellmats.begin(), cellmats.end(), material_id_) != cellmats.end());
-      bool const single_mat_src_cell = !nb_mats || (material_id_ == -1) || 
-                                       (nb_mats == 1 && source_cell_mat);
 
-      if (single_mat_src_cell) {
+      bool non_materialistic_cells = !nb_mats || (material_id_ == -1);
+      // nb_mats == 0 -- no materials
+      // material_id_ == -1 -- intersect with mesh not a particular material
+
+      bool pure_cell = non_materialistic_cells || (nb_mats == 1);
+
+      if (!pure_cell) {
+        assert(interface_reconstructor != nullptr);
+        assert(cmp_ptrs[source_id] != nullptr);
+        nb_mats = cmp_ptrs[source_id]->num_materials();
+        cellmats = cmp_ptrs[source_id]->cell_matids();
+        pure_cell = (nb_mats == 1);
+      }
+
+      bool source_cell_has_mat = pure_cell ? non_materialistic_cells || (cellmats[0] == material_id_) :
+                                             cmp_ptrs[source_id]->is_cell_material(material_id_);                                 
+
+      if (source_cell_has_mat) {
+        if (pure_cell) {
 #endif
-        // add source cell moments in the first place
-        swept_moments.emplace_back(source_id, compute_source_moments(source_id));
+          // add source cell moments in the first place
+          swept_moments.emplace_back(source_id, compute_source_moments(source_id));
 
 #ifdef PORTAGE_HAS_TANGRAM
-      } else if (source_cell_mat) {
-        // mixed cell should contain this material
-        assert(interface_reconstructor != nullptr);
-
-        // add source cell moments in the first place: 
-        // obtain the aggregated moments of all MatPoly's with material_id_
-        Tangram::CellMatPoly<3> const& cellmatpoly =
-          interface_reconstructor->cell_matpoly_data(source_id);
-
-        swept_moments.emplace_back(source_id, cellmatpoly.material_moments(material_id_));
+        } else {
+          // add source cell moments in the first place: 
+          // obtain the aggregated moments of all MatPoly's with material_id_
+          swept_moments.emplace_back(source_id, cmp_ptrs[source_id]->material_moments(material_id_));
+        }
       }
-#endif        
+#endif
       std::vector<int> faces, dirs, nodes;
 
       // retrieve current source cell faces/edges and related directions
@@ -1171,20 +1194,22 @@ namespace Portage {
           // moments to the source cell: it will be substracted
           // from the source cell area when performing the interpolation.
 #ifdef PORTAGE_HAS_TANGRAM
-          if (single_mat_src_cell) {
+          if (source_cell_has_mat) {
+            if (pure_cell) {
 #endif              
-            swept_moments.emplace_back(source_id, moments);
+              swept_moments.emplace_back(source_id, moments);
 #ifdef PORTAGE_HAS_TANGRAM
-          } else if (source_cell_mat) {
-            //The volume we take out of the source cell's face group should be positive
-            double clip_volume = -moments[0];
-            //Update the moments with values only for the material with material_id_
-            //contained in the face group
-            moments = compute_face_group_moments(source_id, faces[i], clip_volume);
-            //The weights in this case should be negative, so we reverse the sign
-            for(double& moment : moments) moment *= -1;
+            } else {
+              // The volume we take out of the source cell's face group should be positive
+              double clip_volume = -moments[0];
+              // Update the moments with values only for the material with material_id_
+              // contained in the face group
+              moments = compute_face_group_moments(source_id, faces[i], clip_volume);
+              // The weights in this case should be negative, so we reverse the sign
+              for (double& moment : moments) moment *= -1;
 
-            swept_moments.emplace_back(source_id, moments);            
+              swept_moments.emplace_back(source_id, moments);
+            }
           }
 #endif              
         } else {
@@ -1202,31 +1227,34 @@ namespace Portage {
           }
           // append to list as current neighbor moment.
 #ifdef PORTAGE_HAS_TANGRAM
-          int const adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
+          int adj_cell_nb_mats = source_state_.cell_get_num_mats(neigh);
           std::vector<int> adj_cellmats;
           source_state_.cell_get_mats(neigh, &adj_cellmats);
-          // adj_cell_nb_mats == 0 -- no materials ==> single material
-          // material_id_ == -1 -- intersect with mesh not a particular material
-          // adj_cell_nb_mats == 1 && adj_cellmats[0] == material_id_ -- intersection with pure cell
-          //                                                             containing material_id_      
-          bool const adj_cell_mat = 
-            (std::find(adj_cellmats.begin(), adj_cellmats.end(), material_id_) != adj_cellmats.end());
-          bool const single_mat_adj_cell = !adj_cell_nb_mats || (material_id_ == -1) || 
-                                            (adj_cell_nb_mats == 1 && adj_cell_mat);
 
-          if (single_mat_adj_cell) {
+          bool pure_adj_cell = non_materialistic_cells || (adj_cell_nb_mats == 1);
+
+          if (!pure_adj_cell) {
+            assert(interface_reconstructor != nullptr);
+            assert(cmp_ptrs[neigh] != nullptr);
+            adj_cell_nb_mats = cmp_ptrs[neigh]->num_materials();
+            adj_cellmats = cmp_ptrs[neigh]->cell_matids();
+            pure_adj_cell = (adj_cell_nb_mats == 1);
+          }
+
+          bool adj_cell_mat = pure_adj_cell ? non_materialistic_cells || (adj_cellmats[0] == material_id_) :
+                                              cmp_ptrs[neigh]->is_cell_material(material_id_);
+
+          if (adj_cell_mat) {
+            if (pure_adj_cell) {
 #endif
-            swept_moments.emplace_back(neigh, moments);
+              swept_moments.emplace_back(neigh, moments);
 #ifdef PORTAGE_HAS_TANGRAM
-          } else {
-            //Skip if the neighboring cell doesn't contain material_id_
-            if (!adj_cell_mat)
-              continue;
-            
-            //Compute moments only for the material with material_id_
-            //contained in the face group of the neighboring cell
-            swept_moments.emplace_back(neigh, 
-              compute_face_group_moments(neigh, faces[i], moments[0]));
+            } else {
+              //Compute moments only for the material with material_id_
+              //contained in the face group of the neighboring cell
+              swept_moments.emplace_back(neigh, 
+                compute_face_group_moments(neigh, faces[i], moments[0]));
+            }
           }
 #endif            
         }

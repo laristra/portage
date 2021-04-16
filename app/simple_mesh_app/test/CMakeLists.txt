@@ -7,11 +7,11 @@ message(STATUS "Adding simple_mesh_app test")
 
 # this app can be run in serial or mpi mode - set an environment
 # variable so that either will work
-if(PORTAGE_ENABLE_MPI)
+if(WONTON_ENABLE_MPI)
   set(RUN_COMMAND "mpirun -np 1")
 else()
   set(RUN_COMMAND "")
-endif(PORTAGE_ENABLE_MPI)
+endif(WONTON_ENABLE_MPI)
 
 macro(ADD_SIMPLE_MESH_TEST TEST_NUM)
   file(COPY simple_mesh_test${TEST_NUM}.sh

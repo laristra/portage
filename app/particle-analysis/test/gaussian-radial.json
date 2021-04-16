@@ -1,0 +1,35 @@
+{
+  "source": {
+    "file": "source.csv",
+    "field": "exp((-0.0000001*x*x) + (-0.0005*y*y))",
+    "frame": "local"
+  },
+  "target": {
+    "size": [ 201, 201 ],
+    "distrib": "radial",
+    "span": 1E4,
+    "width": 100,
+    "radius": 1.0,
+    "center": [ 0.0, 0.0 ],
+    "frame": "local",
+    "output": "target.csv"
+  },
+  "scale": {
+    "coords": [ 1E6, 1E4 ],
+    "field": 1E8,
+    "smooth": [ 1.0, 1.0 ]
+  },
+  "remap": {
+    "basis": "unitary",
+    "weight": "gather",
+    "kernel": "b4",
+    "support": "elliptic",
+    "estimator": "lre"
+  },
+  "output": {
+    "source": "source.dat",
+    "exact": "exact.dat",
+    "remap": "remap.dat",
+    "error": "error.dat"
+  }
+}

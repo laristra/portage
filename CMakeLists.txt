@@ -62,6 +62,14 @@ endif()
 #------------------------------------------------------------------------------#
 option(ENABLE_APP_TIMINGS "Enable timings" OFF)
 
+#------------------------------------------------------------------------------#
+# Enable PORTAGE_DEBUG flag
+#------------------------------------------------------------------------------#
+option(PORTAGE_DEBUG "Additional checks will be performed and info printed" OFF)
+if (PORTAGE_DEBUG)
+  add_definitions(-DPORTAGE_DEBUG)
+endif()
+
 #----------------------------------------------------------------------------
 # Find packages here and set CMake variables. Set link dependencies
 # and compile definitions for portage_support target in

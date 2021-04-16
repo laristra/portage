@@ -400,7 +400,7 @@ class MPI_Bounding_Boxes {
     // Is the a multimaterial problem? If so we need to pass the cell indices
     // in addition to the field values
     if (nmats>0){
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       std::cout << "in distribute, this a multimaterial problem with " << nmats << " materials\n";
 #endif
 

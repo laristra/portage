@@ -212,8 +212,8 @@ namespace Portage {
     // it is intended for lookup purposes only, and is not meant to be iterated.
     std::vector<int>        cells_   = {};
     std::vector<double>     volumes_ = {};
-    std::map<int, int>      index_   = {};
-    std::unordered_set<int> lookup_  = {};
+    std::map<int, int>      index_   = std::map<int, int>{};
+    std::unordered_set<int> lookup_  = std::unordered_set<int>{};
   };
 
 
@@ -434,7 +434,7 @@ public:
     if (relative_voldiff_source > tolerance_) {
       has_mismatch_ = true;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       if (rank_ == 0) {
         std::fprintf(stderr, "\n** MESH MISMATCH - some source cells ");
         std::fprintf(stderr, "are not fully covered by the target mesh\n");
@@ -445,7 +445,7 @@ public:
     if (relative_voldiff_target > tolerance_) {
       has_mismatch_ = true;
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       if (rank_ == 0) {
         std::fprintf(stderr, "\n** MESH MISMATCH - some target cells ");
         std::fprintf(stderr, "are not fully covered by the source mesh\n");
@@ -491,7 +491,7 @@ public:
     }
 #endif
 
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
     if (global_nb_empty > 0 and rank_ == 0) {
       std::fprintf(stderr,
                    "One or more target cells are not covered by ANY source cells.\n"
@@ -824,7 +824,7 @@ public:
               target_data[entity] = global_lower_bound;
 
               if (not hit_lower_bound) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
                 std::fprintf(stderr,
                   "Hit lower bound for cell %d (and maybe other ones) on rank %d\n",
                   t, rank_
@@ -843,7 +843,7 @@ public:
               target_data[entity] = global_upper_bound;
 
               if (not hit_higher_bound) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
                std::fprintf(stderr,
                   "Hit upper bound for cell %d (and maybe other ones) on rank %d\n",
                   t, rank_
@@ -914,7 +914,7 @@ public:
 
       if (std::abs(relative_diff) > conservation_tol) {
         if (rank_ == 0) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
           std::fprintf(stderr,
             "Redistribution not entirely successfully for variable %s\n"
             "Relative conservation error is %f\n"

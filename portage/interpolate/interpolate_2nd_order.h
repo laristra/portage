@@ -371,6 +371,12 @@ namespace Portage {
        */
       int nb_summed = 0;
 
+#ifdef PORTAGE_HAS_TANGRAM
+      std::vector<std::shared_ptr<Tangram::CellMatPoly<D>>> cmp_ptrs;
+      if (interface_reconstructor_ != nullptr)
+        cmp_ptrs = interface_reconstructor_->cell_matpoly_ptrs();
+#endif
+
       // Loop over source cells
       for (auto&& current : sources_and_weights) {
         // Get source cell and the intersection weights
@@ -388,35 +394,42 @@ namespace Portage {
         }
 #ifdef PORTAGE_HAS_TANGRAM
         else if (field_type_ == Field_type::MULTIMATERIAL_FIELD) {
-          int const nb_mats = source_state_.cell_get_num_mats(src_cell);
+          int nb_mats = source_state_.cell_get_num_mats(src_cell);
           std::vector<int> cellmats;
           source_state_.cell_get_mats(src_cell, &cellmats);
 
-          bool is_pure_cell =
-            (nb_mats == 0 or (nb_mats == 1 and cellmats[0] == material_id_));
+          bool non_materialistic_cells = !nb_mats || (material_id_ == -1);
+            // nb_mats == 0 -- no materials
+            // material_id_ == -1 -- intersect with mesh not a particular material
 
-          if (is_pure_cell) {
-            source_mesh_.cell_centroid(src_cell, &source_centroid);
-          } else /* multi-material cell */ {
-            assert(interface_reconstructor_ != nullptr);  // must be defined
+          bool pure_cell = non_materialistic_cells || (nb_mats == 1);
 
-            auto pos = std::find(cellmats.begin(), cellmats.end(), material_id_);
-            bool found_material = (pos != cellmats.end());
+          if (!pure_cell) {
+            assert(interface_reconstructor_ != nullptr);
+            assert(cmp_ptrs[src_cell] != nullptr);
+            nb_mats = cmp_ptrs[src_cell]->num_materials();
+            cellmats = cmp_ptrs[src_cell]->cell_matids();
+            pure_cell = (nb_mats == 1);
+          }
 
-            if (found_material) /* mixed cell contains this material */ {
+          bool source_cell_has_mat = pure_cell ? non_materialistic_cells || (cellmats[0] == material_id_) :
+                                                 cmp_ptrs[src_cell]->is_cell_material(material_id_);                                 
 
+          if (source_cell_has_mat) {
+            if (pure_cell) {
+              source_mesh_.cell_centroid(src_cell, &source_centroid);
+            } else { /* multi-material cell with this material */
               // obtain matpoly's for this material
-              auto const& cellmatpoly = interface_reconstructor_->cell_matpoly_data(src_cell);
-              auto matpolys = cellmatpoly.get_matpolys(material_id_);
+              auto matpolys = cmp_ptrs[src_cell]->get_matpolys(material_id_);
 
               for (int k = 0; k < D; k++)
                 source_centroid[k] = 0;
 
               /*
-               * compute centroid of all matpoly's by summing all the
-               * first order moments first, and then dividing by the
-               * total volume of all matpolys.
-               */
+                * compute centroid of all matpoly's by summing all the
+                * first order moments first, and then dividing by the
+                * total volume of all matpolys.
+                */
               double mvol = 0.;
               for (auto&& poly : matpolys) {
                 auto moments = poly.moments();

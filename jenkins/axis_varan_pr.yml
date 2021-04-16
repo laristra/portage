@@ -15,7 +15,7 @@ CONFIG_TYPE:
 exclude:
   - COMPILER: intel18
     CONFIG_TYPE: flecsi
+  - COMPILER: intel18
+    CONFIG_TYPE: thrust
   - COMPILER: gcc6
-    CONFIG_TYPE: readme 
-
-
+    CONFIG_TYPE: readme  

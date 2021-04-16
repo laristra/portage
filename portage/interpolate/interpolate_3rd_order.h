@@ -270,7 +270,7 @@ class Interpolate_3rdOrder<
 
     int nsrccells = sources_and_weights.size();
     if (!nsrccells) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       std::cerr << "WARNING: No source cells contribute to target cell." <<
         std::endl;
 #endif
@@ -454,7 +454,7 @@ class Interpolate_3rdOrder<
 
     int nsrcnodes = sources_and_weights.size();
     if (!nsrcnodes) {
-#if !defined(NDEBUG) && defined(VERBOSE_OUTPUT)
+#if defined(PORTAGE_DEBUG)
       std::cerr << "WARNING: No source nodes contribute to target node." <<
         std::endl;
 #endif
